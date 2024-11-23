@@ -23,7 +23,7 @@ import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol"
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {MorphoLendingAdapter} from "@src/core/MorphoLendingAdapter.sol";
+import {AaveLendingAdapter} from "@src/core/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
@@ -74,7 +74,7 @@ abstract contract ALMTestBase is Test, Deployers {
         // MARK END
 
         rebalanceAdapter = new SRebalanceAdapter();
-        lendingAdapter = new MorphoLendingAdapter();
+        lendingAdapter = new AaveLendingAdapter();
 
         lendingAdapter.setShortMId(shortMId);
         lendingAdapter.setLongMId(longMId);

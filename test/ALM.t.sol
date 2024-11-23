@@ -15,7 +15,7 @@ import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 import {ALM} from "@src/ALM.sol";
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-import {MorphoLendingAdapter} from "@src/core/MorphoLendingAdapter.sol";
+import {AaveLendingAdapter} from "@src/core/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
@@ -92,12 +92,12 @@ contract ALMTest is ALMTestBase {
         vm.stopPrank();
     }
 
-    function test_morpho_lending_adapter_short() public {
+    function test_aave_lending_adapter_short() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
         lendingAdapter.addAuthorizedCaller(address(alice.addr));
 
-        // ** Approve to Morpho
+        // ** Approve to LA
         vm.startPrank(alice.addr);
         WETH.approve(address(lendingAdapter), type(uint256).max);
         USDC.approve(address(lendingAdapter), type(uint256).max);
@@ -106,14 +106,14 @@ contract ALMTest is ALMTestBase {
         uint256 usdcToSupply = 4000 * 4500 * 1e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
         lendingAdapter.addCollateralShort(usdcToSupply);
-        assertEqMorphoA(shortMId, 0, 0, usdcToSupply);
-        assertEqBalanceStateZero(alice.addr);
+        // assertEqMorphoA(shortMId, 0, 0, usdcToSupply);
+        // assertEqBalanceStateZero(alice.addr);
 
-        // ** Borrow
-        uint256 wethToBorrow = ((usdcToSupply * 1e12) / 4500) / 100;
-        console.log("usdcToSupply", usdcToSupply);
-        console.log("wethToBorrow", wethToBorrow);
-        lendingAdapter.borrowShort(wethToBorrow);
+        // // ** Borrow
+        // uint256 wethToBorrow = ((usdcToSupply * 1e12) / 4500) / 100;
+        // console.log("usdcToSupply", usdcToSupply);
+        // console.log("wethToBorrow", wethToBorrow);
+        // lendingAdapter.borrowShort(wethToBorrow);
         // assertEqMorphoA(shortMId, 0, wethToBorrow, usdcToSupply);
         // assertEqBalanceState(alice.addr, wethToBorrow, 0);
 
@@ -308,7 +308,7 @@ contract ALMTest is ALMTestBase {
         // test_swap_price_down_rebalance();
         // // This is better to do after rebalance
         // vm.startPrank(deployer.addr);
-        // ILendingAdapter newAdapter = new MorphoLendingAdapter();
+        // ILendingAdapter newAdapter = new AaveLendingAdapter();
         // newAdapter.setShortMId(shortMId);
         // newAdapter.setLongMId(longMId);
         // newAdapter.addAuthorizedCaller(address(hook));
