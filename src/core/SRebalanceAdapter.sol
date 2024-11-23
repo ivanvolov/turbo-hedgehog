@@ -107,33 +107,31 @@ contract SRebalanceAdapter is Ownable {
     }
 
     function rebalance() external onlyOwner {
-        (bool isRebalance, ) = isPriceRebalanceNeeded();
-        if (!isRebalance) revert NoRebalanceNeeded();
-        alm.refreshReserves();
-
-        // Notice: we have two cases: have usdc; have usdc debt;
-        uint256 usdcToRepay = lendingAdapter.getBorrowed();
-        if (usdcToRepay > 0) {
-            // console.log("> ! 1");
-            // ** USDC debt. Borrow usdc to repay, repay. Swap ETH to USDC. Return back.
-            address[] memory assets = new address[](1);
-            uint256[] memory amounts = new uint256[](1);
-            uint256[] memory modes = new uint256[](1);
-            (assets[0], amounts[0], modes[0]) = (address(USDC), usdcToRepay, 0);
-            LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), "", 0);
-        } else {
-            // console.log("> ! 2");
-            // ** USDC supplied: just swap USDC to ETH
-            uint256 usdcSupplied = lendingAdapter.getSupplied();
-            if (usdcSupplied > 0) {
-                lendingAdapter.withdraw(usdcSupplied);
-                uint256 ethOut = ALMBaseLib.swapExactInput(address(USDC), address(WETH), usdcSupplied);
-                lendingAdapter.addCollateral(ethOut);
-            }
-        }
-
-        sqrtPriceLastRebalance = alm.sqrtPriceCurrent();
-        alm.updateBoundaries();
+        // (bool isRebalance, ) = isPriceRebalanceNeeded();
+        // if (!isRebalance) revert NoRebalanceNeeded();
+        // alm.refreshReserves();
+        // // Notice: we have two cases: have usdc; have usdc debt;
+        // uint256 usdcToRepay = lendingAdapter.getBorrowed();
+        // if (usdcToRepay > 0) {
+        //     // console.log("> ! 1");
+        //     // ** USDC debt. Borrow usdc to repay, repay. Swap ETH to USDC. Return back.
+        //     address[] memory assets = new address[](1);
+        //     uint256[] memory amounts = new uint256[](1);
+        //     uint256[] memory modes = new uint256[](1);
+        //     (assets[0], amounts[0], modes[0]) = (address(USDC), usdcToRepay, 0);
+        //     LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), "", 0);
+        // } else {
+        //     // console.log("> ! 2");
+        //     // ** USDC supplied: just swap USDC to ETH
+        //     uint256 usdcSupplied = lendingAdapter.getSupplied();
+        //     if (usdcSupplied > 0) {
+        //         lendingAdapter.withdraw(usdcSupplied);
+        //         uint256 ethOut = ALMBaseLib.swapExactInput(address(USDC), address(WETH), usdcSupplied);
+        //         lendingAdapter.addCollateral(ethOut);
+        //     }
+        // }
+        // sqrtPriceLastRebalance = alm.sqrtPriceCurrent();
+        // alm.updateBoundaries();
     }
 
     function executeOperation(
@@ -143,21 +141,18 @@ contract SRebalanceAdapter is Ownable {
         address,
         bytes calldata data
     ) external returns (bool) {
-        require(msg.sender == lendingPool, "M0");
-
-        if (data.length == 0) {
-            lendingAdapter.repay(amounts[0]);
-            lendingAdapter.removeCollateral(lendingAdapter.getCollateral());
-
-            ALMBaseLib.swapExactOutput(address(WETH), address(USDC), amounts[0] + premiums[0]);
-            lendingAdapter.addCollateral(WETH.balanceOf(address(this)));
-        } else {
-            lendingAdapter.repay(amounts[0]);
-            lendingAdapter.removeCollateral(abi.decode(data, (uint256)));
-
-            ALMBaseLib.swapExactOutput(address(WETH), address(USDC), amounts[0] + premiums[0]);
-            WETH.transfer(address(alm), WETH.balanceOf(address(this)));
-        }
-        return true;
+        // require(msg.sender == lendingPool, "M0");
+        // if (data.length == 0) {
+        //     lendingAdapter.repay(amounts[0]);
+        //     lendingAdapter.removeCollateral(lendingAdapter.getCollateral());
+        //     ALMBaseLib.swapExactOutput(address(WETH), address(USDC), amounts[0] + premiums[0]);
+        //     lendingAdapter.addCollateral(WETH.balanceOf(address(this)));
+        // } else {
+        //     lendingAdapter.repay(amounts[0]);
+        //     lendingAdapter.removeCollateral(abi.decode(data, (uint256)));
+        //     ALMBaseLib.swapExactOutput(address(WETH), address(USDC), amounts[0] + premiums[0]);
+        //     WETH.transfer(address(alm), WETH.balanceOf(address(this)));
+        // }
+        // return true;
     }
 }

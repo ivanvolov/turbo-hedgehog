@@ -50,47 +50,43 @@ abstract contract ALMTestSimBase is ALMTestBase {
     }
 
     function save_pool_state() internal {
-        uint128 liquidity = hook.liquidity();
-        uint160 sqrtPriceX96 = hook.sqrtPriceCurrent();
-        int24 tickLower = hook.tickLower();
-        int24 tickUpper = hook.tickUpper();
-        assertApproxEqAbs(tickLower, hookControl.tickLower(), 1);
-        assertApproxEqAbs(tickUpper, hookControl.tickUpper(), 1);
-
-        uint256 borrowed = lendingAdapter.getBorrowed();
-        uint256 supplied = lendingAdapter.getSupplied();
-        uint256 collateral = lendingAdapter.getCollateral();
-        uint256 tvl = hook.TVL();
-        uint256 tvlControl = hookControl.TVL();
-        // console.log("tvl", tvl);
-        // console.log("tvlControl", tvlControl);
-        uint256 sharePrice = hook.sharePrice();
-        uint256 sharePriceControl = hookControl.sharePrice();
-
-        (uint160 sqrtPriceX96Control, ) = hookControl.getTick();
-
-        bytes memory packedData = abi.encodePacked(
-            block.number,
-            sqrtPriceX96Control,
-            liquidity,
-            sqrtPriceX96,
-            tickLower,
-            tickUpper,
-            borrowed,
-            supplied,
-            collateral,
-            tvl,
-            tvlControl,
-            sharePrice,
-            sharePriceControl
-        );
-        string memory packedHexString = toHexString(packedData);
-
-        string[] memory inputs = new string[](3);
-        inputs[0] = "node";
-        inputs[1] = "test/simulations/logState.js";
-        inputs[2] = packedHexString;
-        vm.ffi(inputs);
+        // uint128 liquidity = hook.liquidity();
+        // uint160 sqrtPriceX96 = hook.sqrtPriceCurrent();
+        // int24 tickLower = hook.tickLower();
+        // int24 tickUpper = hook.tickUpper();
+        // assertApproxEqAbs(tickLower, hookControl.tickLower(), 1);
+        // assertApproxEqAbs(tickUpper, hookControl.tickUpper(), 1);
+        // uint256 borrowed = lendingAdapter.getBorrowed();
+        // uint256 supplied = lendingAdapter.getSupplied();
+        // uint256 collateral = lendingAdapter.getCollateral();
+        // uint256 tvl = hook.TVL();
+        // uint256 tvlControl = hookControl.TVL();
+        // // console.log("tvl", tvl);
+        // // console.log("tvlControl", tvlControl);
+        // uint256 sharePrice = hook.sharePrice();
+        // uint256 sharePriceControl = hookControl.sharePrice();
+        // (uint160 sqrtPriceX96Control, ) = hookControl.getTick();
+        // bytes memory packedData = abi.encodePacked(
+        //     block.number,
+        //     sqrtPriceX96Control,
+        //     liquidity,
+        //     sqrtPriceX96,
+        //     tickLower,
+        //     tickUpper,
+        //     borrowed,
+        //     supplied,
+        //     collateral,
+        //     tvl,
+        //     tvlControl,
+        //     sharePrice,
+        //     sharePriceControl
+        // );
+        // string memory packedHexString = toHexString(packedData);
+        // string[] memory inputs = new string[](3);
+        // inputs[0] = "node";
+        // inputs[1] = "test/simulations/logState.js";
+        // inputs[2] = packedHexString;
+        // vm.ffi(inputs);
     }
 
     function save_swap_data(

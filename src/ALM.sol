@@ -62,7 +62,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         (uint128 deltaL, uint256 amountIn, uint256 shares) = _calcDepositParams(amount);
 
         WETH.transferFrom(msg.sender, address(this), amountIn);
-        lendingAdapter.addCollateral(WETH.balanceOf(address(this)));
+        // lendingAdapter.addCollateral(WETH.balanceOf(address(this)));
         liquidity = liquidity + deltaL;
 
         _mint(to, shares);
@@ -72,35 +72,34 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function withdraw(address to, uint256 sharesOut) external notPaused {
-        if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
-        uint256 usdcToRepay = lendingAdapter.getBorrowed();
-        uint256 usdcSupplied = lendingAdapter.getSupplied();
-        if (usdcToRepay == 0) {
-            if (usdcSupplied != 0) {
-                console.log("> have usdc");
-                // ** have usdc;
-                lendingAdapter.withdraw(
-                    ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getSupplied())
-                );
-            }
-            lendingAdapter.removeCollateral(
-                ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getCollateral())
-            );
-        } else if (usdcToRepay != 0 && usdcSupplied == 0) {
-            console.log("> have usdc debt");
-            // ** have usdc debt;
-            IRebalanceAdapter(rebalanceAdapter).withdraw(
-                ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), usdcToRepay),
-                ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getCollateral())
-            );
-        } else revert BalanceInconsistency();
-
-        _burn(msg.sender, sharesOut);
-        uint256 amount0 = USDC.balanceOf(address(this));
-        uint256 amount1 = WETH.balanceOf(address(this));
-        USDC.transfer(to, amount0);
-        WETH.transfer(to, amount1);
-        emit Withdraw(to, sharesOut, amount0, amount1);
+        // if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
+        // // uint256 usdcToRepay = lendingAdapter.getBorrowed();
+        // uint256 usdcSupplied = lendingAdapter.getSupplied();
+        // if (usdcToRepay == 0) {
+        //     if (usdcSupplied != 0) {
+        //         console.log("> have usdc");
+        //         // ** have usdc;
+        //         lendingAdapter.withdraw(
+        //             ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getSupplied())
+        //         );
+        //     }
+        //     lendingAdapter.removeCollateral(
+        //         ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getCollateral())
+        //     );
+        // } else if (usdcToRepay != 0 && usdcSupplied == 0) {
+        //     console.log("> have usdc debt");
+        //     // ** have usdc debt;
+        //     IRebalanceAdapter(rebalanceAdapter).withdraw(
+        //         ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), usdcToRepay),
+        //         ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getCollateral())
+        //     );
+        // } else revert BalanceInconsistency();
+        // _burn(msg.sender, sharesOut);
+        // uint256 amount0 = USDC.balanceOf(address(this));
+        // uint256 amount1 = WETH.balanceOf(address(this));
+        // USDC.transfer(to, amount0);
+        // WETH.transfer(to, amount1);
+        // emit Withdraw(to, sharesOut, amount0, amount1);
     }
 
     // --- Swapping logic ---
@@ -128,52 +127,52 @@ contract ALM is BaseStrategyHook, ERC20 {
     ) internal returns (BeforeSwapDelta) {
         refreshReserves();
 
-        if (params.zeroForOne) {
-            console.log("> WETH price go up...");
-            // If user is selling Token 0 and buying Token 1 (USDC => WETH)
-            // TLDR: Here we got USDC and save it on balance. And just give our ETH back to USER.
-            (
-                BeforeSwapDelta beforeSwapDelta,
-                uint256 wethOut,
-                uint256 usdcIn,
-                uint160 sqrtPriceNext
-            ) = getZeroForOneDeltas(params.amountSpecified);
+        // if (params.zeroForOne) {
+        //     console.log("> WETH price go up...");
+        //     // If user is selling Token 0 and buying Token 1 (USDC => WETH)
+        //     // TLDR: Here we got USDC and save it on balance. And just give our ETH back to USER.
+        //     (
+        //         BeforeSwapDelta beforeSwapDelta,
+        //         uint256 wethOut,
+        //         uint256 usdcIn,
+        //         uint160 sqrtPriceNext
+        //     ) = getZeroForOneDeltas(params.amountSpecified);
 
-            // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
-            // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
-            key.currency0.take(poolManager, address(this), usdcIn, false);
-            repayAndSupply(usdcIn); // Notice: repaying if needed to reduce lending interest.
+        //     // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
+        //     // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
+        //     key.currency0.take(poolManager, address(this), usdcIn, false);
+        //     repayAndSupply(usdcIn); // Notice: repaying if needed to reduce lending interest.
 
-            // We don't have token 1 on our account yet, so we need to withdraw WETH from the Morpho.
-            // We also need to create a debit so user could take it back from the PM.
-            lendingAdapter.removeCollateral(wethOut);
-            key.currency1.settle(poolManager, address(this), wethOut, false);
+        //     // We don't have token 1 on our account yet, so we need to withdraw WETH from the Morpho.
+        //     // We also need to create a debit so user could take it back from the PM.
+        //     lendingAdapter.removeCollateral(wethOut);
+        //     key.currency1.settle(poolManager, address(this), wethOut, false);
 
-            sqrtPriceCurrent = sqrtPriceNext;
-            return beforeSwapDelta;
-        } else {
-            console.log("> WETH price go down...");
-            // If user is selling Token 1 and buying Token 0 (WETH => USDC)
-            // TLDR: Here we borrow USDC at Morpho and give it back.
+        //     sqrtPriceCurrent = sqrtPriceNext;
+        //     return beforeSwapDelta;
+        // } else {
+        //     console.log("> WETH price go down...");
+        //     // If user is selling Token 1 and buying Token 0 (WETH => USDC)
+        //     // TLDR: Here we borrow USDC at Morpho and give it back.
 
-            (
-                BeforeSwapDelta beforeSwapDelta,
-                uint256 wethIn,
-                uint256 usdcOut,
-                uint160 sqrtPriceNext
-            ) = getOneForZeroDeltas(params.amountSpecified);
+        //     (
+        //         BeforeSwapDelta beforeSwapDelta,
+        //         uint256 wethIn,
+        //         uint256 usdcOut,
+        //         uint160 sqrtPriceNext
+        //     ) = getOneForZeroDeltas(params.amountSpecified);
 
-            // Put extra WETH to Morpho
-            key.currency1.take(poolManager, address(this), wethIn, false);
-            lendingAdapter.addCollateral(wethIn);
+        //     // Put extra WETH to Morpho
+        //     key.currency1.take(poolManager, address(this), wethIn, false);
+        //     lendingAdapter.addCollateral(wethIn);
 
-            // Ensure we have enough USDC. Redeem from reserves and borrow if needed.
-            redeemAndBorrow(usdcOut);
-            key.currency0.settle(poolManager, address(this), usdcOut, false);
+        //     // Ensure we have enough USDC. Redeem from reserves and borrow if needed.
+        //     redeemAndBorrow(usdcOut);
+        //     key.currency0.settle(poolManager, address(this), usdcOut, false);
 
-            sqrtPriceCurrent = sqrtPriceNext;
-            return beforeSwapDelta;
-        }
+        //     sqrtPriceCurrent = sqrtPriceNext;
+        //     return beforeSwapDelta;
+        // }
     }
 
     // --- Internal and view functions ---
@@ -239,31 +238,30 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function redeemAndBorrow(uint256 usdcOut) internal {
-        uint256 withdrawAmount = ALMMathLib.min(lendingAdapter.getSupplied(), usdcOut);
-        if (withdrawAmount > 0) lendingAdapter.withdraw(withdrawAmount);
-
-        if (usdcOut > withdrawAmount) lendingAdapter.borrow(usdcOut - withdrawAmount);
+        // uint256 withdrawAmount = ALMMathLib.min(lendingAdapter.getSupplied(), usdcOut);
+        // if (withdrawAmount > 0) lendingAdapter.withdraw(withdrawAmount);
+        // if (usdcOut > withdrawAmount) lendingAdapter.borrow(usdcOut - withdrawAmount);
     }
 
     function repayAndSupply(uint256 amountUSDC) internal {
-        uint256 repayAmount = ALMMathLib.min(lendingAdapter.getBorrowed(), amountUSDC);
-        if (repayAmount > 0) lendingAdapter.repay(repayAmount);
-        if (amountUSDC > repayAmount) lendingAdapter.supply(amountUSDC - repayAmount);
+        // uint256 repayAmount = ALMMathLib.min(lendingAdapter.getBorrowed(), amountUSDC);
+        // if (repayAmount > 0) lendingAdapter.repay(repayAmount);
+        // if (amountUSDC > repayAmount) lendingAdapter.supply(amountUSDC - repayAmount);
     }
 
     function refreshReserves() public {
-        lendingAdapter.syncBorrow();
-        lendingAdapter.syncDeposit();
+        // lendingAdapter.syncLong();
+        // lendingAdapter.syncShort();
     }
 
     // ---- Math functions
 
     function TVL() public view returns (uint256) {
-        uint256 price = _calcCurrentPrice();
-        int256 tvl = int256(lendingAdapter.getCollateral()) +
-            int256(lendingAdapter.getSupplied() / price) -
-            int256(lendingAdapter.getBorrowed() / price);
-        return uint256(tvl);
+        // uint256 price = _calcCurrentPrice();
+        // int256 tvl = int256(lendingAdapter.getCollateral()) +
+        //     int256(lendingAdapter.getSupplied() / price) -
+        //     int256(lendingAdapter.getBorrowed() / price);
+        // return uint256(tvl);
     }
 
     function sharePrice() public view returns (uint256) {

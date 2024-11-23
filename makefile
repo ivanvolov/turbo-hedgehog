@@ -12,9 +12,9 @@ trsl:
 	clear && forge test -vvvv --match-test test_rebalance_simulation --ffi
 
 t:
-	clear && forge test -vv --match-test test_hook_deployment_exploit_revert
+	clear && forge test -vv --match-test test_morpho_lending_adapter_short
 tl:
-	clear && forge test -vvvv --match-test test_hook_deployment_exploit_revert
+	clear && forge test -vvvv --match-test test_morpho_lending_adapter_short
 
 t2:
 	clear && forge test -vv --match-test test_quick_test

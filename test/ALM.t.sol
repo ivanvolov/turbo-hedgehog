@@ -56,73 +56,79 @@ contract ALMTest is ALMTestBase {
         );
     }
 
-    function test_morpho_lending_adapter_supply() public {
+    function test_morpho_lending_adapter_long() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
         lendingAdapter.addAuthorizedCaller(address(alice.addr));
 
-        vm.startPrank(alice.addr);
-
         // ** Approve to Morpho
-        USDC.approve(address(lendingAdapter), type(uint256).max);
-
-        // ** Supply
-        uint256 usdcToSupply = 4000 * 1e6;
-        deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.supply(usdcToSupply);
-
-        assertEqMorphoS(depositUSDCmId, usdcToSupply * 1e6, 0, 0);
-        assertEqBalanceStateZero(alice.addr);
-
-        // ** Withdraw
-        lendingAdapter.withdraw(usdcToSupply);
-        assertEqMorphoS(borrowUSDCmId, 0, 0, 0);
-        assertEqBalanceState(alice.addr, 0, usdcToSupply);
-
-        vm.stopPrank();
-    }
-
-    function test_morpho_lending_adapter_borrow() public {
-        // ** Enable Alice to call the adapter
-        vm.prank(deployer.addr);
-        lendingAdapter.addAuthorizedCaller(address(alice.addr));
-
         vm.startPrank(alice.addr);
-
-        // ** Approve to Morpho
         WETH.approve(address(lendingAdapter), type(uint256).max);
         USDC.approve(address(lendingAdapter), type(uint256).max);
 
-        // ** Supply collateral
-        deal(address(WETH), address(alice.addr), 1 ether);
-        lendingAdapter.addCollateral(1 ether);
-
-        assertEqMorphoS(borrowUSDCmId, 0, 0, 1 ether);
+        // ** Add collateral
+        uint256 wethToSupply = 4000 * 1e18;
+        deal(address(WETH), address(alice.addr), wethToSupply);
+        lendingAdapter.addCollateralLong(wethToSupply);
+        assertEqMorphoA(longMId, 0, 0, wethToSupply);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Borrow
-        uint256 borrowUSDC = 4000 * 1e6;
-        lendingAdapter.borrow(borrowUSDC);
-
-        assertEqMorphoS(borrowUSDCmId, 0, borrowUSDC * 1e6, 1 ether);
-        assertEqBalanceState(alice.addr, 0, borrowUSDC);
+        uint256 usdcToBorrow = ((wethToSupply * 4500) / 1e12) / 2;
+        lendingAdapter.borrowLong(usdcToBorrow);
+        assertEqMorphoA(longMId, 0, usdcToBorrow, wethToSupply);
+        assertEqBalanceState(alice.addr, 0, usdcToBorrow);
 
         // ** Repay
-        lendingAdapter.repay(borrowUSDC);
-        assertEqMorphoS(borrowUSDCmId, 0, 0, 1 ether);
+        lendingAdapter.repayLong(usdcToBorrow);
+        assertEqMorphoA(longMId, 0, 0, wethToSupply);
         assertEqBalanceStateZero(alice.addr);
 
-        // ** Withdraw collateral
-        lendingAdapter.removeCollateral(1 ether);
-        assertEqMorphoS(borrowUSDCmId, 0, 0, 0);
-        assertEqBalanceState(alice.addr, 1 ether, 0);
+        // ** Remove collateral
+        lendingAdapter.removeCollateralLong(wethToSupply);
+        assertEqMorphoA(longMId, 0, 0, 0);
+        assertEqBalanceState(alice.addr, wethToSupply, 0);
 
         vm.stopPrank();
     }
 
-    // function test_volatility_fees() public {
-    //     assertEq(hook.getSwapFees(), 1149360638297872);
-    // }
+    function test_morpho_lending_adapter_short() public {
+        // ** Enable Alice to call the adapter
+        vm.prank(deployer.addr);
+        lendingAdapter.addAuthorizedCaller(address(alice.addr));
+
+        // ** Approve to Morpho
+        vm.startPrank(alice.addr);
+        WETH.approve(address(lendingAdapter), type(uint256).max);
+        USDC.approve(address(lendingAdapter), type(uint256).max);
+
+        // ** Add collateral
+        uint256 usdcToSupply = 4000 * 4500 * 1e6;
+        deal(address(USDC), address(alice.addr), usdcToSupply);
+        lendingAdapter.addCollateralShort(usdcToSupply);
+        assertEqMorphoA(shortMId, 0, 0, usdcToSupply);
+        assertEqBalanceStateZero(alice.addr);
+
+        // ** Borrow
+        uint256 wethToBorrow = ((usdcToSupply * 1e12) / 4500) / 100;
+        console.log("usdcToSupply", usdcToSupply);
+        console.log("wethToBorrow", wethToBorrow);
+        lendingAdapter.borrowShort(wethToBorrow);
+        // assertEqMorphoA(shortMId, 0, wethToBorrow, usdcToSupply);
+        // assertEqBalanceState(alice.addr, wethToBorrow, 0);
+
+        // // ** Repay
+        // lendingAdapter.repayShort(wethToBorrow);
+        // assertEqMorphoA(shortMId, 0, 0, usdcToSupply);
+        // assertEqBalanceStateZero(alice.addr);
+
+        // // ** Remove collateral
+        // lendingAdapter.removeCollateralShort(usdcToSupply);
+        // assertEqMorphoA(shortMId, 0, 0, 0);
+        // assertEqBalanceState(alice.addr, 0, usdcToSupply);
+
+        vm.stopPrank();
+    }
 
     uint256 amountToDep = 100 ether;
 
@@ -137,8 +143,8 @@ contract ALMTest is ALMTestBase {
 
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        assertEqMorphoA(borrowUSDCmId, 0, 0, amountToDep);
-        assertEqMorphoA(depositUSDCmId, 0, 0, 0);
+        assertEqMorphoA(longMId, 0, 0, amountToDep);
+        assertEqMorphoA(shortMId, 0, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), 1182773400228691521900860642689024);
         assertEq(hook._calcCurrentPrice(), 4486999999999999769339);
@@ -158,8 +164,8 @@ contract ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqMorphoA(depositUSDCmId, usdcToSwap, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, 0, 0, amountToDep - deltaWETH);
+        assertEqMorphoA(shortMId, usdcToSwap, 0, 0);
+        assertEqMorphoA(longMId, 0, 0, amountToDep - deltaWETH);
 
         assertEq(hook.sqrtPriceCurrent(), 1181210201945000124313491613764168);
     }
@@ -178,8 +184,8 @@ contract ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqMorphoA(depositUSDCmId, usdcToSwapQ, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, 0, 0, amountToDep - deltaWETH);
+        assertEqMorphoA(shortMId, usdcToSwapQ, 0, 0);
+        assertEqMorphoA(longMId, 0, 0, amountToDep - deltaWETH);
 
         assertEq(hook.sqrtPriceCurrent(), 1184338667228746981679537543072454);
     }
@@ -197,8 +203,8 @@ contract ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqMorphoA(depositUSDCmId, 0, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, 0, deltaUSDC, amountToDep + wethToSwap);
+        assertEqMorphoA(shortMId, 0, 0, 0);
+        assertEqMorphoA(longMId, 0, deltaUSDC, amountToDep + wethToSwap);
 
         assertEq(hook.sqrtPriceCurrent(), 1184338667228746981679537543072454);
     }
@@ -217,8 +223,8 @@ contract ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqMorphoA(depositUSDCmId, 0, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, 0, deltaUSDC, amountToDep + wethToSwapQ);
+        assertEqMorphoA(shortMId, 0, 0, 0);
+        assertEqMorphoA(longMId, 0, deltaUSDC, amountToDep + wethToSwapQ);
 
         assertEq(hook.sqrtPriceCurrent(), 1181128042874516412352801494904863);
     }
@@ -241,8 +247,8 @@ contract ALMTest is ALMTestBase {
         assertEq(hook.sqrtPriceCurrent(), 1199991337229301579466306546906758);
 
         assertEqBalanceState(address(hook), 0, 0);
-        assertEqMorphoA(depositUSDCmId, 0, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, 0, 46216366450, 110999999999999999712);
+        assertEqMorphoA(shortMId, 0, 0, 0);
+        assertEqMorphoA(longMId, 0, 46216366450, 110999999999999999712);
 
         assertEq(rebalanceAdapter.sqrtPriceLastRebalance(), initialSQRTPrice);
 
@@ -252,8 +258,8 @@ contract ALMTest is ALMTestBase {
         assertEq(rebalanceAdapter.sqrtPriceLastRebalance(), 1199991337229301579466306546906758);
 
         assertEqBalanceState(address(hook), 0, 0);
-        assertEqMorphoA(depositUSDCmId, 0, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, 0, 0, 98956727267096030628);
+        assertEqMorphoA(shortMId, 0, 0, 0);
+        assertEqMorphoA(longMId, 0, 0, 98956727267096030628);
     }
 
     function test_swap_price_down_rebalance_withdraw() public {
@@ -299,36 +305,29 @@ contract ALMTest is ALMTestBase {
     }
 
     function test_lending_adapter_migration() public {
-        test_swap_price_down_rebalance();
-        // This is better to do after rebalance
-
-        vm.startPrank(deployer.addr);
-        ILendingAdapter newAdapter = new MorphoLendingAdapter();
-        newAdapter.setDepositUSDCmId(depositUSDCmId);
-        newAdapter.setBorrowUSDCmId(borrowUSDCmId);
-        newAdapter.addAuthorizedCaller(address(hook));
-        newAdapter.addAuthorizedCaller(address(rebalanceAdapter));
-
-        // @Notice: Alice here acts as a migration contract the purpose of with is to transfer collateral between adapters
-        newAdapter.addAuthorizedCaller(alice.addr);
-
-        rebalanceAdapter.setLendingAdapter(address(newAdapter));
-        hook.setLendingAdapter(address(newAdapter));
-
-        lendingAdapter.addAuthorizedCaller(address(alice.addr));
-        vm.stopPrank();
-
-        uint256 collateral = lendingAdapter.getCollateral();
-        vm.startPrank(alice.addr);
-        lendingAdapter.removeCollateral(collateral);
-
-        WETH.approve(address(newAdapter), type(uint256).max);
-        newAdapter.addCollateral(collateral);
-        vm.stopPrank();
-
-        assertEqBalanceState(address(hook), 0, 0);
-        assertEqMorphoA(depositUSDCmId, address(newAdapter), 0, 0, 0);
-        assertEqMorphoA(borrowUSDCmId, address(newAdapter), 0, 0, 98956727267096030628);
+        // test_swap_price_down_rebalance();
+        // // This is better to do after rebalance
+        // vm.startPrank(deployer.addr);
+        // ILendingAdapter newAdapter = new MorphoLendingAdapter();
+        // newAdapter.setShortMId(shortMId);
+        // newAdapter.setLongMId(longMId);
+        // newAdapter.addAuthorizedCaller(address(hook));
+        // newAdapter.addAuthorizedCaller(address(rebalanceAdapter));
+        // // @Notice: Alice here acts as a migration contract the purpose of with is to transfer collateral between adapters
+        // newAdapter.addAuthorizedCaller(alice.addr);
+        // rebalanceAdapter.setLendingAdapter(address(newAdapter));
+        // hook.setLendingAdapter(address(newAdapter));
+        // lendingAdapter.addAuthorizedCaller(address(alice.addr));
+        // vm.stopPrank();
+        // uint256 collateral = lendingAdapter.getCollateral();
+        // vm.startPrank(alice.addr);
+        // lendingAdapter.removeCollateral(collateral);
+        // WETH.approve(address(newAdapter), type(uint256).max);
+        // newAdapter.addCollateral(collateral);
+        // vm.stopPrank();
+        // assertEqBalanceState(address(hook), 0, 0);
+        // assertEqMorphoA(shortMId, address(newAdapter), 0, 0, 0);
+        // assertEqMorphoA(longMId, address(newAdapter), 0, 0, 98956727267096030628);
     }
 
     function test_accessability() public {

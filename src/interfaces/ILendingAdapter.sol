@@ -4,35 +4,41 @@ pragma solidity ^0.8.25;
 import {Id} from "@forks/morpho/IMorpho.sol";
 
 interface ILendingAdapter {
-    // Borrow market functions
-    function getBorrowed() external view returns (uint256);
+    // Long market
+    function getBorrowedLong() external view returns (uint256);
 
-    function borrow(uint256 amountUSDC) external;
+    function borrowLong(uint256 amountUSDC) external;
 
-    function repay(uint256 amount) external;
+    function repayLong(uint256 amountUSDC) external;
 
-    function getCollateral() external view returns (uint256);
+    function getCollateralLong() external view returns (uint256);
 
-    function removeCollateral(uint256 amount) external;
+    function removeCollateralLong(uint256 amountWETH) external;
 
-    function addCollateral(uint256 amount) external;
+    function addCollateralLong(uint256 amountWETH) external;
 
-    // Provide market functions
-    function getSupplied() external view returns (uint256);
+    // Short market
+    function getBorrowedShort() external view returns (uint256);
 
-    function supply(uint256 amount) external;
+    function borrowShort(uint256 amountWETH) external;
 
-    function withdraw(uint256 amount) external;
+    function repayShort(uint256 amountWETH) external;
 
-    // Sync market functions
-    function syncDeposit() external;
+    function getCollateralShort() external view returns (uint256);
 
-    function syncBorrow() external;
+    function removeCollateralShort(uint256 amountUSDC) external;
+
+    function addCollateralShort(uint256 amountUSDC) external;
+
+    // Helpers
+    function syncLong() external;
+
+    function syncShort() external;
 
     // Params
-    function setBorrowUSDCmId(Id) external;
+    function setLongMId(Id) external;
 
-    function setDepositUSDCmId(Id) external;
+    function setShortMId(Id) external;
 
     function addAuthorizedCaller(address) external;
 }

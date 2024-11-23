@@ -11,14 +11,13 @@ import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
 contract MorphoLendingAdapter is Ownable, ILendingAdapter {
-    IMorpho public constant morpho =
-        IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
+    IMorpho public constant morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
 
     IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
-    Id public depositUSDCmId;
-    Id public borrowUSDCmId;
+    Id public shortMId;
+    Id public longMId;
 
     mapping(address => bool) public authorizedCallers;
 
@@ -27,121 +26,88 @@ contract MorphoLendingAdapter is Ownable, ILendingAdapter {
         USDC.approve(address(morpho), type(uint256).max);
     }
 
-    function setDepositUSDCmId(Id _depositUSDCmId) external onlyOwner {
-        depositUSDCmId = _depositUSDCmId;
+    function setShortMId(Id _shortMId) external onlyOwner {
+        shortMId = _shortMId;
     }
 
-    function setBorrowUSDCmId(Id _borrowUSDCmId) external onlyOwner {
-        borrowUSDCmId = _borrowUSDCmId;
+    function setLongMId(Id _longMId) external onlyOwner {
+        longMId = _longMId;
     }
 
     function addAuthorizedCaller(address _caller) external onlyOwner {
         authorizedCallers[_caller] = true;
     }
 
-    // Borrow market
+    // Long market
 
-    function getBorrowed() external view returns (uint256) {
-        return
-            MorphoBalancesLib.expectedBorrowAssets(
-                morpho,
-                morpho.idToMarketParams(borrowUSDCmId),
-                address(this)
-            );
+    function getBorrowedLong() external view returns (uint256) {
+        return MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(longMId), address(this));
     }
 
-    function borrow(uint256 amountUSDC) external onlyAuthorizedCaller {
-        morpho.borrow(
-            morpho.idToMarketParams(borrowUSDCmId),
-            amountUSDC,
-            0,
-            address(this),
-            msg.sender
-        );
+    function borrowLong(uint256 amountUSDC) external onlyAuthorizedCaller {
+        morpho.borrow(morpho.idToMarketParams(longMId), amountUSDC, 0, address(this), msg.sender);
     }
 
-    function repay(uint256 amountUSDC) external onlyAuthorizedCaller {
+    function repayLong(uint256 amountUSDC) external onlyAuthorizedCaller {
         USDC.transferFrom(msg.sender, address(this), amountUSDC);
-        morpho.repay(
-            morpho.idToMarketParams(borrowUSDCmId),
-            amountUSDC,
-            0,
-            address(this),
-            ""
-        );
+        morpho.repay(morpho.idToMarketParams(longMId), amountUSDC, 0, address(this), "");
     }
 
-    function getCollateral() external view returns (uint256) {
-        Position memory p = morpho.position(borrowUSDCmId, address(this));
+    function getCollateralLong() external view returns (uint256) {
+        Position memory p = morpho.position(longMId, address(this));
         return p.collateral;
     }
 
-    function removeCollateral(uint256 amount) external onlyAuthorizedCaller {
-        morpho.withdrawCollateral(
-            morpho.idToMarketParams(borrowUSDCmId),
-            amount,
-            address(this),
-            msg.sender
-        );
+    function removeCollateralLong(uint256 amountWETH) external onlyAuthorizedCaller {
+        morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amountWETH, address(this), msg.sender);
     }
 
-    function addCollateral(uint256 amount) external onlyAuthorizedCaller {
-        WETH.transferFrom(msg.sender, address(this), amount);
-        morpho.supplyCollateral(
-            morpho.idToMarketParams(borrowUSDCmId),
-            amount,
-            address(this),
-            ""
-        );
+    function addCollateralLong(uint256 amountWETH) external onlyAuthorizedCaller {
+        WETH.transferFrom(msg.sender, address(this), amountWETH);
+        morpho.supplyCollateral(morpho.idToMarketParams(longMId), amountWETH, address(this), "");
     }
 
-    // Provide market
+    // Short market
 
-    function getSupplied() external view returns (uint256) {
-        return
-            MorphoBalancesLib.expectedSupplyAssets(
-                morpho,
-                morpho.idToMarketParams(depositUSDCmId),
-                address(this)
-            );
+    function getBorrowedShort() external view returns (uint256) {
+        return MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(shortMId), address(this));
     }
 
-    function supply(uint256 amountUsdc) external onlyAuthorizedCaller {
-        USDC.transferFrom(msg.sender, address(this), amountUsdc);
-        morpho.supply(
-            morpho.idToMarketParams(depositUSDCmId),
-            amountUsdc,
-            0,
-            address(this),
-            ""
-        );
+    function borrowShort(uint256 amountWETH) external onlyAuthorizedCaller {
+        morpho.borrow(morpho.idToMarketParams(shortMId), amountWETH, 0, address(this), msg.sender);
     }
 
-    function withdraw(uint256 amountUsdc) external onlyAuthorizedCaller {
-        morpho.withdraw(
-            morpho.idToMarketParams(depositUSDCmId),
-            amountUsdc,
-            0,
-            address(this),
-            msg.sender
-        );
+    function repayShort(uint256 amountWETH) external onlyAuthorizedCaller {
+        USDC.transferFrom(msg.sender, address(this), amountWETH);
+        morpho.repay(morpho.idToMarketParams(shortMId), amountWETH, 0, address(this), "");
     }
 
-    function syncDeposit() external {
-        morpho.accrueInterest(morpho.idToMarketParams(depositUSDCmId));
+    function getCollateralShort() external view returns (uint256) {
+        Position memory p = morpho.position(shortMId, address(this));
+        return p.collateral;
     }
 
-    function syncBorrow() external {
-        morpho.accrueInterest(morpho.idToMarketParams(borrowUSDCmId));
+    function removeCollateralShort(uint256 amountUSDC) external onlyAuthorizedCaller {
+        morpho.withdrawCollateral(morpho.idToMarketParams(shortMId), amountUSDC, address(this), msg.sender);
+    }
+
+    function addCollateralShort(uint256 amountUSDC) external onlyAuthorizedCaller {
+        USDC.transferFrom(msg.sender, address(this), amountUSDC);
+        morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amountUSDC, address(this), "");
     }
 
     // Helpers
 
+    function syncLong() external {
+        morpho.accrueInterest(morpho.idToMarketParams(longMId));
+    }
+
+    function syncShort() external {
+        morpho.accrueInterest(morpho.idToMarketParams(shortMId));
+    }
+
     modifier onlyAuthorizedCaller() {
-        require(
-            authorizedCallers[msg.sender] == true,
-            "Caller is not authorized V4 pool"
-        );
+        require(authorizedCallers[msg.sender] == true, "Caller is not authorized V4 pool");
         _;
     }
 }

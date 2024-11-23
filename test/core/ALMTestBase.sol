@@ -50,8 +50,8 @@ abstract contract ALMTestBase is Test, Deployers {
     TestAccount swapper;
     TestAccount zero;
 
-    Id depositUSDCmId;
-    Id borrowUSDCmId;
+    Id shortMId;
+    Id longMId;
     IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
     uint256 almId;
 
@@ -76,8 +76,8 @@ abstract contract ALMTestBase is Test, Deployers {
         rebalanceAdapter = new SRebalanceAdapter();
         lendingAdapter = new MorphoLendingAdapter();
 
-        lendingAdapter.setDepositUSDCmId(depositUSDCmId);
-        lendingAdapter.setBorrowUSDCmId(borrowUSDCmId);
+        lendingAdapter.setShortMId(shortMId);
+        lendingAdapter.setLongMId(longMId);
         lendingAdapter.addAuthorizedCaller(address(hook));
         lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
 
@@ -120,13 +120,15 @@ abstract contract ALMTestBase is Test, Deployers {
     function create_and_seed_morpho_markets() internal {
         address oracle = 0x48F7E36EB6B826B2dF4B2E630B62Cd25e89E40e2;
 
-        modifyMockOracle(oracle, 4487851340816804029821232973); //4487 usdc for eth
+        // @Notice: The price rate of 1 asset of collateral token quoted in 1 asset of loan token. With `36 + loan token decimals - collateral token decimals` decimals.
+        // modifyMockOracle(oracle, 4487851340816804029821232973); //4487 usdc for eth
+        modifyMockOracle(oracle, 222866057499442861561321795465945421627523072); //4487 usdc for eth, reversed oracle
 
-        borrowUSDCmId = create_morpho_market(address(USDC), address(WETH), 915000000000000000, oracle);
+        longMId = create_morpho_market(address(USDC), address(WETH), 915000000000000000, oracle);
+        provideLiquidityToMorpho(longMId, 1000 ether); // Providing some ETH
 
-        provideLiquidityToMorpho(borrowUSDCmId, 1000 ether); // Providing some ETH
-
-        depositUSDCmId = create_morpho_market(address(USDC), address(WETH), 945000000000000000, oracle);
+        shortMId = create_morpho_market(address(WETH), address(USDC), 945000000000000000, oracle);
+        provideLiquidityToMorpho(shortMId, 4000000 * 1e6); // Providing some USDC
     }
 
     function presetChainlinkOracles() internal {
@@ -257,14 +259,6 @@ abstract contract ALMTestBase is Test, Deployers {
         iface = IChainlinkOracle(oracle);
 
         vm.mockCall(address(oracle), abi.encodeWithSelector(iface.price.selector), abi.encode(newPrice));
-
-        // console.log("> vault", address(iface.VAULT()));
-        // console.log("> conversionSample", iface.VAULT_CONVERSION_SAMPLE());
-        // console.log("> baseFeed1", address(iface.BASE_FEED_1()));
-        // console.log("> baseFeed2", address(iface.BASE_FEED_2()));
-        // console.log("> quoteFeed1", address(iface.QUOTE_FEED_1()));
-        // console.log("> quoteFeed2", address(iface.QUOTE_FEED_2()));
-        // console.log("> scaleFactor", iface.SCALE_FACTOR());
         return iface;
     }
 
