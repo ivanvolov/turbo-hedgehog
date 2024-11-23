@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import {Id} from "@forks/morpho/IMorpho.sol";
 
 interface ILendingAdapter {
-    // Long market
+    // ** Long market
     function getBorrowedLong() external view returns (uint256);
 
     function borrowLong(uint256 amountUSDC) external;
@@ -17,7 +17,7 @@ interface ILendingAdapter {
 
     function addCollateralLong(uint256 amountWETH) external;
 
-    // Short market
+    // ** Short market
     function getBorrowedShort() external view returns (uint256);
 
     function borrowShort(uint256 amountWETH) external;
@@ -30,15 +30,11 @@ interface ILendingAdapter {
 
     function addCollateralShort(uint256 amountUSDC) external;
 
-    // Helpers
+    // ** Helpers
     function syncLong() external;
 
     function syncShort() external;
 
-    // Params
-    function setLongMId(Id) external;
-
-    function setShortMId(Id) external;
-
+    // ** Params
     function addAuthorizedCaller(address) external;
 }

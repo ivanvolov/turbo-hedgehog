@@ -76,8 +76,6 @@ abstract contract ALMTestBase is Test, Deployers {
         rebalanceAdapter = new SRebalanceAdapter();
         lendingAdapter = new AaveLendingAdapter();
 
-        lendingAdapter.setShortMId(shortMId);
-        lendingAdapter.setLongMId(longMId);
         lendingAdapter.addAuthorizedCaller(address(hook));
         lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
 

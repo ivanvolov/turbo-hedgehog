@@ -37,7 +37,6 @@ contract ALMSimulationTest is ALMTestSimBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
-        create_and_seed_morpho_markets();
         init_hook();
         init_control_hook();
         approve_accounts();

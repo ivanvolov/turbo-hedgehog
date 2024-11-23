@@ -8,10 +8,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
-import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
-import {IAaveOracle} from "@aave/core-v3/contracts/interfaces/IAaveOracle.sol";
-import {IPoolAddressesProvider} from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
-import {IPoolDataProvider} from "@aave/core-v3/contracts/interfaces/IPoolDataProvider.sol";
+import {IPool} from "@aave-core-v3/contracts/interfaces/IPool.sol";
+import {IAaveOracle} from "@aave-core-v3/contracts/interfaces/IAaveOracle.sol";
+import {IPoolAddressesProvider} from "@aave-core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
+import {IPoolDataProvider} from "@aave-core-v3/contracts/interfaces/IPoolDataProvider.sol";
 
 contract AaveLendingAdapter is Ownable, ILendingAdapter {
     //aaveV3
@@ -20,100 +20,99 @@ contract AaveLendingAdapter is Ownable, ILendingAdapter {
     IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
-    Id public shortMId;
-    Id public longMId;
-
     mapping(address => bool) public authorizedCallers;
 
     constructor() Ownable(msg.sender) {
-        WETH.approve(address(morpho), type(uint256).max);
-        USDC.approve(address(morpho), type(uint256).max);
+        WETH.approve(getPool(), type(uint256).max);
+        USDC.approve(getPool(), type(uint256).max);
     }
 
-    function setShortMId(Id _shortMId) external onlyOwner {
-        shortMId = _shortMId;
-    }
-
-    function setLongMId(Id _longMId) external onlyOwner {
-        longMId = _longMId;
+    function getPool() public view returns (address) {
+        return provider.getPool();
     }
 
     function addAuthorizedCaller(address _caller) external onlyOwner {
         authorizedCallers[_caller] = true;
     }
 
-    // Long market
+    // ** Long market
 
     function getBorrowedLong() external view returns (uint256) {
-        return MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(longMId), address(this));
+        (, , address variableDebtTokenAddress) = getAssetAddresses(address(USDC));
+        return IERC20(variableDebtTokenAddress).balanceOf(address(this));
     }
 
     function borrowLong(uint256 amountUSDC) external onlyAuthorizedCaller {
-        morpho.borrow(morpho.idToMarketParams(longMId), amountUSDC, 0, address(this), msg.sender);
+        IPool(getPool()).borrow(address(USDC), amountUSDC, 2, 0, address(this)); // Interest rate mode: 2 = variable
+        USDC.transfer(msg.sender, amountUSDC);
     }
 
     function repayLong(uint256 amountUSDC) external onlyAuthorizedCaller {
         USDC.transferFrom(msg.sender, address(this), amountUSDC);
-        morpho.repay(morpho.idToMarketParams(longMId), amountUSDC, 0, address(this), "");
+        IPool(getPool()).repay(address(USDC), amountUSDC, 2, address(this));
     }
 
     function getCollateralLong() external view returns (uint256) {
-        Position memory p = morpho.position(longMId, address(this));
-        return p.collateral;
+        (address aTokenAddress, , ) = getAssetAddresses(address(WETH));
+        return IERC20(aTokenAddress).balanceOf(address(this));
     }
 
     function removeCollateralLong(uint256 amountWETH) external onlyAuthorizedCaller {
-        morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amountWETH, address(this), msg.sender);
+        IPool(getPool()).withdraw(address(WETH), amountWETH, msg.sender);
     }
 
     function addCollateralLong(uint256 amountWETH) external onlyAuthorizedCaller {
         WETH.transferFrom(msg.sender, address(this), amountWETH);
-        morpho.supplyCollateral(morpho.idToMarketParams(longMId), amountWETH, address(this), "");
+        IPool(getPool()).supply(address(WETH), amountWETH, address(this), 0);
     }
 
-    // Short market
+    // ** Short market
 
     function getBorrowedShort() external view returns (uint256) {
-        return MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(shortMId), address(this));
+        (, , address variableDebtTokenAddress) = getAssetAddresses(address(WETH));
+        return IERC20(variableDebtTokenAddress).balanceOf(address(this));
     }
 
     function borrowShort(uint256 amountWETH) external onlyAuthorizedCaller {
-        morpho.borrow(morpho.idToMarketParams(shortMId), amountWETH, 0, address(this), msg.sender);
+        IPool(getPool()).borrow(address(WETH), amountWETH, 2, 0, address(this)); // Interest rate mode: 2 = variable
+        WETH.transfer(msg.sender, amountWETH);
     }
 
     function repayShort(uint256 amountWETH) external onlyAuthorizedCaller {
-        USDC.transferFrom(msg.sender, address(this), amountWETH);
-        morpho.repay(morpho.idToMarketParams(shortMId), amountWETH, 0, address(this), "");
+        WETH.transferFrom(msg.sender, address(this), amountWETH);
+        IPool(getPool()).repay(address(WETH), amountWETH, 2, address(this));
     }
 
     function getCollateralShort() external view returns (uint256) {
-        Position memory p = morpho.position(shortMId, address(this));
-        return p.collateral;
+        (address aTokenAddress, , ) = getAssetAddresses(address(USDC));
+        return IERC20(aTokenAddress).balanceOf(address(this));
     }
 
     function removeCollateralShort(uint256 amountUSDC) external onlyAuthorizedCaller {
-        morpho.withdrawCollateral(morpho.idToMarketParams(shortMId), amountUSDC, address(this), msg.sender);
+        IPool(getPool()).withdraw(address(USDC), amountUSDC, msg.sender);
     }
 
     function addCollateralShort(uint256 amountUSDC) external onlyAuthorizedCaller {
         USDC.transferFrom(msg.sender, address(this), amountUSDC);
-        morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amountUSDC, address(this), "");
+        IPool(getPool()).supply(address(USDC), amountUSDC, address(this), 0);
     }
 
-    // Helpers
+    // ** Helpers
 
-    function syncLong() external {
-        morpho.accrueInterest(morpho.idToMarketParams(longMId));
+    function getAssetAddresses(address underlying) public view returns (address, address, address) {
+        return IPoolDataProvider(provider.getPoolDataProvider()).getReserveTokensAddresses(underlying);
     }
 
-    function syncShort() external {
-        morpho.accrueInterest(morpho.idToMarketParams(shortMId));
+    function getAssetPrice(address underlying) external view returns (uint256) {
+        return IAaveOracle(provider.getPriceOracle()).getAssetPrice(underlying) * 1e10;
     }
+
+    function syncLong() external {}
+
+    function syncShort() external {}
 
     modifier onlyAuthorizedCaller() {
         require(authorizedCallers[msg.sender] == true, "Caller is not authorized V4 pool");
         _;
     }
 }
-// TODO: remove in production
-// LINKS: https://docs.morpho.org/morpho/tutorials/manage-positions
