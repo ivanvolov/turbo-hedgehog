@@ -174,8 +174,11 @@ contract ALM is BaseStrategyHook, ERC20 {
     function positionAdjustmentPriceUp(uint256 deltaUSDC, uint256 deltaWETH) internal {
         (uint256 value0, uint256 value1) = ALMMathLib.getK2Values(k2, deltaUSDC);
         if (k2 >= 0) {
-            if (k2 != 0) lendingAdapter.removeCollateralShort(value0);
-            lendingAdapter.repayLong(value1);
+            lendingAdapter.repayLong(deltaUSDC);
+            if (k2 != 0) {
+                lendingAdapter.removeCollateralShort(value0);
+                lendingAdapter.repayLong(value0);
+            }
         } else {
             lendingAdapter.addCollateralShort(value0);
             lendingAdapter.repayLong(value1);
@@ -183,8 +186,11 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         (value0, value1) = ALMMathLib.getK1Values(k1, deltaWETH);
         if (k1 >= 0) {
-            if (k1 != 0) lendingAdapter.repayShort(value0);
-            lendingAdapter.removeCollateralLong(value1);
+            if (k1 != 0) {
+                lendingAdapter.removeCollateralLong(value0);
+                lendingAdapter.repayShort(value0);
+            }
+            lendingAdapter.removeCollateralLong(deltaWETH);
         } else {
             lendingAdapter.removeCollateralLong(value1);
             lendingAdapter.borrowShort(value0);
