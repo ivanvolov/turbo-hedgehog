@@ -131,13 +131,17 @@ library ALMMathLib {
 
     function getTVL(
         uint256 EH,
+        uint256 UH,
         uint256 CL,
         uint256 DS,
         uint256 CS,
         uint256 DL,
         uint256 price
     ) internal pure returns (uint256) {
-        return uint256(int256(EH) + int256(CL) - int256(DS) + ((int256(CS) - int256(DL)) * int256(price)) / 1e18);
+        return
+            uint256(
+                int256(EH) + int256(CL) - int256(DS) + ((int256(CS) + int256(UH) - int256(DL)) * int256(price)) / 1e18
+            );
     }
 
     // --- Helpers ---
