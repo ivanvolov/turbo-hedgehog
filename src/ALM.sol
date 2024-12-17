@@ -65,6 +65,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         WETH.transferFrom(msg.sender, address(this), amountIn);
         liquidity = liquidity + deltaLiquidity;
 
+        if (isPositionsOpened()) lendingAdapter.addCollateralLong(WETH.balanceOf(address(this)));
+
         uint256 TVL2 = TVL();
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
         _mint(to, _shares);
@@ -198,16 +200,24 @@ contract ALM is BaseStrategyHook, ERC20 {
     // ---- Math functions
 
     function TVL() public view returns (uint256) {
-        // uint256 price = _calcCurrentPrice();
-        // int256 tvl = int256(lendingAdapter.getCollateral()) +
-        //     int256(lendingAdapter.getSupplied() / price) -
-        //     int256(lendingAdapter.getBorrowed() / price);
-        // return uint256(tvl);
+        return
+            ALMMathLib.getTVL(
+                WETH.balanceOf(address(this)),
+                lendingAdapter.getCollateralLong(),
+                lendingAdapter.getBorrowedShort(),
+                lendingAdapter.getCollateralShort(),
+                lendingAdapter.getBorrowedLong(),
+                _calcCurrentPrice()
+            );
     }
 
-    function sharePrice() public view returns (uint256) {
+    function sharePrice() external view returns (uint256) {
         if (totalSupply() == 0) return 0;
         return (TVL() * 1e18) / totalSupply();
+    }
+
+    function isPositionsOpened() public view returns (bool) {
+        return lendingAdapter.getBorrowedShort() > 0 || lendingAdapter.getBorrowedLong() > 0;
     }
 
     function _calcCurrentPrice() public view returns (uint256) {

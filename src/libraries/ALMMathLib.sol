@@ -129,6 +129,17 @@ library ALMMathLib {
         else return (ts.mul(TVL2 - TVL1)) / TVL1;
     }
 
+    function getTVL(
+        uint256 EH,
+        uint256 CL,
+        uint256 DS,
+        uint256 CS,
+        uint256 DL,
+        uint256 price
+    ) internal pure returns (uint256) {
+        return uint256(int256(EH) + int256(CL) - int256(DS) + ((int256(CS) - int256(DL)) * int256(price)) / 1e18);
+    }
+
     // --- Helpers ---
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
@@ -140,6 +151,7 @@ library ALMMathLib {
     }
 
     function toInt24(int256 value) internal pure returns (int24) {
+        //TODO: I bet we don't need it
         require(value >= type(int24).min && value <= type(int24).max, "MH1");
         return int24(value);
     }
