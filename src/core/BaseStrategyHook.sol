@@ -20,6 +20,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IWETH} from "@forks/IWETH.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
+import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -46,7 +47,12 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     bool public paused = false;
     bool public shutdown = false;
-    int24 public tickDelta = 3000;
+    int24 public tickDelta = 3000; //TODO: set up production values here
+
+    int256 public k1 = 1e18 / 2; //TODO: set up production values here
+    int256 public k2 = 1e18 / 2;
+    int256 public k3 = 1e18 / 2;
+    int256 public k4 = 1e18 / 2;
 
     bytes32 public authorizedPool;
 
@@ -84,6 +90,13 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         shutdown = _shutdown;
     }
 
+    function setKParams(int256 _k1, int256 _k2, int256 _k3, int256 _k4) external onlyHookDeployer {
+        k1 = _k1;
+        k2 = _k2;
+        k3 = _k3;
+        k4 = _k4;
+    }
+
     function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyHookDeployer {
         authorizedPool = PoolId.unwrap(authorizedPoolKey.toId());
     }
@@ -117,6 +130,68 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         // Here it's inverted due to currencies order
         tickUpper = tick - tickDelta;
         tickLower = tick + tickDelta;
+    }
+
+    // --- Deltas calculation ---
+
+    function getZeroForOneDeltas(
+        int256 amountSpecified
+    ) internal view returns (BeforeSwapDelta beforeSwapDelta, uint256 wethOut, uint256 usdcIn, uint160 sqrtPriceNext) {
+        if (amountSpecified > 0) {
+            // console.log("> amount specified positive");
+            wethOut = uint256(amountSpecified);
+
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, wethOut);
+
+            usdcIn = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+
+            beforeSwapDelta = toBeforeSwapDelta(
+                -int128(uint128(wethOut)), // specified token = token1
+                int128(uint128(usdcIn)) // unspecified token = token0
+            );
+        } else {
+            // console.log("> amount specified negative");
+            usdcIn = uint256(-amountSpecified);
+
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, usdcIn);
+
+            wethOut = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+
+            beforeSwapDelta = toBeforeSwapDelta(
+                int128(uint128(usdcIn)), // specified token = token0
+                -int128(uint128(wethOut)) // unspecified token = token1
+            );
+        }
+    }
+
+    function getOneForZeroDeltas(
+        int256 amountSpecified
+    ) internal view returns (BeforeSwapDelta beforeSwapDelta, uint256 wethIn, uint256 usdcOut, uint160 sqrtPriceNext) {
+        if (amountSpecified > 0) {
+            // console.log("> amount specified positive");
+            usdcOut = uint256(amountSpecified);
+
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, usdcOut);
+
+            wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+
+            beforeSwapDelta = toBeforeSwapDelta(
+                -int128(uint128(usdcOut)), // specified token = token0
+                int128(uint128(wethIn)) // unspecified token = token1
+            );
+        } else {
+            // console.log("> amount specified negative");
+            wethIn = uint256(-amountSpecified);
+
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, wethIn);
+
+            usdcOut = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+
+            beforeSwapDelta = toBeforeSwapDelta(
+                int128(uint128(wethIn)), // specified token = token1
+                -int128(uint128(usdcOut)) // unspecified token = token0
+            );
+        }
     }
 
     // --- Modifiers ---

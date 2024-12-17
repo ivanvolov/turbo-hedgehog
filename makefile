@@ -16,10 +16,5 @@ t:
 tl:
 	clear && forge test -vvvv --match-test test_aave_lending_adapter
 
-t2:
-	clear && forge test -vv --match-test test_quick_test
-t2l:
-	clear && forge test -vvvv --match-test test_quick_test
-
 spell:
 	clear && cspell "**/*.*"
