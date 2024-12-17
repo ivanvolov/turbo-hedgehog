@@ -57,15 +57,19 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function deposit(address to, uint256 amount) external notPaused notShutdown returns (uint256, uint256) {
-        // if (amount == 0) revert ZeroLiquidity();
-        // refreshReserves();
-        // (uint128 deltaL, uint256 amountIn, uint256 shares) = _calcDepositParams(amount);
-        // WETH.transferFrom(msg.sender, address(this), amountIn);
-        // // lendingAdapter.addCollateral(WETH.balanceOf(address(this)));
-        // liquidity = liquidity + deltaL;
-        // _mint(to, shares);
-        // emit Deposit(msg.sender, amountIn, shares);
-        // return (amountIn, shares);
+        if (amount == 0) revert ZeroLiquidity();
+        refreshReserves();
+        uint256 TVL1 = TVL();
+
+        (uint128 deltaLiquidity, uint256 amountIn) = _calcDepositLiquidity(amount);
+        WETH.transferFrom(msg.sender, address(this), amountIn);
+        liquidity = liquidity + deltaLiquidity;
+
+        uint256 TVL2 = TVL();
+        uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
+        _mint(to, _shares);
+        emit Deposit(msg.sender, amountIn, _shares);
+        return (amountIn, _shares);
     }
 
     function withdraw(address to, uint256 sharesOut) external notPaused {
@@ -210,9 +214,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         return ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceCurrent);
     }
 
-    function _calcDepositParams(
-        uint256 amount
-    ) public view returns (uint128 _liquidity, uint256 _amount, uint256 shares) {
+    function _calcDepositLiquidity(uint256 amount) public view returns (uint128 _liquidity, uint256 _amount) {
         _liquidity = ALMMathLib.getLiquidityFromAmount1SqrtPriceX96(
             ALMMathLib.getSqrtPriceAtTick(tickUpper),
             sqrtPriceCurrent,
@@ -224,9 +226,6 @@ contract ALM is BaseStrategyHook, ERC20 {
             ALMMathLib.getSqrtPriceAtTick(tickLower),
             _liquidity
         );
-
-        uint256 _sharePrice = sharePrice();
-        shares = _sharePrice == 0 ? _amount : (_amount * 1e18) / _sharePrice;
     }
 
     // TODO: Notice * I'm not using it now in the code at all.
