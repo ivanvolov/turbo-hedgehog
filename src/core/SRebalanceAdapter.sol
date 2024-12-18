@@ -49,8 +49,8 @@ contract SRebalanceAdapter is Ownable {
 
     int24 public tickDeltaThreshold = 2000;
 
-    IERC20 WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IERC20 USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    IERC20 WETH = IERC20(ALMBaseLib.WETH);
+    IERC20 USDC = IERC20(ALMBaseLib.USDC);
 
     // aavev2
     address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;

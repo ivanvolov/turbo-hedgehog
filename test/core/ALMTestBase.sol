@@ -22,11 +22,14 @@ import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {AaveLendingAdapter} from "@src/core/AaveLendingAdapter.sol";
+import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
+
+import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
     using TestAccountLib for TestAccount;
@@ -41,6 +44,7 @@ abstract contract ALMTestBase is Test, Deployers {
     TestERC20 WETH;
 
     ILendingAdapter lendingAdapter;
+    IPositionManager positionManager;
 
     TestAccount marketCreator;
     TestAccount morphoLpProvider;
@@ -70,14 +74,20 @@ abstract contract ALMTestBase is Test, Deployers {
         deployCodeTo("ALM.sol", abi.encode(manager), hookAddress);
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
-        assertEq(hook.hookDeployer(), deployer.addr);
+        assertEq(hook.hookAdmin(), deployer.addr);
         // MARK END
 
         rebalanceAdapter = new SRebalanceAdapter();
         lendingAdapter = new AaveLendingAdapter();
+        positionManager = new PositionManager();
+
+        positionManager.setHook(address(hook));
+        positionManager.setLendingAdapter(address(lendingAdapter));
+        positionManager.setKParams(1e18 / 2, 1e18 / 2);
 
         lendingAdapter.addAuthorizedCaller(address(hook));
         lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
+        lendingAdapter.addAuthorizedCaller(address(positionManager));
 
         rebalanceAdapter.setALM(address(hook));
         rebalanceAdapter.setLendingAdapter(address(lendingAdapter));

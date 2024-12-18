@@ -17,12 +17,12 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {IWETH} from "@forks/IWETH.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 abstract contract BaseStrategyHook is BaseHook, IALM {
@@ -30,9 +30,10 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     using PoolIdLibrary for PoolKey;
 
     ILendingAdapter public lendingAdapter;
+    IPositionManager public positionManager;
     address public rebalanceAdapter;
 
-    IWETH WETH = IWETH(ALMBaseLib.WETH);
+    IERC20 WETH = IERC20(ALMBaseLib.WETH);
     IERC20 USDC = IERC20(ALMBaseLib.USDC);
 
     uint128 public liquidity;
@@ -40,7 +41,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     int24 public tickLower;
     int24 public tickUpper;
 
-    address public immutable hookDeployer;
+    address public hookAdmin;
 
     uint256 public almIdCounter = 0;
     mapping(uint256 => ALMInfo) almInfo;
@@ -49,11 +50,6 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     bool public shutdown = false;
     int24 public tickDelta = 3000; //TODO: set up production values here
 
-    int256 public k1 = 1e18 / 2; //TODO: set up production values here
-    int256 public k2 = 1e18 / 2;
-    int256 public k3 = 1e18 / 2;
-    int256 public k4 = 1e18 / 2;
-
     bytes32 public authorizedPool;
 
     function getALMInfo(uint256 almId) external view returns (ALMInfo memory) {
@@ -61,10 +57,10 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     }
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
-        hookDeployer = msg.sender;
+        hookAdmin = msg.sender;
     }
 
-    function setLendingAdapter(address _lendingAdapter) external onlyHookDeployer {
+    function setLendingAdapter(address _lendingAdapter) external onlyHookAdmin {
         if (address(lendingAdapter) != address(0)) {
             WETH.approve(address(lendingAdapter), 0);
             USDC.approve(address(lendingAdapter), 0);
@@ -74,30 +70,31 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         USDC.approve(address(lendingAdapter), type(uint256).max);
     }
 
-    function setRebalanceAdapter(address _rebalanceAdapter) external onlyHookDeployer {
+    function setPositionManager(address _positionManager) external onlyHookAdmin {
+        positionManager = IPositionManager(_positionManager);
+    }
+
+    function setRebalanceAdapter(address _rebalanceAdapter) external onlyHookAdmin {
         rebalanceAdapter = _rebalanceAdapter;
     }
 
-    function setTickDelta(int24 _tickDelta) external onlyHookDeployer {
+    function setHookAdmin(address _hookAdmin) external onlyHookAdmin {
+        hookAdmin = _hookAdmin;
+    }
+
+    function setTickDelta(int24 _tickDelta) external onlyHookAdmin {
         tickDelta = _tickDelta;
     }
 
-    function setPaused(bool _paused) external onlyHookDeployer {
+    function setPaused(bool _paused) external onlyHookAdmin {
         paused = _paused;
     }
 
-    function setShutdown(bool _shutdown) external onlyHookDeployer {
+    function setShutdown(bool _shutdown) external onlyHookAdmin {
         shutdown = _shutdown;
     }
 
-    function setKParams(int256 _k1, int256 _k2, int256 _k3, int256 _k4) external onlyHookDeployer {
-        k1 = _k1;
-        k2 = _k2;
-        k3 = _k3;
-        k4 = _k4;
-    }
-
-    function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyHookDeployer {
+    function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyHookAdmin {
         authorizedPool = PoolId.unwrap(authorizedPoolKey.toId());
     }
 
@@ -197,8 +194,8 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     // --- Modifiers ---
 
     /// @dev Only the hook deployer may call this function
-    modifier onlyHookDeployer() {
-        if (msg.sender != hookDeployer) revert NotHookDeployer();
+    modifier onlyHookAdmin() {
+        if (msg.sender != hookAdmin) revert NotHookDeployer();
         _;
     }
 
