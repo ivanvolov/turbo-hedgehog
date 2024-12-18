@@ -46,16 +46,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         return ALM.afterInitialize.selector;
     }
 
-    /// @notice  Disable adding liquidity through the PM
-    function beforeAddLiquidity(
-        address,
-        PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
-        bytes calldata
-    ) external view override onlyAuthorizedPool(key) returns (bytes4) {
-        revert AddLiquidityThroughHook();
-    }
-
     function deposit(address to, uint256 amount) external notPaused notShutdown returns (uint256, uint256) {
         if (amount == 0) revert ZeroLiquidity();
         refreshReserves();

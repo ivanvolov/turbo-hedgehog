@@ -9,6 +9,7 @@ import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -18,8 +19,10 @@ import {IALM} from "@src/interfaces/IALM.sol";
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
 contract PositionManager is Ownable, IPositionManager {
-    int256 public k1 = 1e18 / 2; //TODO: set up production values here
-    int256 public k2 = 1e18 / 2;
+    using FixedPointMathLib for uint256;
+
+    uint256 public k1 = 1e18 / 2; //TODO: set up production values here
+    uint256 public k2 = 1e18 / 2;
 
     IERC20 WETH = IERC20(ALMBaseLib.WETH);
     IERC20 USDC = IERC20(ALMBaseLib.USDC);
@@ -44,39 +47,43 @@ contract PositionManager is Ownable, IPositionManager {
         hook = IALM(_hook);
     }
 
-    function setKParams(int256 _k1, int256 _k2) external onlyOwner {
+    function setKParams(uint256 _k1, uint256 _k2) external onlyOwner {
         k1 = _k1;
         k2 = _k2;
     }
 
     function positionAdjustmentPriceUp(uint256 deltaUSDC, uint256 deltaWETH) external override {
         if (msg.sender != address(hook)) revert NotHook();
-        (uint256 value0, uint256 value1) = ALMMathLib.getK2Values(k2, deltaUSDC);
-        if (k2 >= 0) {
-            lendingAdapter.repayLong(deltaUSDC);
-            if (k2 != 0) {
-                lendingAdapter.removeCollateralShort(value0);
-                lendingAdapter.repayLong(value0);
-            }
-        } else {
-            lendingAdapter.addCollateralShort(value0);
-            lendingAdapter.repayLong(value1);
-        }
+        USDC.transferFrom(msg.sender, address(this), deltaUSDC);
 
-        (value0, value1) = ALMMathLib.getK1Values(k1, deltaWETH);
-        if (k1 >= 0) {
-            if (k1 != 0) {
-                lendingAdapter.removeCollateralLong(value0);
-                lendingAdapter.repayShort(value0);
-            }
-            lendingAdapter.removeCollateralLong(deltaWETH);
-        } else {
-            lendingAdapter.removeCollateralLong(value1);
-            lendingAdapter.borrowShort(value0);
-        }
+        uint256 k = hook.sqrtPriceCurrent() >= hook.sqrtPriceAtLastRebalance() ? k2 : k1;
+        // Repay dUSD of long debt;
+        // Remove k * dETH from long collateral;
+        // Repay (k-1) * dETH to short debt;
+
+        lendingAdapter.repayLong(deltaUSDC);
+        lendingAdapter.removeCollateralLong(k.mul(deltaWETH));
+        if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaWETH));
+
+        WETH.transfer(msg.sender, deltaWETH);
     }
 
     function positionAdjustmentPriceDown(uint256 deltaUSDC, uint256 deltaWETH) external override {
         if (msg.sender != address(hook)) revert NotHook();
+        WETH.transferFrom(msg.sender, address(this), deltaWETH);
+
+        uint256 k = hook.sqrtPriceCurrent() >= hook.sqrtPriceAtLastRebalance() ? k2 : k1;
+        // Add k1 * dETH to long as collateral;
+        // Borrow (k1-1) * dETH from short by increasing debt;
+        // Borrow dUSD from long by increasing debt;
+
+        lendingAdapter.addCollateralLong(deltaWETH);
+        if (k != 1e18) {
+            lendingAdapter.borrowShort((k - 1e18).mul(deltaWETH));
+            lendingAdapter.addCollateralLong((k - 1e18).mul(deltaWETH));
+        }
+        lendingAdapter.borrowLong(deltaUSDC);
+
+        USDC.transfer(msg.sender, deltaUSDC);
     }
 }

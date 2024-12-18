@@ -38,6 +38,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     uint128 public liquidity;
     uint160 public sqrtPriceCurrent;
+    uint160 public sqrtPriceAtLastRebalance;
     int24 public tickLower;
     int24 public tickUpper;
 
@@ -71,7 +72,13 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     }
 
     function setPositionManager(address _positionManager) external onlyHookAdmin {
+        if (address(lendingAdapter) != address(0)) {
+            WETH.approve(address(positionManager), 0);
+            USDC.approve(address(positionManager), 0);
+        }
         positionManager = IPositionManager(_positionManager);
+        WETH.approve(address(positionManager), type(uint256).max);
+        USDC.approve(address(positionManager), type(uint256).max);
     }
 
     function setRebalanceAdapter(address _rebalanceAdapter) external onlyHookAdmin {
@@ -116,6 +123,16 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
                 afterAddLiquidityReturnDelta: false,
                 afterRemoveLiquidityReturnDelta: false
             });
+    }
+
+    /// @notice  Disable adding liquidity through the PM
+    function beforeAddLiquidity(
+        address,
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata,
+        bytes calldata
+    ) external view override onlyAuthorizedPool(key) returns (bytes4) {
+        revert AddLiquidityThroughHook();
     }
 
     function updateBoundaries() public onlyRebalanceAdapter {

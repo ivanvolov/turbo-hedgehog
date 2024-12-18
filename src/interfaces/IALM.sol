@@ -28,8 +28,6 @@ interface IALM {
 
     event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
 
-    function sqrtPriceCurrent() external view returns (uint160);
-
     function refreshReserves() external;
 
     function tickLower() external view returns (int24);
@@ -39,4 +37,8 @@ interface IALM {
     function rebalanceAdapter() external view returns (address);
 
     function updateBoundaries() external;
+
+    function sqrtPriceCurrent() external view returns (uint160);
+
+    function sqrtPriceAtLastRebalance() external view returns (uint160);
 }
