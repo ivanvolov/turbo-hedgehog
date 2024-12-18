@@ -8,7 +8,7 @@ interface IPositionManager {
 
     function setLendingAdapter(address _lendingAdapter) external;
 
-    function setKParams(int256 _k1, int256 _k2) external;
+    function setKParams(uint256 _k1, uint256 _k2) external;
 
     function positionAdjustmentPriceUp(uint256 deltaUSDC, uint256 deltaWETH) external;
 
