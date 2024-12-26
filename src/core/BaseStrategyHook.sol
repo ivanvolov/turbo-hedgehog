@@ -22,6 +22,7 @@ import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
@@ -31,6 +32,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     ILendingAdapter public lendingAdapter;
     IPositionManager public positionManager;
+    IOracle public oracle;
     address public rebalanceAdapter;
 
     IERC20 WETH = IERC20(ALMBaseLib.WETH);
@@ -79,6 +81,10 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         positionManager = IPositionManager(_positionManager);
         WETH.approve(address(positionManager), type(uint256).max);
         USDC.approve(address(positionManager), type(uint256).max);
+    }
+
+    function setOracle(address _oracle) external onlyHookAdmin {
+        oracle = IOracle(_oracle);
     }
 
     function setRebalanceAdapter(address _rebalanceAdapter) external onlyHookAdmin {

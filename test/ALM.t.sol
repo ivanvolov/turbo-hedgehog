@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 
@@ -22,7 +22,7 @@ import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 
-contract ALMTest is ALMTestBase {
+contract ALMTest is MorphoTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
 
