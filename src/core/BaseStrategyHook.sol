@@ -52,6 +52,10 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     bool public paused = false;
     bool public shutdown = false;
     int24 public tickDelta = 3000; //TODO: set up production values here
+    uint256 public weight = 6 * 1e17; // 0.6%
+    uint256 public longLeverage = 3 * 1e18;
+    uint256 public shortLeverage = 2 * 1e18;
+    uint256 public maxDeviation = 1 * 1e16; // 0.01%
 
     bytes32 public authorizedPool;
 
@@ -109,6 +113,22 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyHookAdmin {
         authorizedPool = PoolId.unwrap(authorizedPoolKey.toId());
+    }
+
+    function setWeight(uint256 _weight) external onlyHookAdmin {
+        weight = _weight;
+    }
+
+    function setLongLeverage(uint256 _longLeverage) external onlyHookAdmin {
+        longLeverage = _longLeverage;
+    }
+
+    function setShortLeverage(uint256 _shortLeverage) external onlyHookAdmin {
+        shortLeverage = _shortLeverage;
+    }
+
+    function setMaxDeviation(uint256 _maxDeviation) external onlyHookAdmin {
+        maxDeviation = _maxDeviation;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {

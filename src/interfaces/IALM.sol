@@ -13,7 +13,6 @@ interface IALM {
     error ContractShutdown();
     error NotEnoughSharesToWithdraw();
     error BalanceInconsistency();
-
     error UnauthorizedPool();
 
     struct ALMInfo {
@@ -30,6 +29,8 @@ interface IALM {
 
     function refreshReserves() external;
 
+    function oracle() external view returns (address);
+
     function tickLower() external view returns (int24);
 
     function tickUpper() external view returns (int24);
@@ -41,4 +42,12 @@ interface IALM {
     function sqrtPriceCurrent() external view returns (uint160);
 
     function sqrtPriceAtLastRebalance() external view returns (uint160);
+
+    function TVL() external view returns (uint256);
+
+    function weight() external view returns (uint256);
+
+    function longLeverage() external view returns (uint256);
+
+    function shortLeverage() external view returns (uint256);
 }
