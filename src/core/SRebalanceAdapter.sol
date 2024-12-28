@@ -113,73 +113,82 @@ contract SRebalanceAdapter is Ownable {
     }
 
     function rebalance(uint256 slippage) external onlyOwner {
-        (bool isRebalance, ) = isPriceRebalanceNeeded();
-        if (!isRebalance) revert NoRebalanceNeeded();
+        {
+            (bool isRebalance, ) = isPriceRebalanceNeeded();
+            if (!isRebalance) revert NoRebalanceNeeded();
+        }
         alm.refreshReserves();
 
-        uint256 tvl = alm.TVL();
-        uint256 weight = alm.weight();
-        uint256 longLeverage = alm.longLeverage();
-        uint256 shortLeverage = alm.shortLeverage();
-        uint256 price = IOracle(alm.oracle()).price();
-
-        uint256 currentCL = lendingAdapter.getCollateralLong();
-        uint256 currentCS = lendingAdapter.getCollateralShort();
-        uint256 currentDL = lendingAdapter.getBorrowedLong();
-        uint256 currentDS = lendingAdapter.getBorrowedShort();
-
-        uint256 targetCL = tvl.mul(weight).mul(longLeverage);
-        uint256 targetCS = tvl.mul(1 - weight).mul(price).mul(shortLeverage);
-        uint256 targetDL = currentCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
-        uint256 targetDS = currentCS.mul(1e18 - uint256(1e18).div(shortLeverage)).div(price);
-
-        int256 k = (1e18 + int256(slippage));
-
-        int256 deltaCL = (int256(targetCL - currentCL) * k) / 1e18;
-        int256 deltaCS = (int256(targetCS - currentCS) * k) / 1e18;
-        int256 deltaDL = (int256(targetDL - currentDL) * k) / 1e18;
-        int256 deltaDS = (int256(targetDS - currentDS) * k) / 1e18;
-
-        uint256 ethToFl;
-        uint256 usdcToFl;
-        if (deltaCL > 0) ethToFl += uint256(deltaCL);
-        if (deltaCS > 0) usdcToFl += uint256(deltaCS);
-        if (deltaDL < 0) usdcToFl += uint256(-deltaDL);
-        if (deltaDS < 0) ethToFl += uint256(-deltaDS);
+        (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = rebalanceCalculations(1e18 + int256(slippage));
 
         address[] memory assets = new address[](1);
         uint256[] memory amounts = new uint256[](1);
         uint256[] memory modes = new uint256[](1);
         (assets[0], amounts[0], modes[0]) = (address(WETH), ethToFl, 0);
         (assets[1], amounts[1], modes[1]) = (address(USDC), usdcToFl, 0);
-        LENDING_POOL.flashLoan(
-            address(this),
-            assets,
-            amounts,
-            modes,
-            address(this),
-            abi.encode(slippage, deltaCL, deltaCS, deltaDL, deltaDS, targetDL, targetDS),
-            0
-        );
+        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
 
         // ** Check max deviation
-
-        price = IOracle(alm.oracle()).price();
-        currentCL = lendingAdapter.getCollateralLong();
-        currentDL = lendingAdapter.getBorrowedLong();
-        currentCS = lendingAdapter.getCollateralShort();
-        currentDS = lendingAdapter.getBorrowedShort();
-
-        {
-            uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - currentDL);
-            uint256 _shortLeverage = currentCS.div(currentCS - currentDS.mul(price));
-
-            require(ALMMathLib.abs(int256(longLeverage) - int256(_longLeverage)) <= 1e17, "D1");
-            require(ALMMathLib.abs(int256(shortLeverage) - int256(_shortLeverage)) <= 1e17, "D2");
-        }
+        checkDeviations();
 
         sqrtPriceLastRebalance = alm.sqrtPriceCurrent();
         alm.updateBoundaries();
+    }
+
+    function checkDeviations() internal view {
+        uint256 price = IOracle(alm.oracle()).price();
+        uint256 currentCL = lendingAdapter.getCollateralLong();
+        uint256 currentCS = lendingAdapter.getCollateralShort();
+
+        uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
+        uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
+
+        require(_longLeverage - alm.longLeverage() <= 1e17, "D1");
+        require(_shortLeverage - alm.shortLeverage() <= 1e17, "D2");
+    }
+
+    // @Notice: this function is mainly for removing stack too deep error
+    function rebalanceCalculations(
+        int256 k
+    ) internal view returns (uint256 ethToFl, uint256 usdcToFl, bytes memory data) {
+        uint256 targetDL;
+        uint256 targetDS;
+
+        int256 deltaCL;
+        int256 deltaCS;
+        int256 deltaDL;
+        int256 deltaDS;
+        {
+            uint256 targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage());
+            uint256 targetCS = alm.TVL().mul(1 - alm.weight()).mul(IOracle(alm.oracle()).price()).mul(
+                alm.shortLeverage()
+            );
+            targetDL = lendingAdapter.getCollateralLong().mul(IOracle(alm.oracle()).price()).mul(
+                1e18 - uint256(1e18).div(alm.longLeverage())
+            );
+            targetDS = lendingAdapter.getCollateralShort().mul(1e18 - uint256(1e18).div(alm.shortLeverage())).div(
+                IOracle(alm.oracle()).price()
+            );
+
+            deltaCL = (int256(targetCL - lendingAdapter.getCollateralLong()) * k) / 1e18;
+            deltaCS = (int256(targetCS - lendingAdapter.getCollateralShort()) * k) / 1e18;
+            deltaDL = (int256(targetDL - lendingAdapter.getBorrowedLong()) * k) / 1e18;
+            deltaDS = (int256(targetDS - lendingAdapter.getBorrowedShort()) * k) / 1e18;
+        }
+
+        if (deltaCL > 0) ethToFl += uint256(deltaCL);
+        if (deltaCS > 0) usdcToFl += uint256(deltaCS);
+        if (deltaDL < 0) usdcToFl += uint256(-deltaDL);
+        if (deltaDS < 0) ethToFl += uint256(-deltaDS);
+
+        data = abi.encode(
+            deltaCL,
+            deltaCS,
+            deltaDL,
+            deltaDS,
+            uint256(targetDL).mul(uint256(k)),
+            uint256(targetDS).mul(uint256(k))
+        );
     }
 
     function executeOperation(
@@ -191,16 +200,34 @@ contract SRebalanceAdapter is Ownable {
     ) external returns (bool) {
         require(msg.sender == lendingPool, "M0");
 
-        (
-            uint256 slippage,
-            int256 deltaCL,
-            int256 deltaCS,
-            int256 deltaDL,
-            int256 deltaDS,
-            uint256 targetDL,
-            uint256 targetDS
-        ) = abi.decode(data, (uint256, int256, int256, int256, int256, uint256, uint256));
-        uint256 k = (1e18 + slippage);
+        _positionManagement(data);
+
+        // ** Flash loan management
+
+        if (amounts[0] + premiums[0] > WETH.balanceOf(address(this))) {
+            ALMBaseLib.swapExactOutput(
+                address(USDC),
+                address(WETH),
+                amounts[0] + premiums[0] - WETH.balanceOf(address(this))
+            );
+        }
+
+        if (amounts[0] + premiums[0] > WETH.balanceOf(address(this)))
+            ALMBaseLib.swapExactInput(
+                address(WETH),
+                address(USDC),
+                amounts[0] + premiums[0] - WETH.balanceOf(address(this))
+            );
+
+        if (amounts[1] + premiums[1] > USDC.balanceOf(address(this)))
+            lendingAdapter.repayLong(amounts[1] + premiums[1] - USDC.balanceOf(address(this)));
+        return true;
+    }
+
+    // @Notice: this function is mainly for removing stack too deep error
+    function _positionManagement(bytes calldata data) internal {
+        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS, uint256 _targetDL, uint256 _targetDS) = abi
+            .decode(data, (int256, int256, int256, int256, uint256, uint256));
 
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
         else if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
@@ -211,20 +238,7 @@ contract SRebalanceAdapter is Ownable {
         if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
         if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
 
-        if (deltaDL != 0) lendingAdapter.borrowLong(targetDL.mul(k) - lendingAdapter.getBorrowedLong());
-        if (deltaDS != 0) lendingAdapter.borrowShort(targetDS.mul(k) - lendingAdapter.getBorrowedShort());
-
-        // ** Flash loan management
-
-        if (amounts[0] + premiums[0] > WETH.balanceOf(address(this))) {
-            // here is modified 6.a
-        }
-        uint256 extraETH = amounts[0] + premiums[0] - WETH.balanceOf(address(this));
-
-        if (extraETH > 0) ALMBaseLib.swapExactInput(address(WETH), address(USDC), extraETH);
-
-        uint256 extraUSDC = amounts[1] + premiums[1] - USDC.balanceOf(address(this));
-        if (extraUSDC > 0) lendingAdapter.repayLong(extraUSDC);
-        return true;
+        if (deltaDL != 0) lendingAdapter.borrowLong(_targetDL - lendingAdapter.getBorrowedLong());
+        if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
     }
 }

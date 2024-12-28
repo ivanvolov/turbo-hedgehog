@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId} from "v4-core/types/PoolId.sol";
 
+import {IOracle} from "@src/interfaces/IOracle.sol";
+
 interface IALM {
     error ZeroLiquidity();
     error NotHookDeployer();
@@ -29,7 +31,7 @@ interface IALM {
 
     function refreshReserves() external;
 
-    function oracle() external view returns (address);
+    function oracle() external view returns (IOracle);
 
     function tickLower() external view returns (int24);
 
