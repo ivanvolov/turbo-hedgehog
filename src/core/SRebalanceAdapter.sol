@@ -113,21 +113,20 @@ contract SRebalanceAdapter is Ownable {
     }
 
     function rebalance(uint256 slippage) external onlyOwner {
-        {
-            (bool isRebalance, ) = isPriceRebalanceNeeded();
-            if (!isRebalance) revert NoRebalanceNeeded();
-        }
+        (bool isRebalance, ) = isPriceRebalanceNeeded();
+        if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
 
         (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = rebalanceCalculations(1e18 + int256(slippage));
 
-        address[] memory assets = new address[](1);
-        uint256[] memory amounts = new uint256[](1);
-        uint256[] memory modes = new uint256[](1);
+        address[] memory assets = new address[](2);
+        uint256[] memory amounts = new uint256[](2);
+        uint256[] memory modes = new uint256[](2);
         (assets[0], amounts[0], modes[0]) = (address(WETH), ethToFl, 0);
-        (assets[1], amounts[1], modes[1]) = (address(USDC), usdcToFl, 0);
+        (assets[1], amounts[1], modes[1]) = (address(USDC), ALMBaseLib.c18to6(usdcToFl), 0);
+        console.log("ethToFl", ethToFl);
+        console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
-
         // ** Check max deviation
         checkDeviations();
 
@@ -151,6 +150,7 @@ contract SRebalanceAdapter is Ownable {
     function rebalanceCalculations(
         int256 k
     ) internal view returns (uint256 ethToFl, uint256 usdcToFl, bytes memory data) {
+        console.log("> rebalanceCalculations");
         uint256 targetDL;
         uint256 targetDS;
 
@@ -160,7 +160,7 @@ contract SRebalanceAdapter is Ownable {
         int256 deltaDS;
         {
             uint256 targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage());
-            uint256 targetCS = alm.TVL().mul(1 - alm.weight()).mul(IOracle(alm.oracle()).price()).mul(
+            uint256 targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(IOracle(alm.oracle()).price()).mul(
                 alm.shortLeverage()
             );
             targetDL = lendingAdapter.getCollateralLong().mul(IOracle(alm.oracle()).price()).mul(
@@ -198,29 +198,32 @@ contract SRebalanceAdapter is Ownable {
         address,
         bytes calldata data
     ) external returns (bool) {
+        console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
-
         _positionManagement(data);
 
+        uint256 borrowedWETH = amounts[0] + premiums[0];
+        uint256 borrowedUSDC = ALMBaseLib.c6to18(amounts[1] + premiums[1]);
         // ** Flash loan management
-
-        if (amounts[0] + premiums[0] > WETH.balanceOf(address(this))) {
+        if (borrowedWETH > ALMBaseLib.wethBalance(address(this))) {
+            console.log("I want to get eth", borrowedWETH - ALMBaseLib.wethBalance(address(this)));
+            console.log("I have", ALMBaseLib.usdcBalance(address(this)));
             ALMBaseLib.swapExactOutput(
                 address(USDC),
                 address(WETH),
-                amounts[0] + premiums[0] - WETH.balanceOf(address(this))
+                borrowedWETH - ALMBaseLib.wethBalance(address(this))
             );
         }
 
-        if (amounts[0] + premiums[0] > WETH.balanceOf(address(this)))
+        if (borrowedWETH > ALMBaseLib.wethBalance(address(this)))
             ALMBaseLib.swapExactInput(
                 address(WETH),
                 address(USDC),
-                amounts[0] + premiums[0] - WETH.balanceOf(address(this))
+                borrowedWETH - ALMBaseLib.wethBalance(address(this))
             );
 
-        if (amounts[1] + premiums[1] > USDC.balanceOf(address(this)))
-            lendingAdapter.repayLong(amounts[1] + premiums[1] - USDC.balanceOf(address(this)));
+        if (borrowedUSDC > ALMBaseLib.usdcBalance(address(this)))
+            lendingAdapter.repayLong(borrowedUSDC - ALMBaseLib.usdcBalance(address(this)));
         return true;
     }
 

@@ -14,6 +14,8 @@ import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
 import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
+import {TickMath as TickMathV3} from "@forks/uniswap-v3/libraries/TickMath.sol";
+import {OracleLibrary} from "@forks/uniswap-v3/libraries/OracleLibrary.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -113,8 +115,8 @@ abstract contract ALMTestBase is Test, Deployers {
         hook.setLendingAdapter(address(lendingAdapter));
         hook.setRebalanceAdapter(address(rebalanceAdapter));
         hook.setOracle(address(oracle));
-        assertEq(hook.tickLower(), 192230 + 3000);
-        assertEq(hook.tickUpper(), 192230 - 3000);
+        assertEq(hook.tickLower(), 193779 + 3000);
+        assertEq(hook.tickUpper(), 193779 - 3000);
         // MARK END
 
         // This is needed in order to simulate proper accounting
@@ -159,6 +161,13 @@ abstract contract ALMTestBase is Test, Deployers {
         USDC.approve(address(swapRouter), type(uint256).max);
         WETH.approve(address(swapRouter), type(uint256).max);
         vm.stopPrank();
+    }
+
+    // -- Uniswap V3 -- //
+
+    function getPoolSQRTPrice(address pool) public view returns (uint160) {
+        (int24 arithmeticMeanTick, ) = OracleLibrary.consult(pool, 1);
+        return TickMathV3.getSqrtRatioAtTick(arithmeticMeanTick);
     }
 
     // -- Uniswap V4 -- //

@@ -55,7 +55,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         WETH.transferFrom(msg.sender, address(this), amountIn);
         liquidity = liquidity + deltaLiquidity;
 
-        lendingAdapter.addCollateralLong(WETH.balanceOf(address(this)));
+        lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
 
         uint256 TVL2 = TVL();
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
@@ -64,36 +64,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         return (amountIn, _shares);
     }
 
-    function withdraw(address to, uint256 sharesOut) external notPaused {
-        // if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
-        // // uint256 usdcToRepay = lendingAdapter.getBorrowed();
-        // uint256 usdcSupplied = lendingAdapter.getSupplied();
-        // if (usdcToRepay == 0) {
-        //     if (usdcSupplied != 0) {
-        //         console.log("> have usdc");
-        //         // ** have usdc;
-        //         lendingAdapter.withdraw(
-        //             ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getSupplied())
-        //         );
-        //     }
-        //     lendingAdapter.removeCollateral(
-        //         ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getCollateral())
-        //     );
-        // } else if (usdcToRepay != 0 && usdcSupplied == 0) {
-        //     console.log("> have usdc debt");
-        //     // ** have usdc debt;
-        //     IRebalanceAdapter(rebalanceAdapter).withdraw(
-        //         ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), usdcToRepay),
-        //         ALMMathLib.getWithdrawAmount(sharesOut, totalSupply(), lendingAdapter.getCollateral())
-        //     );
-        // } else revert BalanceInconsistency();
-        // _burn(msg.sender, sharesOut);
-        // uint256 amount0 = USDC.balanceOf(address(this));
-        // uint256 amount1 = WETH.balanceOf(address(this));
-        // USDC.transfer(to, amount0);
-        // WETH.transfer(to, amount1);
-        // emit Withdraw(to, sharesOut, amount0, amount1);
-    }
+    function withdraw(address to, uint256 sharesOut) external notPaused {}
 
     // --- Swapping logic ---
     function beforeSwap(
@@ -165,27 +136,23 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     // ---- Math functions
-
+    //TODO: I would remove balances, cause money can't be withdraws from ALM so no need to account for them
     function TVL() public view returns (uint256) {
         return
             ALMMathLib.getTVL(
-                WETH.balanceOf(address(this)),
-                USDC.balanceOf(address(this)),
+                ALMBaseLib.wethBalance(address(this)),
+                ALMBaseLib.usdcBalance(address(this)),
                 lendingAdapter.getCollateralLong(),
                 lendingAdapter.getBorrowedShort(),
                 lendingAdapter.getCollateralShort(),
                 lendingAdapter.getBorrowedLong(),
-                _calcCurrentPrice()
+                oracle.price()
             );
     }
 
     function sharePrice() external view returns (uint256) {
         if (totalSupply() == 0) return 0;
         return (TVL() * 1e18) / totalSupply();
-    }
-
-    function _calcCurrentPrice() public view returns (uint256) {
-        return ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceCurrent);
     }
 
     function _calcDepositLiquidity(uint256 amount) public view returns (uint128 _liquidity, uint256 _amount) {

@@ -12,9 +12,9 @@ trsl:
 	clear && forge test -vvvv --match-test test_rebalance_simulation --ffi
 
 t:
-	clear && forge test -vv --match-test test_aave_lending_adapter
+	clear && forge test -vv --match-test test_deposit
 tl:
-	clear && forge test -vvvv --match-test test_aave_lending_adapter
+	clear && forge test -vvvv --match-test test_deposit
 
 spell:
 	clear && cspell "**/*.*"
