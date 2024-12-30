@@ -7,7 +7,7 @@
     // "**/.vscode": true,
     "**/cspell.dict": true,
     "**/.forge-snapshots": true,
-    "**/lib": true,
+    // "**/lib": true,
     "**/out": true,
     "**/.github": true,
     "**/.git": true
