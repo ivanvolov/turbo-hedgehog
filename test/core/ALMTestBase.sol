@@ -103,14 +103,7 @@ abstract contract ALMTestBase is Test, Deployers {
         ); // pre-compute key in order to restrict hook to this pool
 
         hook.setAuthorizedPool(_key);
-        (key, ) = initPool(
-            Currency.wrap(address(USDC)),
-            Currency.wrap(address(WETH)),
-            hook,
-            poolFee,
-            initialSQRTPrice,
-            ""
-        );
+        (key, ) = initPool(Currency.wrap(address(USDC)), Currency.wrap(address(WETH)), hook, poolFee, initialSQRTPrice);
 
         hook.setLendingAdapter(address(lendingAdapter));
         hook.setRebalanceAdapter(address(rebalanceAdapter));

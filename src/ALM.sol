@@ -37,9 +37,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         address,
         PoolKey calldata key,
         uint160 sqrtPrice,
-        int24,
-        bytes calldata
-    ) external override onlyByPoolManager onlyAuthorizedPool(key) returns (bytes4) {
+        int24
+    ) external override onlyPoolManager onlyAuthorizedPool(key) returns (bytes4) {
         console.log("> afterInitialize");
         sqrtPriceCurrent = sqrtPrice;
         _updateBoundaries();
@@ -78,7 +77,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         notPaused
         notShutdown
         onlyAuthorizedPool(key)
-        onlyByPoolManager
+        onlyPoolManager
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         return (this.beforeSwap.selector, _beforeSwap(params, key), 0);

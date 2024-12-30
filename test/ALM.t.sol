@@ -50,8 +50,7 @@ contract ALMTest is MorphoTestBase {
             Currency.wrap(address(WETH)),
             hook,
             poolFee + 1,
-            initialSQRTPrice,
-            ""
+            initialSQRTPrice
         );
     }
 
@@ -355,7 +354,7 @@ contract ALMTest is MorphoTestBase {
 
     function test_accessability() public {
         vm.expectRevert(SafeCallback.NotPoolManager.selector);
-        hook.afterInitialize(address(0), key, 0, 0, "");
+        hook.afterInitialize(address(0), key, 0, 0);
 
         vm.expectRevert(IALM.AddLiquidityThroughHook.selector);
         hook.beforeAddLiquidity(address(0), key, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");

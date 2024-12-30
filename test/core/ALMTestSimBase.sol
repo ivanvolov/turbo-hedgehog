@@ -41,8 +41,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
             Currency.wrap(address(WETH)),
             hookControl,
             poolFee,
-            initialSQRTPrice,
-            ""
+            initialSQRTPrice
         );
         // MARK END
 

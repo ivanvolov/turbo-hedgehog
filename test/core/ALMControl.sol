@@ -235,13 +235,7 @@ contract ALMControl is BaseHook, ERC20 {
         return ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96);
     }
 
-    function afterInitialize(
-        address,
-        PoolKey calldata _key,
-        uint160,
-        int24,
-        bytes calldata
-    ) external override returns (bytes4) {
+    function afterInitialize(address, PoolKey calldata _key, uint160, int24) external override returns (bytes4) {
         key = _key;
         return ALMControl.afterInitialize.selector;
     }
