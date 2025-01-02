@@ -155,7 +155,7 @@ contract ALMTest is MorphoTestBase {
         // assertApproxEqAbs(hook.TVL(), amountToDep, 1e10);
     }
 
-    uint256 slippage = 1e17;
+    uint256 slippage = 1e15;
 
     function test_deposit_rebalance() public {
         test_deposit();
