@@ -78,7 +78,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     }
 
     function setPositionManager(address _positionManager) external onlyHookAdmin {
-        if (address(lendingAdapter) != address(0)) {
+        if (address(positionManager) != address(0)) {
             WETH.approve(address(positionManager), 0);
             USDC.approve(address(positionManager), 0);
         }

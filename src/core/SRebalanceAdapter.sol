@@ -127,14 +127,13 @@ contract SRebalanceAdapter is Ownable {
         console.log("ethToFl", ethToFl);
         console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
-        
+
         // ** Check max deviation
         checkDeviations();
-        
+
         // Update state
         sqrtPriceLastRebalance = alm.sqrtPriceCurrent();
         alm.updateBoundaries();
-
     }
 
     function checkDeviations() internal view {
@@ -177,13 +176,9 @@ contract SRebalanceAdapter is Ownable {
             uint256 targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(IOracle(alm.oracle()).price()).mul(
                 alm.shortLeverage()
             );
-            targetDL = targetCL.mul(IOracle(alm.oracle()).price()).mul(
-                1e18 - uint256(1e18).div(alm.longLeverage())
-            );
+            targetDL = targetCL.mul(IOracle(alm.oracle()).price()).mul(1e18 - uint256(1e18).div(alm.longLeverage()));
 
-            targetDS = targetCS.mul(1e18 - uint256(1e18).div(alm.shortLeverage())).div(
-            IOracle(alm.oracle()).price()
-            );
+            targetDS = targetCS.mul(1e18 - uint256(1e18).div(alm.shortLeverage())).div(IOracle(alm.oracle()).price());
 
             console.log("targetCL", targetCL);
             console.log("targetCS", targetCS);
@@ -200,7 +195,6 @@ contract SRebalanceAdapter is Ownable {
             console.log("deltaDL", deltaDL);
             console.log("deltaDS", deltaDS);
         }
-
 
         if (deltaCL > 0) ethToFl += uint256(deltaCL);
         if (deltaCS > 0) usdcToFl += uint256(deltaCS);
@@ -248,7 +242,6 @@ contract SRebalanceAdapter is Ownable {
 
         console.log("borrowedWETH %s", borrowedWETH);
 
-
         if (borrowedWETH > ALMBaseLib.wethBalance(address(this))) {
             console.log("I want to get eth", borrowedWETH - ALMBaseLib.wethBalance(address(this)));
             console.log("I have USDC", ALMBaseLib.usdcBalance(address(this)));
@@ -258,7 +251,7 @@ contract SRebalanceAdapter is Ownable {
                 borrowedWETH - ALMBaseLib.wethBalance(address(this))
             );
         }
-        
+
         if (borrowedWETH > ALMBaseLib.wethBalance(address(this)))
             ALMBaseLib.swapExactInput(
                 address(WETH),

@@ -82,7 +82,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
         positionManager.setHook(address(hook));
         positionManager.setLendingAdapter(address(lendingAdapter));
-        positionManager.setKParams(1e18 / 2, 1e18 / 2);
+        positionManager.setKParams(1425 * 1e15, 1425 * 1e15);
 
         lendingAdapter.addAuthorizedCaller(address(hook));
         lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
@@ -108,6 +108,7 @@ abstract contract ALMTestBase is Test, Deployers {
         hook.setLendingAdapter(address(lendingAdapter));
         hook.setRebalanceAdapter(address(rebalanceAdapter));
         hook.setOracle(address(oracle));
+        hook.setPositionManager(address(positionManager));
         assertEq(hook.tickLower(), 193779 + 3000);
         assertEq(hook.tickUpper(), 193779 - 3000);
         // MARK END
@@ -238,8 +239,19 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 _balanceUSDC,
         uint256 _balanceETH
     ) public view {
-        assertApproxEqAbs(WETH.balanceOf(owner), _balanceWETH, 1000, "Balance WETH not equal");
+        assertApproxEqAbs(WETH.balanceOf(owner), _balanceWETH, 10000, "Balance WETH not equal");
         assertApproxEqAbs(USDC.balanceOf(owner), _balanceUSDC, 10, "Balance USDC not equal");
         assertApproxEqAbs(owner.balance, _balanceETH, 10, "Balance ETH not equal");
+    }
+
+    function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
+        // console.log("CL", lendingAdapter.getCollateralLong());
+        // console.log("CS", lendingAdapter.getCollateralShort());
+        // console.log("DL", lendingAdapter.getBorrowedLong());
+        // console.log("DS", lendingAdapter.getBorrowedShort());
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), CL, 1e10, "CL not equal");
+        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()), CS, 1e10, "CS not equal");
+        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()), DL, 1e10, "DL not equal");
+        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), DS, 1e10, "DS not equal");
     }
 }

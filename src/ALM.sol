@@ -104,7 +104,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), usdcIn, false);
 
-            positionManager.positionAdjustmentPriceUp(usdcIn, wethOut);
+            positionManager.positionAdjustmentPriceUp(ALMBaseLib.c6to18(usdcIn), wethOut);
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), wethOut, false);
@@ -121,7 +121,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             ) = getOneForZeroDeltas(params.amountSpecified);
             key.currency1.take(poolManager, address(this), wethIn, false);
 
-            positionManager.positionAdjustmentPriceDown(usdcOut, wethIn);
+            positionManager.positionAdjustmentPriceDown(ALMBaseLib.c6to18(usdcOut), wethIn);
 
             key.currency0.settle(poolManager, address(this), usdcOut, false);
             sqrtPriceCurrent = sqrtPriceNext;
