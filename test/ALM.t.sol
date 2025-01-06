@@ -65,7 +65,7 @@ contract ALMTest is MorphoTestBase {
         USDC.approve(address(lendingAdapter), type(uint256).max);
 
         // ** Add collateral
-        uint256 wethToSupply = 4000 * 1e18;
+        uint256 wethToSupply = 1e18;
         deal(address(WETH), address(alice.addr), wethToSupply);
         lendingAdapter.addCollateralLong(wethToSupply);
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
@@ -73,14 +73,14 @@ contract ALMTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
 
         // ** Borrow
-        uint256 usdcToBorrow = ((wethToSupply * 4500) / 1e12) / 2;
-        lendingAdapter.borrowLong(usdcToBorrow);
+        uint256 usdcToBorrow = ((wethToSupply * 3843) / 1e12) / 2;
+        lendingAdapter.borrowLong(ALMBaseLib.c6to18(usdcToBorrow));
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), usdcToBorrow, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), ALMBaseLib.c6to18(usdcToBorrow), 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToBorrow);
 
         // ** Repay
-        lendingAdapter.repayLong(usdcToBorrow);
+        lendingAdapter.repayLong(ALMBaseLib.c6to18(usdcToBorrow));
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
@@ -105,28 +105,28 @@ contract ALMTest is MorphoTestBase {
         USDC.approve(address(lendingAdapter), type(uint256).max);
 
         // ** Add collateral
-        uint256 usdcToSupply = 4000 * 4500 * 1e6;
+        uint256 usdcToSupply = 3843 * 1e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.addCollateralShort(usdcToSupply);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
+        lendingAdapter.addCollateralShort(ALMBaseLib.c6to18(usdcToSupply));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), ALMBaseLib.c6to18(usdcToSupply), 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Borrow
-        uint256 wethToBorrow = ((usdcToSupply * 1e12) / 4500) / 2;
+        uint256 wethToBorrow = ((usdcToSupply * 1e12) / 3843) / 2;
         lendingAdapter.borrowShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), ALMBaseLib.c6to18(usdcToSupply), 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), wethToBorrow, 1e1);
         assertEqBalanceState(alice.addr, wethToBorrow, 0);
 
         // ** Repay
         lendingAdapter.repayShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), ALMBaseLib.c6to18(usdcToSupply), 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Remove collateral
-        lendingAdapter.removeCollateralShort(usdcToSupply);
+        lendingAdapter.removeCollateralShort(ALMBaseLib.c6to18(usdcToSupply));
         assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToSupply);
