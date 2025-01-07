@@ -41,8 +41,10 @@ contract SRebalanceAdapter is Ownable {
     IALM public alm;
 
     uint160 public sqrtPriceLastRebalance;
+    uint256 public timeAtLastRebalance;
 
     int24 public tickDeltaThreshold = 2000;
+    uint256 public rebalanceTimeThreshold;
 
     IERC20 WETH = IERC20(ALMBaseLib.WETH);
     IERC20 USDC = IERC20(ALMBaseLib.USDC);
@@ -81,28 +83,35 @@ contract SRebalanceAdapter is Ownable {
         tickDeltaThreshold = _tickDeltaThreshold;
     }
 
-    function isPriceRebalanceNeeded() public view returns (bool, int24) {
-        // int24 tickLastRebalance = ALMMathLib.getTickFromSqrtPrice(sqrtPriceLastRebalance);
-        // int24 tickCurrent = ALMMathLib.getTickFromSqrtPrice(alm.sqrtPriceCurrent());
-
-        // int24 tickDelta = tickCurrent - tickLastRebalance;
-        // tickDelta = tickDelta > 0 ? tickDelta : -tickDelta;
-
-        // return (tickDelta > tickDeltaThreshold, tickDelta);
-        return (true, 0);
+    function setRebalanceTimeThreshold(uint256 _rebalanceTimeThreshold) external onlyOwner {
+        rebalanceTimeThreshold = _rebalanceTimeThreshold;
     }
 
-    function withdraw(uint256 deltaDebt, uint256 deltaCollateral) external {
-        // if (msg.sender != address(alm)) revert NotALM();
-        // address[] memory assets = new address[](1);
-        // uint256[] memory amounts = new uint256[](1);
-        // uint256[] memory modes = new uint256[](1);
-        // (assets[0], amounts[0], modes[0]) = (address(USDC), deltaDebt, 0);
-        // LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(deltaCollateral), 0);
+    function isRebalanceNeeded() public view returns (bool, int24, uint256) {
+        (bool _isPriceRebalance, int24 tickDelta) = isPriceRebalance();
+        (bool _isTimeRebalance, uint256 auctionTriggerTime) = isTimeRebalance();
+
+        return (_isPriceRebalance || _isTimeRebalance, tickDelta, auctionTriggerTime);
+    }
+
+    function isPriceRebalance() public view returns (bool, int24) {
+        int24 tickLastRebalance = ALMMathLib.getTickFromSqrtPrice(sqrtPriceLastRebalance);
+        int24 tickCurrent = ALMMathLib.getTickFromSqrtPrice(alm.sqrtPriceCurrent());
+
+        int24 tickDelta = tickCurrent - tickLastRebalance;
+        tickDelta = tickDelta > 0 ? tickDelta : -tickDelta;
+
+        return (tickDelta > tickDeltaThreshold, tickDelta);
+    }
+
+    function isTimeRebalance() public view returns (bool, uint256) {
+        uint256 auctionTriggerTime = timeAtLastRebalance + rebalanceTimeThreshold;
+
+        return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
     }
 
     function rebalance(uint256 slippage) external onlyOwner {
-        (bool isRebalance, ) = isPriceRebalanceNeeded();
+        (bool isRebalance, , ) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
 
@@ -123,6 +132,7 @@ contract SRebalanceAdapter is Ownable {
         // Update state
         sqrtPriceLastRebalance = alm.sqrtPriceCurrent();
         alm.updateBoundaries();
+        timeAtLastRebalance = block.timestamp;
     }
 
     function checkDeviations() internal view {

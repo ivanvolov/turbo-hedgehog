@@ -25,26 +25,26 @@ contract ALMSimulationTest is ALMTestSimBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    // function setUp() public {
-    //     clear_snapshots();
+    function setUp() public {
+        clear_snapshots();
 
-    //     initialSQRTPrice = 1182773400228691521900860642689024; // 4487 usdc for eth (but in reversed tokens order). Tick: 192228
+        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
+        vm.selectFork(mainnetFork);
+        vm.rollFork(19_955_703);
 
-    //     uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-    //     vm.selectFork(mainnetFork);
-    //     vm.rollFork(19_955_703);
+        initialSQRTPrice = getPoolSQRTPrice(ALMBaseLib.ETH_USDC_POOL); // 3843 usdc for eth (but in reversed tokens order)
 
-    //     deployFreshManagerAndRouters();
+        deployFreshManagerAndRouters();
 
-    //     create_accounts_and_tokens();
-    //     init_hook();
-    //     init_control_hook();
-    //     approve_accounts();
-    //     presetChainlinkOracles();
+        create_accounts_and_tokens();
+        init_hook();
+        init_control_hook();
+        approve_accounts();
+        presetChainlinkOracles();
 
-    //     deal(address(USDC), address(swapper.addr), 100_000_000 * 1e6);
-    //     deal(address(WETH), address(swapper.addr), 100_000 * 1e18);
-    // }
+        deal(address(USDC), address(swapper.addr), 100_000_000 * 1e6);
+        deal(address(WETH), address(swapper.addr), 100_000 * 1e18);
+    }
 
     // function test_quick_test() public {
     //     resetGenerator();

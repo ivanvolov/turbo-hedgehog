@@ -92,6 +92,7 @@ abstract contract ALMTestBase is Test, Deployers {
         rebalanceAdapter.setLendingAdapter(address(lendingAdapter));
         rebalanceAdapter.setSqrtPriceLastRebalance(initialSQRTPrice);
         rebalanceAdapter.setTickDeltaThreshold(250);
+        rebalanceAdapter.setRebalanceTimeThreshold(2000);
 
         // MARK: Pool deployment
         PoolKey memory _key = PoolKey(
