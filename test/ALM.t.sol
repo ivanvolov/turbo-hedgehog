@@ -136,6 +136,16 @@ contract ALMTest is MorphoTestBase {
 
     uint256 amountToDep = 100 ether;
 
+    function test_withdraw() public {
+        vm.expectRevert(IALM.NotZeroShares.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, 0, 0);
+
+        vm.expectRevert(IALM.NotEnoughSharesToWithdraw.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, 10, 0);
+    }
+
     function test_deposit() public {
         assertEq(hook.TVL(), 0);
 
@@ -144,6 +154,7 @@ contract ALMTest is MorphoTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         assertApproxEqAbs(shares, amountToDep, 1e10);
+        assertEq(hook.balanceOf(alice.addr), shares);
 
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
@@ -151,6 +162,15 @@ contract ALMTest is MorphoTestBase {
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice);
         assertApproxEqAbs(hook.TVL(), amountToDep, 1e4);
+    }
+
+    function test_deposit_withdraw() public {
+        test_deposit();
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.expectRevert(IALM.ZeroDebt.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0);
     }
 
     uint256 slippage = 1e15;
@@ -167,6 +187,31 @@ contract ALMTest is MorphoTestBase {
         assertEqBalanceStateZero(address(hook));
         assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 40039999999999999310);
         assertApproxEqAbs(hook.TVL(), 99 * 1e18, 1e18);
+    }
+
+    function test_deposit_rebalance_withdraw() public {
+        test_deposit_rebalance();
+        assertEqBalanceStateZero(alice.addr);
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        assertEq(hook.balanceOf(alice.addr), 0);
+
+        assertEqBalanceState(alice.addr, 99620659279839587529, 0);
+        assertEqPositionState(0, 0, 0, 0);
+        assertApproxEqAbs(hook.TVL(), 0, 1e4);
+        assertEqBalanceStateZero(address(hook));
+    }
+
+    function test_deposit_rebalance_withdraw_revert_min_eth() public {
+        test_deposit_rebalance();
+        assertEqBalanceStateZero(alice.addr);
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.expectRevert(IALM.NotMinETHWithdraw.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw, amountToDep);
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -373,7 +418,7 @@ contract ALMTest is MorphoTestBase {
         hook.deposit(address(0), 0);
 
         vm.expectRevert(IALM.ContractPaused.selector);
-        hook.withdraw(deployer.addr, 0);
+        hook.withdraw(deployer.addr, 0, 0);
 
         vm.prank(address(manager));
         vm.expectRevert(IALM.ContractPaused.selector);

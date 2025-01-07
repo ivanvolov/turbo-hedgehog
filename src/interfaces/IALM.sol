@@ -8,12 +8,15 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 
 interface IALM {
     error ZeroLiquidity();
+    error ZeroDebt();
     error NotHookDeployer();
     error NotRebalanceAdapter();
     error AddLiquidityThroughHook();
     error ContractPaused();
     error ContractShutdown();
     error NotEnoughSharesToWithdraw();
+    error NotZeroShares();
+    error NotMinETHWithdraw();
     error BalanceInconsistency();
     error UnauthorizedPool();
 

@@ -45,7 +45,7 @@ library ALMBaseLib {
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountInMaximum: type(uint256).max,
-                    amountOut: tokenOut == USDC ? c6to18(amountOut) : amountOut,
+                    amountOut: tokenOut == USDC ? c18to6(amountOut) : amountOut,
                     sqrtPriceLimitX96: 0
                 })
             );
