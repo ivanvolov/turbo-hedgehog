@@ -15,6 +15,7 @@ const args = decodeHexString(packedHexString, [
     "uint256",
     "uint256",
     "uint256",
+    "uint256",
 ]);
 
 saveToCSV("states", `${args.join(",")}\n`);

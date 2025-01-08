@@ -3,8 +3,7 @@ const { prepareCsvFile } = require("./common");
 const swapsHeaderRow = "amount, zFo, In, bN, delta0, delta1, delta0c, delta1c\n";
 prepareCsvFile("swaps", swapsHeaderRow);
 
-const statesHeaderRow =
-    "bN, sqrtC, liq, sqrt, tL, tU, borrowed, supplied, collateral, tvl, tvlControl, shareP, sharePc\n";
+const statesHeaderRow = "bN, sqrtC, liq, sqrt, tL, tU, CL, CS, DL, DS, tvl, tvlControl, shareP, sharePc\n";
 prepareCsvFile("states", statesHeaderRow);
 
 const depositsHeaderRow = "amount, actor, bN, dWETH, dWETHc, dUSDCc, dSH, dSHc\n";
