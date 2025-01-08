@@ -108,7 +108,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         address,
         bytes calldata data
     ) external returns (bool) {
-        console.log("executeOperation");
+        // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
 
         (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = abi.decode(data, (uint256, uint256, uint256, uint256));

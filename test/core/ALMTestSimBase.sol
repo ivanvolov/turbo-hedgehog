@@ -26,6 +26,14 @@ abstract contract ALMTestSimBase is ALMTestBase {
     uint256 numberOfSwaps;
     uint256 expectedPoolPriceForConversion;
 
+    function approve_accounts() public override {
+        super.approve_accounts();
+        vm.startPrank(swapper.addr);
+        USDC.approve(address(hookControl), type(uint256).max);
+        WETH.approve(address(hookControl), type(uint256).max);
+        vm.stopPrank();
+    }
+
     function init_control_hook() internal {
         vm.startPrank(deployer.addr);
 
@@ -51,10 +59,12 @@ abstract contract ALMTestSimBase is ALMTestBase {
     function save_pool_state() internal {
         uint128 liquidity = hook.liquidity();
         uint160 sqrtPriceX96 = hook.sqrtPriceCurrent();
+
         int24 tickLower = hook.tickLower();
         int24 tickUpper = hook.tickUpper();
         assertApproxEqAbs(tickLower, hookControl.tickLower(), 1);
         assertApproxEqAbs(tickUpper, hookControl.tickUpper(), 1);
+
         uint256 CL = lendingAdapter.getCollateralLong();
         uint256 CS = lendingAdapter.getCollateralShort();
         uint256 DL = lendingAdapter.getBorrowedLong();
@@ -62,8 +72,6 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
         uint256 tvl = hook.TVL();
         uint256 tvlControl = hookControl.TVL();
-        // console.log("tvl", tvl);
-        // console.log("tvlControl", tvlControl);
         uint256 sharePrice = hook.sharePrice();
         uint256 sharePriceControl = hookControl.sharePrice();
         (uint160 sqrtPriceX96Control, ) = hookControl.getTick();
@@ -182,8 +190,8 @@ abstract contract ALMTestSimBase is ALMTestBase {
         vm.ffi(inputs);
     }
 
-    function save_rebalance_data(int24 delta) internal {
-        bytes memory packedData = abi.encodePacked(delta, block.number);
+    function save_rebalance_data(int24 delta, uint256 auctionTriggerTime) internal {
+        bytes memory packedData = abi.encodePacked(delta, auctionTriggerTime, block.number);
         string memory packedHexString = toHexString(packedData);
 
         string[] memory inputs = new string[](3);

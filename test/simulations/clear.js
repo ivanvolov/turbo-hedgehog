@@ -12,5 +12,5 @@ prepareCsvFile("deposits", depositsHeaderRow);
 const withdrawsHeaderRow = "shares1, shares2, actor, bN, dWETH, dUSDC, dWETHc, dUSDCc\n";
 prepareCsvFile("withdraws", withdrawsHeaderRow);
 
-const rebalancesHeaderRow = "delta, bN\n";
+const rebalancesHeaderRow = "delta, aTT, bN\n";
 prepareCsvFile("rebalances", rebalancesHeaderRow);

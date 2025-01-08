@@ -53,23 +53,18 @@ contract PositionManager is Ownable, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 deltaUSDC, uint256 deltaWETH) external override {
-        console.log("!");
         if (msg.sender != address(hook)) revert NotHook();
-        console.log("!");
         USDC.transferFrom(address(hook), address(this), ALMBaseLib.c18to6(deltaUSDC));
-        console.log("!");
 
         uint256 k = hook.sqrtPriceCurrent() >= hook.sqrtPriceAtLastRebalance() ? k2 : k1;
-        console.log("!");
         // Repay dUSD of long debt;
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
 
-        console.log("!", deltaUSDC);
         lendingAdapter.repayLong(deltaUSDC);
-        console.log("!");
+
         lendingAdapter.removeCollateralLong(k.mul(deltaWETH));
-        console.log("!");
+
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaWETH));
 
         WETH.transfer(address(hook), deltaWETH);

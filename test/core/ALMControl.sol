@@ -173,6 +173,8 @@ contract ALMControl is BaseHook, ERC20 {
             }),
             ""
         );
+        // console.log("USDC balance", key.currency0.balanceOf(sender));
+        // console.log("ETH balance", key.currency1.balanceOf(sender));
 
         if (delta.amount0() < 0) {
             key.currency0.settle(poolManager, sender, uint256(uint128(-delta.amount0())), false);

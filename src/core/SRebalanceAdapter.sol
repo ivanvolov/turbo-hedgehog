@@ -154,7 +154,7 @@ contract SRebalanceAdapter is Ownable {
     function rebalanceCalculations(
         int256 k
     ) internal view returns (uint256 ethToFl, uint256 usdcToFl, bytes memory data) {
-        console.log("> rebalanceCalculations");
+        // console.log("> rebalanceCalculations");
         // console.log("k %s", k);
         uint256 targetDL;
         uint256 targetDS;
@@ -217,7 +217,7 @@ contract SRebalanceAdapter is Ownable {
         address,
         bytes calldata data
     ) external returns (bool) {
-        console.log("executeOperation");
+        // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
         _positionManagement(data);
 

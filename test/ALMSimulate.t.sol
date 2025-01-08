@@ -65,36 +65,44 @@ contract ALMSimulationTest is ALMTestSimBase {
     // }
 
     function test_simulation() public {
+        console.log("> Simulation started");
+        console.log("Start block ts: %s", block.timestamp);
+        console.log("Start block num: %s", block.number);
+
         depositProbabilityPerBlock = 10; // Probability of deposit per block
-        maxDeposits = 10; // The maximum number of deposits. Set to max(uint256) to disable
+        maxDeposits = 5; // The maximum number of deposits. Set to max(uint256) to disable
 
         withdrawProbabilityPerBlock = 7; // Probability of withdraw per block
         maxWithdraws = 3; // The maximum number of withdraws. Set to max(uint256) to disable
 
-        numberOfSwaps = 1; // Number of blocks with swaps
+        numberOfSwaps = 50; // Number of blocks with swaps
 
-        maxUniqueDepositors = 3; // The maximum number of depositors
+        maxUniqueDepositors = 5; // The maximum number of depositors
         depositorReuseProbability = 50; // 50 % prob what the depositor will be reused rather then creating new one
 
-        expectedPoolPriceForConversion = 4500; // USDC-WETH price (used for In/Out swaps). TODO it more elegantly with quoter.
+        expectedPoolPriceForConversion = 3843; // USDC-WETH price (used for In/Out swaps). TODO it more elegantly with quoter.
 
         resetGenerator();
         uint256 depositsRemained = maxDeposits;
         uint256 withdrawsRemained = maxWithdraws;
-        console.log(">Simulation started");
-        console.log(">> Start block ts: %s", block.timestamp);
-        console.log(">> Start block num: %s", block.number);
 
         uint256 randomAmount;
 
         // ** First deposit to allow swapping
-        approve_actor(alice.addr);
-        deposit(1000 ether, alice.addr);
+        {
+            approve_actor(alice.addr);
+            deposit(1000 ether, alice.addr);
+            save_pool_state();
+
+            vm.roll(block.number + 1);
+            vm.warp(block.timestamp + 12);
+        }
+
+        // ** Do rebalance cause no swaps before first rebalance
+        try_rebalance();
         save_pool_state();
 
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + 12);
-
+        // ** Do random swaps with periodic deposits and withdraws
         for (uint i = 0; i < numberOfSwaps; i++) {
             // **  Always do swaps
             {
@@ -104,10 +112,10 @@ contract ALMSimulationTest is ALMTestSimBase {
 
                 // Now will adjust amount if it's USDC goes In
                 if ((zeroForOne && _in) || (!zeroForOne && !_in)) {
-                    console.log("> randomAmount before", randomAmount);
+                    // console.log("> randomAmount before", randomAmount);
                     randomAmount = (randomAmount * expectedPoolPriceForConversion) / 1e12;
                 } else {
-                    console.log("> randomAmount", randomAmount);
+                    // console.log("> randomAmount", randomAmount);
                 }
 
                 swap(randomAmount, zeroForOne, _in);
@@ -147,12 +155,16 @@ contract ALMSimulationTest is ALMTestSimBase {
         }
 
         // ** Withdraw all remaining liquidity
-        // for (uint id = 1; id <= lastGeneratedAddressId; id++) {
-        //     withdraw(100, 100, getDepositorById(id));
-        //     save_pool_state();
-        // }
-        // withdraw(100, 100, alice.addr);
-        // save_pool_state();
+        {
+            console.log("Withdraw all remaining liquidity");
+            for (uint id = 1; id <= lastGeneratedAddressId; id++) {
+                withdraw(100, 100, getDepositorById(id));
+                save_pool_state();
+            }
+
+            withdraw(100, 100, alice.addr);
+            save_pool_state();
+        }
     }
 
     // function test_rebalance_simulation() public {
@@ -190,6 +202,7 @@ contract ALMSimulationTest is ALMTestSimBase {
 
     //         // ** Always try to do rebalance
     //         try_rebalance();
+    // save_pool_state();
 
     //         // ** Roll block after each iteration
     //         vm.roll(block.number + 1);
@@ -200,22 +213,24 @@ contract ALMSimulationTest is ALMTestSimBase {
     //     save_pool_state();
     // }
 
-    // function try_rebalance() internal {
-    //     (bool isRebalance, int24 delta) = rebalanceAdapter.isPriceRebalanceNeeded();
-    //     console.log("isRebalance", isRebalance);
-    //     // console.log(delta);
-    //     // console.log(rebalanceAdapter.tickDeltaThreshold());
-    //     if (isRebalance) {
-    //         // console.log("doing rebalance");
-    //         vm.prank(rebalanceAdapter.owner());
-    //         rebalanceAdapter.rebalance();
+    function try_rebalance() internal {
+        (bool isRebalance, int24 delta, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
+        console.log("isRebalance", isRebalance);
+        // console.log(delta);
+        // console.log(rebalanceAdapter.tickDeltaThreshold());
+        if (isRebalance) {
+            console.log(">> doing rebalance");
+            vm.prank(rebalanceAdapter.owner());
+            rebalanceAdapter.rebalance(1e16); //TODO: do here some adaptive slippage if it fails
+            console.log("(1)");
 
-    //         vm.prank(swapper.addr);
-    //         hookControl.rebalance();
+            vm.prank(swapper.addr);
+            hookControl.rebalance();
+            console.log("(2)");
 
-    //         save_rebalance_data(delta);
-    //     }
-    // }
+            save_rebalance_data(delta, auctionTriggerTime);
+        }
+    }
 
     function swap(uint256 amount, bool zeroForOne, bool _in) internal {
         // console.log(">> do swap", amount, zeroForOne, _in);
