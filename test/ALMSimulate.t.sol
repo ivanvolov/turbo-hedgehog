@@ -142,7 +142,7 @@ contract ALMSimulationTest is ALMTestSimBase {
                     if (actor != address(0)) {
                         randomAmount = random(100); // It is percent here
 
-                        withdraw(randomAmount, randomAmount, actor);
+                        withdraw(randomAmount, actor);
                         save_pool_state();
                         withdrawsRemained--;
                     }
@@ -158,11 +158,11 @@ contract ALMSimulationTest is ALMTestSimBase {
         {
             console.log("Withdraw all remaining liquidity");
             for (uint id = 1; id <= lastGeneratedAddressId; id++) {
-                withdraw(100, 100, getDepositorById(id));
+                withdraw(100, getDepositorById(id));
                 save_pool_state();
             }
 
-            withdraw(100, 100, alice.addr);
+            withdraw(100, alice.addr);
             save_pool_state();
         }
     }
@@ -209,7 +209,7 @@ contract ALMSimulationTest is ALMTestSimBase {
     //         vm.warp(block.timestamp + 12);
     //     }
 
-    //     withdraw(100, 100, alice.addr);
+    //     withdraw(100, alice.addr);
     //     save_pool_state();
     // }
 
@@ -311,9 +311,9 @@ contract ALMSimulationTest is ALMTestSimBase {
         vm.stopPrank();
     }
 
-    function withdraw(uint256 sharesPercent1, uint256 sharesPercent2, address actor) internal {
-        uint256 shares1 = (hook.balanceOf(actor) * sharesPercent1 * 1e16) / 1e18;
-        uint256 shares2 = (hookControl.balanceOf(actor) * sharesPercent2 * 1e16) / 1e18;
+    function withdraw(uint256 sharesPercent, address actor) internal {
+        uint256 shares1 = (hook.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
+        uint256 shares2 = (hookControl.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
         console.log(">> do withdraw:", actor, shares1, shares2);
 
         vm.startPrank(actor);

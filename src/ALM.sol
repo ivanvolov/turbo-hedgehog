@@ -67,8 +67,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
 
-        uint256 TVL2 = TVL();
-        uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
+        uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
         return (amountIn, _shares);

@@ -128,7 +128,7 @@ library ALMMathLib {
 
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
         if (TVL1 == 0) return TVL2;
-        else return (ts.mul(TVL2 - TVL1)) / TVL1;
+        else return (ts.mul(TVL2 - TVL1)).div(TVL1);
     }
 
     function getTVL(

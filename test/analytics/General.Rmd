@@ -192,7 +192,7 @@ combined_plot
 ```
 
 ```{r}
-states_1 <- states
+states_1 <- states %>% filter(!(shareP == 0 & sharePc == 0))
 states_1$shareP <- states_1$shareP/ 1e18
 states_1$sharePc <-  states_1$sharePc/(1e18)
 
@@ -218,7 +218,7 @@ combined_plot
 ```
 
 ```{r}
-states_1 <- states
+states_1 <- states %>% filter(!(shareP == 0 & sharePc == 0))
 states_1$tvl <-  states_1$tvl/1e18
 states_1$tvlControl <-  states_1$tvlControl/(1e18*2)
 
