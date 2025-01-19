@@ -61,19 +61,26 @@ contract ALM is BaseStrategyHook, ERC20 {
         refreshReserves();
         uint256 TVL1 = TVL();
 
-        (uint128 deltaLiquidity, uint256 amountIn) = _calcDepositLiquidity(amount);
-        WETH.transferFrom(msg.sender, address(this), amountIn);
+        uint128 deltaLiquidity;
+        uint256 amountIn;
+        if (isInvertAssets) {
+            (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount0(amount);
+            USDC.transferFrom(msg.sender, address(this), amountIn);
+            lendingAdapter.addCollateralShort(ALMBaseLib.usdcBalance(address(this)));
+        } else {
+            (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount1(amount);
+            WETH.transferFrom(msg.sender, address(this), amountIn);
+            lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
+        }
+
         liquidity = liquidity + deltaLiquidity;
-
-        lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
-
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
         return (amountIn, _shares);
     }
 
-    function withdraw(address to, uint256 sharesOut, uint256 minWETH) external notPaused {
+    function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
@@ -96,8 +103,13 @@ contract ALM is BaseStrategyHook, ERC20 {
         (assets[1], amounts[1], modes[1]) = (address(USDC), ALMBaseLib.c18to6(uDL), 0);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS, uDL, uDS), 0);
 
-        if (ALMBaseLib.wethBalance(address(this)) < minWETH) revert NotMinETHWithdraw();
-        WETH.transfer(to, ALMBaseLib.wethBalance(address(this)));
+        if (isInvertAssets) {
+            if (ALMBaseLib.usdcBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
+            USDC.transfer(to, ALMBaseLib.usdcBalance(address(this)));
+        } else {
+            if (ALMBaseLib.wethBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
+            WETH.transfer(to, ALMBaseLib.wethBalance(address(this)));
+        }
     }
 
     function executeOperation(
@@ -123,17 +135,38 @@ contract ALM is BaseStrategyHook, ERC20 {
         // console.log("WETH balance", ALMBaseLib.wethBalance(address(this)));
         // console.log("USDC balance", ALMBaseLib.usdcBalance(address(this)));
 
-        uint256 flUSDCdebt = uDL + ALMBaseLib.c6to18(premiums[1]);
-        if (flUSDCdebt > ALMBaseLib.usdcBalance(address(this))) {
-            // console.log("WETH => USDC");
-            // console.log("USDC delta", flUSDCdebt - ALMBaseLib.usdcBalance(address(this)));
-            ALMBaseLib.swapExactOutput(
-                address(WETH),
-                address(USDC),
-                flUSDCdebt - ALMBaseLib.usdcBalance(address(this))
-            );
-        } else if (ALMBaseLib.usdcBalance(address(this)) > flUSDCdebt) {
-            ALMBaseLib.swapExactInput(address(USDC), address(WETH), ALMBaseLib.usdcBalance(address(this)) - flUSDCdebt);
+        if (isInvertAssets) {
+            uint256 flWETHdebt = uDS + ALMBaseLib.c6to18(premiums[0]);
+            if (flWETHdebt > ALMBaseLib.wethBalance(address(this))) {
+                ALMBaseLib.swapExactOutput(
+                    address(USDC),
+                    address(WETH),
+                    flWETHdebt - ALMBaseLib.wethBalance(address(this))
+                );
+            } else if (ALMBaseLib.wethBalance(address(this)) > flWETHdebt) {
+                ALMBaseLib.swapExactInput(
+                    address(WETH),
+                    address(USDC),
+                    ALMBaseLib.wethBalance(address(this)) - flWETHdebt
+                );
+            }
+        } else {
+            uint256 flUSDCdebt = uDL + ALMBaseLib.c6to18(premiums[1]);
+            if (flUSDCdebt > ALMBaseLib.usdcBalance(address(this))) {
+                // console.log("WETH => USDC");
+                // console.log("USDC delta", flUSDCdebt - ALMBaseLib.usdcBalance(address(this)));
+                ALMBaseLib.swapExactOutput(
+                    address(WETH),
+                    address(USDC),
+                    flUSDCdebt - ALMBaseLib.usdcBalance(address(this))
+                );
+            } else if (ALMBaseLib.usdcBalance(address(this)) > flUSDCdebt) {
+                ALMBaseLib.swapExactInput(
+                    address(USDC),
+                    address(WETH),
+                    ALMBaseLib.usdcBalance(address(this)) - flUSDCdebt
+                );
+            }
         }
 
         return true;
@@ -213,15 +246,25 @@ contract ALM is BaseStrategyHook, ERC20 {
     //TODO: I would remove balances, cause money can't be withdraws from ALM so no need to account for them
     function TVL() public view returns (uint256) {
         return
-            ALMMathLib.getTVL(
-                ALMBaseLib.wethBalance(address(this)),
-                ALMBaseLib.usdcBalance(address(this)),
-                lendingAdapter.getCollateralLong(),
-                lendingAdapter.getBorrowedShort(),
-                lendingAdapter.getCollateralShort(),
-                lendingAdapter.getBorrowedLong(),
-                oracle.price()
-            );
+            isInvertAssets
+                ? ALMMathLib.getTVLStable(
+                    ALMBaseLib.wethBalance(address(this)),
+                    ALMBaseLib.usdcBalance(address(this)),
+                    lendingAdapter.getCollateralLong(),
+                    lendingAdapter.getBorrowedShort(),
+                    lendingAdapter.getCollateralShort(),
+                    lendingAdapter.getBorrowedLong(),
+                    oracle.price()
+                )
+                : ALMMathLib.getTVL(
+                    ALMBaseLib.wethBalance(address(this)),
+                    ALMBaseLib.usdcBalance(address(this)),
+                    lendingAdapter.getCollateralLong(),
+                    lendingAdapter.getBorrowedShort(),
+                    lendingAdapter.getCollateralShort(),
+                    lendingAdapter.getBorrowedLong(),
+                    oracle.price()
+                );
     }
 
     function sharePrice() external view returns (uint256) {
@@ -229,7 +272,25 @@ contract ALM is BaseStrategyHook, ERC20 {
         return (TVL() * 1e18) / totalSupply();
     }
 
-    function _calcDepositLiquidity(uint256 amount) public view returns (uint128 _liquidity, uint256 _amount) {
+    function _calcDepositLiquidityFromAmount0(
+        uint256 amount
+    ) public view returns (uint128 _liquidity, uint256 _amount) {
+        _liquidity = ALMMathLib.getLiquidityFromAmount0SqrtPriceX96(
+            ALMMathLib.getSqrtPriceAtTick(tickUpper),
+            sqrtPriceCurrent,
+            amount
+        );
+        (_amount, ) = ALMMathLib.getAmountsFromLiquiditySqrtPriceX96(
+            sqrtPriceCurrent,
+            ALMMathLib.getSqrtPriceAtTick(tickUpper),
+            ALMMathLib.getSqrtPriceAtTick(tickLower),
+            _liquidity
+        );
+    }
+
+    function _calcDepositLiquidityFromAmount1(
+        uint256 amount
+    ) public view returns (uint128 _liquidity, uint256 _amount) {
         _liquidity = ALMMathLib.getLiquidityFromAmount1SqrtPriceX96(
             ALMMathLib.getSqrtPriceAtTick(tickUpper),
             sqrtPriceCurrent,

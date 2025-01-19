@@ -57,6 +57,8 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     uint256 public shortLeverage = 2 * 1e18;
     uint256 public maxDeviation = 1 * 1e16; // 0.01%
 
+    bool public isInvertAssets = false;
+
     bytes32 public authorizedPool;
 
     function getALMInfo(uint256 almId) external view returns (ALMInfo memory) {
@@ -129,6 +131,10 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     function setMaxDeviation(uint256 _maxDeviation) external onlyHookAdmin {
         maxDeviation = _maxDeviation;
+    }
+
+    function setInvertAssets(bool _isInvertAssets) external onlyHookAdmin {
+        isInvertAssets = _isInvertAssets;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {

@@ -41,6 +41,9 @@ contract ALMTest is ALMTestBase {
         init_hook();
         approve_accounts();
         presetChainlinkOracles();
+
+        vm.prank(deployer.addr);
+        hook.setInvertAssets(true);
     }
 
     function test_hook_deployment_exploit_revert() public {
@@ -220,7 +223,7 @@ contract ALMTest is ALMTestBase {
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        vm.expectRevert(IALM.NotMinETHWithdraw.selector);
+        vm.expectRevert(IALM.NotMinOutWithdraw.selector);
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, sharesToWithdraw, amountToDep);
     }

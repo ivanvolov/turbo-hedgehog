@@ -16,7 +16,7 @@ interface IALM {
     error ContractShutdown();
     error NotEnoughSharesToWithdraw();
     error NotZeroShares();
-    error NotMinETHWithdraw();
+    error NotMinOutWithdraw();
     error BalanceInconsistency();
     error UnauthorizedPool();
 

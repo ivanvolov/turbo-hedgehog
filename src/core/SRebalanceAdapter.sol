@@ -42,6 +42,7 @@ contract SRebalanceAdapter is Ownable {
 
     uint160 public sqrtPriceLastRebalance;
     uint256 public timeAtLastRebalance;
+    bool public invertAssets = false;
 
     int24 public tickDeltaThreshold = 2000;
     uint256 public rebalanceTimeThreshold;
@@ -85,6 +86,10 @@ contract SRebalanceAdapter is Ownable {
 
     function setRebalanceTimeThreshold(uint256 _rebalanceTimeThreshold) external onlyOwner {
         rebalanceTimeThreshold = _rebalanceTimeThreshold;
+    }
+
+    function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
+        invertAssets = _isInvertAssets;
     }
 
     function isRebalanceNeeded() public view returns (bool, int24, uint256) {
@@ -165,19 +170,27 @@ contract SRebalanceAdapter is Ownable {
         int256 deltaDS;
         {
             // console.log("price %s", IOracle(alm.oracle()).price());
-
             // console.log("currentCL", lendingAdapter.getCollateralLong());
             // console.log("currentCS", lendingAdapter.getCollateralShort());
             // console.log("currentDL", lendingAdapter.getBorrowedLong());
             // console.log("currentDS", lendingAdapter.getBorrowedShort());
 
-            uint256 targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage());
-            uint256 targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(IOracle(alm.oracle()).price()).mul(
-                alm.shortLeverage()
-            );
-            targetDL = targetCL.mul(IOracle(alm.oracle()).price()).mul(1e18 - uint256(1e18).div(alm.longLeverage()));
+            uint256 targetCL;
+            uint256 targetCS;
+            uint256 price = IOracle(alm.oracle()).price();
+            if (invertAssets) {
+                targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage()).div(price);
+                targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(alm.shortLeverage());
 
-            targetDS = targetCS.mul(1e18 - uint256(1e18).div(alm.shortLeverage())).div(IOracle(alm.oracle()).price());
+                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(alm.longLeverage()));
+                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(alm.shortLeverage()));
+            } else {
+                targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage());
+                targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(alm.shortLeverage()).mul(price);
+
+                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(alm.longLeverage()));
+                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(alm.shortLeverage()));
+            }
 
             // console.log("targetCL", targetCL);
             // console.log("targetCS", targetCS);
