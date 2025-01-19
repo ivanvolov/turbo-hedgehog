@@ -20,14 +20,6 @@ interface IALM {
     error BalanceInconsistency();
     error UnauthorizedPool();
 
-    struct ALMInfo {
-        uint256 amount;
-        uint256 sqrtPrice;
-        int24 tickLower;
-        int24 tickUpper;
-        uint256 created;
-    }
-
     event Deposit(address indexed to, uint256 amount, uint256 shares);
 
     event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);

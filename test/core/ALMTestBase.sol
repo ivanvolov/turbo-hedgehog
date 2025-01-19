@@ -69,7 +69,7 @@ abstract contract ALMTestBase is Test, Deployers {
                     Hooks.AFTER_INITIALIZE_FLAG
             )
         );
-        deployCodeTo("ALM.sol", abi.encode(manager), hookAddress);
+        deployCodeTo("ALM.sol", abi.encode(manager, "NAME", "SYMBOL"), hookAddress);
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
         assertEq(hook.hookAdmin(), deployer.addr);

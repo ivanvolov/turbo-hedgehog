@@ -45,19 +45,12 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     address public hookAdmin;
 
-    uint256 public almIdCounter = 0;
-    mapping(uint256 => ALMInfo) almInfo;
-
     bool public paused = false;
     bool public shutdown = false;
     int24 public tickDelta = 3000;
     bool public isInvertAssets = false;
 
     bytes32 public authorizedPool;
-
-    function getALMInfo(uint256 almId) external view returns (ALMInfo memory) {
-        return almInfo[almId];
-    }
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         hookAdmin = msg.sender;

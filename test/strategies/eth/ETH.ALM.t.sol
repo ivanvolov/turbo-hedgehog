@@ -66,9 +66,9 @@ contract ETHALMTest is ALMTestBase {
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, 0, 0);
 
-        // vm.expectRevert(IALM.NotEnoughSharesToWithdraw.selector);
-        // vm.prank(alice.addr);
-        // hook.withdraw(alice.addr, 10, 0);
+        vm.expectRevert(IALM.NotEnoughSharesToWithdraw.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, 10, 0);
     }
 
     function test_deposit() public {
@@ -92,10 +92,10 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_withdraw() public {
         test_deposit();
 
-        // uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        // vm.expectRevert(IALM.ZeroDebt.selector);
-        // vm.prank(alice.addr);
-        // hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.expectRevert(IALM.ZeroDebt.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0);
     }
 
     uint256 slippage = 1e15;

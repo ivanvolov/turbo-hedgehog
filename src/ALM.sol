@@ -32,12 +32,15 @@ contract ALM is BaseStrategyHook, ERC20 {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
 
-    // Aavev2
+    // AaveV2
     address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
-    // TODO: change name to production
-    constructor(IPoolManager manager) BaseStrategyHook(manager) ERC20("ALM", "hhALM") {
+    constructor(
+        IPoolManager manager,
+        string memory name,
+        string memory symbol
+    ) BaseStrategyHook(manager) ERC20(name, symbol) {
         USDC.approve(lendingPool, type(uint256).max);
         WETH.approve(lendingPool, type(uint256).max);
         USDC.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);

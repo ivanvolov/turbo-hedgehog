@@ -39,11 +39,24 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
         create_accounts_and_tokens();
         init_hook();
+
+        // Setting up strategy params
+        {
+            vm.startPrank(deployer.addr);
+            hook.setInvertAssets(true);
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            rebalanceAdapter.setTickDeltaThreshold(250);
+            rebalanceAdapter.setRebalanceTimeThreshold(2000);
+            rebalanceAdapter.setWeight(45 * 1e16); // 0.45 (45%)
+            rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
+            rebalanceAdapter.setShortLeverage(3 * 1e18); // 3
+            rebalanceAdapter.setMaxDeviationLong(1e16); // 0.01 (1%)
+            rebalanceAdapter.setMaxDeviationShort(1e16); // 0.01 (1%)
+            vm.stopPrank();
+        }
+
         approve_accounts();
         presetChainlinkOracles();
-
-        vm.prank(deployer.addr);
-        hook.setInvertAssets(true);
     }
 
     uint256 amountToDep = 100 ether;
