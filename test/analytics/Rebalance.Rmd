@@ -15,12 +15,15 @@ suppressWarnings(library(dplyr))
 
 ```{r warnigns=FALSE}
 rm(list = ls())
-deposits <- read.csv("../simulations/out/deposits.csv", colClasses = c("actor" = "character"))
-withdraws <- read.csv("../simulations/out/withdraws.csv", colClasses = c("actor" = "character"))
+#deposits <- read.csv("../simulations/out/deposits.csv", colClasses = c("actor" = "character"))
+#withdraws <- read.csv("../simulations/out/withdraws.csv", colClasses = c("actor" = "character"))
 rebalances <- read.csv("../simulations/out/rebalances.csv")
 
 states <- read.csv("../simulations/out/states.csv")
-states$collateral <- as.numeric(states$collateral) / 1e18
+states$CL <- as.numeric(states$CL) / 1e18
+states$CS <- as.numeric(states$CS) / 1e18
+states$DL <- as.numeric(states$DL) / 1e18
+states$DS <- as.numeric(states$DS) / 1e18
 
 swaps <- read.csv("../simulations/out/swaps.csv")
 swaps$zFo <- as.logical(swaps$zFo)
@@ -39,6 +42,7 @@ swaps$delta1c = as.numeric(swaps$delta1c) / 1e18
 
 
 #head(deposits)
+#head(withdraws)
 dim(swaps)
 dim(states)
 ```
@@ -62,8 +66,10 @@ merged_data$tvlControl = merged_data$tvlControl/1e18
 merged_data$shareP = merged_data$shareP/1e18
 merged_data$sharePc = merged_data$sharePc/1e18
 
-merged_data$resUSDC <- (-merged_data$borrowed + merged_data$supplied) / 1e6
+merged_data$resUSDC <- (merged_data$CS-merged_data$DL)
 merged_data$resUSDC = as.integer(merged_data$resUSDC)
+merged_data$resWETH <- (merged_data$CL-merged_data$DS)
+merged_data$resWETH = as.integer(merged_data$resWETH)
 merged_data <- left_join(merged_data, rebalances, by = "bN")
 ```
 
@@ -97,7 +103,7 @@ plot4 <- ggplot(merged_data) +
   geom_line(aes(x = bN, y = tL), color = "orange", linewidth = 1) +
   geom_line(aes(x = bN, y = tU), color = "orange", linewidth = 1) +
   geom_vline(data = event_lines, aes(xintercept = bN), color = "red", linewidth = 1) +
-  labs(title = "Threshold Chart", y = "Thresholds") +
+  labs(title = "Ticks", y = "Ticks") +
   theme_minimal()
 
 plot5 <- ggplot(merged_data, aes(x = bN, y = resUSDC)) +
@@ -107,10 +113,10 @@ plot5 <- ggplot(merged_data, aes(x = bN, y = resUSDC)) +
   labs(title = "USDC Reserve Chart", y = "USDC Amount") +
   theme_minimal()
 
-plot6 <- ggplot(merged_data, aes(x = bN, y = collateral)) +
+plot6 <- ggplot(merged_data, aes(x = bN, y = resWETH)) +
   geom_bar(stat = "identity", fill = "darkred", alpha = 0.7) +
   geom_vline(data = event_lines, aes(xintercept = bN), color = "red", linewidth = 1) +
-  labs(title = "Collateral Chart", y = "Collateral Amount") +
+  labs(title = "WETH Reserve Chart", y = "WETH Amount") +
   theme_minimal()
 
 plot1 <- ggplotly(plot1)
@@ -124,7 +130,7 @@ combined_plot <- subplot(
   plot1, plot2, plot3, plot4, plot5, plot6,
   nrows = 6,
   shareX = TRUE,
-  heights = c(0.15, 0.2, 0.15, 0.1, 0.2, 0.1)  # Adjust height ratios
+  heights = c(0.15, 0.2, 0.15, 0.1, 0.2, 0.2)  # Adjust height ratios
 ) %>%
   layout(
     title = "Pool ALM",
@@ -139,8 +145,8 @@ combined_plot <- subplot(
     yaxis2 = list(title = "Price"),
     yaxis3 = list(title = "Share"),
     yaxis4 = list(title = "Ticks"),
-    yaxis5 = list(title = "Supplied"),
-    yaxis6 = list(title = "Collateral"),
+    yaxis5 = list(title = "USDC reserves"),
+    yaxis6 = list(title = "WETH reserves"),
     hovermode = "x unified",  # Synchronize hover across all charts
     shapes = list(
       list(
