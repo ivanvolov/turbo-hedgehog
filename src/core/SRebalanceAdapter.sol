@@ -31,8 +31,9 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {ILendingPool} from "@src/interfaces/IAave.sol";
+import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 
-contract SRebalanceAdapter is Ownable {
+contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;
     error NoRebalanceNeeded();
     error NotALM();
@@ -40,19 +41,25 @@ contract SRebalanceAdapter is Ownable {
     ILendingAdapter public lendingAdapter;
     IALM public alm;
 
-    uint160 public sqrtPriceLastRebalance;
+    uint160 public sqrtPriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
-    bool public invertAssets = false;
-
-    int24 public tickDeltaThreshold = 2000;
-    uint256 public rebalanceTimeThreshold;
 
     IERC20 WETH = IERC20(ALMBaseLib.WETH);
     IERC20 USDC = IERC20(ALMBaseLib.USDC);
 
-    // aavev2
+    // AaveV2
     address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
+
+    // ** Parameters
+    int24 public tickDeltaThreshold = 2000;
+    uint256 public rebalanceTimeThreshold = 2000;
+    uint256 public weight = 6 * 1e17; // 0.6%
+    uint256 public longLeverage = 3 * 1e18;
+    uint256 public shortLeverage = 2 * 1e18;
+    uint256 public maxDeviationLong = 1e16; // 0.01%
+    uint256 public maxDeviationShort = 1e16; // 0.01%
+    bool public invertAssets = false;
 
     constructor() Ownable(msg.sender) {
         USDC.approve(lendingPool, type(uint256).max);
@@ -60,14 +67,6 @@ contract SRebalanceAdapter is Ownable {
 
         USDC.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
         WETH.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-    }
-
-    function setALM(address _alm) external onlyOwner {
-        alm = IALM(_alm);
-    }
-
-    function setSqrtPriceLastRebalance(uint160 _sqrtPriceLastRebalance) external onlyOwner {
-        sqrtPriceLastRebalance = _sqrtPriceLastRebalance;
     }
 
     function setLendingAdapter(address _lendingAdapter) external onlyOwner {
@@ -80,17 +79,51 @@ contract SRebalanceAdapter is Ownable {
         USDC.approve(address(lendingAdapter), type(uint256).max);
     }
 
+    function setALM(address _alm) external onlyOwner {
+        alm = IALM(_alm);
+    }
+
     function setTickDeltaThreshold(int24 _tickDeltaThreshold) external onlyOwner {
         tickDeltaThreshold = _tickDeltaThreshold;
+    }
+
+    function setSqrtPriceAtLastRebalance(uint160 _sqrtPriceAtLastRebalance) external onlyOwner {
+        sqrtPriceAtLastRebalance = _sqrtPriceAtLastRebalance;
+    }
+
+    function setTimeAtLastRebalance(uint256 _timeAtLastRebalance) external onlyOwner {
+        timeAtLastRebalance = _timeAtLastRebalance;
     }
 
     function setRebalanceTimeThreshold(uint256 _rebalanceTimeThreshold) external onlyOwner {
         rebalanceTimeThreshold = _rebalanceTimeThreshold;
     }
 
+    function setWeight(uint256 _weight) external onlyOwner {
+        weight = _weight;
+    }
+
+    function setLongLeverage(uint256 _longLeverage) external onlyOwner {
+        longLeverage = _longLeverage;
+    }
+
+    function setShortLeverage(uint256 _shortLeverage) external onlyOwner {
+        shortLeverage = _shortLeverage;
+    }
+
+    function setMaxDeviationLong(uint256 _maxDeviationLong) external onlyOwner {
+        maxDeviationLong = _maxDeviationLong;
+    }
+
+    function setMaxDeviationShort(uint256 _maxDeviationShort) external onlyOwner {
+        maxDeviationShort = _maxDeviationShort;
+    }
+
     function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
         invertAssets = _isInvertAssets;
     }
+
+    // ** Logic
 
     function isRebalanceNeeded() public view returns (bool, int24, uint256) {
         (bool _isPriceRebalance, int24 tickDelta) = isPriceRebalance();
@@ -100,7 +133,7 @@ contract SRebalanceAdapter is Ownable {
     }
 
     function isPriceRebalance() public view returns (bool, int24) {
-        int24 tickLastRebalance = ALMMathLib.getTickFromSqrtPrice(sqrtPriceLastRebalance);
+        int24 tickLastRebalance = ALMMathLib.getTickFromSqrtPrice(sqrtPriceAtLastRebalance);
         int24 tickCurrent = ALMMathLib.getTickFromSqrtPrice(alm.sqrtPriceCurrent());
 
         int24 tickDelta = tickCurrent - tickLastRebalance;
@@ -135,7 +168,7 @@ contract SRebalanceAdapter is Ownable {
         checkDeviations();
 
         // Update state
-        sqrtPriceLastRebalance = alm.sqrtPriceCurrent();
+        sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
     }
@@ -151,8 +184,8 @@ contract SRebalanceAdapter is Ownable {
         // console.log("longLeverage %s", _longLeverage);
         // console.log("shortLeverage %s", _shortLeverage);
 
-        require(_longLeverage - alm.longLeverage() <= 1e17, "D1");
-        require(_shortLeverage - alm.shortLeverage() <= 1e17, "D2");
+        require(_longLeverage - longLeverage <= 1e17, "D1");
+        require(_shortLeverage - shortLeverage <= 1e17, "D2");
     }
 
     // @Notice: this function is mainly for removing stack too deep error
@@ -179,17 +212,17 @@ contract SRebalanceAdapter is Ownable {
             uint256 targetCS;
             uint256 price = IOracle(alm.oracle()).price();
             if (invertAssets) {
-                targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage()).div(price);
-                targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(alm.shortLeverage());
+                targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
+                targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
 
-                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(alm.longLeverage()));
-                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(alm.shortLeverage()));
+                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
+                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             } else {
-                targetCL = alm.TVL().mul(alm.weight()).mul(alm.longLeverage());
-                targetCS = alm.TVL().mul(1e18 - alm.weight()).mul(alm.shortLeverage()).mul(price);
+                targetCL = alm.TVL().mul(weight).mul(longLeverage);
+                targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
 
-                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(alm.longLeverage()));
-                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(alm.shortLeverage()));
+                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
+                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             }
 
             // console.log("targetCL", targetCL);

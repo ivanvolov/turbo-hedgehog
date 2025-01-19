@@ -82,7 +82,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
         positionManager.setHook(address(hook));
         positionManager.setLendingAdapter(address(lendingAdapter));
-        positionManager.setKParams(1425 * 1e15, 1425 * 1e15);
+        positionManager.setRebalanceAdapter(address(rebalanceAdapter));
 
         lendingAdapter.addAuthorizedCaller(address(hook));
         lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
@@ -90,9 +90,8 @@ abstract contract ALMTestBase is Test, Deployers {
 
         rebalanceAdapter.setALM(address(hook));
         rebalanceAdapter.setLendingAdapter(address(lendingAdapter));
-        rebalanceAdapter.setSqrtPriceLastRebalance(initialSQRTPrice);
-        rebalanceAdapter.setTickDeltaThreshold(250);
-        rebalanceAdapter.setRebalanceTimeThreshold(2000);
+        rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
+        rebalanceAdapter.setTimeAtLastRebalance(0);
 
         // MARK: Pool deployment
         PoolKey memory _key = PoolKey(

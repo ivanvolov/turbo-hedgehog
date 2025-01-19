@@ -20,7 +20,7 @@ import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 
-contract ALMSimulationTest is ALMTestSimBase {
+contract ETHALMSimulationTest is ALMTestSimBase {
     using PoolIdLibrary for PoolId;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
