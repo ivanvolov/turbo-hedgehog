@@ -181,7 +181,9 @@ library ALMMathLib {
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
         uint256 sqrtPriceX96 = getSqrtPriceAtTick(tick);
-        return (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
+        uint256 const = 6277101735386680763835789423207666416102355444464034512896; // const = 2^192
+        return (uint256(sqrtPriceX96)).pow(uint256(2e18)).mul(1e36).div(const);
+        // TODO: witch is better test: (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
     }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
