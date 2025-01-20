@@ -41,8 +41,6 @@ contract ALMGeneralTest is ALMTestBase {
         init_hook();
         approve_accounts();
         presetChainlinkOracles();
-
-        vm.prank(deployer.addr);
     }
 
     function test_hook_deployment_exploit_revert() public {
@@ -173,6 +171,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_migration() public {
+        //TODO: fix this test
         // test_deposit_rebalance();
         // // This is better to do after rebalance
         // vm.startPrank(deployer.addr);

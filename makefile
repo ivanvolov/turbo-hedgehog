@@ -15,6 +15,9 @@ t:
 	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_deposit"
 tl:
 	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_deposit"
+tg:
+	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
+
 
 spell:
 	clear && cspell "**/*.*"
