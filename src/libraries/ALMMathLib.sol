@@ -72,37 +72,6 @@ library ALMMathLib {
         return (LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity));
     }
 
-    function getLiquidityFromAmount1SqrtPriceX96(
-        uint160 sqrtPriceUpperX96,
-        uint160 sqrtPriceLowerX96,
-        uint256 amount1
-    ) internal pure returns (uint128) {
-        return LiquidityAmounts.getLiquidityForAmount1(sqrtPriceUpperX96, sqrtPriceLowerX96, amount1);
-    }
-
-    function getLiquidityFromAmount0SqrtPriceX96(
-        uint160 sqrtPriceUpperX96,
-        uint160 sqrtPriceLowerX96,
-        uint256 amount0
-    ) internal pure returns (uint128) {
-        return LiquidityAmounts.getLiquidityForAmount0(sqrtPriceUpperX96, sqrtPriceLowerX96, amount0);
-    }
-
-    function getAmountsFromLiquiditySqrtPriceX96(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceUpperX96,
-        uint160 sqrtPriceLowerX96,
-        uint128 liquidity
-    ) internal pure returns (uint256, uint256) {
-        return
-            LiquidityAmounts.getAmountsForLiquidity(
-                sqrtPriceCurrentX96,
-                sqrtPriceUpperX96,
-                sqrtPriceLowerX96,
-                liquidity
-            );
-    }
-
     function calculateSwapFee(int256 RV7, int256 RV30) internal pure returns (uint256) {
         int256 F0 = 3000000000000000; // 0.003
         int256 alpha = 2049000000000000000; // 2.049
@@ -179,6 +148,22 @@ library ALMMathLib {
             );
     }
 
+    function getVLP(
+        uint256 TVL,
+        uint256 weight,
+        uint256 longLeverage,
+        uint256 shortLeverage
+    ) internal pure returns (uint256) {
+        uint256 ratio = uint256(
+            (int256(weight) * (int256(longLeverage) - int256(shortLeverage))) / 1e18 + int256(shortLeverage)
+        );
+        return ratio.mul(TVL);
+    }
+
+    function getL(uint256 V, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
+        return V.div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()));
+    }
+
     function getUserAmounts(
         uint256 totalSupply,
         uint256 sharesOut,
@@ -193,6 +178,11 @@ library ALMMathLib {
     }
 
     // --- Helpers ---
+
+    function getPriceFromTick(int24 tick) internal pure returns (uint256) {
+        uint256 sqrtPriceX96 = getSqrtPriceAtTick(tick);
+        return (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
+    }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
         return TickMath.getSqrtPriceAtTick(tick);

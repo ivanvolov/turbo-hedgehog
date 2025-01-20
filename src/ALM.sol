@@ -23,7 +23,6 @@ import {ILendingPool} from "@src/interfaces/IAave.sol";
 
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 
 /// @title ALM
 /// @author IVikkk
@@ -59,28 +58,19 @@ contract ALM is BaseStrategyHook, ERC20 {
         return ALM.afterInitialize.selector;
     }
 
-    function deposit(address to, uint256 amount) external notPaused notShutdown returns (uint256, uint256) {
-        if (amount == 0) revert ZeroLiquidity();
+    function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
+        if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
 
-        uint128 deltaLiquidity;
-        uint256 amountIn;
         if (isInvertAssets) {
-            (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount0(amount);
-            console.log("amountIn", amount);
-            console.log("amountWant", amountIn);
             USDC.transferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(ALMBaseLib.usdcBalance(address(this)));
         } else {
-            (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount1(amount);
-            console.log("amountIn", amount);
-            console.log("amountWant", amountIn);
             WETH.transferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
         }
 
-        liquidity = liquidity + deltaLiquidity;
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
@@ -102,7 +92,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         if (uDS == 0 || uDL == 0) revert ZeroDebt();
         _burn(msg.sender, sharesOut);
-        //TODO: remove liquidity from the pool
+        liquidity = rebalanceAdapter.calcLiquidity();
 
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
@@ -278,44 +268,6 @@ contract ALM is BaseStrategyHook, ERC20 {
     function sharePrice() external view returns (uint256) {
         if (totalSupply() == 0) return 0;
         return (TVL() * 1e18) / totalSupply();
-    }
-
-    function _calcDepositLiquidityFromAmount0(
-        uint256 amount
-    ) public view returns (uint128 _liquidity, uint256 _amount) {
-        console.log("sqrtPriceCurrent", sqrtPriceCurrent);
-        console.log("tickUpper", tickUpper);
-        console.log("tickLower", tickLower);
-        _liquidity = ALMMathLib.getLiquidityFromAmount0SqrtPriceX96(
-            ALMMathLib.getSqrtPriceAtTick(tickUpper),
-            sqrtPriceCurrent,
-            amount
-        );
-        (_amount, ) = ALMMathLib.getAmountsFromLiquiditySqrtPriceX96(
-            sqrtPriceCurrent,
-            ALMMathLib.getSqrtPriceAtTick(tickUpper),
-            ALMMathLib.getSqrtPriceAtTick(tickLower),
-            _liquidity
-        );
-    }
-
-    function _calcDepositLiquidityFromAmount1(
-        uint256 amount
-    ) public view returns (uint128 _liquidity, uint256 _amount) {
-        console.log("sqrtPriceCurrent", sqrtPriceCurrent);
-        console.log("tickUpper", tickUpper);
-        console.log("tickLower", tickLower);
-        _liquidity = ALMMathLib.getLiquidityFromAmount1SqrtPriceX96(
-            ALMMathLib.getSqrtPriceAtTick(tickUpper),
-            sqrtPriceCurrent,
-            amount
-        );
-        (, _amount) = ALMMathLib.getAmountsFromLiquiditySqrtPriceX96(
-            sqrtPriceCurrent,
-            ALMMathLib.getSqrtPriceAtTick(tickUpper),
-            ALMMathLib.getSqrtPriceAtTick(tickLower),
-            _liquidity
-        );
     }
 
     // TODO: Notice * I'm not using it now in the code at all.

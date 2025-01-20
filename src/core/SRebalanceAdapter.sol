@@ -42,6 +42,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     IALM public alm;
 
     uint160 public sqrtPriceAtLastRebalance;
+    uint256 public oraclePriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
 
     IERC20 WETH = IERC20(ALMBaseLib.WETH);
@@ -52,8 +53,8 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
     // ** Parameters
-    int24 public tickDeltaThreshold = 2000;
-    uint256 public rebalanceTimeThreshold = 2000;
+    uint256 public rebalancePriceThreshold;
+    uint256 public rebalanceTimeThreshold;
     uint256 public weight = 6 * 1e17; // 0.6%
     uint256 public longLeverage = 3 * 1e18;
     uint256 public shortLeverage = 2 * 1e18;
@@ -83,12 +84,16 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         alm = IALM(_alm);
     }
 
-    function setTickDeltaThreshold(int24 _tickDeltaThreshold) external onlyOwner {
-        tickDeltaThreshold = _tickDeltaThreshold;
+    function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
+        rebalancePriceThreshold = _rebalancePriceThreshold;
     }
 
     function setSqrtPriceAtLastRebalance(uint160 _sqrtPriceAtLastRebalance) external onlyOwner {
         sqrtPriceAtLastRebalance = _sqrtPriceAtLastRebalance;
+    }
+
+    function setOraclePriceAtLastRebalance(uint256 _oraclePriceAtLastRebalance) external onlyOwner {
+        oraclePriceAtLastRebalance = _oraclePriceAtLastRebalance;
     }
 
     function setTimeAtLastRebalance(uint256 _timeAtLastRebalance) external onlyOwner {
@@ -125,21 +130,16 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
     // ** Logic
 
-    function isRebalanceNeeded() public view returns (bool, int24, uint256) {
-        (bool _isPriceRebalance, int24 tickDelta) = isPriceRebalance();
+    function isRebalanceNeeded() public view returns (bool, int256, uint256) {
+        (bool _isPriceRebalance, int256 tickDelta) = isPriceRebalance();
         (bool _isTimeRebalance, uint256 auctionTriggerTime) = isTimeRebalance();
 
         return (_isPriceRebalance || _isTimeRebalance, tickDelta, auctionTriggerTime);
     }
 
-    function isPriceRebalance() public view returns (bool, int24) {
-        int24 tickLastRebalance = ALMMathLib.getTickFromSqrtPrice(sqrtPriceAtLastRebalance);
-        int24 tickCurrent = ALMMathLib.getTickFromSqrtPrice(alm.sqrtPriceCurrent());
-
-        int24 tickDelta = tickCurrent - tickLastRebalance;
-        tickDelta = tickDelta > 0 ? tickDelta : -tickDelta;
-
-        return (tickDelta > tickDeltaThreshold, tickDelta);
+    function isPriceRebalance() public view returns (bool, int256) {
+        int256 priceDelta = int256(IOracle(alm.oracle()).price()) - int256(oraclePriceAtLastRebalance);
+        return (ALMMathLib.abs(priceDelta) > rebalancePriceThreshold, priceDelta);
     }
 
     function isTimeRebalance() public view returns (bool, uint256) {
@@ -167,10 +167,30 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         // ** Check max deviation
         checkDeviations();
 
-        // Update state
+        // ** Update state
         sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
+        oraclePriceAtLastRebalance = IOracle(alm.oracle()).price();
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
+        alm.updateLiquidity(calcLiquidity());
+    }
+
+    function calcLiquidity() public view returns (uint128) {
+        uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+        console.log("VLP %s", VLP);
+        console.log("price %s", oraclePriceAtLastRebalance);
+        console.log("priceUpper %s", uint256(1e12).div(ALMMathLib.getPriceFromTick(alm.tickUpper())));
+        console.log("priceLower %s", uint256(1e12).div(ALMMathLib.getPriceFromTick(alm.tickLower())));
+
+        return
+            uint128(
+                ALMMathLib.getL(
+                    VLP,
+                    oraclePriceAtLastRebalance,
+                    uint256(1e12).div(ALMMathLib.getPriceFromTick(alm.tickUpper())),
+                    uint256(1e12).div(ALMMathLib.getPriceFromTick(alm.tickLower()))
+                )
+            );
     }
 
     function checkDeviations() internal view {

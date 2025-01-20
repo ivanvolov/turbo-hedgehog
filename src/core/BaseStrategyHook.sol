@@ -24,6 +24,7 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 abstract contract BaseStrategyHook is BaseHook, IALM {
@@ -33,7 +34,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     ILendingAdapter public lendingAdapter;
     IPositionManager public positionManager;
     IOracle public oracle;
-    address public rebalanceAdapter;
+    IRebalanceAdapter public rebalanceAdapter;
 
     IERC20 WETH = IERC20(ALMBaseLib.WETH);
     IERC20 USDC = IERC20(ALMBaseLib.USDC);
@@ -81,7 +82,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     }
 
     function setRebalanceAdapter(address _rebalanceAdapter) external onlyHookAdmin {
-        rebalanceAdapter = _rebalanceAdapter;
+        rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
     }
 
     function setHookAdmin(address _hookAdmin) external onlyHookAdmin {
@@ -140,6 +141,10 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     function updateBoundaries() public onlyRebalanceAdapter {
         _updateBoundaries();
+    }
+
+    function updateLiquidity(uint128 _liquidity) public onlyRebalanceAdapter {
+        liquidity = _liquidity;
     }
 
     function _updateBoundaries() internal {
@@ -221,7 +226,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     /// @dev Only the rebalance adapter may call this function
     modifier onlyRebalanceAdapter() {
-        if (msg.sender != rebalanceAdapter) revert NotRebalanceAdapter();
+        if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter();
         _;
     }
 

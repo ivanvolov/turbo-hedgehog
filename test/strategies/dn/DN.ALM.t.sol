@@ -45,7 +45,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
             vm.startPrank(deployer.addr);
             hook.setInvertAssets(true);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setTickDeltaThreshold(250);
+            rebalanceAdapter.setRebalancePriceThreshold(1e18);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(45 * 1e16); // 0.45 (45%)
             rebalanceAdapter.setLongLeverage(3 * 1e18); // 3

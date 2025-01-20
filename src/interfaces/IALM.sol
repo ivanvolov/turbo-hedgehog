@@ -32,9 +32,9 @@ interface IALM {
 
     function tickUpper() external view returns (int24);
 
-    function rebalanceAdapter() external view returns (address);
-
     function updateBoundaries() external;
+
+    function updateLiquidity(uint128 _liquidity) external;
 
     function sqrtPriceCurrent() external view returns (uint160);
 

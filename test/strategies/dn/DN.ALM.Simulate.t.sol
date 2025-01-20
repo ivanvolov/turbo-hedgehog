@@ -215,7 +215,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
     }
 
     function try_rebalance() internal {
-        (bool isRebalance, int24 delta, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
+        (bool isRebalance, int256 delta, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
         console.log("isRebalance", isRebalance);
         if (isRebalance) {
             console.log(">> doing rebalance");

@@ -91,6 +91,7 @@ abstract contract ALMTestBase is Test, Deployers {
         rebalanceAdapter.setALM(address(hook));
         rebalanceAdapter.setLendingAdapter(address(lendingAdapter));
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
+        rebalanceAdapter.setOraclePriceAtLastRebalance(0);
         rebalanceAdapter.setTimeAtLastRebalance(0);
 
         // MARK: Pool deployment
