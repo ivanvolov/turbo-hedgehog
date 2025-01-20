@@ -201,11 +201,11 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
         uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
 
-        // console.log("longLeverage %s", _longLeverage);
-        // console.log("shortLeverage %s", _shortLeverage);
+        console.log("longLeverage %s", _longLeverage);
+        console.log("shortLeverage %s", _shortLeverage);
 
-        require(_longLeverage - longLeverage <= 1e17, "D1");
-        require(_shortLeverage - shortLeverage <= 1e17, "D2");
+        require(_longLeverage - longLeverage <= maxDeviationLong, "D1");
+        require(_shortLeverage - shortLeverage <= maxDeviationShort, "D2");
     }
 
     // @Notice: this function is mainly for removing stack too deep error
