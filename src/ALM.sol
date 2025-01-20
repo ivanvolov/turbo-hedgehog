@@ -68,12 +68,14 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 amountIn;
         if (isInvertAssets) {
             (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount0(amount);
-            // console.log("amount", amount);
-            // console.log("amountIn", amountIn);
+            console.log("amountIn", amount);
+            console.log("amountWant", amountIn);
             USDC.transferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(ALMBaseLib.usdcBalance(address(this)));
         } else {
             (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount1(amount);
+            console.log("amountIn", amount);
+            console.log("amountWant", amountIn);
             WETH.transferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
         }
@@ -100,6 +102,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         if (uDS == 0 || uDL == 0) revert ZeroDebt();
         _burn(msg.sender, sharesOut);
+        //TODO: remove liquidity from the pool
 
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
@@ -280,6 +283,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     function _calcDepositLiquidityFromAmount0(
         uint256 amount
     ) public view returns (uint128 _liquidity, uint256 _amount) {
+        console.log("sqrtPriceCurrent", sqrtPriceCurrent);
+        console.log("tickUpper", tickUpper);
+        console.log("tickLower", tickLower);
         _liquidity = ALMMathLib.getLiquidityFromAmount0SqrtPriceX96(
             ALMMathLib.getSqrtPriceAtTick(tickUpper),
             sqrtPriceCurrent,
@@ -296,6 +302,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     function _calcDepositLiquidityFromAmount1(
         uint256 amount
     ) public view returns (uint128 _liquidity, uint256 _amount) {
+        console.log("sqrtPriceCurrent", sqrtPriceCurrent);
+        console.log("tickUpper", tickUpper);
+        console.log("tickLower", tickLower);
         _liquidity = ALMMathLib.getLiquidityFromAmount1SqrtPriceX96(
             ALMMathLib.getSqrtPriceAtTick(tickUpper),
             sqrtPriceCurrent,

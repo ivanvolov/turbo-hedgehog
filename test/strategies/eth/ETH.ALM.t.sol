@@ -80,7 +80,7 @@ contract ETHALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        assertApproxEqAbs(shares, willTake, 1e1, "shares returned");
+        assertEq(shares, willTake, "shares returned");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceState(alice.addr, amountToDep - willTake, 0);
@@ -89,7 +89,7 @@ contract ETHALMTest is ALMTestBase {
         assertEqPositionState(willTake, 0, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), willTake, 1e1, "TVL");
+        assertEq(hook.TVL(), willTake, "TVL");
     }
 
     function test_deposit_withdraw_revert() public {

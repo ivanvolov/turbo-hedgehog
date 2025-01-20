@@ -80,7 +80,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        assertApproxEqAbs(shares, willTake * 1e12, 1e1, "shares returned");
+        assertEq(shares, willTake * 1e12, "shares returned");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceState(alice.addr, 0, amountToDep - willTake);
@@ -88,7 +88,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(0, willTake, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), willTake * 1e12, 1e1, "TVL");
+        assertEq(hook.TVL(), willTake * 1e12, "TVL");
     }
 
     function test_deposit_withdraw_revert() public {
