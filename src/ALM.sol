@@ -68,6 +68,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 amountIn;
         if (isInvertAssets) {
             (deltaLiquidity, amountIn) = _calcDepositLiquidityFromAmount0(amount);
+            // console.log("amount", amount);
+            // console.log("amountIn", amountIn);
             USDC.transferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(ALMBaseLib.usdcBalance(address(this)));
         } else {

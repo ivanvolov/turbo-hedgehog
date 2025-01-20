@@ -59,8 +59,6 @@ contract ETHALMTest is ALMTestBase {
         presetChainlinkOracles();
     }
 
-    uint256 amountToDep = 100 ether;
-
     function test_withdraw() public {
         vm.expectRevert(IALM.NotZeroShares.selector);
         vm.prank(alice.addr);
@@ -71,25 +69,30 @@ contract ETHALMTest is ALMTestBase {
         hook.withdraw(alice.addr, 10, 0);
     }
 
+    uint256 amountToDep = 100 ether;
+    uint256 willTake = 99999999999999998278;
+
     function test_deposit() public {
-        assertEq(hook.TVL(), 0);
+        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        assertApproxEqAbs(shares, amountToDep, 1e10);
-        assertEq(hook.balanceOf(alice.addr), shares);
+        assertApproxEqAbs(shares, willTake, 1e1, "shares returned");
+        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
+        assertEqBalanceState(alice.addr, amountToDep - willTake, 0);
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(amountToDep, 0, 0, 0);
+        assertEqPositionState(willTake, 0, 0, 0);
 
-        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice);
-        assertApproxEqAbs(hook.TVL(), amountToDep, 1e4);
+        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
+        assertApproxEqAbs(hook.TVL(), willTake, 1e1, "TVL");
     }
 
-    function test_deposit_withdraw() public {
+    function test_deposit_withdraw_revert() public {
         test_deposit();
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
