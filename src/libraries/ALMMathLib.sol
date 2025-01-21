@@ -82,14 +82,6 @@ library ALMMathLib {
         return uint256(max(minFee, min(maxFess, (F0 * (1e18 + R)) / 1e18)));
     }
 
-    function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
-        //const = 2^192
-        uint256 price = uint256(sqrtPriceX96).pow(uint256(2e18)).mul(1e36).div(
-            6277101735386680763835789423207666416102355444464034512896
-        );
-        return uint256(1e30).div(price);
-    }
-
     function getWithdrawAmount(uint256 shares, uint256 totalSupply, uint256 amount) internal pure returns (uint256) {
         uint256 ratio = shares.div(totalSupply);
         return amount.mul(ratio);
@@ -181,7 +173,10 @@ library ALMMathLib {
     // --- Helpers ---
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
-        uint256 sqrtPriceX96 = getSqrtPriceAtTick(tick);
+        return getPriceFromSqrtPriceX96(getSqrtPriceAtTick(tick));
+    }
+
+    function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
         uint256 const = 6277101735386680763835789423207666416102355444464034512896; // const = 2^192
         return (uint256(sqrtPriceX96)).pow(uint256(2e18)).mul(1e36).div(const);
         // TODO: witch is better test: (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));

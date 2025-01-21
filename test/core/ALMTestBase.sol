@@ -247,9 +247,10 @@ abstract contract ALMTestBase is Test, Deployers {
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         // console.log("CL", lendingAdapter.getCollateralLong());
-        // console.log("CS", lendingAdapter.getCollateralShort());
-        // console.log("DL", lendingAdapter.getBorrowedLong());
+        // console.log("CS", ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()));
+        // console.log("DL", ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()));
         // console.log("DS", lendingAdapter.getBorrowedShort());
+
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), CL, 1e10, "CL not equal");
         assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()), CS, 1e10, "CS not equal");
         assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()), DL, 1e10, "DL not equal");

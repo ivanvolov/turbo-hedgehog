@@ -204,6 +204,8 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 usdcIn,
                 uint160 sqrtPriceNext
             ) = getZeroForOneDeltas(params.amountSpecified);
+            // console.log("> wethOut", wethOut);
+            // console.log("> usdcIn", usdcIn);
 
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
@@ -224,6 +226,8 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 usdcOut,
                 uint160 sqrtPriceNext
             ) = getOneForZeroDeltas(params.amountSpecified);
+            // console.log("> wethIn", wethIn);
+            // console.log("> usdcOut", usdcOut);
             key.currency1.take(poolManager, address(this), wethIn, false);
 
             positionManager.positionAdjustmentPriceDown(ALMBaseLib.c6to18(usdcOut), wethIn);
@@ -231,6 +235,16 @@ contract ALM is BaseStrategyHook, ERC20 {
             key.currency0.settle(poolManager, address(this), usdcOut, false);
             sqrtPriceCurrent = sqrtPriceNext;
             return beforeSwapDelta;
+        }
+    }
+
+    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256, uint256) {
+        if (zeroForOne) {
+            (, uint256 wethOut, uint256 usdcIn, ) = getZeroForOneDeltas(amountSpecified);
+            return (usdcIn, wethOut);
+        } else {
+            (, uint256 wethIn, uint256 usdcOut, ) = getOneForZeroDeltas(amountSpecified);
+            return (usdcOut, wethIn);
         }
     }
 

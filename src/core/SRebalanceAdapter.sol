@@ -134,6 +134,8 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         (bool _isPriceRebalance, int256 tickDelta) = isPriceRebalance();
         (bool _isTimeRebalance, uint256 auctionTriggerTime) = isTimeRebalance();
 
+        console.log("tickDelta %s", uint256(tickDelta));
+        console.log("auctionTriggerTime %s", auctionTriggerTime);
         return (_isPriceRebalance || _isTimeRebalance, tickDelta, auctionTriggerTime);
     }
 

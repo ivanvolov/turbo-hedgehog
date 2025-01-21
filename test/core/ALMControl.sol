@@ -234,7 +234,7 @@ contract ALMControl is BaseHook, ERC20 {
 
     function _calcCurrentPrice() public view returns (uint256) {
         (uint160 sqrtPriceX96, ) = getTick();
-        return ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96);
+        return uint256(1e30).div(ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96));
     }
 
     function afterInitialize(address, PoolKey calldata _key, uint160, int24) external override returns (bytes4) {
