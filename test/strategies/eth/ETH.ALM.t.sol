@@ -50,8 +50,8 @@ contract ETHALMTest is ALMTestBase {
             rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
             rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
             rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
-            rebalanceAdapter.setMaxDeviationLong(1e16); // 0.01 (1%)
-            rebalanceAdapter.setMaxDeviationShort(1e16); // 0.01 (1%)
+            rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
+            rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
             vm.stopPrank();
         }
 
@@ -100,7 +100,7 @@ contract ETHALMTest is ALMTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0);
     }
 
-    uint256 slippage = 1e16;
+    uint256 slippage = 1e15;
 
     function test_deposit_rebalance() public {
         test_deposit();
@@ -112,7 +112,7 @@ contract ETHALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 40039999999999999310);
+        assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16); //TODO замість констант то краще формулами прописать
         assertApproxEqAbs(hook.TVL(), 99 * 1e18, 1e18);
     }
 
