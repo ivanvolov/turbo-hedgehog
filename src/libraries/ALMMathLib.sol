@@ -154,9 +154,6 @@ library ALMMathLib {
         uint256 longLeverage,
         uint256 shortLeverage
     ) internal pure returns (uint256) {
-
-        console.log("TVl %s", TVL);
-
         uint256 ratio = uint256(
             (int256(weight) * (int256(longLeverage) - int256(shortLeverage))) / 1e18 + int256(shortLeverage)
         );
@@ -164,7 +161,8 @@ library ALMMathLib {
     }
 
     function getL(uint256 V, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        return (V.mul(price)).div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()));
+        return
+            (V.mul(price)).div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()));
     }
 
     function getUserAmounts(
@@ -224,5 +222,10 @@ library ALMMathLib {
         unchecked {
             return uint256(n >= 0 ? n : -n); //TODO: why unchecked?
         }
+    }
+
+    function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
+        int256 n = int256(a) - int256(b);
+        return abs(n);
     }
 }

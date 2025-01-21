@@ -58,7 +58,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     uint256 public weight;
     uint256 public longLeverage;
     uint256 public shortLeverage;
-    uint256 public maxDeviationLong; 
+    uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
     bool public invertAssets = false;
 
@@ -166,11 +166,8 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         // console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
 
-
-        lendingAdapter.repayLong(ALMBaseLib.usdcBalance(address(this)));
-        //lendingAdapter.repayShort(ALMBaseLib.wethBalance(address(this)));
-        //console.log("USDC balance after %s", ALMBaseLib.usdcBalance(address(this)));
-        //console.log("WETH balance after %s", ALMBaseLib.wethBalance(address(this)));
+        console.log("USDC balance after %s", ALMBaseLib.usdcBalance(address(this)));
+        console.log("WETH balance after %s", ALMBaseLib.wethBalance(address(this)));
 
         // ** Check max deviation
         checkDeviations();
@@ -191,25 +188,14 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         console.log("priceUpper %s", uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickUpper())));
         console.log("priceLower %s", uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickLower())));
 
-        uint256 liquidity =
-            ALMMathLib.getL(
-                VLP,
-                oraclePriceAtLastRebalance,
-                uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickUpper())),
-                uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickLower()))
-                );
-
+        uint256 liquidity = ALMMathLib.getL(
+            VLP,
+            oraclePriceAtLastRebalance,
+            uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickUpper())),
+            uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickLower()))
+        );
         console.log("liquidity %s", liquidity);
-
         return uint128(liquidity);
-//            uint128(
-//                ALMMathLib.getL(
-//                    VLP,
-//                    oraclePriceAtLastRebalance,
-//                    uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickUpper())),
-//                    uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickLower()))
-//                )
-//            );
     }
 
     function checkDeviations() internal view {
@@ -217,22 +203,21 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         uint256 currentCL = lendingAdapter.getCollateralLong();
         uint256 currentCS = lendingAdapter.getCollateralShort();
 
-        console.log("CL after %s", currentCL);
-        console.log("CS after %s", currentCS);
-        console.log("DL after %s", lendingAdapter.getBorrowedLong());
-        console.log("DS after %s", lendingAdapter.getBorrowedShort());
+        // console.log("CL after %s", currentCL);
+        // console.log("CS after %s", currentCS);
+        // console.log("DL after %s", lendingAdapter.getBorrowedLong());
+        // console.log("DS after %s", lendingAdapter.getBorrowedShort());
 
         uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
         uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
 
-        console.log("longLeverage %s", _longLeverage);
-        console.log("shortLeverage %s", _shortLeverage);
+        // console.log("longLeverage %s", _longLeverage);
+        // console.log("shortLeverage %s", _shortLeverage);
 
-        uint256 deviationLong = _longLeverage > longLeverage ? _longLeverage - longLeverage : longLeverage - _longLeverage;
-        uint256 deviationShort = _shortLeverage > shortLeverage ? _shortLeverage - shortLeverage : shortLeverage - _shortLeverage;
-        
+        uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
+        uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);
         require(deviationLong <= maxDeviationLong, "D1");
-        require(deviationShort<= maxDeviationShort, "D2");
+        require(deviationShort <= maxDeviationShort, "D2");
     }
 
     // @Notice: this function is mainly for removing stack too deep error
@@ -254,23 +239,20 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
             console.log("currentCS", lendingAdapter.getCollateralShort());
             console.log("currentDL", lendingAdapter.getBorrowedLong());
             console.log("currentDS", lendingAdapter.getBorrowedShort());
-
-            uint256 TVL = alm.TVL();
-
-            console.log("preTVL %s", TVL);
+            console.log("preTVL %s", alm.TVL());
 
             uint256 targetCL;
             uint256 targetCS;
             uint256 price = IOracle(alm.oracle()).price();
             if (invertAssets) {
-                targetCL = TVL.mul(weight).mul(longLeverage).div(price);
-                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage);
+                targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
+                targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
 
                 targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             } else {
-                targetCL = TVL.mul(weight).mul(longLeverage);
-                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage).mul(price);
+                targetCL = alm.TVL().mul(weight).mul(longLeverage);
+                targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
 
                 targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
@@ -356,8 +338,8 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
                 address(USDC),
                 borrowedWETH - ALMBaseLib.wethBalance(address(this))
             );
-        if (borrowedUSDC > ALMBaseLib.usdcBalance(address(this)))
-            lendingAdapter.repayLong(borrowedUSDC - ALMBaseLib.usdcBalance(address(this)));
+        if (borrowedUSDC < ALMBaseLib.usdcBalance(address(this)))
+            lendingAdapter.repayLong(ALMBaseLib.usdcBalance(address(this)) - borrowedUSDC);
 
         return true;
     }

@@ -112,7 +112,7 @@ contract ETHALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16); //TODO замість констант то краще формулами прописать
+        assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16);
         assertApproxEqAbs(hook.TVL(), 99 * 1e18, 1e18);
     }
 
