@@ -187,14 +187,14 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
         console.log("VLP %s", VLP);
         console.log("price      %s", oraclePriceAtLastRebalance);
-        console.log("priceUpper %s", uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickUpper())));
-        console.log("priceLower %s", uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickLower())));
+        console.log("priceUpper %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())));
+        console.log("priceLower %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower())));
 
         uint256 liquidity = ALMMathLib.getL(
             VLP,
             oraclePriceAtLastRebalance,
-            uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickUpper())),
-            uint256(1e30).div(ALMMathLib.getPriceFromTick(alm.tickLower()))
+            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())),
+            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower()))
         );
         console.log("liquidity %s", liquidity);
         return uint128(liquidity);

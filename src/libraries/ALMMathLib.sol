@@ -182,6 +182,10 @@ library ALMMathLib {
         // TODO: witch is better test: (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
     }
 
+    function reversePrice(uint256 price) internal pure returns (uint256) {
+        return uint256(1e30).div(price); // TODO: this can change according to decimals and order
+    }
+
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
         return TickMath.getSqrtPriceAtTick(tick);
     }

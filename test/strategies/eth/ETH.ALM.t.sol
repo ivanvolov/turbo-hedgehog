@@ -111,7 +111,9 @@ contract ETHALMTest is ALMTestBase {
     uint256 slippage = 1e15;
 
     function test_deposit_rebalance() public {
+        console.log("price (0)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(initialSQRTPrice)));
         test_deposit();
+        console.log("price (1)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
 
         vm.expectRevert();
         rebalanceAdapter.rebalance(slippage);
@@ -122,6 +124,7 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
         assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16);
         assertApproxEqAbs(hook.TVL(), 99890660873473629515, 1e1);
+        console.log("price (2)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
@@ -255,15 +258,14 @@ contract ETHALMTest is ALMTestBase {
             assertEqBalanceState(address(hook), 0, 0);
         }
 
-        // ** Make oracle change with swap price
-        {
-            uint256 price = ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent());
-            console.log("price", price);
-            console.log(IOracle(hook.oracle()).price());
-            vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(price));
-            console.log(IOracle(hook.oracle()).price());
-            //TODO: maybe update aave lending pool here
-        }
+        console.log("price (3)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
+        // // ** Make oracle change with swap price
+        // {
+        //     console.log(IOracle(hook.oracle()).price());
+        //     // vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()))));
+        //     // console.log(IOracle(hook.oracle()).price());
+        //     // //TODO: maybe update aave lending pool here
+        // }
 
         // // ** Second rebalance
         // {
