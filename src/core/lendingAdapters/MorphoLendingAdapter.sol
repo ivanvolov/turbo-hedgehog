@@ -3,12 +3,16 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-import "@src/interfaces/ILendingAdapter.sol";
+// ** libraries
 import {IMorpho, Id, Position} from "@forks/morpho/IMorpho.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
+
+// ** contracts
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
+
+// ** interfaces
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 
 contract MorphoLendingAdapter is Ownable, ILendingAdapter {
     IMorpho public constant morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);

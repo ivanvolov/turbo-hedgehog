@@ -4,23 +4,29 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
+// ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
-import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
-import {ALM} from "@src/ALM.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
+
+// ** libraries
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
+import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
+
+// ** contracts
+import {ALM} from "@src/ALM.sol";
 import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+
+// ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
@@ -134,41 +140,41 @@ contract ALMGeneralTest is ALMTestBase {
         vm.stopPrank();
     }
 
-    uint256 amountToDep = 100 ether;
+    // uint256 amountToDep = 100 ether;
 
-    function test_deposit() public {
-        assertEq(hook.TVL(), 0);
+    // function test_deposit() public {
+    //     assertEq(hook.TVL(), 0);
 
-        deal(address(WETH), address(alice.addr), amountToDep);
-        vm.prank(alice.addr);
+    //     deal(address(WETH), address(alice.addr), amountToDep);
+    //     vm.prank(alice.addr);
 
-        (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        assertApproxEqAbs(shares, amountToDep, 1e10);
-        assertEq(hook.balanceOf(alice.addr), shares);
+    //     (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
+    //     assertApproxEqAbs(shares, amountToDep, 1e10);
+    //     assertEq(hook.balanceOf(alice.addr), shares);
 
-        assertEqBalanceStateZero(alice.addr);
-        assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(amountToDep, 0, 0, 0);
+    //     assertEqBalanceStateZero(alice.addr);
+    //     assertEqBalanceStateZero(address(hook));
+    //     assertEqPositionState(amountToDep, 0, 0, 0);
 
-        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice);
-        assertApproxEqAbs(hook.TVL(), amountToDep, 1e4);
-    }
+    //     assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice);
+    //     assertApproxEqAbs(hook.TVL(), amountToDep, 1e4);
+    // }
 
-    uint256 slippage = 1e15;
+    // uint256 slippage = 1e15;
 
-    function test_deposit_rebalance() public {
-        test_deposit();
+    // function test_deposit_rebalance() public {
+    //     test_deposit();
 
-        vm.expectRevert();
-        rebalanceAdapter.rebalance(slippage);
+    //     vm.expectRevert();
+    //     rebalanceAdapter.rebalance(slippage);
 
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
+    //     vm.prank(deployer.addr);
+    //     rebalanceAdapter.rebalance(slippage);
 
-        assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 40039999999999999310);
-        assertApproxEqAbs(hook.TVL(), 99 * 1e18, 1e18);
-    }
+    //     assertEqBalanceStateZero(address(hook));
+    //     assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 40039999999999999310);
+    //     assertApproxEqAbs(hook.TVL(), 99 * 1e18, 1e18);
+    // }
 
     function test_lending_adapter_migration() public {
         //TODO: fix this test

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
+// ** interfaces
 import {Id} from "@forks/morpho/IMorpho.sol";
 
 interface ILendingAdapter {

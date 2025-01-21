@@ -3,26 +3,30 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {Currency} from "v4-core/types/Currency.sol";
-import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+// ** v4 imports
 import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
-import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-
+import {Hooks} from "v4-core/libraries/Hooks.sol";
+import {Currency} from "v4-core/types/Currency.sol";
+import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
-
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {PRBMathUD60x18} from "../../src/libraries/math/PRBMathUD60x18.sol";
-import {ABDKMath64x64} from "../../src/libraries/math/ABDKMath64x64.sol";
+import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
+import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
+// ** libraries
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {ABDKMath64x64} from "@src/libraries/math/ABDKMath64x64.sol";
+
+// ** contracts
+import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+
+// ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 
 /// @title ALM Control hook for simulation

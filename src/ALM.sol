@@ -3,25 +3,29 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
+// ** v4 imports
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 
-import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
-import {ILendingPool} from "@src/interfaces/IAave.sol";
+// ** libraries
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+// ** contracts
+import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
+import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+
+// ** interfaces
+import {ILendingPool} from "@src/interfaces/IAave.sol";
+import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
+import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
 
 /// @title ALM

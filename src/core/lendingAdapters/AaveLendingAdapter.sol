@@ -3,16 +3,21 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-import "@src/interfaces/ILendingAdapter.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-
+// ** Aave imports
 import {IPool} from "@aave-core-v3/contracts/interfaces/IPool.sol";
 import {IAaveOracle} from "@aave-core-v3/contracts/interfaces/IAaveOracle.sol";
 import {IPoolAddressesProvider} from "@aave-core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import {IPoolDataProvider} from "@aave-core-v3/contracts/interfaces/IPoolDataProvider.sol";
+
+// ** libraries
+import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
+
+// ** contracts
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+// ** interfaces
+import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 
 contract AaveLendingAdapter is Ownable, ILendingAdapter {
     //aaveV3

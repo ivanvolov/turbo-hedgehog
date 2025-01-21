@@ -3,18 +3,20 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
+// ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-
-import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 
+// ** contracts
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+// ** interfaces
+import {IALM} from "@src/interfaces/IALM.sol";
+import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
 
 /// @title PositionManager
 /// @author IVikkk

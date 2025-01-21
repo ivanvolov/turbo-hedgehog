@@ -11,6 +11,7 @@ import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 
 // ** libraries
@@ -19,19 +20,18 @@ import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 
 // ** contracts
-import {ERC721} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
+import {ERC721} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {ILendingPool} from "@src/interfaces/IAave.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;

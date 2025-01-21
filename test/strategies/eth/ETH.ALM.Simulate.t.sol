@@ -4,21 +4,26 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
+// ** v4 imports
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ALMTestSimBase} from "@test/core/ALMTestSimBase.sol";
-import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 
+// ** libraries
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
+import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
+
+// ** contracts
 import {ALM} from "@src/ALM.sol";
 import {ALMControl} from "@test/core/ALMControl.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {ALMTestSimBase} from "@test/core/ALMTestSimBase.sol";
+
+// ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
 contract ETHALMSimulationTest is ALMTestSimBase {
     using PoolIdLibrary for PoolId;
