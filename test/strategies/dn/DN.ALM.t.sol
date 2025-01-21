@@ -78,53 +78,52 @@ contract DeltaNeutralALMTest is ALMTestBase {
     }
 
     uint256 amountToDep = 100 * 3843 * 1e6;
-    uint256 willTake = 330772555959;
 
     function test_deposit() public {
         assertEq(hook.TVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
-        deal(address(WETH), address(alice.addr), amountToDep);
+        deal(address(USDC), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        assertEq(shares, amountToDep, "shares returned");
+        assertEq(shares, amountToDep * 1e12, "shares returned");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(amountToDep, 0, 0, 0);
+        assertEqPositionState(0, amountToDep, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertEq(hook.TVL(), amountToDep, "TVL");
+        assertEq(hook.TVL(), amountToDep * 1e12, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
-    // function test_deposit_withdraw_revert() public {
-    //     test_deposit();
+    function test_deposit_withdraw_revert() public {
+        test_deposit();
 
-    //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-    //     vm.expectRevert(IALM.ZeroDebt.selector);
-    //     vm.prank(alice.addr);
-    //     hook.withdraw(alice.addr, sharesToWithdraw, 0);
-    // }
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.expectRevert(IALM.ZeroDebt.selector);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+    }
 
-    // uint256 slippage = 1e15;
+    uint256 slippage = 1e15;
 
-    // function test_deposit_rebalance() public {
-    //     console.log("price (0)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(initialSQRTPrice)));
-    //     test_deposit();
-    //     console.log("price (1)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
+    function test_deposit_rebalance() public {
+        console.log("price (0)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(initialSQRTPrice)));
+        test_deposit();
+        console.log("price (1)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
 
-    //     vm.expectRevert();
-    //     rebalanceAdapter.rebalance(slippage);
+        vm.expectRevert();
+        rebalanceAdapter.rebalance(slippage);
 
-    //     vm.prank(deployer.addr);
-    //     rebalanceAdapter.rebalance(slippage);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(slippage);
 
-    //     assertEqBalanceStateZero(address(hook));
-    //     assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16);
-    //     assertApproxEqAbs(hook.TVL(), 99890660873473629515, 1e1);
-    //     console.log("price (2)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
-    // }
+        assertEqBalanceStateZero(address(hook));
+        // assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16);
+        // assertApproxEqAbs(hook.TVL(), 99890660873473629515, 1e1);
+        // console.log("price (2)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
+    }
 }
