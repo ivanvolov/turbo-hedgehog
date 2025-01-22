@@ -240,9 +240,9 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 _balanceUSDC,
         uint256 _balanceETH
     ) public view {
-        assertApproxEqAbs(WETH.balanceOf(owner), _balanceWETH, 10000, "Balance WETH not equal");
-        assertApproxEqAbs(USDC.balanceOf(owner), _balanceUSDC, 10, "Balance USDC not equal");
-        assertApproxEqAbs(owner.balance, _balanceETH, 10, "Balance ETH not equal");
+        assertApproxEqAbs(WETH.balanceOf(owner), _balanceWETH, 1e5, "Balance WETH not equal");
+        assertApproxEqAbs(USDC.balanceOf(owner), _balanceUSDC, 1e1, "Balance USDC not equal");
+        assertApproxEqAbs(owner.balance, _balanceETH, 1e1, "Balance ETH not equal");
     }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
@@ -251,9 +251,9 @@ abstract contract ALMTestBase is Test, Deployers {
         // console.log("DL", ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()));
         // console.log("DS", lendingAdapter.getBorrowedShort());
 
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), CL, 1e10, "CL not equal");
-        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()), CS, 1e10, "CS not equal");
-        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()), DL, 1e10, "DL not equal");
-        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), DS, 1e10, "DS not equal");
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), CL, 1e5, "CL not equal");
+        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
+        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
+        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
     }
 }

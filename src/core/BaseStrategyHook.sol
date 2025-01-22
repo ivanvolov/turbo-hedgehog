@@ -225,7 +225,6 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             usdcOut = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            usdcOut = uint256(amountSpecified);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(wethIn)), // specified token = token1

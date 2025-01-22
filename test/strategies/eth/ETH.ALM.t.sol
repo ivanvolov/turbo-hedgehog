@@ -111,9 +111,7 @@ contract ETHALMTest is ALMTestBase {
     uint256 slippage = 1e15;
 
     function test_deposit_rebalance() public {
-        console.log("price (0)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(initialSQRTPrice)));
         test_deposit();
-        console.log("price (1)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
 
         vm.expectRevert();
         rebalanceAdapter.rebalance(slippage);
@@ -122,16 +120,12 @@ contract ETHALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 4004e16);
+        assertEqPositionState(180 * 1e18, 307920000000, 462146886298, 4004e16);
         assertApproxEqAbs(hook.TVL(), 99890660873473629515, 1e1);
-        console.log("price (2)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
-        test_deposit();
-
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
+        test_deposit_rebalance();
 
         vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
         vm.prank(deployer.addr);
@@ -187,7 +181,7 @@ contract ETHALMTest is ALMTestBase {
 
         uint256 wethToGetFSwap = 1 ether;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 3843312667);
+        assertEq(usdcToSwapQ, 3847436367);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 
@@ -197,10 +191,10 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(178574999999999996901, 307919999998, 458493206690, 39614999999999999310);
+        assertEqPositionState(178575000000000000000, 307920000000, 458299449931, 39614999999999999999);
 
-        assertEq(hook.sqrtPriceCurrent(), 1277987849751580995478539614475200);
-        assertApproxEqAbs(hook.TVL(), 99889183260067550014, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1276618096489726408736299365119965);
+        assertApproxEqAbs(hook.TVL(), 99890254629514159523, 1e1);
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
@@ -245,36 +239,38 @@ contract ETHALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
-        test_deposit_rebalance();
+        // console.log("price (1)", getHookPrice());
+        test_deposit_rebalance_swap_price_up_in();
+        // console.log("price (2)", getHookPrice());
 
-        // ** Swap some more
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
+        rebalanceAdapter.rebalance(slippage);
+
+        // ** Make oracle change with swap price
         {
-            uint256 usdcToSwap = 3843 * 1e6 * 20;
-            deal(address(USDC), address(swapper.addr), usdcToSwap);
-            assertEqBalanceState(swapper.addr, 0, usdcToSwap);
-
-            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-            assertEqBalanceState(swapper.addr, deltaWETH, 0);
-            assertEqBalanceState(address(hook), 0, 0);
+            vm.mockCall(
+                address(hook.oracle()),
+                abi.encodeWithSelector(IOracle.price.selector),
+                abi.encode(getHookPrice())
+            );
+            // TODO: maybe update aave lending pool here
         }
 
-        console.log("price (3)", ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent())));
-        // // ** Make oracle change with swap price
-        // {
-        //     console.log(IOracle(hook.oracle()).price());
-        //     // vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()))));
-        //     // console.log(IOracle(hook.oracle()).price());
-        //     // //TODO: maybe update aave lending pool here
-        // }
+        // ** Second rebalance
+        {
+            vm.prank(deployer.addr);
+            rebalanceAdapter.rebalance(slippage);
 
-        // // ** Second rebalance
-        // {
-        //     vm.prank(deployer.addr);
-        //     rebalanceAdapter.rebalance(slippage);
+            assertEqBalanceStateZero(address(hook));
+            assertEqPositionState(180370260073738130001, 311178443632, 466465276440, 40122362296402637362);
+            assertApproxEqAbs(hook.TVL(), 100243518021586397094, 1e1);
+        }
+    }
 
-        //     assertEqBalanceStateZero(address(hook));
-        //     // assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 40039999999999999310);
-        //     assertApproxEqAbs(hook.TVL(), 100191841810579074801, 1e18);
-        // }
+    // ** Utils
+
+    function getHookPrice() public view returns (uint256) {
+        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()));
     }
 }
