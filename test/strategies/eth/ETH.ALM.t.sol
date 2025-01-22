@@ -165,21 +165,21 @@ contract ETHALMTest is ALMTestBase {
 
     function test_deposit_rebalance_swap_price_up_in() public {
         test_deposit_rebalance();
-        uint256 usdcToSwap = 3843 * 1e6;
+        uint256 usdcToSwap = 1788455 * 1e4;
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 999918646462106328, 1e4);
+        assertApproxEqAbs(deltaWETH, 4630326474463087336, 1e4);
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(178575115928791498482, 307919999998, 458498879999, 39615034575253604810);
+        assertEqPositionState(173401784773890100547, 307920000000, 444262336298, 38072111248353187883);
 
-        assertEq(hook.sqrtPriceCurrent(), 1277987849751692429863867267471246);
-        assertApproxEqAbs(hook.TVL(), 99889183380557898869, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1271645439987077030108026428499394);
+        assertApproxEqAbs(hook.TVL(), 99906878956038341607, 1e1);
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {

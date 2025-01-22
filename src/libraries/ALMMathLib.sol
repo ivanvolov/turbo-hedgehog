@@ -73,10 +73,10 @@ library ALMMathLib {
     }
 
     function calculateSwapFee(int256 RV7, int256 RV30) internal pure returns (uint256) {
-        int256 F0 = 3000000000000000; // 0.003
-        int256 alpha = 2049000000000000000; // 2.049
-        int256 minFee = 500000000000000; //0.05%
-        int256 maxFess = 5000000000000000; //0.5%
+        int256 F0 = 0; // 0.003
+        int256 alpha = 0; // 2.049
+        int256 minFee = 0; //0.05%
+        int256 maxFess = 0; //0.5%
 
         int256 R = (alpha * (((RV7 * 1e18) / RV30) - 1e18)) / 1e18;
         return uint256(max(minFee, min(maxFess, (F0 * (1e18 + R)) / 1e18)));
@@ -154,7 +154,7 @@ library ALMMathLib {
 
     function getL(uint256 V, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
         return
-            (V.mul(price)).div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()));
+            (V.mul(price)).div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
     function getUserAmounts(

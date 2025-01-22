@@ -162,9 +162,15 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
             // console.log("> amount specified positive");
             wethOut = uint256(amountSpecified);
 
+            console.log("wethOut %s", wethOut);
+            console.log("liquidity %s", liquidity);
+
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, wethOut);
+            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
+            console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             usdcIn = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            console.log("usdcIn %s", usdcIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(wethOut)), // specified token = token1
@@ -174,9 +180,14 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
             // console.log("> amount specified negative");
             usdcIn = uint256(-amountSpecified);
 
+            console.log("usdcIn %s", usdcIn);
+
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, usdcIn);
+            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
+            console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             wethOut = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            console.log("wethOut %s", wethOut);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(usdcIn)), // specified token = token0
@@ -191,10 +202,14 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         if (amountSpecified > 0) {
             // console.log("> amount specified positive");
             usdcOut = uint256(amountSpecified);
+            console.log("usdcOut %s", usdcOut);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, usdcOut);
+            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
+            console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            console.log("wethIn %s", wethIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(usdcOut)), // specified token = token0
@@ -203,10 +218,14 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         } else {
             // console.log("> amount specified negative");
             wethIn = uint256(-amountSpecified);
+            console.log("wethIn %s", wethIn);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, wethIn);
+            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
+            console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             usdcOut = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            usdcOut = uint256(amountSpecified);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(wethIn)), // specified token = token1

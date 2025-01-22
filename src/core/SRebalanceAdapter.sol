@@ -205,16 +205,17 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         uint256 currentCL = lendingAdapter.getCollateralLong();
         uint256 currentCS = lendingAdapter.getCollateralShort();
 
-        // console.log("CL after %s", currentCL);
-        // console.log("CS after %s", currentCS);
-        // console.log("DL after %s", lendingAdapter.getBorrowedLong());
-        // console.log("DS after %s", lendingAdapter.getBorrowedShort());
+        console.log("CL after %s", currentCL);
+        console.log("CS after %s", currentCS);
+        console.log("DL after %s", lendingAdapter.getBorrowedLong());
+        console.log("DS after %s", lendingAdapter.getBorrowedShort());
 
         uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
         uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
 
-        // console.log("longLeverage %s", _longLeverage);
-        // console.log("shortLeverage %s", _shortLeverage);
+        console.log("longLeverage %s", _longLeverage);
+        console.log("shortLeverage %s", _shortLeverage);
+        console.log("TVL after %s", alm.TVL());
 
         uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
         uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);

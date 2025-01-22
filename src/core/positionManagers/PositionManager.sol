@@ -72,6 +72,7 @@ contract PositionManager is Ownable, IPositionManager {
         lendingAdapter.repayLong(deltaUSDC);
 
         lendingAdapter.removeCollateralLong(k.mul(deltaWETH));
+        console.log("deltaWETH to repay %s", (k - 1e18).mul(deltaWETH));
 
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaWETH));
 
