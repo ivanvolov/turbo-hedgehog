@@ -104,7 +104,7 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         authorizedPool = PoolId.unwrap(authorizedPoolKey.toId());
     }
 
-    function setInvertAssets(bool _isInvertAssets) external onlyHookAdmin {
+    function setIsInvertAssets(bool _isInvertAssets) external onlyHookAdmin {
         isInvertAssets = _isInvertAssets;
     }
 

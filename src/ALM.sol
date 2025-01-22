@@ -107,7 +107,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         if (isInvertAssets) {
             if (ALMBaseLib.usdcBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
-            USDC.transfer(to, ALMBaseLib.usdcBalance(address(this)));
+            USDC.transfer(to, ALMBaseLib.c18to6(ALMBaseLib.usdcBalance(address(this))));
         } else {
             if (ALMBaseLib.wethBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
             WETH.transfer(to, ALMBaseLib.wethBalance(address(this)));
@@ -138,7 +138,9 @@ contract ALM is BaseStrategyHook, ERC20 {
         // console.log("USDC balance", ALMBaseLib.usdcBalance(address(this)));
 
         if (isInvertAssets) {
-            uint256 flWETHdebt = uDS + ALMBaseLib.c6to18(premiums[0]);
+            uint256 flWETHdebt = uDS + premiums[0];
+            console.log("flWETHdebt  %s", flWETHdebt);
+            console.log("wethBalance %s", ALMBaseLib.wethBalance(address(this)));
             if (flWETHdebt > ALMBaseLib.wethBalance(address(this))) {
                 ALMBaseLib.swapExactOutput(
                     address(USDC),
@@ -154,9 +156,9 @@ contract ALM is BaseStrategyHook, ERC20 {
             }
         } else {
             uint256 flUSDCdebt = uDL + ALMBaseLib.c6to18(premiums[1]);
+            console.log("flUSDCdebt  %s", flUSDCdebt);
+            console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
             if (flUSDCdebt > ALMBaseLib.usdcBalance(address(this))) {
-                // console.log("WETH => USDC");
-                // console.log("USDC delta", flUSDCdebt - ALMBaseLib.usdcBalance(address(this)));
                 ALMBaseLib.swapExactOutput(
                     address(WETH),
                     address(USDC),

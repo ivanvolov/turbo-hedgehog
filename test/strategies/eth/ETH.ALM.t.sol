@@ -51,7 +51,8 @@ contract ETHALMTest is ALMTestBase {
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setInvertAssets(false);
+            hook.setIsInvertAssets(false);
+            rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e18);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
@@ -147,14 +148,14 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
     }
 
-    function test_deposit_rebalance_withdraw_revert_min_eth() public {
+    function test_deposit_rebalance_withdraw_revert_min_out() public {
         test_deposit_rebalance();
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.expectRevert(IALM.NotMinOutWithdraw.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, amountToDep);
+        hook.withdraw(alice.addr, sharesToWithdraw, type(uint256).max);
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
