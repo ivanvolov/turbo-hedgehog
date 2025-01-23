@@ -87,7 +87,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
         oracle = new Oracle();
 
-        positionManager.setHook(address(hook));
+        positionManager.setALM(address(hook));
         positionManager.setLendingAdapter(address(lendingAdapter));
         positionManager.setRebalanceAdapter(address(rebalanceAdapter));
 

@@ -42,7 +42,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     error NotALM();
 
     ILendingAdapter public lendingAdapter;
-    IALM public alm; //TODO: rename to hook to remain consistent
+    IALM public alm;
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;

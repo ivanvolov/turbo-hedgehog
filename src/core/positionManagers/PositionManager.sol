@@ -36,7 +36,7 @@ contract PositionManager is Ownable, IPositionManager {
 
     ILendingAdapter public lendingAdapter;
 
-    IALM public hook;
+    IALM public alm;
     IRebalanceAdapter public rebalanceAdapter;
 
     constructor() Ownable(msg.sender) {}
@@ -54,8 +54,8 @@ contract PositionManager is Ownable, IPositionManager {
         lendingAdapter = ILendingAdapter(_lendingAdapter);
     }
 
-    function setHook(address _hook) external override onlyOwner {
-        hook = IALM(_hook);
+    function setALM(address _alm) external override onlyOwner {
+        alm = IALM(_alm);
     }
 
     function setRebalanceAdapter(address _rebalanceAdapter) external onlyOwner {
@@ -68,10 +68,10 @@ contract PositionManager is Ownable, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external override {
-        if (msg.sender != address(hook)) revert NotHook();
-        IERC20(token0).transferFrom(address(hook), address(this), delta0.unwrap(t0Dec));
+        if (msg.sender != address(alm)) revert NotALM();
+        IERC20(token0).transferFrom(address(alm), address(this), delta0.unwrap(t0Dec));
 
-        uint256 k = hook.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
+        uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
@@ -82,14 +82,14 @@ contract PositionManager is Ownable, IPositionManager {
 
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(delta1));
 
-        IERC20(token1).transfer(address(hook), delta1.unwrap(t1Dec));
+        IERC20(token1).transfer(address(alm), delta1.unwrap(t1Dec));
     }
 
     function positionAdjustmentPriceDown(uint256 delta0, uint256 delta1) external override {
-        if (msg.sender != address(hook)) revert NotHook();
-        IERC20(token1).transferFrom(address(hook), address(this), delta1.unwrap(t1Dec));
+        if (msg.sender != address(alm)) revert NotALM();
+        IERC20(token1).transferFrom(address(alm), address(this), delta1.unwrap(t1Dec));
 
-        uint256 k = hook.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
+        uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Add k1 * dETH to long as collateral;
         // Borrow (k1-1) * dETH from short by increasing debt;
         // Borrow dUSD from long by increasing debt;
@@ -101,6 +101,6 @@ contract PositionManager is Ownable, IPositionManager {
         }
         lendingAdapter.borrowLong(delta0);
 
-        IERC20(token0).transfer(address(hook), delta0.unwrap(t0Dec));
+        IERC20(token0).transfer(address(alm), delta0.unwrap(t0Dec));
     }
 }
