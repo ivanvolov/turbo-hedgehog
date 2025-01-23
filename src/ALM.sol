@@ -95,7 +95,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256[] memory modes = new uint256[](2);
         (assets[0], amounts[0], modes[0]) = (token0, uDL.unwrap(t0Dec), 0);
         (assets[1], amounts[1], modes[1]) = (token1, uDS.unwrap(t1Dec), 0);
-        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS, uDL, uDS), 0);
+        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
 
         if (isInvertAssets) {
             if (token0Balance(false) < minAmountOut) revert NotMinOutWithdraw();
@@ -108,7 +108,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function executeOperation(
         address[] calldata,
-        uint256[] calldata,
+        uint256[] calldata amounts,
         uint256[] calldata premiums,
         address,
         bytes calldata data
@@ -116,10 +116,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
 
-        (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = abi.decode(data, (uint256, uint256, uint256, uint256));
+        (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
-        lendingAdapter.repayLong(uDL);
-        lendingAdapter.repayShort(uDS);
+        lendingAdapter.repayLong(amounts[0].wrap(t0Dec));
+        lendingAdapter.repayShort(amounts[1].wrap(t1Dec));
 
         lendingAdapter.removeCollateralLong(uCL);
         lendingAdapter.removeCollateralShort(uCS);
@@ -128,19 +128,18 @@ contract ALM is BaseStrategyHook, ERC20 {
         // console.log("USDC balance", token0Balance(true));
 
         if (isInvertAssets) {
-            //TODO:maybe refactor with int256 here
-            uint256 flWETHdebt = uDS + premiums[1].wrap(t1Dec);
-            if (flWETHdebt > token1Balance(true)) {
-                ALMBaseLib.swapExactOutput(token0, token1, (flWETHdebt - token1Balance(true)).unwrap(t1Dec));
-            } else if (token1Balance(true) > flWETHdebt) {
-                ALMBaseLib.swapExactInput(token1, token0, (token1Balance(true) - flWETHdebt).unwrap(t1Dec));
+            int256 delWETHdebt = int256(amounts[1] + premiums[1]) - int256(token1Balance(false));
+            if (delWETHdebt > 0) {
+                ALMBaseLib.swapExactOutput(token0, token1, uint256(delWETHdebt));
+            } else if (delWETHdebt < 0) {
+                ALMBaseLib.swapExactInput(token1, token0, ALMMathLib.abs(delWETHdebt));
             }
         } else {
-            uint256 flUSDCdebt = uDL + premiums[0].wrap(t0Dec);
-            if (flUSDCdebt > token0Balance(true)) {
-                ALMBaseLib.swapExactOutput(token1, token0, (flUSDCdebt - token0Balance(true)).unwrap(t0Dec));
-            } else if (token0Balance(true) > flUSDCdebt) {
-                ALMBaseLib.swapExactInput(token0, token1, (token0Balance(true) - flUSDCdebt).unwrap(t0Dec));
+            int256 delUSDCdebt = int256(amounts[0] + premiums[0]) - int256(token0Balance(false));
+            if (delUSDCdebt > 0) {
+                ALMBaseLib.swapExactOutput(token1, token0, uint256(delUSDCdebt));
+            } else if (delUSDCdebt < 0) {
+                ALMBaseLib.swapExactInput(token0, token1, ALMMathLib.abs(delUSDCdebt));
             }
         }
 
@@ -148,6 +147,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     // --- Swapping logic ---
+
     function beforeSwap(
         address,
         PoolKey calldata key,
@@ -241,7 +241,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         return wrap ? IERC20(token1).balanceOf(address(this)).wrap(t1Dec) : IERC20(token1).balanceOf(address(this));
     }
 
-    // ---- Math functions
+    // --- Math functions ---
+
     //TODO: I would remove balances, cause money can't be withdraws from ALM so no need to account for them
     function TVL() public view returns (uint256) {
         return

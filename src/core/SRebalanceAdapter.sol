@@ -175,8 +175,8 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         // console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
 
-        console.log("USDC balance after %s", token0BalanceUnwr(address(this)));
-        console.log("WETH balance after %s", token1BalanceUnwr(address(this)));
+        console.log("USDC balance after %s", token0BalanceUnwr());
+        console.log("WETH balance after %s", token1BalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();
@@ -325,18 +325,18 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         // console.log("premium0 %s", premiums[0]);
         // console.log("premium1 %s", premiums[1]);
         // console.log("borrowedToken1 %s", borrowedToken1);
-        // console.log("wethBalance %s", token1BalanceUnwr(address(this)));
+        // console.log("wethBalance %s", token1BalanceUnwr());
         // console.log("borrowedToken0 %s", borrowedToken0);
-        // console.log("usdcBalance %s", token0BalanceUnwr(address(this)));
+        // console.log("usdcBalance %s", token0BalanceUnwr());
 
-        if (borrowedToken1 > token1BalanceUnwr(address(this)))
-            ALMBaseLib.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr(address(this)));
+        if (borrowedToken1 > token1BalanceUnwr())
+            ALMBaseLib.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
 
-        if (borrowedToken1 > token1BalanceUnwr(address(this)))
-            ALMBaseLib.swapExactInput(token1, token0, borrowedToken1 - token1BalanceUnwr(address(this)));
+        if (borrowedToken1 > token1BalanceUnwr())
+            ALMBaseLib.swapExactInput(token1, token0, borrowedToken1 - token1BalanceUnwr());
 
-        if (borrowedToken0 < token0BalanceUnwr(address(this)))
-            lendingAdapter.repayLong((token0BalanceUnwr(address(this)) - borrowedToken0).wrap(t0Dec));
+        if (borrowedToken0 < token0BalanceUnwr())
+            lendingAdapter.repayLong((token0BalanceUnwr() - borrowedToken0).wrap(t0Dec));
 
         return true;
     }
@@ -359,11 +359,13 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
     }
 
-    function token0BalanceUnwr(address who) internal view returns (uint256) {
-        return IERC20(token0).balanceOf(who);
+    // --- Helpers ---
+
+    function token0BalanceUnwr() internal view returns (uint256) {
+        return IERC20(token0).balanceOf(address(this));
     }
 
-    function token1BalanceUnwr(address who) internal view returns (uint256) {
-        return IERC20(token1).balanceOf(who);
+    function token1BalanceUnwr() internal view returns (uint256) {
+        return IERC20(token1).balanceOf(address(this));
     }
 }
