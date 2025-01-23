@@ -10,7 +10,7 @@ import {IPoolAddressesProvider} from "@aave-core-v3/contracts/interfaces/IPoolAd
 import {IPoolDataProvider} from "@aave-core-v3/contracts/interfaces/IPoolDataProvider.sol";
 
 // ** libraries
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
+import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -20,17 +20,33 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 
 contract AaveLendingAdapter is Ownable, ILendingAdapter {
-    //aaveV3
+    using TokenWrapperLib for uint256;
+
+    // ** AaveV3
     IPoolAddressesProvider constant provider = IPoolAddressesProvider(0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e);
 
-    IERC20 WETH = IERC20(ALMBaseLib.WETH);
-    IERC20 USDC = IERC20(ALMBaseLib.USDC);
+    address public baseToken;
+    address public quoteToken;
+    uint8 public baseDec;
+    uint8 public quoteDec;
 
     mapping(address => bool) public authorizedCallers;
 
-    constructor() Ownable(msg.sender) {
-        WETH.approve(getPool(), type(uint256).max);
-        USDC.approve(getPool(), type(uint256).max);
+    constructor() Ownable(msg.sender) {}
+
+    function setTokens(
+        address _baseToken,
+        address _quoteToken,
+        uint8 _baseDec,
+        uint8 _quoteDec
+    ) external override onlyOwner {
+        baseToken = _baseToken;
+        quoteToken = _quoteToken;
+        baseDec = _baseDec;
+        quoteDec = _quoteDec;
+
+        IERC20(quoteToken).approve(getPool(), type(uint256).max);
+        IERC20(baseToken).approve(getPool(), type(uint256).max);
     }
 
     function getPool() public view returns (address) {
@@ -44,63 +60,63 @@ contract AaveLendingAdapter is Ownable, ILendingAdapter {
     // ** Long market
 
     function getBorrowedLong() external view returns (uint256) {
-        (, , address variableDebtTokenAddress) = getAssetAddresses(address(USDC));
-        return ALMBaseLib.c6to18(IERC20(variableDebtTokenAddress).balanceOf(address(this)));
+        (, , address variableDebtTokenAddress) = getAssetAddresses(baseToken);
+        return IERC20(variableDebtTokenAddress).balanceOf(address(this)).wrap(baseDec);
     }
 
-    function borrowLong(uint256 amountUSDC) external onlyAuthorizedCaller {
-        IPool(getPool()).borrow(address(USDC), ALMBaseLib.c18to6(amountUSDC), 2, 0, address(this)); // Interest rate mode: 2 = variable
-        USDC.transfer(msg.sender, ALMBaseLib.c18to6(amountUSDC));
+    function borrowLong(uint256 amount) external onlyAuthorizedCaller {
+        IPool(getPool()).borrow(baseToken, amount.unwrap(baseDec), 2, 0, address(this)); // Interest rate mode: 2 = variable
+        IERC20(baseToken).transfer(msg.sender, amount.unwrap(baseDec));
     }
 
-    function repayLong(uint256 amountUSDC) external onlyAuthorizedCaller {
-        USDC.transferFrom(msg.sender, address(this), ALMBaseLib.c18to6(amountUSDC));
-        IPool(getPool()).repay(address(USDC), ALMBaseLib.c18to6(amountUSDC), 2, address(this));
+    function repayLong(uint256 amount) external onlyAuthorizedCaller {
+        IERC20(baseToken).transferFrom(msg.sender, address(this), amount.unwrap(baseDec));
+        IPool(getPool()).repay(baseToken, amount.unwrap(baseDec), 2, address(this));
     }
 
     function getCollateralLong() external view returns (uint256) {
-        (address aTokenAddress, , ) = getAssetAddresses(address(WETH));
-        return IERC20(aTokenAddress).balanceOf(address(this));
+        (address aTokenAddress, , ) = getAssetAddresses(quoteToken);
+        return IERC20(aTokenAddress).balanceOf(address(this)).wrap(quoteDec);
     }
 
-    function removeCollateralLong(uint256 amountWETH) external onlyAuthorizedCaller {
-        IPool(getPool()).withdraw(address(WETH), amountWETH, msg.sender);
+    function removeCollateralLong(uint256 amount) external onlyAuthorizedCaller {
+        IPool(getPool()).withdraw(quoteToken, amount.unwrap(quoteDec), msg.sender);
     }
 
-    function addCollateralLong(uint256 amountWETH) external onlyAuthorizedCaller {
-        WETH.transferFrom(msg.sender, address(this), amountWETH);
-        IPool(getPool()).supply(address(WETH), amountWETH, address(this), 0);
+    function addCollateralLong(uint256 amount) external onlyAuthorizedCaller {
+        IERC20(quoteToken).transferFrom(msg.sender, address(this), amount.unwrap(quoteDec));
+        IPool(getPool()).supply(quoteToken, amount.unwrap(quoteDec), address(this), 0);
     }
 
     // ** Short market
 
     function getBorrowedShort() external view returns (uint256) {
-        (, , address variableDebtTokenAddress) = getAssetAddresses(address(WETH));
-        return IERC20(variableDebtTokenAddress).balanceOf(address(this));
+        (, , address variableDebtTokenAddress) = getAssetAddresses(quoteToken);
+        return IERC20(variableDebtTokenAddress).balanceOf(address(this)).wrap(quoteDec);
     }
 
-    function borrowShort(uint256 amountWETH) external onlyAuthorizedCaller {
-        IPool(getPool()).borrow(address(WETH), amountWETH, 2, 0, address(this)); // Interest rate mode: 2 = variable
-        WETH.transfer(msg.sender, amountWETH);
+    function borrowShort(uint256 amount) external onlyAuthorizedCaller {
+        IPool(getPool()).borrow(quoteToken, amount.unwrap(quoteDec), 2, 0, address(this)); // Interest rate mode: 2 = variable
+        IERC20(quoteToken).transfer(msg.sender, amount.unwrap(quoteDec));
     }
 
-    function repayShort(uint256 amountWETH) external onlyAuthorizedCaller {
-        WETH.transferFrom(msg.sender, address(this), amountWETH);
-        IPool(getPool()).repay(address(WETH), amountWETH, 2, address(this));
+    function repayShort(uint256 amount) external onlyAuthorizedCaller {
+        IERC20(quoteToken).transferFrom(msg.sender, address(this), amount.unwrap(quoteDec));
+        IPool(getPool()).repay(quoteToken, amount.unwrap(quoteDec), 2, address(this));
     }
 
     function getCollateralShort() external view returns (uint256) {
-        (address aTokenAddress, , ) = getAssetAddresses(address(USDC));
-        return ALMBaseLib.c6to18(IERC20(aTokenAddress).balanceOf(address(this)));
+        (address aTokenAddress, , ) = getAssetAddresses(baseToken);
+        return IERC20(aTokenAddress).balanceOf(address(this)).wrap(baseDec);
     }
 
-    function removeCollateralShort(uint256 amountUSDC) external onlyAuthorizedCaller {
-        IPool(getPool()).withdraw(address(USDC), ALMBaseLib.c18to6(amountUSDC), msg.sender);
+    function removeCollateralShort(uint256 amount) external onlyAuthorizedCaller {
+        IPool(getPool()).withdraw(baseToken, amount.unwrap(baseDec), msg.sender);
     }
 
-    function addCollateralShort(uint256 amountUSDC) external onlyAuthorizedCaller {
-        USDC.transferFrom(msg.sender, address(this), ALMBaseLib.c18to6(amountUSDC));
-        IPool(getPool()).supply(address(USDC), ALMBaseLib.c18to6(amountUSDC), address(this), 0);
+    function addCollateralShort(uint256 amount) external onlyAuthorizedCaller {
+        IERC20(baseToken).transferFrom(msg.sender, address(this), amount.unwrap(baseDec));
+        IPool(getPool()).supply(baseToken, amount.unwrap(baseDec), address(this), 0);
     }
 
     // ** Helpers
@@ -108,10 +124,6 @@ contract AaveLendingAdapter is Ownable, ILendingAdapter {
     function getAssetAddresses(address underlying) public view returns (address, address, address) {
         return IPoolDataProvider(provider.getPoolDataProvider()).getReserveTokensAddresses(underlying);
     }
-
-    // function getAssetPrice(address underlying) external view returns (uint256) {
-    //     return IAaveOracle(provider.getPriceOracle()).getAssetPrice(underlying) * 1e10;
-    // }
 
     function syncLong() external {}
 

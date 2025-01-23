@@ -18,6 +18,7 @@ import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
@@ -35,20 +36,24 @@ import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface
 
 contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;
+    using TokenWrapperLib for uint256;
+
     error NoRebalanceNeeded();
     error NotALM();
 
     ILendingAdapter public lendingAdapter;
-    IALM public alm;
+    IALM public alm; //TODO: rename to hook to remain consistent
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
 
-    IERC20 WETH = IERC20(ALMBaseLib.WETH);
-    IERC20 USDC = IERC20(ALMBaseLib.USDC);
+    address public token0;
+    address public token1;
+    uint8 public t0Dec;
+    uint8 public t1Dec;
 
-    // AaveV2
+    // ** AaveV2
     address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
@@ -62,22 +67,24 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public invertAssets = false;
 
-    constructor() Ownable(msg.sender) {
-        USDC.approve(lendingPool, type(uint256).max);
-        WETH.approve(lendingPool, type(uint256).max);
+    constructor() Ownable(msg.sender) {}
 
-        USDC.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-        WETH.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
+    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external onlyOwner {
+        token0 = _token0;
+        token1 = _token1;
+        t0Dec = _t0Dec;
+        t1Dec = _t1Dec;
+
+        IERC20(token0).approve(lendingPool, type(uint256).max);
+        IERC20(token1).approve(lendingPool, type(uint256).max);
+        IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
+        IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
     }
 
     function setLendingAdapter(address _lendingAdapter) external onlyOwner {
-        if (address(lendingAdapter) != address(0)) {
-            WETH.approve(address(lendingAdapter), 0);
-            USDC.approve(address(lendingAdapter), 0);
-        }
+        ALMBaseLib.approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max);
+        ALMBaseLib.approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
         lendingAdapter = ILendingAdapter(_lendingAdapter);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
     }
 
     function setALM(address _alm) external onlyOwner {
@@ -162,14 +169,14 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
         uint256[] memory modes = new uint256[](2);
-        (assets[0], amounts[0], modes[0]) = (address(WETH), ethToFl, 0);
-        (assets[1], amounts[1], modes[1]) = (address(USDC), ALMBaseLib.c18to6(usdcToFl), 0);
+        (assets[0], amounts[0], modes[0]) = (token0, usdcToFl.unwrap(t0Dec), 0);
+        (assets[1], amounts[1], modes[1]) = (token1, ethToFl.unwrap(t1Dec), 0);
         // console.log("ethToFl", ethToFl);
         // console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
 
-        console.log("USDC balance after %s", ALMBaseLib.usdcBalance(address(this)));
-        console.log("WETH balance after %s", ALMBaseLib.wethBalance(address(this)));
+        console.log("USDC balance after %s", token0BalanceUnwr(address(this)));
+        console.log("WETH balance after %s", token1BalanceUnwr(address(this)));
 
         // ** Check max deviation
         checkDeviations();
@@ -310,39 +317,26 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         // console.log("afterDL %s", lendingAdapter.getBorrowedLong());
         // console.log("afterDS %s", lendingAdapter.getBorrowedShort());
 
-        uint256 borrowedWETH = amounts[0] + premiums[0];
-        uint256 borrowedUSDC = ALMBaseLib.c6to18(amounts[1] + premiums[1]);
+        uint256 borrowedToken0 = amounts[0] + premiums[0];
+        uint256 borrowedToken1 = amounts[1] + premiums[1];
+
         // ** Flash loan management
 
         // console.log("premium0 %s", premiums[0]);
         // console.log("premium1 %s", premiums[1]);
+        // console.log("borrowedToken1 %s", borrowedToken1);
+        // console.log("wethBalance %s", token1BalanceUnwr(address(this)));
+        // console.log("borrowedToken0 %s", borrowedToken0);
+        // console.log("usdcBalance %s", token0BalanceUnwr(address(this)));
 
-        // console.log("borrowedWETH %s", borrowedWETH);
-        // console.log("wethBalance %s", ALMBaseLib.wethBalance(address(this)));
+        if (borrowedToken1 > token1BalanceUnwr(address(this)))
+            ALMBaseLib.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr(address(this)));
 
-        // console.log("borrowedUSDC %s", borrowedUSDC);
-        // console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
+        if (borrowedToken1 > token1BalanceUnwr(address(this)))
+            ALMBaseLib.swapExactInput(token1, token0, borrowedToken1 - token1BalanceUnwr(address(this)));
 
-        // console.log("borrowedWETH %s", borrowedWETH);
-
-        if (borrowedWETH > ALMBaseLib.wethBalance(address(this))) {
-            // console.log("I want to get eth", borrowedWETH - ALMBaseLib.wethBalance(address(this)));
-            // console.log("I have USDC", ALMBaseLib.usdcBalance(address(this)));
-            ALMBaseLib.swapExactOutput(
-                address(USDC),
-                address(WETH),
-                borrowedWETH - ALMBaseLib.wethBalance(address(this))
-            );
-        }
-
-        if (borrowedWETH > ALMBaseLib.wethBalance(address(this)))
-            ALMBaseLib.swapExactInput(
-                address(WETH),
-                address(USDC),
-                borrowedWETH - ALMBaseLib.wethBalance(address(this))
-            );
-        if (borrowedUSDC < ALMBaseLib.usdcBalance(address(this)))
-            lendingAdapter.repayLong(ALMBaseLib.usdcBalance(address(this)) - borrowedUSDC);
+        if (borrowedToken0 < token0BalanceUnwr(address(this)))
+            lendingAdapter.repayLong((token0BalanceUnwr(address(this)) - borrowedToken0).wrap(t0Dec));
 
         return true;
     }
@@ -363,5 +357,13 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
         if (deltaDL != 0) lendingAdapter.borrowLong(_targetDL - lendingAdapter.getBorrowedLong());
         if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
+    }
+
+    function token0BalanceUnwr(address who) internal view returns (uint256) {
+        return IERC20(token0).balanceOf(who);
+    }
+
+    function token1BalanceUnwr(address who) internal view returns (uint256) {
+        return IERC20(token1).balanceOf(who);
     }
 }

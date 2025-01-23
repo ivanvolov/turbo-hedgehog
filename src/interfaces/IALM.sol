@@ -23,8 +23,15 @@ interface IALM {
     error UnauthorizedPool();
 
     event Deposit(address indexed to, uint256 amount, uint256 shares);
-
     event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+
+    function t0Dec() external view returns (uint8);
+
+    function t1Dec() external view returns (uint8);
 
     function refreshReserves() external;
 
@@ -41,4 +48,8 @@ interface IALM {
     function sqrtPriceCurrent() external view returns (uint160);
 
     function TVL() external view returns (uint256);
+
+    function token0Balance(bool wrap) external view returns (uint256);
+
+    function token1Balance(bool wrap) external view returns (uint256);
 }

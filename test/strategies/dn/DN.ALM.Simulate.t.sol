@@ -42,7 +42,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
-        init_hook();
+        init_hook(address(USDC), address(WETH), 6, 18);
         init_control_hook();
         approve_accounts();
         presetChainlinkOracles();

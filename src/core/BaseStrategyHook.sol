@@ -25,6 +25,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {ILendingPool} from "@src/interfaces/IAave.sol";
 
 abstract contract BaseStrategyHook is BaseHook, IALM {
     using CurrencySettler for Currency;
@@ -35,8 +36,14 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     IOracle public oracle;
     IRebalanceAdapter public rebalanceAdapter;
 
-    IERC20 WETH = IERC20(ALMBaseLib.WETH);
-    IERC20 USDC = IERC20(ALMBaseLib.USDC);
+    address public token0;
+    address public token1;
+    uint8 public t0Dec;
+    uint8 public t1Dec;
+
+    // AaveV2
+    address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
+    ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
     uint128 public liquidity;
     uint160 public sqrtPriceCurrent;
@@ -56,24 +63,28 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
         hookAdmin = msg.sender;
     }
 
+    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external onlyHookAdmin {
+        token0 = _token0;
+        token1 = _token1;
+        t0Dec = _t0Dec;
+        t1Dec = _t1Dec;
+
+        IERC20(token0).approve(lendingPool, type(uint256).max);
+        IERC20(token1).approve(lendingPool, type(uint256).max);
+        IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
+        IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
+    }
+
     function setLendingAdapter(address _lendingAdapter) external onlyHookAdmin {
-        if (address(lendingAdapter) != address(0)) {
-            WETH.approve(address(lendingAdapter), 0);
-            USDC.approve(address(lendingAdapter), 0);
-        }
+        ALMBaseLib.approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max);
+        ALMBaseLib.approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
         lendingAdapter = ILendingAdapter(_lendingAdapter);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
     }
 
     function setPositionManager(address _positionManager) external onlyHookAdmin {
-        if (address(positionManager) != address(0)) {
-            WETH.approve(address(positionManager), 0);
-            USDC.approve(address(positionManager), 0);
-        }
+        ALMBaseLib.approveSingle(token0, address(positionManager), _positionManager, type(uint256).max);
+        ALMBaseLib.approveSingle(token1, address(positionManager), _positionManager, type(uint256).max);
         positionManager = IPositionManager(_positionManager);
-        WETH.approve(address(positionManager), type(uint256).max);
-        USDC.approve(address(positionManager), type(uint256).max);
     }
 
     function setOracle(address _oracle) external onlyHookAdmin {

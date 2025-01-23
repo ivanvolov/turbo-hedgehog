@@ -101,6 +101,14 @@ contract MorphoLendingAdapter is Ownable, ILendingAdapter {
     }
 
     // Helpers
+    function setTokens(
+        address _baseToken,
+        address _quoteToken,
+        uint8 _baseDec,
+        uint8 _quoteDec
+    ) external override onlyOwner {
+        //TODO: implement it for morpho
+    }
 
     function syncLong() external {
         morpho.accrueInterest(morpho.idToMarketParams(longMId));

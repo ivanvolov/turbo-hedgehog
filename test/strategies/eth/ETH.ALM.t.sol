@@ -46,14 +46,13 @@ contract ETHALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
-        init_hook();
+        init_hook(address(USDC), address(WETH), 6, 18);
 
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
             rebalanceAdapter.setIsInvertAssets(false);
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e18);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
@@ -61,6 +60,7 @@ contract ETHALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             vm.stopPrank();
         }
 

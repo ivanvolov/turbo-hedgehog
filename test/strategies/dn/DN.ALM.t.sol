@@ -46,14 +46,13 @@ contract DeltaNeutralALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
-        init_hook();
+        init_hook(address(USDC), address(WETH), 6, 18);
 
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
             rebalanceAdapter.setIsInvertAssets(true);
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e18);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(45 * 1e16); // 0.45 (45%)
@@ -61,6 +60,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(3 * 1e18); // 3
             rebalanceAdapter.setMaxDeviationLong(1e16); // 0.01 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e16); // 0.01 (1%)
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             vm.stopPrank();
         }
 

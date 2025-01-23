@@ -38,4 +38,6 @@ interface ILendingAdapter {
 
     // ** Params
     function addAuthorizedCaller(address) external;
+
+    function setTokens(address, address, uint8, uint8) external;
 }

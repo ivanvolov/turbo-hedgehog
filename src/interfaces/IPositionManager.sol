@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 interface IPositionManager {
     error NotHook();
 
+    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external;
+
     function setHook(address _hook) external;
 
     function setLendingAdapter(address _lendingAdapter) external;
