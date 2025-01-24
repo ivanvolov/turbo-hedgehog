@@ -28,7 +28,7 @@ library ALMBaseLib {
                     fee: ETH_USDC_POOL_FEE,
                     recipient: address(this),
                     deadline: block.timestamp,
-                    amountIn: tokenIn == USDC ? c18to6(amountIn) : amountIn,
+                    amountIn: amountIn,
                     amountOutMinimum: 0,
                     sqrtPriceLimitX96: 0
                 })
@@ -45,27 +45,14 @@ library ALMBaseLib {
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountInMaximum: type(uint256).max,
-                    amountOut: tokenOut == USDC ? c18to6(amountOut) : amountOut,
+                    amountOut: amountOut,
                     sqrtPriceLimitX96: 0
                 })
             );
     }
 
-    function wethBalance(address who) internal view returns (uint256) {
-        return IERC20(WETH).balanceOf(who);
-    }
-
-    function usdcBalance(address who) internal view returns (uint256) {
-        return c6to18(IERC20(USDC).balanceOf(who));
-    }
-
-    //? Convert function: Converts a value with 6 decimals to a representation with 18 decimals
-    function c6to18(uint256 amountIn6Decimals) internal pure returns (uint256) {
-        return amountIn6Decimals * (10 ** 12);
-    }
-
-    //? Convert function: Converts a value with 18 decimals to a representation with 6 decimals
-    function c18to6(uint256 amountIn18Decimals) internal pure returns (uint256) {
-        return amountIn18Decimals / (10 ** 12);
+    function approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {
+        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).approve(moduleOld, 0);
+        if (moduleNew != address(this)) IERC20(token).approve(moduleNew, amount);
     }
 }

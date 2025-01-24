@@ -30,6 +30,7 @@ import {OracleLibrary} from "@forks/uniswap-v3/libraries/OracleLibrary.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
@@ -57,10 +58,10 @@ abstract contract ALMTestBase is Test, Deployers {
 
     uint256 almId;
 
-    function init_hook() internal {
+    function init_hook(address _token0, address _token1, uint8 _token0Dec, uint8 _token1Dec) internal {
         vm.startPrank(deployer.addr);
 
-        // MARK: Usual UniV4 hook deployment process
+        // MARK: UniV4 hook deployment process
         address hookAddress = address(
             uint160(
                 Hooks.BEFORE_SWAP_FLAG |
@@ -72,51 +73,75 @@ abstract contract ALMTestBase is Test, Deployers {
         deployCodeTo("ALM.sol", abi.encode(manager, "NAME", "SYMBOL"), hookAddress);
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
-        assertEq(hook.hookAdmin(), deployer.addr);
+        assertEq(hook.owner(), deployer.addr);
         // MARK END
 
-        rebalanceAdapter = new SRebalanceAdapter();
+        // MARK: Deploying modules and setting up parameters
         lendingAdapter = new AaveLendingAdapter();
         positionManager = new PositionManager();
         oracle = new Oracle();
+        rebalanceAdapter = new SRebalanceAdapter();
 
-        positionManager.setHook(address(hook));
-        positionManager.setLendingAdapter(address(lendingAdapter));
-        positionManager.setRebalanceAdapter(address(rebalanceAdapter));
+        hook.setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        hook.setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
 
-        lendingAdapter.addAuthorizedCaller(address(hook));
-        lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
-        lendingAdapter.addAuthorizedCaller(address(positionManager));
+        IBase(address(lendingAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        IBase(address(lendingAdapter)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
 
-        rebalanceAdapter.setALM(address(hook));
-        rebalanceAdapter.setLendingAdapter(address(lendingAdapter));
+        IBase(address(positionManager)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        IBase(address(positionManager)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
+
+        IBase(address(rebalanceAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec); // * Notice: tokens should be set first in all contracts
+        IBase(address(rebalanceAdapter)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
+
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
         rebalanceAdapter.setOraclePriceAtLastRebalance(0);
         rebalanceAdapter.setTimeAtLastRebalance(0);
+        // MARK END
 
         // MARK: Pool deployment
         PoolKey memory _key = PoolKey(
-            Currency.wrap(address(USDC)),
-            Currency.wrap(address(WETH)),
+            Currency.wrap(_token0),
+            Currency.wrap(_token1),
             poolFee,
             int24((poolFee / 100) * 2),
             hook
         ); // pre-compute key in order to restrict hook to this pool
 
         hook.setAuthorizedPool(_key);
-        (key, ) = initPool(Currency.wrap(address(USDC)), Currency.wrap(address(WETH)), hook, poolFee, initialSQRTPrice);
+        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
 
-        hook.setLendingAdapter(address(lendingAdapter));
-        hook.setRebalanceAdapter(address(rebalanceAdapter));
-        hook.setOracle(address(oracle));
-        hook.setPositionManager(address(positionManager));
         assertEq(hook.tickLower(), 193779 + 3000);
         assertEq(hook.tickUpper(), 193779 - 3000);
         // MARK END
 
         // This is needed in order to simulate proper accounting
-        deal(address(USDC), address(manager), 1000 ether);
-        deal(address(WETH), address(manager), 1000 ether);
+        deal(_token0, address(manager), 1000 ether);
+        deal(_token1, address(manager), 1000 ether);
         vm.stopPrank();
     }
 
@@ -248,8 +273,8 @@ abstract contract ALMTestBase is Test, Deployers {
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
             console.log("CL", lendingAdapter.getCollateralLong());
-            console.log("CS", ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()));
-            console.log("DL", ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()));
+            console.log("CS", c18to6(lendingAdapter.getCollateralShort()));
+            console.log("DL", c18to6(lendingAdapter.getBorrowedLong()));
             console.log("DS", lendingAdapter.getBorrowedShort());
             _assertEqPositionState(CL, CS, DL, DS); // this is to throw the error
         }
@@ -257,8 +282,18 @@ abstract contract ALMTestBase is Test, Deployers {
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), CL, 1e5, "CL not equal");
-        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
-        assertApproxEqAbs(ALMBaseLib.c18to6(lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
+        assertApproxEqAbs(c18to6(lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
+        assertApproxEqAbs(c18to6(lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
+    }
+
+    // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals
+    function c6to18(uint256 amountIn6Decimals) internal pure returns (uint256) {
+        return amountIn6Decimals * (10 ** 12);
+    }
+
+    // ** Convert function: Converts a value with 18 decimals to a representation with 6 decimals
+    function c18to6(uint256 amountIn18Decimals) internal pure returns (uint256) {
+        return amountIn18Decimals / (10 ** 12);
     }
 }

@@ -18,37 +18,27 @@ import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
-import {ERC721} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {ILendingPool} from "@src/interfaces/IAave.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
-contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
+contract SRebalanceAdapter is Base, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;
-    error NoRebalanceNeeded();
-    error NotALM();
+    using TokenWrapperLib for uint256;
 
-    ILendingAdapter public lendingAdapter;
-    IALM public alm;
+    error NoRebalanceNeeded();
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
 
-    IERC20 WETH = IERC20(ALMBaseLib.WETH);
-    IERC20 USDC = IERC20(ALMBaseLib.USDC);
-
-    // AaveV2
+    // ** AaveV2
     address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
@@ -62,26 +52,13 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public invertAssets = false;
 
-    constructor() Ownable(msg.sender) {
-        USDC.approve(lendingPool, type(uint256).max);
-        WETH.approve(lendingPool, type(uint256).max);
+    constructor() Base(msg.sender) {}
 
-        USDC.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-        WETH.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-    }
-
-    function setLendingAdapter(address _lendingAdapter) external onlyOwner {
-        if (address(lendingAdapter) != address(0)) {
-            WETH.approve(address(lendingAdapter), 0);
-            USDC.approve(address(lendingAdapter), 0);
-        }
-        lendingAdapter = ILendingAdapter(_lendingAdapter);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
-    }
-
-    function setALM(address _alm) external onlyOwner {
-        alm = IALM(_alm);
+    function _postSetTokens() internal override {
+        IERC20(token0).approve(lendingPool, type(uint256).max);
+        IERC20(token1).approve(lendingPool, type(uint256).max);
+        IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
+        IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
     }
 
     function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
@@ -168,26 +145,26 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
         console.log("slippage %s", slippage);
 
-        (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = rebalanceCalculations(1e18 + int256(slippage));
+        (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + int256(slippage));
 
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
         uint256[] memory modes = new uint256[](2);
-        (assets[0], amounts[0], modes[0]) = (address(WETH), ethToFl, 0);
-        (assets[1], amounts[1], modes[1]) = (address(USDC), ALMBaseLib.c18to6(usdcToFl), 0);
+        (assets[0], amounts[0], modes[0]) = (token0, usdcToFl.unwrap(t0Dec), 0);
+        (assets[1], amounts[1], modes[1]) = (token1, ethToFl.unwrap(t1Dec), 0);
         // console.log("ethToFl", ethToFl);
         // console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
 
-        console.log("USDC balance after %s", ALMBaseLib.usdcBalance(address(this)));
-        console.log("WETH balance after %s", ALMBaseLib.wethBalance(address(this)));
+        console.log("USDC balance after %s", token0BalanceUnwr());
+        console.log("WETH balance after %s", token1BalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();
 
         // ** Update state
         sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
-        oraclePriceAtLastRebalance = IOracle(alm.oracle()).price();
+        oraclePriceAtLastRebalance = oracle.price();
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
         alm.updateLiquidity(calcLiquidity());
@@ -211,41 +188,52 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         console.log("priceUpper %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())));
         console.log("priceLower %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower())));
 
-        uint256 liquidity = ALMMathLib.getL(
-            VLP,
-            oraclePriceAtLastRebalance,
-            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())),
-            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower()))
-        );
-        console.log("liquidity %s", liquidity);
-        return uint128(liquidity);
-    }
+        uint256 borrowedToken0 = amounts[0] + premiums[0];
+        uint256 borrowedToken1 = amounts[1] + premiums[1];
 
-    function checkDeviations() internal view {
-        uint256 price = IOracle(alm.oracle()).price();
-        uint256 currentCL = lendingAdapter.getCollateralLong();
-        uint256 currentCS = lendingAdapter.getCollateralShort();
+        // ** Flash loan management
 
-        console.log("CL after %s", currentCL);
-        console.log("CS after %s", currentCS);
-        console.log("DL after %s", lendingAdapter.getBorrowedLong());
-        console.log("DS after %s", lendingAdapter.getBorrowedShort());
+        // console.log("premium0 %s", premiums[0]);
+        // console.log("premium1 %s", premiums[1]);
+        // console.log("borrowedToken1 %s", borrowedToken1);
+        // console.log("wethBalance %s", token1BalanceUnwr());
+        // console.log("borrowedToken0 %s", borrowedToken0);
+        // console.log("usdcBalance %s", token0BalanceUnwr());
 
-        uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
-        uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
+        if (borrowedToken1 > token1BalanceUnwr())
+            ALMBaseLib.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
 
-        console.log("longLeverage %s", _longLeverage);
-        console.log("shortLeverage %s", _shortLeverage);
-        console.log("TVL after %s", alm.TVL());
+        if (borrowedToken1 > token1BalanceUnwr())
+            ALMBaseLib.swapExactInput(token1, token0, borrowedToken1 - token1BalanceUnwr());
 
-        uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
-        uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);
-        require(deviationLong <= maxDeviationLong, "D1");
-        require(deviationShort <= maxDeviationShort, "D2");
+        if (borrowedToken0 < token0BalanceUnwr())
+            lendingAdapter.repayLong((token0BalanceUnwr() - borrowedToken0).wrap(t0Dec));
+
+        return true;
     }
 
     // @Notice: this function is mainly for removing stack too deep error
-    function rebalanceCalculations(
+    function _positionManagement(bytes calldata data) internal {
+        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS, uint256 _targetDL, uint256 _targetDS) = abi
+            .decode(data, (int256, int256, int256, int256, uint256, uint256));
+
+        if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
+        else if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
+
+        if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
+        else if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
+
+        if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
+        if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
+
+        if (deltaDL != 0) lendingAdapter.borrowLong(_targetDL - lendingAdapter.getBorrowedLong());
+        if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
+    }
+
+    // --- Math functions ---
+
+    // @Notice: this function is mainly for removing stack too deep error
+    function _rebalanceCalculations(
         int256 k
     ) internal view returns (uint256 ethToFl, uint256 usdcToFl, bytes memory data) {
         // console.log("> rebalanceCalculations");
@@ -258,7 +246,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         int256 deltaDL;
         int256 deltaDS;
         {
-            console.log("price %s", IOracle(alm.oracle()).price());
+            console.log("price %s", oracle.price());
             console.log("currentCL", lendingAdapter.getCollateralLong());
             console.log("currentCS", lendingAdapter.getCollateralShort());
             console.log("currentDL", lendingAdapter.getBorrowedLong());
@@ -267,7 +255,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
             uint256 targetCL;
             uint256 targetCS;
-            uint256 price = IOracle(alm.oracle()).price();
+            uint256 price = oracle.price();
             if (invertAssets) {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
@@ -315,74 +303,54 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         );
     }
 
-    function executeOperation(
-        address[] calldata,
-        uint256[] calldata amounts,
-        uint256[] calldata premiums,
-        address,
-        bytes calldata data
-    ) external returns (bool) {
-        // console.log("executeOperation");
-        require(msg.sender == lendingPool, "M0");
-        _positionManagement(data);
+    function calcLiquidity() public view returns (uint128) {
+        uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
 
-        // console.log("afterCL %s", lendingAdapter.getCollateralLong());
-        // console.log("afterCS %s", lendingAdapter.getCollateralShort());
-        // console.log("afterDL %s", lendingAdapter.getBorrowedLong());
-        // console.log("afterDS %s", lendingAdapter.getBorrowedShort());
+        console.log("VLP %s", VLP);
+        console.log("price      %s", oraclePriceAtLastRebalance);
+        console.log("priceUpper %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())));
+        console.log("priceLower %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower())));
 
-        uint256 borrowedWETH = amounts[0] + premiums[0];
-        uint256 borrowedUSDC = ALMBaseLib.c6to18(amounts[1] + premiums[1]);
-        // ** Flash loan management
-
-        // console.log("premium0 %s", premiums[0]);
-        // console.log("premium1 %s", premiums[1]);
-
-        // console.log("borrowedWETH %s", borrowedWETH);
-        // console.log("wethBalance %s", ALMBaseLib.wethBalance(address(this)));
-
-        // console.log("borrowedUSDC %s", borrowedUSDC);
-        // console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
-
-        // console.log("borrowedWETH %s", borrowedWETH);
-
-        if (borrowedWETH > ALMBaseLib.wethBalance(address(this))) {
-            // console.log("I want to get eth", borrowedWETH - ALMBaseLib.wethBalance(address(this)));
-            // console.log("I have USDC", ALMBaseLib.usdcBalance(address(this)));
-            ALMBaseLib.swapExactOutput(
-                address(USDC),
-                address(WETH),
-                borrowedWETH - ALMBaseLib.wethBalance(address(this))
-            );
-        }
-
-        if (borrowedWETH > ALMBaseLib.wethBalance(address(this)))
-            ALMBaseLib.swapExactInput(
-                address(WETH),
-                address(USDC),
-                borrowedWETH - ALMBaseLib.wethBalance(address(this))
-            );
-        if (borrowedUSDC < ALMBaseLib.usdcBalance(address(this)))
-            lendingAdapter.repayLong(ALMBaseLib.usdcBalance(address(this)) - borrowedUSDC);
-
-        return true;
+        uint256 liquidity = ALMMathLib.getL(
+            VLP,
+            oraclePriceAtLastRebalance,
+            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())),
+            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower()))
+        );
+        console.log("liquidity %s", liquidity);
+        return uint128(liquidity);
     }
 
-    // @Notice: this function is mainly for removing stack too deep error
-    function _positionManagement(bytes calldata data) internal {
-        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS, uint256 _targetDL, uint256 _targetDS) = abi
-            .decode(data, (int256, int256, int256, int256, uint256, uint256));
+    function checkDeviations() internal view {
+        uint256 price = oracle.price();
+        uint256 currentCL = lendingAdapter.getCollateralLong();
+        uint256 currentCS = lendingAdapter.getCollateralShort();
 
-        if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
-        else if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
+        console.log("CL after %s", currentCL);
+        console.log("CS after %s", currentCS);
+        console.log("DL after %s", lendingAdapter.getBorrowedLong());
+        console.log("DS after %s", lendingAdapter.getBorrowedShort());
 
-        if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
-        else if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
+        uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
+        uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
 
-        if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
-        if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
+        console.log("longLeverage %s", _longLeverage);
+        console.log("shortLeverage %s", _shortLeverage);
+        console.log("TVL after %s", alm.TVL());
 
-        if (deltaDL != 0) lendingAdapter.borrowLong(_targetDL - lendingAdapter.getBorrowedLong());
-        if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
+        uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
+        uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);
+        require(deviationLong <= maxDeviationLong, "D1");
+        require(deviationShort <= maxDeviationShort, "D2");
+    }
+
+    // --- Helpers ---
+
+    function token0BalanceUnwr() internal view returns (uint256) {
+        return IERC20(token0).balanceOf(address(this));
+    }
+
+    function token1BalanceUnwr() internal view returns (uint256) {
+        return IERC20(token1).balanceOf(address(this));
     }
 }

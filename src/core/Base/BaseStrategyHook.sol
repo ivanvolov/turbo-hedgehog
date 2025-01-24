@@ -19,31 +19,29 @@ import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
+// ** contracts
+import {Base} from "@src/core/Base/Base.sol";
+
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {ILendingPool} from "@src/interfaces/IAave.sol";
 
-abstract contract BaseStrategyHook is BaseHook, IALM {
+abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
 
-    ILendingAdapter public lendingAdapter;
-    IPositionManager public positionManager;
-    IOracle public oracle;
-    IRebalanceAdapter public rebalanceAdapter;
-
-    IERC20 WETH = IERC20(ALMBaseLib.WETH);
-    IERC20 USDC = IERC20(ALMBaseLib.USDC);
+    // AaveV2
+    address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
+    ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
     uint128 public liquidity;
     uint160 public sqrtPriceCurrent;
     int24 public tickLower;
     int24 public tickUpper;
-
-    address public hookAdmin;
 
     bool public paused = false;
     bool public shutdown = false;
@@ -52,59 +50,32 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     bytes32 public authorizedPool;
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
-        hookAdmin = msg.sender;
+    constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
+
+    function _postSetTokens() internal override {
+        IERC20(token0).approve(lendingPool, type(uint256).max);
+        IERC20(token1).approve(lendingPool, type(uint256).max);
+        IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
+        IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
     }
 
-    function setLendingAdapter(address _lendingAdapter) external onlyHookAdmin {
-        if (address(lendingAdapter) != address(0)) {
-            WETH.approve(address(lendingAdapter), 0);
-            USDC.approve(address(lendingAdapter), 0);
-        }
-        lendingAdapter = ILendingAdapter(_lendingAdapter);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
-    }
-
-    function setPositionManager(address _positionManager) external onlyHookAdmin {
-        if (address(positionManager) != address(0)) {
-            WETH.approve(address(positionManager), 0);
-            USDC.approve(address(positionManager), 0);
-        }
-        positionManager = IPositionManager(_positionManager);
-        WETH.approve(address(positionManager), type(uint256).max);
-        USDC.approve(address(positionManager), type(uint256).max);
-    }
-
-    function setOracle(address _oracle) external onlyHookAdmin {
-        oracle = IOracle(_oracle);
-    }
-
-    function setRebalanceAdapter(address _rebalanceAdapter) external onlyHookAdmin {
-        rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
-    }
-
-    function setHookAdmin(address _hookAdmin) external onlyHookAdmin {
-        hookAdmin = _hookAdmin;
-    }
-
-    function setTickDelta(int24 _tickDelta) external onlyHookAdmin {
+    function setTickDelta(int24 _tickDelta) external onlyOwner {
         tickDelta = _tickDelta;
     }
 
-    function setPaused(bool _paused) external onlyHookAdmin {
+    function setPaused(bool _paused) external onlyOwner {
         paused = _paused;
     }
 
-    function setShutdown(bool _shutdown) external onlyHookAdmin {
+    function setShutdown(bool _shutdown) external onlyOwner {
         shutdown = _shutdown;
     }
 
-    function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyHookAdmin {
+    function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyOwner {
         authorizedPool = PoolId.unwrap(authorizedPoolKey.toId());
     }
 
-    function setIsInvertAssets(bool _isInvertAssets) external onlyHookAdmin {
+    function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
         isInvertAssets = _isInvertAssets;
     }
 
@@ -241,20 +212,9 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
 
     // --- Modifiers ---
 
-    /// @dev Only the hook deployer may call this function
-    modifier onlyHookAdmin() {
-        if (msg.sender != hookAdmin) revert NotHookDeployer();
-        _;
-    }
-
-    /// @dev Only the rebalance adapter may call this function
-    modifier onlyRebalanceAdapter() {
-        if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter();
-        _;
-    }
-
     /// @dev Only allows execution when the contract is not paused
     modifier notPaused() {
+        //TODO: should I stop only hook or all components?
         if (paused) revert ContractPaused();
         _;
     }

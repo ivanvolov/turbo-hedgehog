@@ -16,6 +16,7 @@ import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 // ** libraries
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
+import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -25,12 +26,14 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
+    using TokenWrapperLib for uint256;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
@@ -44,7 +47,7 @@ contract ALMGeneralTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
-        init_hook();
+        init_hook(address(USDC), address(WETH), 6, 18);
         approve_accounts();
         presetChainlinkOracles();
     }
@@ -55,7 +58,7 @@ contract ALMGeneralTest is ALMTestBase {
             Currency.wrap(address(USDC)),
             Currency.wrap(address(WETH)),
             hook,
-            poolFee + 1,
+            poolFee + 1, //TODO: check this again. Is fee +1 prove this test case?
             initialSQRTPrice
         );
     }
@@ -63,7 +66,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_long() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        lendingAdapter.addAuthorizedCaller(address(alice.addr));
+        IBase(address(lendingAdapter)).setComponents(alice.addr, alice.addr, alice.addr, alice.addr, alice.addr);
 
         // ** Approve to Morpho
         vm.startPrank(alice.addr);
@@ -80,13 +83,13 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** Borrow
         uint256 usdcToBorrow = ((wethToSupply * 3843) / 1e12) / 2;
-        lendingAdapter.borrowLong(ALMBaseLib.c6to18(usdcToBorrow));
+        lendingAdapter.borrowLong(c6to18(usdcToBorrow));
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), ALMBaseLib.c6to18(usdcToBorrow), 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), c6to18(usdcToBorrow), 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToBorrow);
 
         // ** Repay
-        lendingAdapter.repayLong(ALMBaseLib.c6to18(usdcToBorrow));
+        lendingAdapter.repayLong(c6to18(usdcToBorrow));
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
@@ -103,7 +106,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_short() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        lendingAdapter.addAuthorizedCaller(address(alice.addr));
+        IBase(address(lendingAdapter)).setComponents(alice.addr, alice.addr, alice.addr, alice.addr, alice.addr);
 
         // ** Approve to LA
         vm.startPrank(alice.addr);
@@ -113,68 +116,32 @@ contract ALMGeneralTest is ALMTestBase {
         // ** Add collateral
         uint256 usdcToSupply = 3843 * 1e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.addCollateralShort(ALMBaseLib.c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), ALMBaseLib.c6to18(usdcToSupply), 1e1);
+        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Borrow
         uint256 wethToBorrow = ((usdcToSupply * 1e12) / 3843) / 2;
         lendingAdapter.borrowShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), ALMBaseLib.c6to18(usdcToSupply), 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), wethToBorrow, 1e1);
         assertEqBalanceState(alice.addr, wethToBorrow, 0);
 
         // ** Repay
         lendingAdapter.repayShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), ALMBaseLib.c6to18(usdcToSupply), 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Remove collateral
-        lendingAdapter.removeCollateralShort(ALMBaseLib.c6to18(usdcToSupply));
+        lendingAdapter.removeCollateralShort(c6to18(usdcToSupply));
         assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToSupply);
 
         vm.stopPrank();
     }
-
-    // uint256 amountToDep = 100 ether;
-
-    // function test_deposit() public {
-    //     assertEq(hook.TVL(), 0);
-
-    //     deal(address(WETH), address(alice.addr), amountToDep);
-    //     vm.prank(alice.addr);
-
-    //     (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-    //     assertApproxEqAbs(shares, amountToDep, 1e10);
-    //     assertEq(hook.balanceOf(alice.addr), shares);
-
-    //     assertEqBalanceStateZero(alice.addr);
-    //     assertEqBalanceStateZero(address(hook));
-    //     assertEqPositionState(amountToDep, 0, 0, 0);
-
-    //     assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice);
-    //     assertApproxEqAbs(hook.TVL(), amountToDep, 1e4);
-    // }
-
-    // uint256 slippage = 1e15;
-
-    // function test_deposit_rebalance() public {
-    //     test_deposit();
-
-    //     vm.expectRevert();
-    //     rebalanceAdapter.rebalance(slippage);
-
-    //     vm.prank(deployer.addr);
-    //     rebalanceAdapter.rebalance(slippage);
-
-    //     assertEqBalanceStateZero(address(hook));
-    //     assertEqPositionState(180 * 1e18, 307919 * 1e6, 462341 * 1e6, 40039999999999999310);
-    //     assertApproxEqAbs(hook.TVL(), 99 * 1e18, 1e18);
-    // }
 
     function test_lending_adapter_migration() public {
         //TODO: fix this test
@@ -248,5 +215,15 @@ contract ALMGeneralTest is ALMTestBase {
         vm.prank(address(manager));
         vm.expectRevert(IALM.ContractShutdown.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+    }
+
+    function test_decimals_conversion() public {
+        //TODO: add more tests
+        uint256 amount = 100 * 1e6;
+        assertEq(amount.wrap(6), 100 * 1e18, "1");
+        assertEq(amount.wrap(6).unwrap(6), amount, "2");
+
+        amount = 100 * 1e18;
+        assertEq(amount.wrap(18), amount, "3");
     }
 }

@@ -46,7 +46,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
-        init_hook();
+        init_hook(address(USDC), address(WETH), 6, 18);
 
         // Setting up strategy params
         {

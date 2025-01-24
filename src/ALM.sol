@@ -17,13 +17,13 @@ import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
+import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 // ** interfaces
-import {ILendingPool} from "@src/interfaces/IAave.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
@@ -34,21 +34,13 @@ import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol"
 contract ALM is BaseStrategyHook, ERC20 {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
-
-    // AaveV2
-    address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
-    ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
+    using TokenWrapperLib for uint256;
 
     constructor(
         IPoolManager manager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(manager) ERC20(name, symbol) {
-        USDC.approve(lendingPool, type(uint256).max);
-        WETH.approve(lendingPool, type(uint256).max);
-        USDC.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-        WETH.approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-    }
+    ) BaseStrategyHook(manager) ERC20(name, symbol) {}
 
     function afterInitialize(
         address,
@@ -71,11 +63,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 TVL1 = TVL();
 
         if (isInvertAssets) {
-            USDC.transferFrom(msg.sender, address(this), amountIn);
-            lendingAdapter.addCollateralShort(ALMBaseLib.usdcBalance(address(this)));
+            IERC20(token0).transferFrom(msg.sender, address(this), amountIn);
+            lendingAdapter.addCollateralShort(token0Balance(true));
         } else {
-            WETH.transferFrom(msg.sender, address(this), amountIn);
-            lendingAdapter.addCollateralLong(ALMBaseLib.wethBalance(address(this)));
+            IERC20(token1).transferFrom(msg.sender, address(this), amountIn);
+            lendingAdapter.addCollateralLong(token1Balance(true));
         }
 
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
@@ -118,19 +110,17 @@ contract ALM is BaseStrategyHook, ERC20 {
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
         uint256[] memory modes = new uint256[](2);
-        (assets[0], amounts[0], modes[0]) = (address(WETH), uDS, 0);
-        (assets[1], amounts[1], modes[1]) = (address(USDC), ALMBaseLib.c18to6(uDL), 0);
-        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS, uDL, uDS), 0);
+        (assets[0], amounts[0], modes[0]) = (token0, uDL.unwrap(t0Dec), 0);
+        (assets[1], amounts[1], modes[1]) = (token1, uDS.unwrap(t1Dec), 0);
+        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
 
         if (isInvertAssets) {
-
+            if (token0Balance(false) < minAmountOut) revert NotMinOutWithdraw();
+            IERC20(token0).transfer(to, token0Balance(false));
             console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
-
-            if (ALMBaseLib.usdcBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
-            USDC.transfer(to, ALMBaseLib.c18to6(ALMBaseLib.usdcBalance(address(this))));
         } else {
-            if (ALMBaseLib.wethBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
-            WETH.transfer(to, ALMBaseLib.wethBalance(address(this)));
+            if (token1Balance(false) < minAmountOut) revert NotMinOutWithdraw();
+            IERC20(token1).transfer(to, token1Balance(false));
         }
 
         console.log("WithdrawDone");
@@ -139,7 +129,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function executeOperation(
         address[] calldata,
-        uint256[] calldata,
+        uint256[] calldata amounts,
         uint256[] calldata premiums,
         address,
         bytes calldata data
@@ -147,54 +137,32 @@ contract ALM is BaseStrategyHook, ERC20 {
         // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
 
-        (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = abi.decode(data, (uint256, uint256, uint256, uint256));
+        (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
-        lendingAdapter.repayLong(uDL);
-        lendingAdapter.repayShort(uDS);
+        lendingAdapter.repayLong(amounts[0].wrap(t0Dec));
+        lendingAdapter.repayShort(amounts[1].wrap(t1Dec));
 
         lendingAdapter.removeCollateralLong(uCL);
         lendingAdapter.removeCollateralShort(uCS);
 
-        // console.log("WETH to return %s", uDS + premiums[0]);
-        // console.log("USDC to return %s", ALMBaseLib.c18to6(uDL) + premiums[1]);
-        // console.log("WETH balance", ALMBaseLib.wethBalance(address(this)));
-        // console.log("USDC balance", ALMBaseLib.usdcBalance(address(this)));
+        // console.log("WETH balance", token1Balance(true));
+        // console.log("USDC balance", token0Balance(true));
 
         if (isInvertAssets) {
-            uint256 flWETHdebt = uDS + premiums[0];
-            console.log("flWETHdebt  %s", flWETHdebt);
-            console.log("wethBalance %s", ALMBaseLib.wethBalance(address(this)));
-            if (flWETHdebt > ALMBaseLib.wethBalance(address(this))) {
-                ALMBaseLib.swapExactOutput(
-                    address(USDC),
-                    address(WETH),
-                    flWETHdebt - ALMBaseLib.wethBalance(address(this))
-                );
-            } else if (ALMBaseLib.wethBalance(address(this)) > flWETHdebt) {
-                ALMBaseLib.swapExactInput(
-                    address(WETH),
-                    address(USDC),
-                    ALMBaseLib.wethBalance(address(this)) - flWETHdebt
-                );
+            int256 delWETHdebt = int256(amounts[1] + premiums[1]) - int256(token1Balance(false));
+            if (delWETHdebt > 0) {
+                ALMBaseLib.swapExactOutput(token0, token1, uint256(delWETHdebt));
+            } else if (delWETHdebt < 0) {
+                ALMBaseLib.swapExactInput(token1, token0, ALMMathLib.abs(delWETHdebt));
             }
 
             console.log("here");
         } else {
-            uint256 flUSDCdebt = uDL + ALMBaseLib.c6to18(premiums[1]);
-            console.log("flUSDCdebt  %s", flUSDCdebt);
-            console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
-            if (flUSDCdebt > ALMBaseLib.usdcBalance(address(this))) {
-                ALMBaseLib.swapExactOutput(
-                    address(WETH),
-                    address(USDC),
-                    flUSDCdebt - ALMBaseLib.usdcBalance(address(this))
-                );
-            } else if (ALMBaseLib.usdcBalance(address(this)) > flUSDCdebt) {
-                ALMBaseLib.swapExactInput(
-                    address(USDC),
-                    address(WETH),
-                    ALMBaseLib.usdcBalance(address(this)) - flUSDCdebt
-                );
+            int256 delUSDCdebt = int256(amounts[0] + premiums[0]) - int256(token0Balance(false));
+            if (delUSDCdebt > 0) {
+                ALMBaseLib.swapExactOutput(token1, token0, uint256(delUSDCdebt));
+            } else if (delUSDCdebt < 0) {
+                ALMBaseLib.swapExactInput(token0, token1, ALMMathLib.abs(delUSDCdebt));
             }
         }
 
@@ -202,6 +170,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     // --- Swapping logic ---
+
     function beforeSwap(
         address,
         PoolKey calldata key,
@@ -242,7 +211,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), usdcIn, false);
 
-            positionManager.positionAdjustmentPriceUp(ALMBaseLib.c6to18(usdcIn), wethOut);
+            positionManager.positionAdjustmentPriceUp(usdcIn.wrap(t0Dec), wethOut.wrap(t1Dec));
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), wethOut, false);
@@ -261,7 +230,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             // console.log("> usdcOut", usdcOut);
             key.currency1.take(poolManager, address(this), wethIn, false);
 
-            positionManager.positionAdjustmentPriceDown(ALMBaseLib.c6to18(usdcOut), wethIn);
+            positionManager.positionAdjustmentPriceDown(usdcOut.wrap(t0Dec), wethIn.wrap(t1Dec));
 
             key.currency0.settle(poolManager, address(this), usdcOut, false);
             sqrtPriceCurrent = sqrtPriceNext;
@@ -285,14 +254,25 @@ contract ALM is BaseStrategyHook, ERC20 {
         lendingAdapter.syncShort();
     }
 
-    // ---- Math functions
+    // --- Helpers ---
+
+    function token0Balance(bool wrap) public view returns (uint256) {
+        return wrap ? IERC20(token0).balanceOf(address(this)).wrap(t0Dec) : IERC20(token0).balanceOf(address(this));
+    }
+
+    function token1Balance(bool wrap) public view returns (uint256) {
+        return wrap ? IERC20(token1).balanceOf(address(this)).wrap(t1Dec) : IERC20(token1).balanceOf(address(this));
+    }
+
+    // --- Math functions ---
+
     //TODO: I would remove balances, cause money can't be withdraws from ALM so no need to account for them
     function TVL() public view returns (uint256) {
         return
             isInvertAssets
                 ? ALMMathLib.getTVLStable(
-                    ALMBaseLib.wethBalance(address(this)),
-                    ALMBaseLib.usdcBalance(address(this)),
+                    token1Balance(true),
+                    token0Balance(true),
                     lendingAdapter.getCollateralLong(),
                     lendingAdapter.getBorrowedShort(),
                     lendingAdapter.getCollateralShort(),
@@ -300,8 +280,8 @@ contract ALM is BaseStrategyHook, ERC20 {
                     oracle.price()
                 )
                 : ALMMathLib.getTVL(
-                    ALMBaseLib.wethBalance(address(this)),
-                    ALMBaseLib.usdcBalance(address(this)),
+                    token1Balance(true),
+                    token0Balance(true),
                     lendingAdapter.getCollateralLong(),
                     lendingAdapter.getBorrowedShort(),
                     lendingAdapter.getCollateralShort(),

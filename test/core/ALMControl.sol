@@ -38,17 +38,17 @@ contract ALMControl is BaseHook, ERC20 {
     using StateLibrary for IPoolManager;
     using PRBMathUD60x18 for uint256;
 
-    IALM hook;
+    IALM alm;
 
     PoolKey key;
 
     int24 public tickLower;
     int24 public tickUpper;
 
-    constructor(IPoolManager _manager, address _hook) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
-        hook = IALM(_hook);
-        tickLower = nearestUsableTick(hook.tickLower(), 2);
-        tickUpper = nearestUsableTick(hook.tickUpper(), 2);
+    constructor(IPoolManager _manager, address _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
+        alm = IALM(_alm);
+        tickLower = nearestUsableTick(alm.tickLower(), 2);
+        tickUpper = nearestUsableTick(alm.tickUpper(), 2);
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -90,8 +90,8 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        tickLower = nearestUsableTick(hook.tickLower(), 2);
-        tickUpper = nearestUsableTick(hook.tickUpper(), 2);
+        tickLower = nearestUsableTick(alm.tickLower(), 2);
+        tickUpper = nearestUsableTick(alm.tickUpper(), 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
         // console.log("newLiquidity", newLiquidity);
