@@ -21,37 +21,22 @@ import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
-import {ERC721} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IALM} from "@src/interfaces/IALM.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {ILendingPool} from "@src/interfaces/IAave.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
-contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
+contract SRebalanceAdapter is Base, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
 
     error NoRebalanceNeeded();
-    error NotALM();
-
-    ILendingAdapter public lendingAdapter;
-    IALM public alm;
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
-
-    address public token0;
-    address public token1;
-    uint8 public t0Dec;
-    uint8 public t1Dec;
 
     // ** AaveV2
     address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
@@ -67,28 +52,13 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public invertAssets = false;
 
-    constructor() Ownable(msg.sender) {}
+    constructor() Base(msg.sender) {}
 
-    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external onlyOwner {
-        token0 = _token0;
-        token1 = _token1;
-        t0Dec = _t0Dec;
-        t1Dec = _t1Dec;
-
+    function _postSetTokens() internal override {
         IERC20(token0).approve(lendingPool, type(uint256).max);
         IERC20(token1).approve(lendingPool, type(uint256).max);
         IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
         IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-    }
-
-    function setLendingAdapter(address _lendingAdapter) external onlyOwner {
-        ALMBaseLib.approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        ALMBaseLib.approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        lendingAdapter = ILendingAdapter(_lendingAdapter);
-    }
-
-    function setALM(address _alm) external onlyOwner {
-        alm = IALM(_alm);
     }
 
     function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
@@ -147,7 +117,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     }
 
     function isPriceRebalance() public view returns (bool, int256) {
-        int256 priceDelta = int256(IOracle(alm.oracle()).price()) - int256(oraclePriceAtLastRebalance);
+        int256 priceDelta = int256(oracle.price()) - int256(oraclePriceAtLastRebalance);
         return (ALMMathLib.abs(priceDelta) > rebalancePriceThreshold, priceDelta);
     }
 
@@ -183,7 +153,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
         // ** Update state
         sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
-        oraclePriceAtLastRebalance = IOracle(alm.oracle()).price();
+        oraclePriceAtLastRebalance = oracle.price();
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
         alm.updateLiquidity(calcLiquidity());
@@ -263,7 +233,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         int256 deltaDL;
         int256 deltaDS;
         {
-            console.log("price %s", IOracle(alm.oracle()).price());
+            console.log("price %s", oracle.price());
             console.log("currentCL", lendingAdapter.getCollateralLong());
             console.log("currentCS", lendingAdapter.getCollateralShort());
             console.log("currentDL", lendingAdapter.getBorrowedLong());
@@ -272,7 +242,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
             uint256 targetCL;
             uint256 targetCS;
-            uint256 price = IOracle(alm.oracle()).price();
+            uint256 price = oracle.price();
             if (invertAssets) {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
@@ -339,7 +309,7 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     }
 
     function checkDeviations() internal view {
-        uint256 price = IOracle(alm.oracle()).price();
+        uint256 price = oracle.price();
         uint256 currentCL = lendingAdapter.getCollateralLong();
         uint256 currentCS = lendingAdapter.getCollateralShort();
 

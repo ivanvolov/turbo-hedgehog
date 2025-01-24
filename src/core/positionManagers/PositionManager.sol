@@ -10,7 +10,7 @@ import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -22,53 +22,21 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 /// @title PositionManager
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
-contract PositionManager is Ownable, IPositionManager {
+contract PositionManager is Base, IPositionManager {
     using FixedPointMathLib for uint256;
     using TokenWrapperLib for uint256;
-
-    address public token0;
-    address public token1;
-    uint8 public t0Dec;
-    uint8 public t1Dec;
 
     uint256 public k1 = 1e18 / 2;
     uint256 public k2 = 1e18 / 2;
 
-    ILendingAdapter public lendingAdapter;
-
-    IALM public alm;
-    IRebalanceAdapter public rebalanceAdapter;
-
-    constructor() Ownable(msg.sender) {}
-
-    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external onlyOwner {
-        token0 = _token0;
-        token1 = _token1;
-        t0Dec = _t0Dec;
-        t1Dec = _t1Dec;
-    }
-
-    function setLendingAdapter(address _lendingAdapter) external onlyOwner {
-        ALMBaseLib.approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max); //TODO: check all approves to be safe
-        ALMBaseLib.approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        lendingAdapter = ILendingAdapter(_lendingAdapter);
-    }
-
-    function setALM(address _alm) external override onlyOwner {
-        alm = IALM(_alm);
-    }
-
-    function setRebalanceAdapter(address _rebalanceAdapter) external onlyOwner {
-        rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
-    }
+    constructor() Base(msg.sender) {}
 
     function setKParams(uint256 _k1, uint256 _k2) external onlyOwner {
         k1 = _k1;
         k2 = _k2;
     }
 
-    function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external override {
-        if (msg.sender != address(alm)) revert NotALM();
+    function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external onlyALM {
         IERC20(token0).transferFrom(address(alm), address(this), delta0.unwrap(t0Dec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
@@ -85,8 +53,7 @@ contract PositionManager is Ownable, IPositionManager {
         IERC20(token1).transfer(address(alm), delta1.unwrap(t1Dec));
     }
 
-    function positionAdjustmentPriceDown(uint256 delta0, uint256 delta1) external override {
-        if (msg.sender != address(alm)) revert NotALM();
+    function positionAdjustmentPriceDown(uint256 delta0, uint256 delta1) external onlyALM {
         IERC20(token1).transferFrom(address(alm), address(this), delta1.unwrap(t1Dec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;

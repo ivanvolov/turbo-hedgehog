@@ -26,6 +26,7 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
@@ -65,7 +66,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_long() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        lendingAdapter.addAuthorizedCaller(address(alice.addr));
+        IBase(address(lendingAdapter)).setComponents(alice.addr, alice.addr, alice.addr, alice.addr, alice.addr);
 
         // ** Approve to Morpho
         vm.startPrank(alice.addr);
@@ -105,7 +106,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_short() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        lendingAdapter.addAuthorizedCaller(address(alice.addr));
+        IBase(address(lendingAdapter)).setComponents(alice.addr, alice.addr, alice.addr, alice.addr, alice.addr);
 
         // ** Approve to LA
         vm.startPrank(alice.addr);

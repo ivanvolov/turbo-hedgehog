@@ -52,7 +52,7 @@ library ALMBaseLib {
     }
 
     function approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0)) IERC20(token).approve(moduleOld, 0);
-        IERC20(token).approve(moduleNew, amount);
+        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).approve(moduleOld, 0);
+        if (moduleNew != address(this)) IERC20(token).approve(moduleNew, amount);
     }
 }

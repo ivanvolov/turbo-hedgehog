@@ -20,7 +20,7 @@ import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {BaseStrategyHook} from "@src/core/BaseStrategyHook.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 // ** interfaces

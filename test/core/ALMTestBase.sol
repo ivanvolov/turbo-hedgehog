@@ -30,6 +30,7 @@ import {OracleLibrary} from "@forks/uniswap-v3/libraries/OracleLibrary.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
@@ -72,31 +73,50 @@ abstract contract ALMTestBase is Test, Deployers {
         deployCodeTo("ALM.sol", abi.encode(manager, "NAME", "SYMBOL"), hookAddress);
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
-        assertEq(hook.hookAdmin(), deployer.addr);
+        assertEq(hook.owner(), deployer.addr);
         // MARK END
 
         // MARK: Deploying modules and setting up parameters
-        rebalanceAdapter = new SRebalanceAdapter();
-        rebalanceAdapter.setTokens(_token0, _token1, _token0Dec, _token1Dec); // * Notice: tokens should be set first in all contracts
-
         lendingAdapter = new AaveLendingAdapter();
-        lendingAdapter.setTokens(_token0, _token1, _token0Dec, _token1Dec);
-
         positionManager = new PositionManager();
-        positionManager.setTokens(_token0, _token1, _token0Dec, _token1Dec);
-
         oracle = new Oracle();
+        rebalanceAdapter = new SRebalanceAdapter();
 
-        positionManager.setALM(address(hook));
-        positionManager.setLendingAdapter(address(lendingAdapter));
-        positionManager.setRebalanceAdapter(address(rebalanceAdapter));
+        hook.setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        hook.setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
 
-        lendingAdapter.addAuthorizedCaller(address(hook));
-        lendingAdapter.addAuthorizedCaller(address(rebalanceAdapter));
-        lendingAdapter.addAuthorizedCaller(address(positionManager));
+        IBase(address(lendingAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        IBase(address(lendingAdapter)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
 
-        rebalanceAdapter.setALM(address(hook));
-        rebalanceAdapter.setLendingAdapter(address(lendingAdapter));
+        IBase(address(positionManager)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        IBase(address(positionManager)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
+
+        IBase(address(rebalanceAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec); // * Notice: tokens should be set first in all contracts
+        IBase(address(rebalanceAdapter)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter)
+        );
 
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
         rebalanceAdapter.setOraclePriceAtLastRebalance(0);
@@ -112,14 +132,9 @@ abstract contract ALMTestBase is Test, Deployers {
             hook
         ); // pre-compute key in order to restrict hook to this pool
 
-        hook.setTokens(_token0, _token1, _token0Dec, _token1Dec);
         hook.setAuthorizedPool(_key);
         (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
 
-        hook.setLendingAdapter(address(lendingAdapter));
-        hook.setRebalanceAdapter(address(rebalanceAdapter));
-        hook.setOracle(address(oracle));
-        hook.setPositionManager(address(positionManager));
         assertEq(hook.tickLower(), 193779 + 3000);
         assertEq(hook.tickUpper(), 193779 - 3000);
         // MARK END

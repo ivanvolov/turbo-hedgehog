@@ -11,8 +11,6 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 interface IALM {
     error ZeroLiquidity();
     error ZeroDebt();
-    error NotHookDeployer();
-    error NotRebalanceAdapter();
     error AddLiquidityThroughHook();
     error ContractPaused();
     error ContractShutdown();
@@ -25,17 +23,7 @@ interface IALM {
     event Deposit(address indexed to, uint256 amount, uint256 shares);
     event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
 
-    function token0() external view returns (address);
-
-    function token1() external view returns (address);
-
-    function t0Dec() external view returns (uint8);
-
-    function t1Dec() external view returns (uint8);
-
     function refreshReserves() external;
-
-    function oracle() external view returns (IOracle);
 
     function tickLower() external view returns (int24);
 

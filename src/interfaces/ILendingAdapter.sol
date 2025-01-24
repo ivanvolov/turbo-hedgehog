@@ -35,9 +35,4 @@ interface ILendingAdapter {
     function syncLong() external;
 
     function syncShort() external;
-
-    // ** Params
-    function addAuthorizedCaller(address) external;
-
-    function setTokens(address, address, uint8, uint8) external;
 }
