@@ -197,7 +197,14 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-        uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+
+        console.log("invertAssets %s", invertAssets);
+        uint256 VLP;
+        if (invertAssets) {
+        VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+        } else {
+        VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(IOracle(alm.oracle()).price());
+        }
 
         console.log("VLP %s", VLP);
         console.log("price      %s", oraclePriceAtLastRebalance);

@@ -54,13 +54,15 @@ contract ETHALMTest is ALMTestBase {
             hook.setIsInvertAssets(false);
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalancePriceThreshold(1e18);
+            rebalanceAdapter.setRebalancePriceThreshold(1e15);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
             rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
             rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
+            rebalanceAdapter.setOraclePriceAtLastRebalance(1e18);
+
             vm.stopPrank();
         }
 
@@ -199,30 +201,30 @@ contract ETHALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
-        uint256 wethToSwap = 1 ether;
+        uint256 wethToSwap = 4701239590479080000.00;
         test_deposit_rebalance();
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 3843312658);
+        assertEq(deltaUSDC, 17977747103);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(181425000000000000000, 307920000000, 465990198957, 40465000000000000000);
+        assertEqPositionState(186699266416432688999, 307920000000, 480124633402, 42038026825953609000); //done
 
-        assertEq(hook.sqrtPriceCurrent(), 1277987852491090258696976300698708);
-        assertApproxEqAbs(hook.TVL(), 99892138488698363212, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1284427395824698971859500971066258); //done
+        assertApproxEqAbs(hook.TVL(), 99921142577748500628, 1e1); //done
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
         test_deposit_rebalance();
 
-        uint256 usdcToGetFSwap = 3837966928;
+        uint256 usdcToGetFSwap = 17987491283; //done
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 998609082496085785);
+        assertEq(wethToSwapQ, 4703800571944748806); //done
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -233,10 +235,10 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(181423017942556922243, 307920000000, 465984853226, 40464408860060836458);
+        assertEqPositionState(186702915815021267048, 307920000000, 480134377581, 42039115243076518242); //done
 
-        assertEq(hook.sqrtPriceCurrent(), 1277987852489185043003803472859085);
-        assertApproxEqAbs(hook.TVL(), 99892136433496345593, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1284430903740923037071553755899878); //done
+        assertApproxEqAbs(hook.TVL(), 99921171946067897676, 1e1); //done
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
