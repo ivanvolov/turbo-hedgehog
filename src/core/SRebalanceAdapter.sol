@@ -130,18 +130,26 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
 
     // ** Logic
 
-    function isRebalanceNeeded() public view returns (bool, int256, uint256) {
-        (bool _isPriceRebalance, int256 tickDelta) = isPriceRebalance();
+    function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
+        (bool _isPriceRebalance, uint256 priceThreshold) = isPriceRebalance();
         (bool _isTimeRebalance, uint256 auctionTriggerTime) = isTimeRebalance();
 
-        console.log("tickDelta %s", uint256(tickDelta));
         console.log("auctionTriggerTime %s", auctionTriggerTime);
-        return (_isPriceRebalance || _isTimeRebalance, tickDelta, auctionTriggerTime);
+        return (_isPriceRebalance || _isTimeRebalance, priceThreshold, auctionTriggerTime);
     }
 
-    function isPriceRebalance() public view returns (bool, int256) {
-        int256 priceDelta = int256(IOracle(alm.oracle()).price()) - int256(oraclePriceAtLastRebalance);
-        return (ALMMathLib.abs(priceDelta) > rebalancePriceThreshold, priceDelta);
+    function isPriceRebalance() public view returns (bool, uint256) {
+
+        uint256 cachedRatio = (IOracle(alm.oracle()).price()).div(oraclePriceAtLastRebalance);
+        console.log("currentPrice %s", alm.oracle().price());
+        console.log("priceAtLastRebalance %s", oraclePriceAtLastRebalance);
+        console.log("cachedRatio %s", cachedRatio);
+        uint256 priceTreshold = cachedRatio > 1e18 ? (cachedRatio).sub(1e18) : uint256(1e18).sub(cachedRatio);
+
+        console.log("priceTreshold %s", priceTreshold);
+
+        return (priceTreshold >= rebalancePriceThreshold, priceTreshold);
+
     }
 
     function isTimeRebalance() public view returns (bool, uint256) {
@@ -151,7 +159,10 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
     }
 
     function rebalance(uint256 slippage) external onlyOwner {
-        (bool isRebalance, , ) = isRebalanceNeeded();
+
+        console.log("Rebalance");
+
+        (bool isRebalance, ,) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
 
@@ -180,6 +191,9 @@ contract SRebalanceAdapter is Ownable, IRebalanceAdapter {
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
         alm.updateLiquidity(calcLiquidity());
+
+        console.log("RebalanceDone");
+
     }
 
     function calcLiquidity() public view returns (uint128) {

@@ -54,13 +54,14 @@ contract DeltaNeutralALMTest is ALMTestBase {
             hook.setIsInvertAssets(true);
             rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalancePriceThreshold(1e18);
+            rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(45 * 1e16); // 0.45 (45%)
             rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
             rebalanceAdapter.setShortLeverage(3 * 1e18); // 3
-            rebalanceAdapter.setMaxDeviationLong(1e16); // 0.01 (1%)
-            rebalanceAdapter.setMaxDeviationShort(1e16); // 0.01 (1%)
+            rebalanceAdapter.setMaxDeviationLong(1e17); // 0.01 (1%)
+            rebalanceAdapter.setMaxDeviationShort(1e17); // 0.01 (1%)
+            rebalanceAdapter.setOraclePriceAtLastRebalance(1e18);
             vm.stopPrank();
         }
 
@@ -160,69 +161,69 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
     function test_deposit_rebalance_swap_price_up_in() public {
         test_deposit_rebalance();
-        uint256 usdcToSwap = 1788455 * 1e4;
+        uint256 usdcToSwap = 20594068491; //done
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 4653415280654932362, 1e4);
+        assertApproxEqAbs(deltaWETH, 5331823310591406484, 1e4); //done
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(128158438953827438453, 634095000000, 328165138461, 107960653922713080146);
+        assertEqPositionState(127191707511167962830, 634095000000, 325455619970, 107672330509990078644); //done
 
-        assertEq(hook.sqrtPriceCurrent(), 1277986412976894052723198864463138);
-        assertApproxEqAbs(hook.TVL(), 383671136123759165123643, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1271645440502551212531930542137883); //done
+        assertApproxEqAbs(hook.TVL(), 383769462107533676231914, 1e1); //done
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
         test_deposit_rebalance();
 
-        uint256 wethToGetFSwap = 1 ether;
+        uint256 wethToGetFSwap = 5331823310823070000; //done
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 3843313592);
+        assertEq(usdcToSwapQ, 20594068491); //done
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
-        assertApproxEqAbs(deltaWETH, 1 ether, 1e1);
+        assertApproxEqAbs(deltaWETH, 5331823310823070000, 1e1); //done
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(133364555728760717069, 634095000000, 342206374869, 109513355416991426399);
+        assertEqPositionState(127191707510837842319, 634095000000, 325455619970, 107672330509891621649); //done
 
-        assertEq(hook.sqrtPriceCurrent(), 1277987542069949744339548841574799);
-        assertApproxEqAbs(hook.TVL(), 383691895130999999788830, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1271645440502275639794774138805276); //done
+        assertApproxEqAbs(hook.TVL(), 383769462106642003358830, 1e1); //done
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
-        uint256 wethToSwap = 1 ether;
+        uint256 wethToSwap = 5412405869100890000;
         test_deposit_rebalance();
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 3843311733);
+        assertEq(deltaUSDC, 20697298845); //done
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(136214555728760717070, 634095000000, 349893000194, 110363355416991426399);
+        assertEqPositionState(142502234092229485318, 634095000000, 366746987307, 112238627911359304649); //done
 
-        assertEq(hook.sqrtPriceCurrent(), 1277988160172721509835967073599109);
-        assertApproxEqAbs(hook.TVL(), 383703269805999999792679, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1284426117818802190383210484719251); //done
+        assertApproxEqAbs(hook.TVL(), 383832632883169325394981, 1e1); //done
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
         test_deposit_rebalance();
 
-        uint256 usdcToGetFSwap = 3837966928;
+        uint256 usdcToGetFSwap = 20697298845; //done
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 998609322581608095);
+        assertEq(wethToSwapQ, 5412405868873678049); //done
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -233,10 +234,10 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(136212574013439508604, 634095000000, 349887655389, 110362764379088609840);
+        assertEqPositionState(142502234091905708288, 634095000000, 366746987307, 112238627911262739570); //done
 
-        assertEq(hook.sqrtPriceCurrent(), 1277988159742930726366106554511578);
-        assertApproxEqAbs(hook.TVL(), 383703261893616609342636, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1284426117818531912956160486717224);
+        assertApproxEqAbs(hook.TVL(), 383832632882294786595582, 1e1);
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
@@ -264,8 +265,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
             rebalanceAdapter.rebalance(slippage);
 
             assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(180370260073738130001, 311178443632, 466465276440, 40122362296402637362);
-            assertApproxEqAbs(hook.TVL(), 100243518021586397094, 1e1);
+            assertEqPositionState(133690275324877496198, 634274255207, 345383781290, 109041749748313045287); // done
+            assertApproxEqAbs(hook.TVL(), 384569784293471999376026, 1e1); //done
         }
     }
 

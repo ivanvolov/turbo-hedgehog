@@ -152,9 +152,9 @@ library ALMMathLib {
         return ratio.mul(TVL);
     }
 
-    function getL(uint256 V, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
+    function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
         return
-            (V.mul(price)).div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+            VLP.div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
     function getUserAmounts(
@@ -171,7 +171,15 @@ library ALMMathLib {
     }
 
     // --- Helpers ---
-
+    //TODO 1e30???
+//    function getTickFromPrice(uint256 oraclePrice) internal pure returns (int24) {
+//        return getTickFromSqrtPrice(
+//            toUint160(
+//                ((uint256(1e30).div(oraclePrice)).sqrt()).mul(79228162514264337593543950336)
+//                )
+//            );
+//    }
+    
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
         return getPriceFromSqrtPriceX96(getSqrtPriceAtTick(tick));
     }
@@ -227,4 +235,5 @@ library ALMMathLib {
         int256 n = int256(a) - int256(b);
         return abs(n);
     }
+
 }

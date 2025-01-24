@@ -147,7 +147,13 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
     }
 
     function _updateBoundaries() internal {
+        
+        //TODO oracle-based boundaries calculation
+        //int24 tick = ALMMathLib.getTickFromPrice(IRebalanceAdapter(rebalanceAdapter).oraclePriceAtLastRebalance());
+        
         int24 tick = ALMMathLib.getTickFromSqrtPrice(sqrtPriceCurrent);
+
+        console.log("tick %s", uint256(int256(tick)));
         // Here it's inverted due to currencies order
         tickUpper = tick - tickDelta;
         tickLower = tick + tickDelta;
@@ -203,9 +209,9 @@ abstract contract BaseStrategyHook is BaseHook, IALM {
             // console.log("> amount specified positive");
             usdcOut = uint256(amountSpecified);
             console.log("usdcOut %s", usdcOut);
+            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, usdcOut);
-            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);

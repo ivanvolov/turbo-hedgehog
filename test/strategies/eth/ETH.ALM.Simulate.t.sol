@@ -220,7 +220,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function try_rebalance() internal {
-        (bool isRebalance, int256 delta, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
+        (bool isRebalance, uint256 ratio, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
         console.log("isRebalance", isRebalance);
         if (isRebalance) {
             console.log(">> doing rebalance");
@@ -237,7 +237,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             hookControl.rebalance();
             console.log("(2)");
 
-            save_rebalance_data(delta, auctionTriggerTime);
+            save_rebalance_data(ratio, auctionTriggerTime);
         }
     }
 

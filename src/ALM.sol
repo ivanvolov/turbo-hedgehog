@@ -63,6 +63,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
+
+        console.log("Deposit");
+
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
@@ -78,13 +81,26 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
+
+        console.log("DepositDone");
+
         return (amountIn, _shares);
+
     }
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
+
+        console.log("Withdraw");
+
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
+
+        console.log("preCL %s", lendingAdapter.getCollateralLong());
+        console.log("preCS %s", lendingAdapter.getCollateralShort());
+        console.log("preDL %s", lendingAdapter.getBorrowedLong());
+        console.log("preDS %s", lendingAdapter.getBorrowedShort());
+
         (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = ALMMathLib.getUserAmounts(
             totalSupply(),
             sharesOut,
@@ -94,9 +110,10 @@ contract ALM is BaseStrategyHook, ERC20 {
             lendingAdapter.getBorrowedShort()
         );
 
-        if (uDS == 0 || uDL == 0) revert ZeroDebt();
+        if (uDS == 0 || uDL == 0) revert ZeroDebt(); //TODO 
         _burn(msg.sender, sharesOut);
         liquidity = rebalanceAdapter.calcLiquidity();
+        console.log("liquidity %s", liquidity);
 
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
@@ -106,12 +123,18 @@ contract ALM is BaseStrategyHook, ERC20 {
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS, uDL, uDS), 0);
 
         if (isInvertAssets) {
+
+            console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
+
             if (ALMBaseLib.usdcBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
             USDC.transfer(to, ALMBaseLib.c18to6(ALMBaseLib.usdcBalance(address(this))));
         } else {
             if (ALMBaseLib.wethBalance(address(this)) < minAmountOut) revert NotMinOutWithdraw();
             WETH.transfer(to, ALMBaseLib.wethBalance(address(this)));
         }
+
+        console.log("WithdrawDone");
+
     }
 
     function executeOperation(
@@ -154,6 +177,8 @@ contract ALM is BaseStrategyHook, ERC20 {
                     ALMBaseLib.wethBalance(address(this)) - flWETHdebt
                 );
             }
+
+            console.log("here");
         } else {
             uint256 flUSDCdebt = uDL + ALMBaseLib.c6to18(premiums[1]);
             console.log("flUSDCdebt  %s", flUSDCdebt);
