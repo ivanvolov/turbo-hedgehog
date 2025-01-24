@@ -13,9 +13,7 @@ library TestAccountLib {
 
     /// @dev Creates a new TestAccount with the provided user name.
     ///      Logic borrows from `StdCheats.sol`.
-    function createTestAccount(
-        string memory user
-    ) internal returns (TestAccount memory) {
+    function createTestAccount(string memory user) internal returns (TestAccount memory) {
         uint256 pk = uint256(keccak256(abi.encodePacked(user)));
         address addr = vm.addr(pk);
         vm.label(addr, user);
@@ -26,10 +24,7 @@ library TestAccountLib {
     /// @param account The TestAccount to sign with.
     /// @param hash The hash to sign.
     /// @return The signature.
-    function signPacked(
-        TestAccount memory account,
-        bytes32 hash
-    ) internal pure returns (bytes memory) {
+    function signPacked(TestAccount memory account, bytes32 hash) internal pure returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(account.pk, hash);
 
         bytes memory signature = new bytes(65);
@@ -40,9 +35,7 @@ library TestAccountLib {
     /// @dev Sorts an array of TestAccounts by address.
     /// @param accounts The array of TestAccounts to sort.
     /// @return The sorted array of TestAccounts.
-    function sortAccounts(
-        TestAccount[] memory accounts
-    ) internal pure returns (TestAccount[] memory) {
+    function sortAccounts(TestAccount[] memory accounts) internal pure returns (TestAccount[] memory) {
         for (uint256 i = 0; i < accounts.length; i++) {
             for (uint256 j = i + 1; j < accounts.length; j++) {
                 if (accounts[i].addr > accounts[j].addr) {

@@ -118,10 +118,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     function _updateBoundaries() internal {
-        
         //TODO oracle-based boundaries calculation
         //int24 tick = ALMMathLib.getTickFromPrice(IRebalanceAdapter(rebalanceAdapter).oraclePriceAtLastRebalance());
-        
+
         int24 tick = ALMMathLib.getTickFromSqrtPrice(sqrtPriceCurrent);
 
         console.log("tick %s", uint256(int256(tick)));

@@ -55,7 +55,6 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
-
         console.log("Deposit");
 
         if (amountIn == 0) revert ZeroLiquidity();
@@ -77,11 +76,9 @@ contract ALM is BaseStrategyHook, ERC20 {
         console.log("DepositDone");
 
         return (amountIn, _shares);
-
     }
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
-
         console.log("Withdraw");
 
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
@@ -102,7 +99,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             lendingAdapter.getBorrowedShort()
         );
 
-        if (uDS == 0 || uDL == 0) revert ZeroDebt(); //TODO 
+        if (uDS == 0 || uDL == 0) revert ZeroDebt(); //TODO
         _burn(msg.sender, sharesOut);
         liquidity = rebalanceAdapter.calcLiquidity();
         console.log("liquidity %s", liquidity);
@@ -115,16 +112,16 @@ contract ALM is BaseStrategyHook, ERC20 {
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
 
         if (isInvertAssets) {
+            console.log("usdcBalance %s", token0Balance(false));
+
             if (token0Balance(false) < minAmountOut) revert NotMinOutWithdraw();
             IERC20(token0).transfer(to, token0Balance(false));
-            console.log("usdcBalance %s", ALMBaseLib.usdcBalance(address(this)));
         } else {
             if (token1Balance(false) < minAmountOut) revert NotMinOutWithdraw();
             IERC20(token1).transfer(to, token1Balance(false));
         }
 
         console.log("WithdrawDone");
-
     }
 
     function executeOperation(

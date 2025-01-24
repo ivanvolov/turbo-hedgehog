@@ -116,17 +116,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function isPriceRebalance() public view returns (bool, uint256) {
-
-        uint256 cachedRatio = (IOracle(alm.oracle()).price()).div(oraclePriceAtLastRebalance);
-        console.log("currentPrice %s", alm.oracle().price());
+        console.log("currentPrice %s", oracle.price());
         console.log("priceAtLastRebalance %s", oraclePriceAtLastRebalance);
+        uint256 cachedRatio = oracle.price().div(oraclePriceAtLastRebalance);
         console.log("cachedRatio %s", cachedRatio);
-        uint256 priceTreshold = cachedRatio > 1e18 ? (cachedRatio).sub(1e18) : uint256(1e18).sub(cachedRatio);
 
-        console.log("priceTreshold %s", priceTreshold);
+        uint256 priceThreshold = cachedRatio > 1e18 ? (cachedRatio).sub(1e18) : uint256(1e18).sub(cachedRatio);
+        console.log("priceThreshold %s", priceThreshold);
 
-        return (priceTreshold >= rebalancePriceThreshold, priceTreshold);
-
+        return (priceThreshold >= rebalancePriceThreshold, priceThreshold);
     }
 
     function isTimeRebalance() public view returns (bool, uint256) {
@@ -136,10 +134,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function rebalance(uint256 slippage) external onlyOwner {
-
         console.log("Rebalance");
 
-        (bool isRebalance, ,) = isRebalanceNeeded();
+        (bool isRebalance, , ) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
 
@@ -170,23 +167,23 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         alm.updateLiquidity(calcLiquidity());
 
         console.log("RebalanceDone");
-
     }
 
-    function calcLiquidity() public view returns (uint128) {
+    function executeOperation(
+        address[] calldata,
+        uint256[] calldata amounts,
+        uint256[] calldata premiums,
+        address,
+        bytes calldata data
+    ) external returns (bool) {
+        // console.log("executeOperation");
+        require(msg.sender == lendingPool, "M0");
+        _positionManagement(data);
 
-        console.log("invertAssets %s", invertAssets);
-        uint256 VLP;
-        if (invertAssets) {
-        VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
-        } else {
-        VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(IOracle(alm.oracle()).price());
-        }
-
-        console.log("VLP %s", VLP);
-        console.log("price      %s", oraclePriceAtLastRebalance);
-        console.log("priceUpper %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())));
-        console.log("priceLower %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower())));
+        // console.log("afterCL %s", lendingAdapter.getCollateralLong());
+        // console.log("afterCS %s", lendingAdapter.getCollateralShort());
+        // console.log("afterDL %s", lendingAdapter.getBorrowedLong());
+        // console.log("afterDS %s", lendingAdapter.getBorrowedShort());
 
         uint256 borrowedToken0 = amounts[0] + premiums[0];
         uint256 borrowedToken1 = amounts[1] + premiums[1];
@@ -304,7 +301,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-        uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+        uint256 VLP;
+        if (invertAssets) {
+            VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+        } else {
+            VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());
+        }
 
         console.log("VLP %s", VLP);
         console.log("price      %s", oraclePriceAtLastRebalance);
