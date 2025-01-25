@@ -141,7 +141,7 @@ combined_plot <- subplot(
     yaxis2 = list(title = "delta1")
   )
 
-combined_plot
+#combined_plot
 }
 ```
 

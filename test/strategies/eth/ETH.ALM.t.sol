@@ -269,10 +269,4 @@ contract ETHALMTest is ALMTestBase {
             assertApproxEqAbs(hook.TVL(), 100243518021586397094, 1e1);
         }
     }
-
-    // ** Utils
-
-    function getHookPrice() public view returns (uint256) {
-        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()));
-    }
 }

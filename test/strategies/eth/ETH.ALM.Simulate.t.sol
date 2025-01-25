@@ -23,6 +23,7 @@ import {ALMTestSimBase} from "@test/core/ALMTestSimBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
 contract ETHALMSimulationTest is ALMTestSimBase {
@@ -51,7 +52,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
-            rebalanceAdapter.setRebalanceTimeThreshold(2000);
+            rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
             rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
             rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
             rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
@@ -191,7 +192,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function test_rebalance_simulation() public {
-        numberOfSwaps = 100; // Number of blocks with swaps
+        numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();
         console.log("Simulation started");
@@ -218,7 +219,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         for (uint i = 0; i < numberOfSwaps; i++) {
             // **  Always do swaps
             {
-                randomAmount = random(30) * 1e18;
+                randomAmount = (random(10) * 1e18) / 100000;
                 bool zeroForOne = (random(3) == 1); // here we set the trend
 
                 swap(randomAmount, zeroForOne, !zeroForOne);
@@ -238,31 +239,35 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function try_rebalance() internal {
-        (bool isRebalance, uint256 ratio, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
-        console.log("isRebalance", isRebalance);
+        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
+        console.log(">> isRebalance", isRebalance);
+        // console.log(">> auctionTriggerTime %s", auctionTriggerTime);
+        // console.log(">> block.timestamp %s", block.timestamp);
+        console.log(">> priceThreshold %s", priceThreshold);
+        console.log(">> rebalancePriceThreshold %s", rebalanceAdapter.rebalancePriceThreshold());
         if (isRebalance) {
             console.log(">> doing rebalance");
             {
                 vm.startPrank(rebalanceAdapter.owner());
-                bool success = rebalanceOrError(1e15);
-                if (!success) success = rebalanceOrError(1e16);
-                if (!success) success = rebalanceOrError(1e17);
-                console.log("(1)");
+                bool success = _rebalanceOrError(1e15);
+                if (!success) success = _rebalanceOrError(1e16);
+                if (!success) success = _rebalanceOrError(1e17);
+                // console.log("(1)");
                 vm.stopPrank();
             }
 
             vm.prank(swapper.addr);
             hookControl.rebalance();
-            console.log("(2)");
+            // console.log("(2)");
 
-            save_rebalance_data(ratio, auctionTriggerTime);
+            save_rebalance_data(priceThreshold, auctionTriggerTime);
         }
     }
 
     // TODO: refactor
-    function rebalanceOrError(uint256 s) internal returns (bool success) {
+    function _rebalanceOrError(uint256 s) internal returns (bool success) {
         try rebalanceAdapter.rebalance(s) {
-            console.log("rebalanced %s", s);
+            console.log("rebalanced with slippage %s", s);
             return true;
         } catch Error(string memory) {
             return false;
@@ -298,6 +303,10 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         }
 
         save_swap_data(amount, zeroForOne, _in, delta0, delta1, delta0c, delta1c);
+
+        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
+        // TODO: Is it good to update this in each simulation?
+        // TODO: maybe update aave lending pool here.
     }
 
     function deposit(uint256 amount, address actor) internal {

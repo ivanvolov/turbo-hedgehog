@@ -193,8 +193,8 @@ abstract contract ALMTestSimBase is ALMTestBase {
         vm.ffi(inputs);
     }
 
-    function save_rebalance_data(uint256 ratio, uint256 auctionTriggerTime) internal {
-        bytes memory packedData = abi.encodePacked(ratio, auctionTriggerTime, block.number);
+    function save_rebalance_data(uint256 priceThreshold, uint256 auctionTriggerTime) internal {
+        bytes memory packedData = abi.encodePacked(priceThreshold, auctionTriggerTime, block.number);
         string memory packedHexString = toHexString(packedData);
 
         string[] memory inputs = new string[](3);

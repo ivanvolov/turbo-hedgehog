@@ -24,6 +24,7 @@ import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TickMath as TickMathV3} from "@forks/uniswap-v3/libraries/TickMath.sol";
 import {OracleLibrary} from "@forks/uniswap-v3/libraries/OracleLibrary.sol";
@@ -285,6 +286,12 @@ abstract contract ALMTestBase is Test, Deployers {
         assertApproxEqAbs(c18to6(lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
         assertApproxEqAbs(c18to6(lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
+    }
+
+    // --- Utils ---
+
+    function getHookPrice() public view returns (uint256) {
+        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()));
     }
 
     // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals

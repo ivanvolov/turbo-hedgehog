@@ -269,10 +269,4 @@ contract DeltaNeutralALMTest is ALMTestBase {
             assertApproxEqAbs(hook.TVL(), 384569784293471999376026, 1e1); //done
         }
     }
-
-    // ** Utils
-
-    function getHookPrice() public view returns (uint256) {
-        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()));
-    }
 }

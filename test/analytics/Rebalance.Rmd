@@ -15,8 +15,6 @@ suppressWarnings(library(dplyr))
 
 ```{r warnigns=FALSE}
 rm(list = ls())
-#deposits <- read.csv("../simulations/out/deposits.csv", colClasses = c("actor" = "character"))
-#withdraws <- read.csv("../simulations/out/withdraws.csv", colClasses = c("actor" = "character"))
 rebalances <- read.csv("../simulations/out/rebalances.csv")
 
 states <- read.csv("../simulations/out/states.csv")
@@ -75,7 +73,7 @@ merged_data <- left_join(merged_data, rebalances, by = "bN")
 
 ```{r}
 event_lines <- merged_data %>%
-  filter(!is.na(delta)) %>%
+  #filter(!is.na(delta)) %>%
   select(bN)
 
 plot1 <- ggplot(merged_data) +
