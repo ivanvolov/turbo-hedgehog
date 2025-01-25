@@ -170,14 +170,9 @@ library ALMMathLib {
     }
 
     // --- Helpers ---
-    //TODO 1e30???
-    //    function getTickFromPrice(uint256 oraclePrice) internal pure returns (int24) {
-    //        return getTickFromSqrtPrice(
-    //            toUint160(
-    //                ((uint256(1e30).div(oraclePrice)).sqrt()).mul(79228162514264337593543950336)
-    //                )
-    //            );
-    //    }
+    function getTickFromPrice(uint256 price) internal pure returns (int24) {
+        return toInt24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
+    }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
         return getPriceFromSqrtPriceX96(getSqrtPriceAtTick(tick));

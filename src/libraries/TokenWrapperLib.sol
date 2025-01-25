@@ -8,13 +8,13 @@ library TokenWrapperLib {
 
     function wrap(uint256 a, uint8 tokenWAD) internal pure returns (uint256) {
         if (tokenWAD == WAD) return a;
-        if (tokenWAD > WAD) return a / 10 ** (tokenWAD - 18);
-        if (tokenWAD < WAD) return a * 10 ** (18 - tokenWAD);
+        else if (tokenWAD > WAD) return a / 10 ** (tokenWAD - 18);
+        else return a * 10 ** (18 - tokenWAD);
     }
 
     function unwrap(uint256 a, uint8 tokenWAD) internal pure returns (uint256) {
         if (tokenWAD == WAD) return a;
-        if (tokenWAD > WAD) return a * 10 ** (tokenWAD - 18);
-        if (tokenWAD < WAD) return a / 10 ** (18 - tokenWAD);
+        else if (tokenWAD > WAD) return a * 10 ** (tokenWAD - 18);
+        else return a / 10 ** (18 - tokenWAD);
     }
 }

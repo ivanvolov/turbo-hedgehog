@@ -43,10 +43,28 @@ contract ETHALMSimulationTest is ALMTestSimBase {
 
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);
+
+        // Setting up strategy params
+        {
+            vm.startPrank(deployer.addr);
+            hook.setIsInvertAssets(false);
+            rebalanceAdapter.setIsInvertAssets(false);
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            rebalanceAdapter.setRebalancePriceThreshold(1e15);
+            rebalanceAdapter.setRebalanceTimeThreshold(2000);
+            rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
+            rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
+            rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
+            rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
+            rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
+            rebalanceAdapter.setOraclePriceAtLastRebalance(1e18);
+            vm.stopPrank();
+        }
+
         init_control_hook();
+
         approve_accounts();
         presetChainlinkOracles();
-
         deal(address(USDC), address(swapper.addr), 100_000_000 * 1e6);
         deal(address(WETH), address(swapper.addr), 100_000 * 1e18);
     }
