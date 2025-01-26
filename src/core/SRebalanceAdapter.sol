@@ -160,8 +160,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         checkDeviations();
 
         // ** Update state
-        sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
+        //sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
         oraclePriceAtLastRebalance = oracle.price();
+
+        sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oraclePriceAtLastRebalance)));     
+
+        alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
+
+        console.log("sqrtPriceAtLastRebalance %s", sqrtPriceAtLastRebalance);
+
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
         alm.updateLiquidity(calcLiquidity());
