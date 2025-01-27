@@ -26,6 +26,7 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IBase} from "@src/interfaces/IBase.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
@@ -162,6 +163,11 @@ contract ETHALMTest is ALMTestBase {
 
     function test_deposit_rebalance_swap_price_up_in() public {
         test_deposit_rebalance();
+        part_swap_price_up_in();
+    }
+
+    // @Notice: this is needed for composability testing letter
+    function part_swap_price_up_in() public {
         uint256 usdcToSwap = 17897776432;
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -358,5 +364,119 @@ contract ETHALMTest is ALMTestBase {
             assertEqPositionState(180477474306962171598, 311830756139, 467412423459, 40146211506948696394);
             assertApproxEqAbs(hook.TVL(), 100310997799059398554, 1e1);
         }
+    }
+
+    function test_lending_adapter_migration() public {
+        test_deposit_rebalance();
+
+        uint256 CLbefore = lendingAdapter.getCollateralLong();
+        uint256 CSbefore = lendingAdapter.getCollateralShort();
+        uint256 DLbefore = lendingAdapter.getBorrowedLong();
+        uint256 DSbefore = lendingAdapter.getBorrowedShort();
+
+        // ** Create new lending adapter
+        ILendingAdapter newAdapter;
+        {
+            vm.startPrank(deployer.addr);
+            newAdapter = new AaveLendingAdapter();
+            IBase(address(newAdapter)).setTokens(address(USDC), address(WETH), 6, 18);
+            IBase(address(newAdapter)).setComponents(
+                migrationContract.addr,
+                address(newAdapter),
+                address(positionManager),
+                address(oracle),
+                address(rebalanceAdapter)
+            );
+        }
+
+        // ** Withdraw collateral
+        {
+            IBase(address(lendingAdapter)).setComponents(
+                migrationContract.addr,
+                migrationContract.addr,
+                migrationContract.addr,
+                migrationContract.addr,
+                migrationContract.addr
+            );
+            vm.stopPrank();
+
+            // @Notice: This is like zero interest FL
+            deal(address(USDC), migrationContract.addr, DLbefore);
+            deal(address(WETH), migrationContract.addr, DSbefore);
+
+            vm.startPrank(migrationContract.addr);
+            USDC.approve(address(lendingAdapter), type(uint256).max);
+            WETH.approve(address(lendingAdapter), type(uint256).max);
+
+            lendingAdapter.repayLong(DLbefore);
+            lendingAdapter.repayShort(DSbefore);
+
+            lendingAdapter.removeCollateralLong(CLbefore);
+            lendingAdapter.removeCollateralShort(CSbefore);
+        }
+
+        // ** Create the same position in the new lending adapter
+        {
+            USDC.approve(address(newAdapter), type(uint256).max);
+            WETH.approve(address(newAdapter), type(uint256).max);
+
+            newAdapter.addCollateralLong(CLbefore);
+            newAdapter.addCollateralShort(CSbefore);
+            newAdapter.borrowLong(DLbefore);
+            newAdapter.borrowShort(DSbefore);
+
+            // @Notice: Here we repay our FL
+            USDC.transfer(zero.addr, DLbefore);
+            WETH.transfer(zero.addr, DSbefore);
+            vm.stopPrank();
+        }
+
+        // ** Connect all parts properly
+        {
+            vm.startPrank(deployer.addr);
+
+            hook.setComponents(
+                address(hook),
+                address(newAdapter),
+                address(positionManager),
+                address(oracle),
+                address(rebalanceAdapter)
+            );
+
+            IBase(address(newAdapter)).setComponents(
+                address(hook),
+                address(newAdapter),
+                address(positionManager),
+                address(oracle),
+                address(rebalanceAdapter)
+            );
+
+            IBase(address(positionManager)).setComponents(
+                address(hook),
+                address(newAdapter),
+                address(positionManager),
+                address(oracle),
+                address(rebalanceAdapter)
+            );
+
+            IBase(address(rebalanceAdapter)).setComponents(
+                address(hook),
+                address(newAdapter),
+                address(positionManager),
+                address(oracle),
+                address(rebalanceAdapter)
+            );
+            vm.stopPrank();
+        }
+
+        assertEqBalanceStateZero(migrationContract.addr);
+
+        // ** Check if states are the same
+        assertEqBalanceStateZero(address(hook));
+        assertEqPositionState(180 * 1e18, 307920000000, 462146886298, 4004e16);
+        assertApproxEqAbs(hook.TVL(), 99890660873473629515, 1e1);
+
+        // ** Check if the same test case works for the new lending adapter
+        part_swap_price_up_in();
     }
 }

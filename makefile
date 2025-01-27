@@ -1,5 +1,5 @@
 ta:
-	clear && forge test -vv
+	clear && forge test -vv --no-match-contract "SimulationTest"
 
 ts:
 	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_simulation --ffi

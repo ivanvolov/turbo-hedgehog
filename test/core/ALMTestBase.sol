@@ -54,6 +54,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
     TestAccount deployer;
     TestAccount alice;
+    TestAccount migrationContract;
     TestAccount swapper;
     TestAccount zero;
 
@@ -168,6 +169,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
         deployer = TestAccountLib.createTestAccount("deployer");
         alice = TestAccountLib.createTestAccount("alice");
+        migrationContract = TestAccountLib.createTestAccount("migrationContract");
         swapper = TestAccountLib.createTestAccount("swapper");
         zero = TestAccountLib.createTestAccount("zero");
     }
@@ -272,20 +274,22 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
+        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
         try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
-            console.log("CL", lendingAdapter.getCollateralLong());
-            console.log("CS", c18to6(lendingAdapter.getCollateralShort()));
-            console.log("DL", c18to6(lendingAdapter.getBorrowedLong()));
-            console.log("DS", lendingAdapter.getBorrowedShort());
-            _assertEqPositionState(CL, CS, DL, DS); // this is to throw the error
+            console.log("CL", _lendingAdapter.getCollateralLong());
+            console.log("CS", c18to6(_lendingAdapter.getCollateralShort()));
+            console.log("DL", c18to6(_lendingAdapter.getBorrowedLong()));
+            console.log("DS", _lendingAdapter.getBorrowedShort());
+            _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), CL, 1e5, "CL not equal");
-        assertApproxEqAbs(c18to6(lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
-        assertApproxEqAbs(c18to6(lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
-        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
+        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
+        assertApproxEqAbs(_lendingAdapter.getCollateralLong(), CL, 1e5, "CL not equal");
+        assertApproxEqAbs(c18to6(_lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
+        assertApproxEqAbs(c18to6(_lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
+        assertApproxEqAbs(_lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
     }
 
     // --- Utils ---

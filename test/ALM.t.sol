@@ -143,33 +143,6 @@ contract ALMGeneralTest is ALMTestBase {
         vm.stopPrank();
     }
 
-    function test_lending_adapter_migration() public {
-        //TODO: fix this test
-        // test_deposit_rebalance();
-        // // This is better to do after rebalance
-        // vm.startPrank(deployer.addr);
-        // ILendingAdapter newAdapter = new AaveLendingAdapter();
-        // newAdapter.setShortMId(shortMId);
-        // newAdapter.setLongMId(longMId);
-        // newAdapter.addAuthorizedCaller(address(hook));
-        // newAdapter.addAuthorizedCaller(address(rebalanceAdapter));
-        // // @Notice: Alice here acts as a migration contract the purpose of with is to transfer collateral between adapters
-        // newAdapter.addAuthorizedCaller(alice.addr);
-        // rebalanceAdapter.setLendingAdapter(address(newAdapter));
-        // hook.setLendingAdapter(address(newAdapter));
-        // lendingAdapter.addAuthorizedCaller(address(alice.addr));
-        // vm.stopPrank();
-        // uint256 collateral = lendingAdapter.getCollateral();
-        // vm.startPrank(alice.addr);
-        // lendingAdapter.removeCollateral(collateral);
-        // WETH.approve(address(newAdapter), type(uint256).max);
-        // newAdapter.addCollateral(collateral);
-        // vm.stopPrank();
-        // assertEqBalanceState(address(hook), 0, 0);
-        // assertEqMorphoA(shortMId, address(newAdapter), 0, 0, 0);
-        // assertEqMorphoA(longMId, address(newAdapter), 0, 0, 98956727267096030628);
-    }
-
     function test_accessability() public {
         vm.expectRevert(SafeCallback.NotPoolManager.selector);
         hook.afterInitialize(address(0), key, 0, 0);
