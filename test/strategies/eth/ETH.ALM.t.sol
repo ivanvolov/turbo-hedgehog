@@ -256,7 +256,6 @@ contract ETHALMTest is ALMTestBase {
                 abi.encodeWithSelector(IOracle.price.selector),
                 abi.encode(getHookPrice())
             );
-            // TODO: maybe update aave lending pool here
         }
 
         // ** Second rebalance

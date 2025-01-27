@@ -305,8 +305,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         save_swap_data(amount, zeroForOne, _in, delta0, delta1, delta0c, delta1c);
 
         vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
-        // TODO: Is it good to update this in each simulation?
-        // TODO: maybe update aave lending pool here.
     }
 
     function deposit(uint256 amount, address actor) internal {
