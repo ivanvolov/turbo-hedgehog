@@ -117,6 +117,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         liquidity = _liquidity;
     }
 
+    function updateSqrtPrice(uint160 _sqrtPrice) public onlyRebalanceAdapter {
+        sqrtPriceCurrent = _sqrtPrice;
+    }
+
     function _updateBoundaries() internal {
         console.log("price: %s", oracle.price());
         int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oracle.price()));
