@@ -291,31 +291,4 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (totalSupply() == 0) return 0;
         return (TVL() * 1e18) / totalSupply();
     }
-
-    // TODO: Notice * I'm not using it now in the code at all.
-    function adjustForFeesDown(uint256 amount) public pure returns (uint256 amountAdjusted) {
-        // console.log("> amount specified", amount);
-        amountAdjusted = amount - (amount * getSwapFees()) / 1e18;
-        // console.log("> amount adjusted ", amountAdjusted);
-    }
-
-    // TODO: Notice * I'm not using it now in the code at all.
-    function adjustForFeesUp(uint256 amount) public pure returns (uint256 amountAdjusted) {
-        // console.log("> amount specified", amount);
-        amountAdjusted = amount + (amount * getSwapFees()) / 1e18;
-        // console.log("> amount adjusted ", amountAdjusted);
-    }
-
-    function getSwapFees() public pure returns (uint256) {
-        // TODO: do fees properly. Now it will be similar to the test pull (0.05)
-        // return 50000000000000000;
-        return 0;
-        // (, int256 RV7, , , ) = AggregatorV3Interface(
-        //     ALMBaseLib.CHAINLINK_7_DAYS_VOL
-        // ).latestRoundData();
-        // (, int256 RV30, , , ) = AggregatorV3Interface(
-        //     ALMBaseLib.CHAINLINK_30_DAYS_VOL
-        // ).latestRoundData();
-        // return ALMMathLib.calculateSwapFee(RV7 * 1e18, RV30 * 1e18);
-    }
 }

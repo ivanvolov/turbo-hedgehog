@@ -51,24 +51,6 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         deal(address(WETH), address(swapper.addr), 100_000 * 1e18);
     }
 
-    function test_quick_test() public {
-        resetGenerator();
-
-        maxUniqueDepositors = 2;
-        console.log(chooseDepositor());
-        console.log(chooseDepositor());
-        console.log(chooseDepositor());
-        console.log(chooseDepositor());
-        console.log(chooseDepositor());
-        console.log("To reuse");
-        console.log(getDepositorToReuse());
-        console.log(getDepositorToReuse());
-        console.log(getDepositorToReuse());
-        console.log(getDepositorToReuse());
-        console.log(getDepositorToReuse());
-        console.log(getDepositorToReuse());
-    }
-
     function test_simulation() public {
         console.log("> Simulation started");
         console.log("Start block ts: %s", block.timestamp);
@@ -124,7 +106,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
                     // console.log("> randomAmount", randomAmount);
                 }
 
-                swap(randomAmount, zeroForOne, _in);
+                simulate_swap(randomAmount, zeroForOne, _in);
                 save_pool_state();
             }
 
@@ -203,7 +185,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
                 randomAmount = random(30) * 1e18;
                 bool zeroForOne = (random(3) == 1); // here we set the trend
 
-                swap(randomAmount, zeroForOne, !zeroForOne);
+                simulate_swap(randomAmount, zeroForOne, !zeroForOne);
                 save_pool_state();
             }
 
@@ -226,9 +208,9 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             console.log(">> doing rebalance");
             {
                 vm.startPrank(rebalanceAdapter.owner());
-                bool success = rebalanceOrError(1e15);
-                if (!success) success = rebalanceOrError(1e16);
-                if (!success) success = rebalanceOrError(1e17);
+                bool success = _rebalanceOrError(1e15);
+                if (!success) success = _rebalanceOrError(1e16);
+                if (!success) success = _rebalanceOrError(1e17);
                 console.log("(1)");
                 vm.stopPrank();
             }
@@ -239,47 +221,6 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
             save_rebalance_data(ratio, auctionTriggerTime);
         }
-    }
-
-    // TODO: refactor
-    function rebalanceOrError(uint256 s) internal returns (bool success) {
-        try rebalanceAdapter.rebalance(s) {
-            console.log("rebalanced %s", s);
-            return true;
-        } catch Error(string memory) {
-            return false;
-        } catch (bytes memory) {
-            return false;
-        }
-    }
-
-    function swap(uint256 amount, bool zeroForOne, bool _in) internal {
-        // console.log(">> do swap", amount, zeroForOne, _in);
-        int256 delta0;
-        int256 delta1;
-        int256 delta0c;
-        int256 delta1c;
-        if (zeroForOne) {
-            // USDC => WETH
-            if (_in) {
-                (delta0, delta1) = __swap(true, -int256(amount), key);
-                (delta0c, delta1c) = __swap(true, -int256(amount), keyControl);
-            } else {
-                (delta0, delta1) = __swap(true, int256(amount), key);
-                (delta0c, delta1c) = __swap(true, int256(amount), keyControl);
-            }
-        } else {
-            // WETH => USDC
-            if (_in) {
-                (delta0, delta1) = __swap(false, -int256(amount), key);
-                (delta0c, delta1c) = __swap(false, -int256(amount), keyControl);
-            } else {
-                (delta0, delta1) = __swap(false, int256(amount), key);
-                (delta0c, delta1c) = __swap(false, int256(amount), keyControl);
-            }
-        }
-
-        save_swap_data(amount, zeroForOne, _in, delta0, delta1, delta0c, delta1c);
     }
 
     function deposit(uint256 amount, address actor) internal {
@@ -372,10 +313,5 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         save_withdraw_data(shares1, shares2, actor, balanceWETH, balanceUSDC, balanceWETHcontrol, balanceUSDCcontrol);
         vm.stopPrank();
-    }
-
-    function rollOneBlock() internal {
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + 12);
     }
 }

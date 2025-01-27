@@ -240,6 +240,95 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertApproxEqAbs(hook.TVL(), 383801330958008119220340, 1e1);
     }
 
+    function test_deposit_rebalance_swap_price_up_in_fees() public {
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        hook.setFees(5 * 1e16);
+        uint256 usdcToSwap = 20594068491; //done
+
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwap);
+
+        (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+        assertApproxEqAbs(deltaWETH, 5323851733135280144, 1e4); //done
+
+        assertEqBalanceState(swapper.addr, deltaWETH, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(127203067009042942864, 634095000000, 325455619970, 107675718430408932339); //done
+
+        assertEq(hook.sqrtPriceCurrent(), 1270696828650359021354068986114864); //done
+        assertApproxEqAbs(hook.TVL(), 383800144709162306510725, 1e1); //done
+    }
+
+    function test_deposit_rebalance_swap_price_up_out_fees() public {
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        hook.setFees(5 * 1e16);
+
+        uint256 wethToGetFSwap = 5331823310823070000; //done
+        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+        assertEq(usdcToSwapQ, 20625058578); //done
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
+
+        (, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
+        assertApproxEqAbs(deltaWETH, 5331823310823070000, 1e1); //done
+
+        assertEqBalanceState(swapper.addr, deltaWETH, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(127191707510837842319, 634095000000, 325424629883, 107672330509891621649); //done
+
+        assertEq(hook.sqrtPriceCurrent(), 1270687346133515048399874137317894); //done
+        assertApproxEqAbs(hook.TVL(), 383800452193642003358830, 1e1); //done
+    }
+
+    function test_deposit_rebalance_swap_price_down_in_fees() public {
+        uint256 wethToSwap = 5408396534130190000;
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        hook.setFees(5 * 1e16);
+
+        deal(address(WETH), address(swapper.addr), wethToSwap);
+        assertEqBalanceState(swapper.addr, wethToSwap, 0);
+
+        (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
+        assertEq(deltaUSDC, 20713010531); //done
+
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(142496520789896237819, 634095000000, 366762698992, 112236923943996757149); //done
+
+        assertEq(hook.sqrtPriceCurrent(), 1283463275764576390572897434700206); //done
+        assertApproxEqAbs(hook.TVL(), 383801489267867101098830, 1e1); //done
+    }
+
+    function test_deposit_rebalance_swap_price_down_out_fees() public {
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        hook.setFees(5 * 1e16);
+
+        uint256 usdcToGetFSwap = 20697298845; //done
+        (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        assertEq(wethToSwapQ, 5404273386596029990); //done
+
+        deal(address(WETH), address(swapper.addr), wethToSwapQ);
+        assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
+
+        (uint256 deltaUSDC, ) = swapWETH_USDC_Out(usdcToGetFSwap);
+        assertEq(deltaUSDC, usdcToGetFSwap);
+
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(142490645304660059804, 634095000000, 366746987307, 112235171606294739144); //done
+
+        assertEq(hook.sqrtPriceCurrent(), 1283458371112389064549618491520823);
+        assertApproxEqAbs(hook.TVL(), 383801330958008119220340, 1e1);
+    }
+
     function test_deposit_rebalance_swap_rebalance() public {
         // console.log("price (1)", getHookPrice());
         test_deposit_rebalance_swap_price_up_in();

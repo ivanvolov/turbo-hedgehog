@@ -48,6 +48,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     int24 public tickDelta = 3000;
     bool public isInvertAssets = false;
 
+    uint256 public fees;
+
     bytes32 public authorizedPool;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
@@ -77,6 +79,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
         isInvertAssets = _isInvertAssets;
+    }
+
+    function setFees(uint256 _fees) external onlyOwner {
+        fees = _fees;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -139,15 +145,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         if (amountSpecified > 0) {
             // console.log("> amount specified positive");
             wethOut = uint256(amountSpecified);
-
             console.log("wethOut %s", wethOut);
-            console.log("liquidity %s", liquidity);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, wethOut);
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             usdcIn = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            usdcIn = adjustForFeesUp(usdcIn);
             console.log("usdcIn %s", usdcIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
@@ -157,10 +162,13 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         } else {
             // console.log("> amount specified negative");
             usdcIn = uint256(-amountSpecified);
-
             console.log("usdcIn %s", usdcIn);
 
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, usdcIn);
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
+                sqrtPriceCurrent,
+                liquidity,
+                adjustForFeesDown(usdcIn)
+            );
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
@@ -181,12 +189,13 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             // console.log("> amount specified positive");
             usdcOut = uint256(amountSpecified);
             console.log("usdcOut %s", usdcOut);
-            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, usdcOut);
+            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            wethIn = adjustForFeesUp(wethIn);
             console.log("wethIn %s", wethIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
@@ -198,17 +207,42 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             wethIn = uint256(-amountSpecified);
             console.log("wethIn %s", wethIn);
 
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, wethIn);
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
+                sqrtPriceCurrent,
+                liquidity,
+                adjustForFeesDown(wethIn)
+            );
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             usdcOut = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            console.log("usdcOut %s", usdcOut);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(wethIn)), // specified token = token1
                 -int128(uint128(usdcOut)) // unspecified token = token0
             );
         }
+    }
+
+    function adjustForFeesDown(uint256 amount) public view returns (uint256 amountAdjusted) {
+        amountAdjusted = amount - (amount * getSwapFees()) / 1e18;
+    }
+
+    function adjustForFeesUp(uint256 amount) public view returns (uint256 amountAdjusted) {
+        amountAdjusted = amount + (amount * getSwapFees()) / 1e18;
+    }
+
+    function getSwapFees() public view returns (uint256) {
+        // TODO: do fees properly
+        return fees;
+        // (, int256 RV7, , , ) = AggregatorV3Interface(
+        //     ALMBaseLib.CHAINLINK_7_DAYS_VOL
+        // ).latestRoundData();
+        // (, int256 RV30, , , ) = AggregatorV3Interface(
+        //     ALMBaseLib.CHAINLINK_30_DAYS_VOL
+        // ).latestRoundData();
+        // return ALMMathLib.calculateSwapFee(RV7 * 1e18, RV30 * 1e18);
     }
 
     // --- Modifiers ---

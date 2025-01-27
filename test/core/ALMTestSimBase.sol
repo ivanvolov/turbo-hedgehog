@@ -29,11 +29,23 @@ abstract contract ALMTestSimBase is ALMTestBase {
     uint256 numberOfSwaps;
     uint256 expectedPoolPriceForConversion;
 
+    // --- Logic ---
+
     function approve_accounts() public override {
         super.approve_accounts();
         vm.startPrank(swapper.addr);
         USDC.approve(address(hookControl), type(uint256).max);
         WETH.approve(address(hookControl), type(uint256).max);
+        vm.stopPrank();
+    }
+
+    function approve_actor(address actor) internal {
+        vm.startPrank(actor);
+        WETH.approve(address(hook), type(uint256).max);
+        WETH.approve(address(hook), type(uint256).max);
+
+        WETH.approve(address(hookControl), type(uint256).max);
+        USDC.approve(address(hookControl), type(uint256).max);
         vm.stopPrank();
     }
 
@@ -58,6 +70,46 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
         vm.stopPrank();
     }
+
+    function simulate_swap(uint256 amount, bool zeroForOne, bool _in) internal {
+        // console.log(">> do swap", amount, zeroForOne, _in);
+        int256 delta0;
+        int256 delta1;
+        int256 delta0c;
+        int256 delta1c;
+        if (zeroForOne) {
+            // TOKEN0 => TOKEN1
+            if (_in) {
+                (delta0, delta1) = __swap(true, -int256(amount), key);
+                (delta0c, delta1c) = __swap(true, -int256(amount), keyControl);
+            } else {
+                (delta0, delta1) = __swap(true, int256(amount), key);
+                (delta0c, delta1c) = __swap(true, int256(amount), keyControl);
+            }
+        } else {
+            // TOKEN1 => TOKEN0
+            if (_in) {
+                (delta0, delta1) = __swap(false, -int256(amount), key);
+                (delta0c, delta1c) = __swap(false, -int256(amount), keyControl);
+            } else {
+                (delta0, delta1) = __swap(false, int256(amount), key);
+                (delta0c, delta1c) = __swap(false, int256(amount), keyControl);
+            }
+        }
+
+        save_swap_data(amount, zeroForOne, _in, delta0, delta1, delta0c, delta1c);
+    }
+
+    function _rebalanceOrError(uint256 s) internal returns (bool success) {
+        try rebalanceAdapter.rebalance(s) {
+            console.log("rebalanced with slippage %s", s);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    // --- Save state helpers ---
 
     function save_pool_state() internal {
         uint128 liquidity = hook.liquidity();
@@ -204,34 +256,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         vm.ffi(inputs);
     }
 
-    function random(uint256 randomCap) public returns (uint) {
-        string[] memory inputs = new string[](3);
-        inputs[0] = "node";
-        inputs[1] = "test/simulations/random.js";
-        inputs[2] = toHexString(abi.encodePacked(randomCap));
-
-        bytes memory result = vm.ffi(inputs);
-        return abi.decode(result, (uint256));
-    }
-
-    // -- Simulation helpers --
-
-    function toHexString(bytes memory input) public pure returns (string memory) {
-        require(input.length < type(uint256).max / 2 - 1);
-        bytes16 symbols = "0123456789abcdef";
-        bytes memory hex_buffer = new bytes(2 * input.length + 2);
-        hex_buffer[0] = "0";
-        hex_buffer[1] = "x";
-
-        uint pos = 2;
-        uint256 length = input.length;
-        for (uint i = 0; i < length; ++i) {
-            uint _byte = uint8(input[i]);
-            hex_buffer[pos++] = symbols[_byte >> 4];
-            hex_buffer[pos++] = symbols[_byte & 0xf];
-        }
-        return string(hex_buffer);
-    }
+    // --- Generation helpers
 
     uint256 lastGeneratedAddressId;
 
@@ -266,17 +291,40 @@ abstract contract ALMTestSimBase is ALMTestBase {
         return addressFromSeed(offset + id);
     }
 
-    function approve_actor(address actor) internal {
-        vm.startPrank(actor);
-        WETH.approve(address(hook), type(uint256).max);
-        WETH.approve(address(hook), type(uint256).max);
-
-        WETH.approve(address(hookControl), type(uint256).max);
-        USDC.approve(address(hookControl), type(uint256).max);
-        vm.stopPrank();
-    }
-
     function addressFromSeed(uint256 seed) public pure returns (address) {
         return address(uint160(uint256(keccak256(abi.encodePacked(seed)))));
+    }
+
+    // -- Simulation helpers --
+    function random(uint256 randomCap) public returns (uint) {
+        string[] memory inputs = new string[](3);
+        inputs[0] = "node";
+        inputs[1] = "test/simulations/random.js";
+        inputs[2] = toHexString(abi.encodePacked(randomCap));
+
+        bytes memory result = vm.ffi(inputs);
+        return abi.decode(result, (uint256));
+    }
+
+    function rollOneBlock() internal {
+        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + 12);
+    }
+
+    function toHexString(bytes memory input) public pure returns (string memory) {
+        require(input.length < type(uint256).max / 2 - 1);
+        bytes16 symbols = "0123456789abcdef";
+        bytes memory hex_buffer = new bytes(2 * input.length + 2);
+        hex_buffer[0] = "0";
+        hex_buffer[1] = "x";
+
+        uint pos = 2;
+        uint256 length = input.length;
+        for (uint i = 0; i < length; ++i) {
+            uint _byte = uint8(input[i]);
+            hex_buffer[pos++] = symbols[_byte >> 4];
+            hex_buffer[pos++] = symbols[_byte & 0xf];
+        }
+        return string(hex_buffer);
     }
 }

@@ -163,7 +163,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         //sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
         oraclePriceAtLastRebalance = oracle.price();
 
-        sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oraclePriceAtLastRebalance)));     
+        sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
+            ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oraclePriceAtLastRebalance))
+        );
 
         alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
 
