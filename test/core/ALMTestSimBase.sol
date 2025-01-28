@@ -77,6 +77,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         int256 delta1;
         int256 delta0c;
         int256 delta1c;
+        uint160 preSqrtPriceX96 = hook.sqrtPriceCurrent();
         if (zeroForOne) {
             // TOKEN0 => TOKEN1
             if (_in) {
@@ -97,7 +98,27 @@ abstract contract ALMTestSimBase is ALMTestBase {
             }
         }
 
-        save_swap_data(amount, zeroForOne, _in, delta0, delta1, delta0c, delta1c);
+        // @Notice: doing save swap data here to remove stack too deep error
+        {
+            string[] memory inputs = new string[](3);
+            inputs[0] = "node";
+            inputs[1] = "test/simulations/logSwap.js";
+            inputs[2] = toHexString(
+                abi.encodePacked(
+                    amount,
+                    zeroForOne,
+                    _in,
+                    block.number,
+                    delta0,
+                    delta1,
+                    delta0c,
+                    delta1c,
+                    preSqrtPriceX96,
+                    hook.sqrtPriceCurrent()
+                )
+            );
+            vm.ffi(inputs);
+        }
     }
 
     function _rebalanceOrError(uint256 s) internal returns (bool success) {
@@ -146,39 +167,10 @@ abstract contract ALMTestSimBase is ALMTestBase {
             sharePrice,
             sharePriceControl
         );
-        string memory packedHexString = toHexString(packedData);
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
         inputs[1] = "test/simulations/logState.js";
-        inputs[2] = packedHexString;
-        vm.ffi(inputs);
-    }
-
-    function save_swap_data(
-        uint256 amount,
-        bool zeroForOne,
-        bool _in,
-        int256 delta0,
-        int256 delta1,
-        int256 delta0c,
-        int256 delta1c
-    ) internal {
-        bytes memory packedData = abi.encodePacked(
-            amount,
-            zeroForOne,
-            _in,
-            block.number,
-            delta0,
-            delta1,
-            delta0c,
-            delta1c
-        );
-        string memory packedHexString = toHexString(packedData);
-
-        string[] memory inputs = new string[](3);
-        inputs[0] = "node";
-        inputs[1] = "test/simulations/logSwap.js";
-        inputs[2] = packedHexString;
+        inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
 
@@ -208,12 +200,11 @@ abstract contract ALMTestSimBase is ALMTestBase {
             delShares,
             delSharesControl
         );
-        string memory packedHexString = toHexString(packedData);
 
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
         inputs[1] = "test/simulations/logDeposits.js";
-        inputs[2] = packedHexString;
+        inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
 
@@ -236,23 +227,22 @@ abstract contract ALMTestSimBase is ALMTestBase {
             delWETHcontrol,
             delUSDCcontrol
         );
-        string memory packedHexString = toHexString(packedData);
 
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
         inputs[1] = "test/simulations/logWithdraws.js";
-        inputs[2] = packedHexString;
+        inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
 
     function save_rebalance_data(uint256 priceThreshold, uint256 auctionTriggerTime) internal {
-        bytes memory packedData = abi.encodePacked(priceThreshold, auctionTriggerTime, block.number);
-        string memory packedHexString = toHexString(packedData);
+        uint128 liquidity = hook.liquidity();
+        bytes memory packedData = abi.encodePacked(liquidity, priceThreshold, auctionTriggerTime, block.number);
 
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
         inputs[1] = "test/simulations/logRebalance.js";
-        inputs[2] = packedHexString;
+        inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
 

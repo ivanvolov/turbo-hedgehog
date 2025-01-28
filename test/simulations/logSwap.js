@@ -10,6 +10,8 @@ const args = decodeHexString(packedHexString, [
     "int256",
     "int256",
     "int256",
+    "uint160",
+    "uint160",
 ]);
 
 saveToCSV("swaps", `${args.join(",")}\n`);

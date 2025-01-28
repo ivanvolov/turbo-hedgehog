@@ -1,6 +1,6 @@
 const { prepareCsvFile } = require("./common");
 
-const swapsHeaderRow = "amount, zFo, In, bN, delta0, delta1, delta0c, delta1c\n";
+const swapsHeaderRow = "amount, zFo, In, bN, delta0, delta1, delta0c, delta1c, preSqrtPrice, postSqrtPrice\n";
 prepareCsvFile("swaps", swapsHeaderRow);
 
 const statesHeaderRow = "bN, sqrtC, liq, sqrt, tL, tU, CL, CS, DL, DS, tvl, tvlControl, shareP, sharePc\n";
@@ -12,5 +12,5 @@ prepareCsvFile("deposits", depositsHeaderRow);
 const withdrawsHeaderRow = "shares1, shares2, actor, bN, dWETH, dUSDC, dWETHc, dUSDCc\n";
 prepareCsvFile("withdraws", withdrawsHeaderRow);
 
-const rebalancesHeaderRow = "priceT, aTT, bN\n";
+const rebalancesHeaderRow = "liquidity, priceT, aTT, bN\n";
 prepareCsvFile("rebalances", rebalancesHeaderRow);

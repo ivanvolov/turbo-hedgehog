@@ -220,13 +220,53 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         save_pool_state();
     }
 
+    function test_swaps_simulation() public {
+        numberOfSwaps = 10; // Number of blocks with swaps
+
+        resetGenerator();
+        console.log("Simulation started");
+        console.log(block.timestamp);
+        console.log(block.number);
+
+        uint256 randomAmount;
+
+        // ** First deposit to allow swapping
+        {
+            approve_actor(alice.addr);
+            deposit(1000 ether, alice.addr);
+            save_pool_state();
+            rollOneBlock();
+        }
+
+        // ** Do rebalance cause no swaps before first rebalance
+        {
+            try_rebalance();
+            save_pool_state();
+            rollOneBlock();
+        }
+
+        for (uint i = 0; i < numberOfSwaps; i++) {
+            // **  Always do swaps
+            {
+                randomAmount = (random(10) * 1e18) / 100000;
+                bool zeroForOne = (random(3) == 1); // here we set the trend
+
+                simulate_swap(randomAmount, zeroForOne, !zeroForOne);
+                save_pool_state();
+            }
+
+            // ** Roll block after each iteration
+            rollOneBlock();
+        }
+    }
+
     function try_rebalance() internal {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
         console.log(">> isRebalance", isRebalance);
         // console.log(">> auctionTriggerTime %s", auctionTriggerTime);
         // console.log(">> block.timestamp %s", block.timestamp);
-        console.log(">> priceThreshold %s", priceThreshold);
-        console.log(">> rebalancePriceThreshold %s", rebalanceAdapter.rebalancePriceThreshold());
+        // console.log(">> priceThreshold %s", priceThreshold);
+        // console.log(">> rebalancePriceThreshold %s", rebalanceAdapter.rebalancePriceThreshold());
         if (isRebalance) {
             console.log(">> doing rebalance");
             {
@@ -234,13 +274,11 @@ contract ETHALMSimulationTest is ALMTestSimBase {
                 bool success = _rebalanceOrError(1e15);
                 if (!success) success = _rebalanceOrError(1e16);
                 if (!success) success = _rebalanceOrError(1e17);
-                // console.log("(1)");
                 vm.stopPrank();
             }
 
             vm.prank(swapper.addr);
             hookControl.rebalance();
-            // console.log("(2)");
 
             save_rebalance_data(priceThreshold, auctionTriggerTime);
         }
