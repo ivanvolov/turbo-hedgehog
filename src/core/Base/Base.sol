@@ -18,6 +18,8 @@ abstract contract Base is IBase {
     error NotALM();
     error NotRebalanceAdapter();
     error NotModule();
+    error ContractPaused();
+    error ContractShutdown();
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -107,6 +109,18 @@ abstract contract Base is IBase {
             msg.sender != address(rebalanceAdapter)
         ) revert NotModule();
 
+        _;
+    }
+
+    /// @dev Only allows execution when the contract is not paused
+    modifier notPaused() {
+        if (alm.paused()) revert ContractPaused();
+        _;
+    }
+
+    /// @dev Only allows execution when the contract is not shut down
+    modifier notShutdown() {
+        if (alm.shutdown()) revert ContractShutdown();
         _;
     }
 }

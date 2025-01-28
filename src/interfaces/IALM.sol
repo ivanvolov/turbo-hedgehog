@@ -12,8 +12,6 @@ interface IALM {
     error ZeroLiquidity();
     error ZeroDebt();
     error AddLiquidityThroughHook();
-    error ContractPaused();
-    error ContractShutdown();
     error NotEnoughSharesToWithdraw();
     error NotZeroShares();
     error NotMinOutWithdraw();
@@ -22,6 +20,10 @@ interface IALM {
 
     event Deposit(address indexed to, uint256 amount, uint256 shares);
     event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
+
+    function paused() external view returns (bool);
+
+    function shutdown() external view returns (bool);
 
     function refreshReserves() external;
 

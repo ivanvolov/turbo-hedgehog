@@ -36,7 +36,7 @@ contract PositionManager is Base, IPositionManager {
         k2 = _k2;
     }
 
-    function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external onlyALM {
+    function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external onlyALM notPaused notShutdown {
         IERC20(token0).transferFrom(address(alm), address(this), delta0.unwrap(t0Dec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
@@ -53,7 +53,7 @@ contract PositionManager is Base, IPositionManager {
         IERC20(token1).transfer(address(alm), delta1.unwrap(t1Dec));
     }
 
-    function positionAdjustmentPriceDown(uint256 delta0, uint256 delta1) external onlyALM {
+    function positionAdjustmentPriceDown(uint256 delta0, uint256 delta1) external onlyALM notPaused notShutdown {
         IERC20(token1).transferFrom(address(alm), address(this), delta1.unwrap(t1Dec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;

@@ -247,19 +247,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     // --- Modifiers ---
 
-    /// @dev Only allows execution when the contract is not paused
-    modifier notPaused() {
-        //TODO: should I stop only hook or all components?
-        if (paused) revert ContractPaused();
-        _;
-    }
-
-    /// @dev Only allows execution when the contract is not shut down
-    modifier notShutdown() {
-        if (shutdown) revert ContractShutdown();
-        _;
-    }
-
     /// @dev Only allows execution for the authorized pool
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {
         if (PoolId.unwrap(poolKey.toId()) != authorizedPool) {

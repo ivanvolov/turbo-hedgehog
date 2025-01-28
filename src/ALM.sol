@@ -47,7 +47,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager onlyAuthorizedPool(key) returns (bytes4) {
+    ) external override onlyPoolManager onlyAuthorizedPool(key) notPaused notShutdown returns (bytes4) {
         console.log("> afterInitialize");
         sqrtPriceCurrent = sqrtPrice;
         _updateBoundaries();
@@ -130,7 +130,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256[] calldata premiums,
         address,
         bytes calldata data
-    ) external returns (bool) {
+    ) external notPaused returns (bool) {
         // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
 
@@ -204,6 +204,8 @@ contract ALM is BaseStrategyHook, ERC20 {
             // console.log("> wethOut", wethOut);
             // console.log("> usdcIn", usdcIn);
 
+            //TODO: if sqrtPriceNext> parameters => reject swap
+
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), usdcIn, false);
@@ -227,6 +229,8 @@ contract ALM is BaseStrategyHook, ERC20 {
             // console.log("> usdcOut", usdcOut);
             key.currency1.take(poolManager, address(this), wethIn, false);
 
+            //TODO: if sqrtPriceNext> parameters => reject swap
+
             positionManager.positionAdjustmentPriceDown(usdcOut.wrap(t0Dec), wethIn.wrap(t1Dec));
 
             key.currency0.settle(poolManager, address(this), usdcOut, false);
@@ -245,8 +249,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
-    function refreshReserves() public {
-        // TODO: here do poke fees
+    function refreshReserves() public notPaused {
         lendingAdapter.syncLong();
         lendingAdapter.syncShort();
     }

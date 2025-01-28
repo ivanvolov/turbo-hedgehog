@@ -133,7 +133,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
     }
 
-    function rebalance(uint256 slippage) external onlyOwner {
+    function rebalance(uint256 slippage) external onlyOwner notPaused notShutdown {
         console.log("Rebalance");
 
         (bool isRebalance, , ) = isRebalanceNeeded();
@@ -184,7 +184,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256[] calldata premiums,
         address,
         bytes calldata data
-    ) external returns (bool) {
+    ) external notPaused notShutdown returns (bool) {
         // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
         _positionManagement(data);

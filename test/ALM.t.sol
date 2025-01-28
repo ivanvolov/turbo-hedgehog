@@ -23,6 +23,7 @@ import {ALM} from "@src/ALM.sol";
 import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -66,7 +67,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_long() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        IBase(address(lendingAdapter)).setComponents(alice.addr, alice.addr, alice.addr, alice.addr, alice.addr);
+        IBase(address(lendingAdapter)).setComponents(address(hook), alice.addr, alice.addr, alice.addr, alice.addr);
 
         // ** Approve to Morpho
         vm.startPrank(alice.addr);
@@ -106,7 +107,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_short() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        IBase(address(lendingAdapter)).setComponents(alice.addr, alice.addr, alice.addr, alice.addr, alice.addr);
+        IBase(address(lendingAdapter)).setComponents(address(hook), alice.addr, alice.addr, alice.addr, alice.addr);
 
         // ** Approve to LA
         vm.startPrank(alice.addr);
@@ -163,34 +164,34 @@ contract ALMGeneralTest is ALMTestBase {
         hook.beforeSwap(address(0), failedKey, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
-    function test_pause() public {
+    function test_hook_pause() public {
         vm.prank(deployer.addr);
         hook.setPaused(true);
 
-        vm.expectRevert(IALM.ContractPaused.selector);
+        vm.expectRevert(Base.ContractPaused.selector);
         hook.deposit(address(0), 0);
 
-        vm.expectRevert(IALM.ContractPaused.selector);
+        vm.expectRevert(Base.ContractPaused.selector);
         hook.withdraw(deployer.addr, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(IALM.ContractPaused.selector);
+        vm.expectRevert(Base.ContractPaused.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
-    function test_shutdown() public {
+    function test_hook_shutdown() public {
         vm.prank(deployer.addr);
         hook.setShutdown(true);
 
-        vm.expectRevert(IALM.ContractShutdown.selector);
+        vm.expectRevert(Base.ContractShutdown.selector);
         hook.deposit(deployer.addr, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(IALM.ContractShutdown.selector);
+        vm.expectRevert(Base.ContractShutdown.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
-    function test_decimals_conversion() public {
+    function test_decimals_conversion() public pure {
         //TODO: add more tests
         uint256 amount = 100 * 1e6;
         assertEq(amount.wrap(6), 100 * 1e18, "1");

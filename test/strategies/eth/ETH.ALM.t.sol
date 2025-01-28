@@ -138,6 +138,10 @@ contract ETHALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw() public {
         test_deposit_rebalance();
+        part_withdraw();
+    }
+
+    function part_withdraw() public {
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -149,6 +153,15 @@ contract ETHALMTest is ALMTestBase {
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(hook.TVL(), 0, 1e4);
         assertEqBalanceStateZero(address(hook));
+    }
+
+    function test_deposit_rebalance_withdraw_on_shutdown() public {
+        test_deposit_rebalance();
+
+        vm.prank(deployer.addr);
+        hook.setShutdown(true);
+
+        part_withdraw();
     }
 
     function test_deposit_rebalance_withdraw_revert_min_out() public {
@@ -381,18 +394,18 @@ contract ETHALMTest is ALMTestBase {
             newAdapter = new AaveLendingAdapter();
             IBase(address(newAdapter)).setTokens(address(USDC), address(WETH), 6, 18);
             IBase(address(newAdapter)).setComponents(
-                migrationContract.addr,
+                address(hook),
                 address(newAdapter),
                 address(positionManager),
                 address(oracle),
-                address(rebalanceAdapter)
+                migrationContract.addr
             );
         }
 
         // ** Withdraw collateral
         {
             IBase(address(lendingAdapter)).setComponents(
-                migrationContract.addr,
+                address(hook),
                 migrationContract.addr,
                 migrationContract.addr,
                 migrationContract.addr,
