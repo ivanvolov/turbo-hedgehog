@@ -221,6 +221,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function test_swaps_simulation() public {
+        vm.prank(deployer.addr);
+        hook.setFees(5 * 1e16);
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();
