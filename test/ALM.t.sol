@@ -34,7 +34,6 @@ import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
-    using TokenWrapperLib for uint256;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
@@ -191,13 +190,75 @@ contract ALMGeneralTest is ALMTestBase {
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
-    function test_decimals_conversion() public pure {
-        //TODO: add more tests
-        uint256 amount = 100 * 1e6;
-        assertEq(amount.wrap(6), 100 * 1e18, "1");
-        assertEq(amount.wrap(6).unwrap(6), amount, "2");
+    function test_TokenWrapperLib_wrap_unwrap_same_wad() public pure {
+        uint256 amount = 1 ether;
+        uint8 token_wad = 18;
 
-        amount = 100 * 1e18;
-        assertEq(amount.wrap(18), amount, "3");
+        uint256 wrapped = TokenWrapperLib.wrap(amount, token_wad);
+        assertEq(wrapped, amount, "wrap with same wad should return same amount");
+
+        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        assertEq(unwrapped, amount, "unwrap with same wad should return original amount");
+    }
+
+    function test_TokenWrapperLib_wrap_higher_wad() public pure {
+        uint256 amount = 1 ether;
+        uint8 token_wad = 24;
+
+        uint256 wrapped = TokenWrapperLib.wrap(amount, token_wad);
+        assertEq(wrapped, amount / (10 ** (token_wad - 18)), "wrap with higher wad should divide correctly");
+
+        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        assertEq(unwrapped, amount, "unwrap should return original amount");
+    }
+
+    function test_TokenWrapperLib_wrap_lower_wad() public pure {
+        uint256 amount = 1 ether;
+        uint8 token_wad = 6;
+
+        uint256 wrapped = TokenWrapperLib.wrap(amount, token_wad);
+        assertEq(wrapped, amount * (10 ** (18 - token_wad)), "wrap with lower wad should multiply correctly");
+
+        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        assertEq(unwrapped, amount, "unwrap should return original amount");
+    }
+
+    function test_TokenWrapperLib_wrap_zero_amount() public pure {
+        uint256 amount = 0;
+
+        uint8 token_wad_12 = 12;
+        uint256 wrapped_12 = TokenWrapperLib.wrap(amount, token_wad_12);
+        assertEq(wrapped_12, 0, "wrap of zero with wad 12 should return zero");
+
+        uint256 unwrapped_12 = TokenWrapperLib.unwrap(wrapped_12, token_wad_12);
+        assertEq(unwrapped_12, 0, "unwrap of zero with wad 12 should return zero");
+
+        uint8 token_wad_18 = 18;
+        uint256 wrapped_18 = TokenWrapperLib.wrap(amount, token_wad_18);
+        assertEq(wrapped_18, 0, "wrap of zero with wad 18 should return zero");
+
+        uint256 unwrapped_18 = TokenWrapperLib.unwrap(wrapped_18, token_wad_18);
+        assertEq(unwrapped_18, 0, "unwrap of zero with wad 18 should return zero");
+
+        uint8 token_wad_24 = 24;
+        uint256 wrapped_24 = TokenWrapperLib.wrap(amount, token_wad_24);
+        assertEq(wrapped_24, 0, "wrap of zero with wad 24 should return zero");
+
+        uint256 unwrapped_24 = TokenWrapperLib.unwrap(wrapped_24, token_wad_24);
+        assertEq(unwrapped_24, 0, "unwrap of zero with wad 24 should return zero");
+    }
+
+    function test_TokenWrapperLib_wrap_unwrap_max_values() public {
+        uint256 max_amount = type(uint256).max;
+
+        vm.expectRevert(stdError.arithmeticError);
+        TokenWrapperLib.wrap(max_amount, 17);
+
+        uint8 token_wad = 18;
+        uint256 wrapped = TokenWrapperLib.wrap(max_amount, token_wad);
+        assertEq(wrapped, max_amount, "wrap of max value with same wad should not overflow");
+
+        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        assertEq(unwrapped, max_amount, "unwrap should return original max amount");
     }
 }
