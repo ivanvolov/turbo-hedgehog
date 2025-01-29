@@ -12,9 +12,9 @@ trsl:
 	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_rebalance_simulation --ffi
 
 tss:
-	clear && forge test -vv --match-contract DeltaNeutralALMSimulationTest --match-test test_swaps_simulation --ffi
+	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
 tssl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMSimulationTest --match-test test_swaps_simulation --ffi
+	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
 
 te:
 	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
