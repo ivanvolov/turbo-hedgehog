@@ -3,25 +3,14 @@ title: "HH Simulation general charts"
 output: html_notebook
 ---
 
-```{r}
-##install.packages("ggplot2")
-#install.packages("tidyverse")
-#install.packages("DT")
-#install.packages("plotly")
-#install.packages("gridExtra")
-#install.packages("knitr")
-#install.packages("dplyr")
-```
-
-
-```{r message=FALSE, warning=FALSE, warnigns=FALSE}
-require(ggplot2)
-require(tidyverse)
-require(DT)
-require(plotly)
-require(gridExtra)
-require(knitr)
-require(dplyr)
+```{r warnigns=FALSE}
+suppressWarnings(library(ggplot2))
+suppressWarnings(library(tidyverse))
+suppressWarnings(library(DT))
+suppressWarnings(library(plotly))
+suppressWarnings(library(gridExtra))
+suppressWarnings(library(knitr))
+suppressWarnings(library(dplyr))
 ```
 
 ```{r warnigns=FALSE}
@@ -68,122 +57,7 @@ merged_data <- left_join(swaps, states_first, by = "bN")
 q = 2**96
 merged_data$price <- 1e12/(merged_data$sqrt/q)**2
 merged_data$priceC <- 1e12/(merged_data$sqrtC/q)**2
-
-dt<-merged_data
-
-names(dt)<-c("amount", "zeroForOne", "Input", "blockNumber", "delta0", "delta1", "delta0c", "delta1c", "sqrtPriceC", "liquidity", "sqrtPrice", "tickLower", "tickUpper", "CL", "CS", "DS", "DL", "TVL", "TVLControl", "sharePrice", "sharePriceControl", "price", "priceControl")
 ```
-
-```{r}
-dt$usdcDiff <- 0
-dt$ethDiff <- 0
-
-checkZeroForOneUSDC <-function (liquidity, delta0, delta1, preSqrtPrice, postSqrtPrice, tickLower, tickUpper, index) {
-  prePrice<- 1e12 / (preSqrtPrice^2 / (2^192))
-  postPrice<- 1e12 / (postSqrtPrice^2 / (2^192))
-
-  #print(prePrice)
-  #print(postPrice)
-  
-  priceLower <- 1e12 / 1.0001^(tickLower)
-  priceUpper <- 1e12 / 1.0001^(tickUpper)
-
-  #print(priceLower)
-  #print(priceUpper)
- 
-  preX = liquidity * (sqrt(priceUpper) - sqrt(prePrice)) / (sqrt(prePrice * priceUpper))
-  preY = liquidity * (sqrt(prePrice) - sqrt(priceLower))
-
-  #print(preX)
-  #print(preY)
-  
-  postX = liquidity * (sqrt(priceUpper) - sqrt(postPrice)) / sqrt(postPrice * priceUpper)
-  postY = liquidity * (sqrt(postPrice) - sqrt(priceLower))
-
-  #print(postX)
-  #print(postY)
-  
-  deltaX = postX - preX
-  deltaY = postY - preY
-  
-  #print(deltaX)
-  #print(deltaY)
-  
-  return (deltaX)
-}
-
-checkZeroForOneETH <-function (liquidity, delta0, delta1, preSqrtPrice, postSqrtPrice, tickLower, tickUpper, index) {
-  prePrice<- 1e12 / (preSqrtPrice^2 / (2^192))
-  postPrice<- 1e12 / (postSqrtPrice^2 / (2^192))
-
-  #print(prePrice)
-  #print(postPrice)
-  
-  priceLower <- 1e12 / 1.0001^(tickLower)
-  priceUpper <- 1e12 / 1.0001^(tickUpper)
-
-  #print(priceLower)
-  #print(priceUpper)
- 
-  preX = liquidity * (sqrt(priceUpper) - sqrt(prePrice)) / (sqrt(prePrice * priceUpper))
-  preY = liquidity * (sqrt(prePrice) - sqrt(priceLower))
-
-  #print(preX)
-  #print(preY)
-  
-  postX = liquidity * (sqrt(priceUpper) - sqrt(postPrice)) / sqrt(postPrice * priceUpper)
-  postY = liquidity * (sqrt(postPrice) - sqrt(priceLower))
-
-  #print(postX)
-  #print(postY)
-  
-  deltaX = postX - preX
-  deltaY = postY - preY
-  
-  #print(deltaX)
-  #print(deltaY)
-
-  return(deltaY)
-}
-
-
-for (i in 2:nrow(dt)) {
-  
-  dt$usdcDiff[i]<-abs(dt$delta1[i]) - abs(checkZeroForOneUSDC(dt$liquidity[i]/1e12, dt$delta0[i], dt$delta1[i], dt$sqrtPrice[i-1], dt$sqrtPrice[i], dt$tickLower[i], dt$tickUpper[i], i)) 
-  
-  dt$ethDiff[i] <- abs(dt$delta0[i]) - abs(checkZeroForOneETH(dt$liquidity[i]/1e12, dt$delta0[i], dt$delta1[i], dt$sqrtPrice[i-1], dt$sqrtPrice[i], dt$tickLower[i], dt$tickUpper[i], i)) 
-  
-}
-
-#checkZeroForOne(dt$liquidity[2]/1e12, dt$delta0[2], dt$delta1[2], dt$sqrtPrice[1], dt$sqrtPrice[2], dt$tickLower[2], dt$tickUpper[2], 2)
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ```{r}
 if (nrow(merged_data) > 0) {

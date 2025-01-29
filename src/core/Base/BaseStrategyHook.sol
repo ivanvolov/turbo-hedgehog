@@ -151,13 +151,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            uint256 fee = calculateFee(sqrtPriceCurrent, sqrtPriceNext);
-
             usdcIn = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            usdcIn = adjustForFeesUp(usdcIn);
             console.log("usdcIn %s", usdcIn);
-
-            usdcIn = usdcIn * (1e18 + fee) / 1e18;
-            console.log("usdcInFee %s", usdcIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(wethOut)), // specified token = token1
@@ -176,13 +172,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            uint256 fee = calculateFee(sqrtPriceCurrent, sqrtPriceNext);
-
             wethOut = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             console.log("wethOut %s", wethOut);
-
-            wethOut = wethOut * (1 - fee) / 1e18;
-            console.log("wethOutFee %s", wethOut);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(usdcIn)), // specified token = token0
@@ -203,15 +194,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            calculateFee(sqrtPriceCurrent, sqrtPriceNext);
-
             wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            wethIn = adjustForFeesUp(wethIn);
             console.log("wethIn %s", wethIn);
-
-            uint256 fee = calculateFee(sqrtPriceCurrent, sqrtPriceNext);
-
-            wethIn = wethIn * (1e18 + fee) / 1e18;
-            console.log("wethInFee %s", wethIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(usdcOut)), // specified token = token0
@@ -230,39 +215,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            calculateFee(sqrtPriceCurrent, sqrtPriceNext);
-
             usdcOut = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             console.log("usdcOut %s", usdcOut);
-
-            uint256 fee = calculateFee(sqrtPriceCurrent, sqrtPriceNext);
-
-            usdcOut = usdcOut * (1e18 - fee) / 1e18;
-            console.log("usdcOutFee %s", usdcOut);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(wethIn)), // specified token = token1
                 -int128(uint128(usdcOut)) // unspecified token = token0
             );
         }
-    }
-
-    //TODO as external adapter for fees upgrade
-    function calculateFee(uint256 preSqrtPrice, uint256 postSqrtPrice) public view returns (uint256 fee) {
-
-        console.log("preSqrtPrice %s", preSqrtPrice);
-        console.log("postSqrtPrice %s", postSqrtPrice);
-
-        uint256 priceChangeRatio = preSqrtPrice < postSqrtPrice ? postSqrtPrice * 1e18 / preSqrtPrice : preSqrtPrice * 1e18 / postSqrtPrice;
-
-        console.log("priceChangeRatio %s", priceChangeRatio);
-
-        uint256 feesBase = getSwapFees();
-        console.log("feesBase %s", feesBase);
-
-        fee = getSwapFees() + (priceChangeRatio * priceChangeRatio / 1e18 - 1e18) / 100;
-
-        console.log("final fee %s", fee);
     }
 
     function adjustForFeesDown(uint256 amount) public view returns (uint256 amountAdjusted) {
