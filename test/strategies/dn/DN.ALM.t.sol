@@ -339,13 +339,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        {
-            vm.mockCall(
-                address(hook.oracle()),
-                abi.encodeWithSelector(IOracle.price.selector),
-                abi.encode(getHookPrice())
-            );
-        }
+        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
 
         // ** Second rebalance
         {
