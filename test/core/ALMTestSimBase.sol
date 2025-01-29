@@ -13,6 +13,9 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {ALMTestBase} from "./ALMTestBase.sol";
 import {ALMControl} from "@test/core/ALMControl.sol";
 
+// ** interfaces
+import {IOracle} from "@src/interfaces/IOracle.sol";
+
 abstract contract ALMTestSimBase is ALMTestBase {
     using CurrencyLibrary for Currency;
 
@@ -71,7 +74,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         vm.stopPrank();
     }
 
-    function simulate_swap(uint256 amount, bool zeroForOne, bool _in) internal {
+    function simulate_swap(uint256 amount, bool zeroForOne, bool _in, bool swapInControl) internal {
         // console.log(">> do swap", amount, zeroForOne, _in);
         int256 delta0;
         int256 delta1;
@@ -79,24 +82,27 @@ abstract contract ALMTestSimBase is ALMTestBase {
         int256 delta1c;
         uint160 preSqrtPriceX96 = hook.sqrtPriceCurrent();
         if (zeroForOne) {
-            // TOKEN0 => TOKEN1
+            // ** TOKEN0 => TOKEN1
             if (_in) {
                 (delta0, delta1) = __swap(true, -int256(amount), key);
-                (delta0c, delta1c) = __swap(true, -int256(amount), keyControl);
+                if (swapInControl) (delta0c, delta1c) = __swap(true, -int256(amount), keyControl);
             } else {
                 (delta0, delta1) = __swap(true, int256(amount), key);
-                (delta0c, delta1c) = __swap(true, int256(amount), keyControl);
+                if (swapInControl) (delta0c, delta1c) = __swap(true, int256(amount), keyControl);
             }
         } else {
-            // TOKEN1 => TOKEN0
+            // ** TOKEN1 => TOKEN0
             if (_in) {
                 (delta0, delta1) = __swap(false, -int256(amount), key);
-                (delta0c, delta1c) = __swap(false, -int256(amount), keyControl);
+                if (swapInControl) (delta0c, delta1c) = __swap(false, -int256(amount), keyControl);
             } else {
                 (delta0, delta1) = __swap(false, int256(amount), key);
-                (delta0c, delta1c) = __swap(false, int256(amount), keyControl);
+                if (swapInControl) (delta0c, delta1c) = __swap(false, int256(amount), keyControl);
             }
         }
+
+        // Make oracle change with swap price
+        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
 
         // @Notice: doing save swap data here to remove stack too deep error
         {

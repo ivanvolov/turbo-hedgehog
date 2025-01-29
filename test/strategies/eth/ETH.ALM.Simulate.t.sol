@@ -39,9 +39,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         vm.rollFork(19_955_703);
 
         initialSQRTPrice = getPoolSQRTPrice(ALMBaseLib.ETH_USDC_POOL); // 3843 usdc for eth (but in reversed tokens order)
-
         deployFreshManagerAndRouters();
-
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);
 
@@ -86,8 +84,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         maxUniqueDepositors = 5; // The maximum number of depositors
         depositorReuseProbability = 50; // 50 % prob what the depositor will be reused rather then creating new one
 
-        expectedPoolPriceForConversion = 3843; // USDC-WETH price (used for In/Out swaps). TODO it more elegantly with quoter.
-
         resetGenerator();
         uint256 depositsRemained = maxDeposits;
         uint256 withdrawsRemained = maxWithdraws;
@@ -118,14 +114,9 @@ contract ETHALMSimulationTest is ALMTestSimBase {
                 bool _in = (random(2) == 1);
 
                 // Now will adjust amount if it's USDC goes In
-                if ((zeroForOne && _in) || (!zeroForOne && !_in)) {
-                    // console.log("> randomAmount before", randomAmount);
-                    randomAmount = (randomAmount * expectedPoolPriceForConversion) / 1e12;
-                } else {
-                    // console.log("> randomAmount", randomAmount);
-                }
+                if ((zeroForOne && _in) || (!zeroForOne && !_in)) randomAmount = (randomAmount * getHookPrice()) / 1e30;
 
-                simulate_swap(randomAmount, zeroForOne, _in);
+                simulate_swap(randomAmount, zeroForOne, _in, true);
                 save_pool_state();
             }
 
@@ -201,10 +192,14 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         for (uint i = 0; i < numberOfSwaps; i++) {
             // **  Always do swaps
             {
-                randomAmount = (random(10) * 1e18) / 100000;
-                bool zeroForOne = (random(3) == 1); // here we set the trend
+                randomAmount = random(10) * 1e18;
+                bool zeroForOne = (random(2) == 1);
+                bool _in = (random(2) == 1);
 
-                simulate_swap(randomAmount, zeroForOne, !zeroForOne);
+                // Now will adjust amount if it's USDC goes In
+                if ((zeroForOne && _in) || (!zeroForOne && !_in)) randomAmount = (randomAmount * getHookPrice()) / 1e30;
+
+                simulate_swap(randomAmount, zeroForOne, _in, true);
                 save_pool_state();
             }
 
@@ -250,10 +245,14 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         for (uint i = 0; i < numberOfSwaps; i++) {
             // **  Always do swaps
             {
-                randomAmount = (random(10) * 1e18) / 100000;
-                bool zeroForOne = (random(3) == 1); // here we set the trend
+                randomAmount = random(10) * 1e18;
+                bool zeroForOne = (random(2) == 1);
+                bool _in = (random(2) == 1);
 
-                simulate_swap(randomAmount, zeroForOne, !zeroForOne);
+                // Now will adjust amount if it's USDC goes In
+                if ((zeroForOne && _in) || (!zeroForOne && !_in)) randomAmount = (randomAmount * getHookPrice()) / 1e30;
+
+                simulate_swap(randomAmount, zeroForOne, _in, false);
                 save_pool_state();
             }
 
