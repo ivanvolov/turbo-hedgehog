@@ -53,7 +53,7 @@ contract ETHALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
-            hook.setFees(0);
+            hook.setFees(5e14); //0.05%
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
@@ -227,12 +227,12 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 17987871838);
+        assertEq(deltaUSDC, 17968118336);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186692986552972355250, 307920000000, 480134758137, 42036153884219825249); //done
+        assertEqPositionState(186692986552972355250, 307920000000, 480115004635, 42036153884219825249); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1283463286628492184493879892596945); //done
         assertApproxEqAbs(hook.TVL(), 99914105171480511295, 1e1); //done
