@@ -90,7 +90,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         // ** Do rebalance cause no swaps before first rebalance
         {
-            try_rebalance();
+            try_rebalance(false);
             save_pool_state();
             rollOneBlock();
         }
@@ -114,7 +114,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         }
     }
 
-    function try_rebalance() internal {
+    function try_rebalance(bool rebalanceControl) internal {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
         console.log(">> isRebalance", isRebalance);
         if (isRebalance) {
@@ -127,8 +127,10 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
                 vm.stopPrank();
             }
 
-            vm.prank(swapper.addr);
-            hookControl.rebalance();
+            if (rebalanceControl) {
+                vm.prank(swapper.addr);
+                hookControl.rebalance();
+            }
 
             save_rebalance_data(priceThreshold, auctionTriggerTime);
         }
