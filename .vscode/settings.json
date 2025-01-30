@@ -20,8 +20,10 @@
   "git.ignoredRepositories": [
     "https://github.com/foundry-rs/forge-std",
     "https://github.com/Uniswap/v4-periphery",
+    "https://github.com/aave-dao/aave-v3-origin",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/forge-std",
-    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/v4-periphery"
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/v4-periphery",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/aave-v3-origin"
   ],
   "cSpell.enabled": true
 }

@@ -8,6 +8,7 @@ import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {SignedMath} from "permit2/lib/openzeppelin-contracts/contracts/utils/math/SignedMath.sol";
 
 //TODO: refactor. Remove unused functions
 library ALMMathLib {
@@ -18,7 +19,7 @@ library ALMMathLib {
         uint128 liquidity,
         uint256 amount1
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = toUint160((amount1 * 2 ** 96) / liquidity);
+        uint160 sqrtPriceDeltaX96 = uint160((amount1 * 2 ** 96) / liquidity);
         return sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
     }
 
@@ -27,7 +28,7 @@ library ALMMathLib {
         uint128 liquidity,
         uint256 amount1
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = toUint160((amount1 * 2 ** 96) / liquidity);
+        uint160 sqrtPriceDeltaX96 = uint160((amount1 * 2 ** 96) / liquidity);
         return sqrtPriceCurrentX96 - sqrtPriceDeltaX96;
     }
 
@@ -37,7 +38,7 @@ library ALMMathLib {
         uint256 amount0
     ) internal pure returns (uint160) {
         return
-            toUint160(
+            uint160(
                 uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
                     uint256(liquidity) - amount0.mul(uint256(sqrtPriceCurrentX96)).div(2 ** 96)
                 )
@@ -50,7 +51,7 @@ library ALMMathLib {
         uint256 amount0
     ) internal pure returns (uint160) {
         return
-            toUint160(
+            uint160(
                 uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
                     uint256(liquidity) + amount0.mul(uint256(sqrtPriceCurrentX96)).div(2 ** 96)
                 )
@@ -80,7 +81,7 @@ library ALMMathLib {
         int256 maxFess = 0; //0.5%
 
         int256 R = (alpha * (((RV7 * 1e18) / RV30) - 1e18)) / 1e18;
-        return uint256(max(minFee, min(maxFess, (F0 * (1e18 + R)) / 1e18)));
+        return uint256(SignedMath.max(minFee, SignedMath.min(maxFess, (F0 * (1e18 + R)) / 1e18)));
     }
 
     function getWithdrawAmount(uint256 shares, uint256 totalSupply, uint256 amount) internal pure returns (uint256) {
@@ -89,11 +90,11 @@ library ALMMathLib {
     }
 
     function getK2Values(int256 k2, uint256 deltaUSDC) internal pure returns (uint256, uint256) {
-        return (deltaUSDC.mul(abs(k2)), deltaUSDC.mul(uint256(1e18 + k2)));
+        return (deltaUSDC.mul(SignedMath.abs(k2)), deltaUSDC.mul(uint256(1e18 + k2)));
     }
 
     function getK1Values(int256 k1, uint256 deltaWETH) internal pure returns (uint256, uint256) {
-        return (deltaWETH.mul(abs(k1)), deltaWETH.mul(uint256(1e18 + k1)));
+        return (deltaWETH.mul(SignedMath.abs(k1)), deltaWETH.mul(uint256(1e18 + k1)));
     }
 
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
@@ -173,7 +174,7 @@ library ALMMathLib {
     // --- Helpers ---
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
         console.log("price Input %s", price);
-        return toInt24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
+        return int24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
@@ -198,37 +199,7 @@ library ALMMathLib {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    function toInt24(int256 value) internal pure returns (int24) {
-        //TODO: I bet we don't need it
-        require(value >= type(int24).min && value <= type(int24).max, "MH1");
-        return int24(value);
-    }
-
-    function toUint160(uint256 value) internal pure returns (uint160) {
-        require(value <= type(uint160).max, "MH2");
-        return uint160(value);
-    }
-
-    function max(int256 a, int256 b) internal pure returns (int256) {
-        return a > b ? a : b;
-    }
-
-    function min(int256 a, int256 b) internal pure returns (int256) {
-        return a < b ? a : b;
-    }
-
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a < b ? a : b;
-    }
-
-    function abs(int256 n) internal pure returns (uint256) {
-        unchecked {
-            return uint256(n >= 0 ? n : -n); //TODO: why unchecked?
-        }
-    }
-
     function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
-        int256 n = int256(a) - int256(b);
-        return abs(n);
+        return a > b ? a - b : b - a;
     }
 }

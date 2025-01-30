@@ -21,7 +21,7 @@ import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
-import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol"; // TODO: why permit and not openzeppelin directly? Fix this house in remapping after the uniswap lib update.
 
 // ** interfaces
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
