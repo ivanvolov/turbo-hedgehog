@@ -13,7 +13,7 @@ import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
-import {Deployers} from "@uniswap/v4-core/test/utils/Deployers.sol";
+import {Deployers} from "v4-core-test/utils/Deployers.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";

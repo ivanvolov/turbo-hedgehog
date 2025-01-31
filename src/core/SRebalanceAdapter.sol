@@ -12,7 +12,7 @@ import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
+import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -26,7 +26,7 @@ import {Base} from "@src/core/base/Base.sol";
 // ** interfaces
 import {ILendingPool} from "@src/interfaces/IAave.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;

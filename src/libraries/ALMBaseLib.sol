@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 // ** interfaces
 import {ISwapRouter} from "@forks/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
-import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 //TODO: refactor. Remove unused variables or maybe merge with ALMMathLib or BaseContract.
 library ALMBaseLib {

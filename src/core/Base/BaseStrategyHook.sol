@@ -13,7 +13,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
-import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
+import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
 import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";

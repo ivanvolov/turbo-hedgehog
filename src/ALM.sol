@@ -12,7 +12,7 @@ import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
+import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -21,12 +21,12 @@ import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
-import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol"; // TODO: why permit and not openzeppelin directly? Fix this house in remapping after the uniswap lib update.
+import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 
 // ** interfaces
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
-import {IERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 /// @title ALM
 /// @author IVikkk

@@ -8,7 +8,7 @@ import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {SignedMath} from "permit2/lib/openzeppelin-contracts/contracts/utils/math/SignedMath.sol";
+import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 //TODO: refactor. Remove unused functions
 library ALMMathLib {

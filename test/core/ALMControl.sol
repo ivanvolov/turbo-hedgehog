@@ -15,7 +15,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
+import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
 // ** libraries
@@ -24,7 +24,7 @@ import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {ABDKMath64x64} from "@src/libraries/math/ABDKMath64x64.sol";
 
 // ** contracts
-import {ERC20} from "permit2/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
