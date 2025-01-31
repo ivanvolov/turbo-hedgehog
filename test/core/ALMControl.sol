@@ -51,28 +51,11 @@ contract ALMControl is BaseHook, ERC20 {
         tickUpper = nearestUsableTick(alm.tickUpper(), 2);
     }
 
-    function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
-        return
-            Hooks.Permissions({
-                beforeInitialize: false,
-                afterInitialize: true,
-                beforeAddLiquidity: false,
-                afterAddLiquidity: false,
-                beforeRemoveLiquidity: false,
-                afterRemoveLiquidity: false,
-                beforeSwap: false,
-                afterSwap: false,
-                beforeDonate: false,
-                afterDonate: false,
-                beforeSwapReturnDelta: false,
-                afterSwapReturnDelta: false,
-                afterAddLiquidityReturnDelta: false,
-                afterRemoveLiquidityReturnDelta: false
-            });
-    }
+    // --- Logic ---
 
-    // This should be called after the target hook is rebalanced
+    // @Notice: This should be called after the target hook is rebalanced
     function rebalance() external {
+        poke();
         (uint128 totalLiquidity, , ) = getPositionInfo();
 
         // ** Withdraw all liquidity
@@ -84,7 +67,6 @@ contract ALMControl is BaseHook, ERC20 {
         );
 
         uint256 _TVL = TVL();
-        // console.log("TVL before:", TVL());
 
         // ** All money to rebalancer
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
@@ -94,21 +76,16 @@ contract ALMControl is BaseHook, ERC20 {
         tickUpper = nearestUsableTick(alm.tickUpper(), 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
-        // console.log("newLiquidity", newLiquidity);
-
-        // console.log("Tick lower/upper");
-        // console.logInt(tickLower);
-        // console.logInt(tickUpper);
 
         // ** Deposit all liquidity
         poolManager.unlock(
             abi.encodeCall(this.unlockModifyPosition, (key, int128(newLiquidity), tickUpper, tickLower, msg.sender))
         );
-        // console.log("TVL after:", TVL());
     }
 
     function deposit(uint256 amount) external {
         require(amount != 0);
+        poke();
 
         (uint160 sqrtPriceX96, ) = getTick();
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(
@@ -134,8 +111,8 @@ contract ALMControl is BaseHook, ERC20 {
 
     function withdraw(uint256 shares) external {
         require(balanceOf(msg.sender) >= shares);
+        poke();
 
-        //TODO: better do some poke here
         uint256 ratio = (shares * 1e18) / totalSupply();
         _burn(msg.sender, shares);
         (uint128 totalLiquidity, , ) = getPositionInfo();
@@ -149,13 +126,10 @@ contract ALMControl is BaseHook, ERC20 {
         );
     }
 
-    function sharePrice() public view returns (uint256) {
-        if (totalSupply() == 0) return 0;
-        return (TVL() * 1e18) / totalSupply();
-    }
-
-    function getTick() public view returns (uint160 sqrtPriceX96, int24 currentTick) {
-        (sqrtPriceX96, currentTick, , ) = poolManager.getSlot0(key.toId());
+    function poke() public {
+        (uint128 liquidity, , ) = getPositionInfo();
+        if (liquidity == 0) return;
+        poolManager.unlock(abi.encodeCall(this.unlockModifyPosition, (key, 0, tickUpper, tickLower, msg.sender)));
     }
 
     function unlockModifyPosition(
@@ -200,16 +174,48 @@ contract ALMControl is BaseHook, ERC20 {
         return "";
     }
 
+    // --- Math ---
+
+    function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
+        return
+            Hooks.Permissions({
+                beforeInitialize: false,
+                afterInitialize: true,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
+                beforeRemoveLiquidity: false,
+                afterRemoveLiquidity: false,
+                beforeSwap: false,
+                afterSwap: false,
+                beforeDonate: false,
+                afterDonate: false,
+                beforeSwapReturnDelta: false,
+                afterSwapReturnDelta: false,
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
+            });
+    }
+
+    function afterInitialize(address, PoolKey calldata _key, uint160, int24) external override returns (bytes4) {
+        key = _key;
+        return ALMControl.afterInitialize.selector;
+    }
+
+    function sharePrice() public view returns (uint256) {
+        if (totalSupply() == 0) return 0;
+        return (TVL() * 1e18) / totalSupply();
+    }
+
+    function getTick() public view returns (uint160 sqrtPriceX96, int24 currentTick) {
+        (sqrtPriceX96, currentTick, , ) = poolManager.getSlot0(key.toId());
+    }
+
     function TVL() public view returns (uint256) {
         (uint256 amount0, uint256 amount1) = getUniswapPositionAmounts();
         return TVL(amount0 + key.currency0.balanceOf(address(this)), amount1 + key.currency1.balanceOf(address(this)));
     }
 
     function TVL(uint256 amount0, uint256 amount1) public view returns (uint256) {
-        // console.log("getTVL");
-        // console.log("amount0", amount0);
-        // console.log("amount1", amount1);
-        // console.log("current price", _calcCurrentPrice());
         return amount1 + (amount0 * 1e30) / _calcCurrentPrice();
     }
 
@@ -239,11 +245,6 @@ contract ALMControl is BaseHook, ERC20 {
     function _calcCurrentPrice() public view returns (uint256) {
         (uint160 sqrtPriceX96, ) = getTick();
         return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96));
-    }
-
-    function afterInitialize(address, PoolKey calldata _key, uint160, int24) external override returns (bytes4) {
-        key = _key;
-        return ALMControl.afterInitialize.selector;
     }
 
     // ** Helpers
@@ -276,13 +277,6 @@ contract ALMControl is BaseHook, ERC20 {
         uint256 pL,
         uint256 digits
     ) internal pure returns (uint128) {
-        // console.log("_getLiquidityForValue");
-        // console.log(v);
-        // console.log(p);
-        // console.log(pH);
-        // console.log(pL);
-        // console.log(digits);
-
         v = v.mul(p);
         return uint128(v.div((p.sqrt()).mul(2e18) - pL.sqrt() - p.div(pH.sqrt())).mul(digits));
     }

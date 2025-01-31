@@ -202,4 +202,8 @@ library ALMMathLib {
     function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? a - b : b - a;
     }
+
+    function abs(int256 n) internal pure returns (uint256) {
+        return SignedMath.abs(n);
+    }
 }
