@@ -21,7 +21,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
-import {ABDKMath64x64} from "@src/libraries/math/ABDKMath64x64.sol";
+import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
 
 // ** contracts
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
