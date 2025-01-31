@@ -53,6 +53,7 @@ contract ETHALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
+            hook.setSwapPriceThreshold(1e18);
             hook.setFees(0);
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
@@ -217,6 +218,20 @@ contract ETHALMTest is ALMTestBase {
 
         assertEq(hook.sqrtPriceCurrent(), 1270692033691648863352713011702213);
         assertApproxEqAbs(hook.TVL(), 99913836793875091884, 1e1);
+    }
+
+    function test_deposit_rebalance_swap_price_up_out_revert_deviations() public {
+        test_deposit_rebalance();
+
+        vm.prank(deployer.addr);
+        hook.setSwapPriceThreshold(3 * 1e15);
+
+        uint256 wethToGetFSwap = 4626903915919660000;
+        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+
+        vm.expectRevert();
+        swapUSDC_WETH_Out(wethToGetFSwap);
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {

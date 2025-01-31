@@ -47,9 +47,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bool public shutdown = false;
     int24 public tickDelta = 3000;
     bool public isInvertAssets = false;
-
+    uint256 public swapPriceThreshold;
     uint256 public fees;
-
     bytes32 public authorizedPool;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
@@ -79,6 +78,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
         isInvertAssets = _isInvertAssets;
+    }
+
+    function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {
+        swapPriceThreshold = _swapPriceThreshold;
     }
 
     function setFees(uint256 _fees) external onlyOwner {

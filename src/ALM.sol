@@ -204,7 +204,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             // console.log("> wethOut", wethOut);
             // console.log("> usdcIn", usdcIn);
 
-            //TODO: if sqrtPriceNext> parameters => reject swap
+            checkSwapDeviations(sqrtPriceNext);
 
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
@@ -229,7 +229,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             // console.log("> usdcOut", usdcOut);
             key.currency1.take(poolManager, address(this), wethIn, false);
 
-            //TODO: if sqrtPriceNext> parameters => reject swap
+            checkSwapDeviations(sqrtPriceNext);
 
             positionManager.positionAdjustmentPriceDown(usdcOut.wrap(t0Dec), wethIn.wrap(t1Dec));
 
@@ -252,6 +252,13 @@ contract ALM is BaseStrategyHook, ERC20 {
     function refreshReserves() public notPaused {
         lendingAdapter.syncLong();
         lendingAdapter.syncShort();
+    }
+
+    function checkSwapDeviations(uint160 sqrtPriceNext) internal view {
+        uint256 ratio = (uint256(sqrtPriceNext) * 1e18) / uint256(sqrtPriceCurrent);
+        uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
+        console.log("checkSwapDeviations:", priceThreshold);
+        if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
     // --- Helpers ---

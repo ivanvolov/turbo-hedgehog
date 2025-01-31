@@ -52,6 +52,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
+            hook.setSwapPriceThreshold(1e18);
+            hook.setFees(0);
             rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change

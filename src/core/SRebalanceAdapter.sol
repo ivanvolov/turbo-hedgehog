@@ -121,7 +121,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 cachedRatio = oracle.price().div(oraclePriceAtLastRebalance);
         console.log("cachedRatio %s", cachedRatio);
 
-        uint256 priceThreshold = cachedRatio > 1e18 ? (cachedRatio).sub(1e18) : uint256(1e18).sub(cachedRatio);
+        uint256 priceThreshold = cachedRatio > 1e18 ? cachedRatio - 1e18 : 1e18 - cachedRatio;
         console.log("priceThreshold %s", priceThreshold);
 
         return (priceThreshold >= rebalancePriceThreshold, priceThreshold);
@@ -129,7 +129,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     function isTimeRebalance() public view returns (bool, uint256) {
         uint256 auctionTriggerTime = timeAtLastRebalance + rebalanceTimeThreshold;
-
         return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
     }
 
