@@ -48,7 +48,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
             hook.setSwapPriceThreshold(1e18);
-            hook.setFees(0);
+            positionManager.setFees(0);
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
@@ -65,7 +65,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         init_control_hook();
 
         approve_accounts();
-        presetChainlinkOracles();
         deal(address(USDC), address(swapper.addr), 100_000_000 * 1e6);
         deal(address(WETH), address(swapper.addr), 100_000 * 1e18);
     }
@@ -219,7 +218,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
 
     function test_swaps_simulation() public {
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e16);
+        positionManager.setFees(5 * 1e16);
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();

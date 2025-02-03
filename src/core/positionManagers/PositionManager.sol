@@ -29,11 +29,17 @@ contract PositionManager is Base, IPositionManager {
     uint256 public k1 = 1e18 / 2;
     uint256 public k2 = 1e18 / 2;
 
+    uint256 public fees;
+
     constructor() Base(msg.sender) {}
 
     function setKParams(uint256 _k1, uint256 _k2) external onlyOwner {
         k1 = _k1;
         k2 = _k2;
+    }
+
+    function setFees(uint256 _fees) external onlyOwner {
+        fees = _fees;
     }
 
     function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external onlyALM notPaused notShutdown {
@@ -69,5 +75,9 @@ contract PositionManager is Base, IPositionManager {
         lendingAdapter.borrowLong(delta0);
 
         IERC20(token0).transfer(address(alm), delta0.unwrap(t0Dec));
+    }
+
+    function getSwapFees(bool, int256) external view returns (uint256) {
+        return fees;
     }
 }

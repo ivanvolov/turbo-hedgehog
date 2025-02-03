@@ -53,8 +53,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
             hook.setSwapPriceThreshold(1e18);
-            hook.setFees(0);
             rebalanceAdapter.setIsInvertAssets(true);
+            positionManager.setFees(0);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
@@ -68,7 +68,6 @@ contract DeltaNeutralALMTest is ALMTestBase {
         }
 
         approve_accounts();
-        presetChainlinkOracles();
     }
 
     function test_withdraw() public {
@@ -245,7 +244,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
         uint256 usdcToSwap = 20594068491; //done
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -266,7 +265,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
 
         uint256 wethToGetFSwap = 5331823310823070000; //done
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -290,7 +289,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         uint256 wethToSwap = 5408396534130190000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -310,7 +309,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
 
         uint256 usdcToGetFSwap = 20697298845; //done
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -349,8 +348,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
             rebalanceAdapter.rebalance(slippage);
 
             assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(133540952742063250489, 634512119140, 345484761720, 108919957825396922361); // done
-            assertApproxEqAbs(hook.TVL(), 384742549210321332953535, 1e1); //done
+            assertEqPositionState(133540952742063250489, 634512119140, 345484761720, 108919957825396922361);
+            assertApproxEqAbs(hook.TVL(), 384742549210321332953535, 1e1);
         }
     }
 }

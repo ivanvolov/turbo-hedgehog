@@ -48,7 +48,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     int24 public tickDelta = 3000;
     bool public isInvertAssets = false;
     uint256 public swapPriceThreshold;
-    uint256 public fees;
     bytes32 public authorizedPool;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
@@ -82,10 +81,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {
         swapPriceThreshold = _swapPriceThreshold;
-    }
-
-    function setFees(uint256 _fees) external onlyOwner {
-        fees = _fees;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -155,7 +150,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             usdcIn = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            usdcIn = adjustForFeesUp(usdcIn);
+            usdcIn = adjustForFeesUp(usdcIn, true, amountSpecified);
             console.log("usdcIn %s", usdcIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
@@ -170,7 +165,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
-                adjustForFeesDown(usdcIn)
+                adjustForFeesDown(usdcIn, true, amountSpecified)
             );
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
@@ -198,7 +193,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            wethIn = adjustForFeesUp(wethIn);
+            wethIn = adjustForFeesUp(wethIn, false, amountSpecified);
             console.log("wethIn %s", wethIn);
 
             beforeSwapDelta = toBeforeSwapDelta(
@@ -213,7 +208,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
                 sqrtPriceCurrent,
                 liquidity,
-                adjustForFeesDown(wethIn)
+                adjustForFeesDown(wethIn, false, amountSpecified)
             );
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
@@ -228,24 +223,22 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         }
     }
 
-    function adjustForFeesDown(uint256 amount) public view returns (uint256 amountAdjusted) {
-        amountAdjusted = amount - (amount * getSwapFees()) / 1e18;
+    function adjustForFeesDown(
+        uint256 amount,
+        bool zeroForOne,
+        int256 amountSpecified
+    ) public view returns (uint256 amountAdjusted) {
+        uint256 fee = positionManager.getSwapFees(zeroForOne, amountSpecified);
+        amountAdjusted = amount - (amount * fee) / 1e18;
     }
 
-    function adjustForFeesUp(uint256 amount) public view returns (uint256 amountAdjusted) {
-        amountAdjusted = amount + (amount * getSwapFees()) / 1e18;
-    }
-
-    function getSwapFees() public view returns (uint256) {
-        // TODO: do fees properly
-        return fees;
-        // (, int256 RV7, , , ) = AggregatorV3Interface(
-        //     ALMBaseLib.CHAINLINK_7_DAYS_VOL
-        // ).latestRoundData();
-        // (, int256 RV30, , , ) = AggregatorV3Interface(
-        //     ALMBaseLib.CHAINLINK_30_DAYS_VOL
-        // ).latestRoundData();
-        // return ALMMathLib.calculateSwapFee(RV7 * 1e18, RV30 * 1e18);
+    function adjustForFeesUp(
+        uint256 amount,
+        bool zeroForOne,
+        int256 amountSpecified
+    ) public view returns (uint256 amountAdjusted) {
+        uint256 fee = positionManager.getSwapFees(zeroForOne, amountSpecified);
+        amountAdjusted = amount + (amount * fee) / 1e18;
     }
 
     // --- Modifiers ---

@@ -48,8 +48,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
             hook.setSwapPriceThreshold(1e18);
-            hook.setFees(0);
             rebalanceAdapter.setIsInvertAssets(true);
+            positionManager.setFees(0);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
@@ -65,14 +65,13 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         init_control_hook();
 
         approve_accounts();
-        presetChainlinkOracles();
         deal(address(USDC), address(swapper.addr), 100_000_000 * 1e6);
         deal(address(WETH), address(swapper.addr), 100_000 * 1e18);
     }
 
     function test_swaps_simulation() public {
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e16);
+        positionManager.setFees(5 * 1e16);
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();

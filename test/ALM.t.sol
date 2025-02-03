@@ -49,7 +49,6 @@ contract ALMGeneralTest is ALMTestBase {
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);
         approve_accounts();
-        presetChainlinkOracles();
     }
 
     function test_hook_deployment_exploit_revert() public {

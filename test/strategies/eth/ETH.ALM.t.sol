@@ -54,7 +54,7 @@ contract ETHALMTest is ALMTestBase {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
             hook.setSwapPriceThreshold(1e18);
-            hook.setFees(0);
+            positionManager.setFees(0);
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
@@ -69,7 +69,6 @@ contract ETHALMTest is ALMTestBase {
         }
 
         approve_accounts();
-        presetChainlinkOracles();
     }
 
     function test_withdraw() public {
@@ -278,7 +277,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14); // 0.05% static fee
+        positionManager.setFees(5 * 1e14);
 
         uint256 usdcToSwap = 17897776432;
 
@@ -300,7 +299,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
 
         uint256 wethToGetFSwap = 4626903915919660000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -324,7 +323,7 @@ contract ETHALMTest is ALMTestBase {
         uint256 wethToSwap = 4696832668752530000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -344,7 +343,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e14);
+        positionManager.setFees(5 * 1e14);
 
         uint256 usdcToGetFSwap = 17987491283;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -390,7 +389,7 @@ contract ETHALMTest is ALMTestBase {
 
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-        // hook.setFees(5 * 1e16);
+        // positionManager.setFees(5 * 1e16);
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
         vm.stopPrank();

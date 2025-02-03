@@ -147,20 +147,6 @@ abstract contract ALMTestBase is Test, Deployers {
         vm.stopPrank();
     }
 
-    function presetChainlinkOracles() internal {
-        vm.mockCall(
-            address(ALMBaseLib.CHAINLINK_7_DAYS_VOL),
-            abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
-            abi.encode(18446744073709563265, 60444, 1725059436, 1725059436, 18446744073709563265)
-        );
-
-        vm.mockCall(
-            address(ALMBaseLib.CHAINLINK_30_DAYS_VOL),
-            abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
-            abi.encode(18446744073709563266, 86480, 1725059412, 1725059412, 18446744073709563266)
-        );
-    }
-
     function create_accounts_and_tokens() public virtual {
         WETH = TestERC20(ALMBaseLib.WETH);
         vm.label(address(WETH), "WETH");
