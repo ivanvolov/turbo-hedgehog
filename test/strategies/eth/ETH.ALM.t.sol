@@ -411,6 +411,9 @@ contract ETHALMTest is ALMTestBase {
             swapWETH_USDC_Out(usdcToGetFSwap);
         }
 
+        // ** Make oracle change with swap price
+        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
+
         // ** Withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
