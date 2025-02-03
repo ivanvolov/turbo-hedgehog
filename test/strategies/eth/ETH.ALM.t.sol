@@ -278,7 +278,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e16);
+        hook.setFees(5 * 1e14); // 0.05% static fee
 
         uint256 usdcToSwap = 17897776432;
 
@@ -286,25 +286,25 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 4626805947735540197, 1e4);
+        assertApproxEqAbs(deltaWETH, 4624504019982289378, 1e4);
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(173406801524476855220, 307920000000, 444249109866, 38073607472212395416);
+        assertEqPositionState(173410081771525237636, 307920000000, 444249109866, 38074585791507527014);
 
-        assertEq(hook.sqrtPriceCurrent(), 1270692167884249415165740426235478);
-        assertApproxEqAbs(hook.TVL(), 99913835812202105946, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1270695320965775488682522591655933);
+        assertApproxEqAbs(hook.TVL(), 99916137739955356764, 1e1);
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e16);
+        hook.setFees(5 * 1e14);
 
         uint256 wethToGetFSwap = 4626903915919660000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 17898157290);
+        assertEq(usdcToSwapQ, 17907106368);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 
@@ -314,41 +314,41 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(173406661919814484500, 307920000000, 444248729008, 38073565835734144500);
+        assertEqPositionState(173406661919814484500, 307920000000, 444239779931, 38073565835734144500);
 
         assertEq(hook.sqrtPriceCurrent(), 1270692033691648863352713011702213);
-        assertApproxEqAbs(hook.TVL(), 99913836793875091884, 1e1);
+        assertApproxEqAbs(hook.TVL(), 99916161833365868709, 1e1);
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
         uint256 wethToSwap = 4696832668752530000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e16);
+        hook.setFees(5 * 1e14);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 17987871838);
+        assertEq(deltaUSDC, 17978922963);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186692986552972355250, 307920000000, 480134758137, 42036153884219825249);
+        assertEqPositionState(186692986552972355250, 307920000000, 480125809262, 42036153884219825249);
 
-        assertEq(hook.sqrtPriceCurrent(), 1283463286628492184493879892596945);
-        assertApproxEqAbs(hook.TVL(), 99914105171480511295, 1e1);
+        assertEq(hook.sqrtPriceCurrent(), 1283460069868909267964367933948804);
+        assertApproxEqAbs(hook.TVL(), 99916430158490124182, 1e1);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        hook.setFees(5 * 1e16);
+        hook.setFees(5 * 1e14);
 
         uint256 usdcToGetFSwap = 17987491283;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 4696732800805156176);
+        assertEq(wethToSwapQ, 4699081167205558754);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -359,10 +359,10 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186692844241147347549, 307920000000, 480134377581, 42036111440342191374);
+        assertEqPositionState(186696190663267921224, 307920000000, 480134377581, 42037109496062362469);
 
         assertEq(hook.sqrtPriceCurrent(), 1283463149833677722315484726714060);
-        assertApproxEqAbs(hook.TVL(), 99914104174928305045, 1e1);
+        assertApproxEqAbs(hook.TVL(), 99916452541328707625, 1e1);
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
@@ -406,56 +406,56 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 17987491283 * 1000; // Yevhen, why is this test breaks here on swap?
+            uint256 usdcToGetFSwap = 17987491283 * 10; // Yevhen, why is this test breaks here on swap?
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
             swapWETH_USDC_Out(usdcToGetFSwap);
         }
 
-        // // ** Withdraw
-        // {
-        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //     vm.prank(alice.addr);
-        //     hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
-        // }
+        // ** Withdraw
+        {
+            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            vm.prank(alice.addr);
+            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
+        }
 
-        // // ** Deposit
-        // {
-        //     uint256 _amountToDep = 20 ether;
-        //     deal(address(WETH), address(alice.addr), _amountToDep);
-        //     vm.prank(alice.addr);
-        //     hook.deposit(alice.addr, _amountToDep);
-        // }
+        // ** Deposit
+        {
+            uint256 _amountToDep = 20 ether;
+            deal(address(WETH), address(alice.addr), _amountToDep);
+            vm.prank(alice.addr);
+            hook.deposit(alice.addr, _amountToDep);
+        }
 
-        // // ** Rebalance
-        // vm.prank(deployer.addr);
-        // rebalanceAdapter.rebalance(1e15);
+        // ** Rebalance
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(1e15);
 
-        // // ** Swap Up out
-        // {
-        //     uint256 wethToGetFSwap = 4626903915919660000;
-        //     (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        //     deal(address(USDC), address(swapper.addr), usdcToSwapQ);
-        //     swapUSDC_WETH_Out(wethToGetFSwap);
-        // }
+        // ** Swap Up out
+        {
+            uint256 wethToGetFSwap = 4626903915919660000;
+            (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+            deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+            swapUSDC_WETH_Out(wethToGetFSwap);
+        }
 
-        // // ** Swap Down In
-        // {
-        //     uint256 wethToSwap = 4696832668752530000;
-        //     deal(address(WETH), address(swapper.addr), wethToSwap);
-        //     swapWETH_USDC_In(wethToSwap);
-        // }
+        // ** Swap Down In
+        {
+            uint256 wethToSwap = 4696832668752530000;
+            deal(address(WETH), address(swapper.addr), wethToSwap);
+            swapWETH_USDC_In(wethToSwap);
+        }
 
-        // // ** Rebalance
-        // vm.prank(deployer.addr);
-        // rebalanceAdapter.rebalance(1e15);
+        // ** Rebalance
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(1e15);
 
-        // // ** Full withdraw
-        // {
-        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //     vm.prank(alice.addr);
-        //     hook.withdraw(alice.addr, sharesToWithdraw, 0);
-        // }
+        // ** Full withdraw
+        {
+            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            vm.prank(alice.addr);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        }
     }
 
     function test_lending_adapter_migration() public {
