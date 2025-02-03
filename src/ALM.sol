@@ -81,6 +81,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
         console.log("Withdraw");
 
+        console.log("sharesOut %s", sharesOut);
+        console.log("totalSupply %s", totalSupply());
+
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
@@ -99,10 +102,13 @@ contract ALM is BaseStrategyHook, ERC20 {
             lendingAdapter.getBorrowedShort()
         );
 
+        console.log("uCL %s", uCL);
+        console.log("uCS %s", uCS);
+        console.log("uDL %s", uDL);
+        console.log("uDS %s", uDS);
+
         if (uDS == 0 || uDL == 0) revert ZeroDebt(); //TODO
         _burn(msg.sender, sharesOut);
-        liquidity = rebalanceAdapter.calcLiquidity();
-        console.log("liquidity %s", liquidity);
 
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
@@ -120,6 +126,9 @@ contract ALM is BaseStrategyHook, ERC20 {
             if (token1Balance(false) < minAmountOut) revert NotMinOutWithdraw();
             IERC20(token1).transfer(to, token1Balance(false));
         }
+
+        liquidity = rebalanceAdapter.calcLiquidity();
+        console.log("liquidity %s", liquidity);
 
         console.log("WithdrawDone");
     }
