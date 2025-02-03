@@ -396,6 +396,8 @@ contract ETHALMTest is ALMTestBase {
 
         test_deposit_rebalance();
 
+        console.log("price  (1)", getHookPrice());
+        console.log("oracle (1)", oracle.price());
         // ** Swap Up In
         {
             uint256 usdcToSwap = 17897776432;
@@ -413,6 +415,8 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Make oracle change with swap price
         vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
+        console.log("price  (2)", getHookPrice());
+        console.log("oracle (2)", oracle.price());
 
         // ** Withdraw
         {
