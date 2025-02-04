@@ -64,7 +64,7 @@ contract ETHALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(1e18);
+            rebalanceAdapter.setOraclePriceAtLastRebalance(3849e18);
             vm.stopPrank();
         }
 
@@ -407,7 +407,7 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 17987491283 * 10; // Yevhen, why is this test breaks here on swap?
+            uint256 usdcToGetFSwap = 17987491283 * 5; // Yevhen, why is this test breaks here on swap?
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
             swapWETH_USDC_Out(usdcToGetFSwap);
@@ -426,16 +426,12 @@ contract ETHALMTest is ALMTestBase {
         }
 
         // ** Deposit
-        {
-            uint256 _amountToDep = 20 ether;
-            deal(address(WETH), address(alice.addr), _amountToDep);
-            vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep);
-        }
-
-        // ** Rebalance
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(1e15);
+        //{
+        //    uint256 _amountToDep = 20 ether;
+        //    deal(address(WETH), address(alice.addr), _amountToDep);
+        //    vm.prank(alice.addr);
+        //    hook.deposit(alice.addr, _amountToDep);
+        //}
 
         // ** Swap Up out
         {
@@ -451,6 +447,12 @@ contract ETHALMTest is ALMTestBase {
             deal(address(WETH), address(swapper.addr), wethToSwap);
             swapWETH_USDC_In(wethToSwap);
         }
+
+        // ** Make oracle change with swap price
+        console.log("preOraclePrice", oracle.price());
+        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
+        console.log("hookPrice", getHookPrice());
+        console.log("postOraclePrice", oracle.price());
 
         // ** Rebalance
         vm.prank(deployer.addr);

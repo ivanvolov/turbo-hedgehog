@@ -118,10 +118,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     function isPriceRebalance() public view returns (bool, uint256) {
         console.log("currentPrice %s", oracle.price());
         console.log("priceAtLastRebalance %s", oraclePriceAtLastRebalance);
-        uint256 cachedRatio = oracle.price().div(oraclePriceAtLastRebalance);
-        console.log("cachedRatio %s", cachedRatio);
 
-        uint256 priceThreshold = cachedRatio > 1e18 ? cachedRatio - 1e18 : 1e18 - cachedRatio;
+        uint256 oraclePrice = oracle.price();
+
+        uint256 priceThreshold = oraclePrice < oraclePriceAtLastRebalance ? 1e18 - oraclePrice.div(oraclePriceAtLastRebalance) : oraclePriceAtLastRebalance.div(oraclePrice) - 1e18;
+
         console.log("priceThreshold %s", priceThreshold);
 
         return (priceThreshold >= rebalancePriceThreshold, priceThreshold);
@@ -151,6 +152,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         // console.log("ethToFl", ethToFl);
         // console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
+
+        console.log("USDC balance after %s", token0BalanceUnwr());
+        console.log("WETH balance after %s", token1BalanceUnwr());
+
+        if (token0BalanceUnwr() != 0)
+            lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
+
+        if (token1BalanceUnwr() != 0)
+            lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
 
         console.log("USDC balance after %s", token0BalanceUnwr());
         console.log("WETH balance after %s", token1BalanceUnwr());
@@ -198,21 +208,27 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         // ** Flash loan management
 
-        // console.log("premium0 %s", premiums[0]);
-        // console.log("premium1 %s", premiums[1]);
-        // console.log("borrowedToken1 %s", borrowedToken1);
-        // console.log("wethBalance %s", token1BalanceUnwr());
-        // console.log("borrowedToken0 %s", borrowedToken0);
-        // console.log("usdcBalance %s", token0BalanceUnwr());
+        console.log("premium0 %s", premiums[0]);
+        console.log("premium1 %s", premiums[1]);
+        console.log("flDEBT ETH %s", borrowedToken1);
+        console.log("wethBalance %s", token1BalanceUnwr());
+        console.log("flDEBT USDC %s", borrowedToken0);
+        console.log("usdcBalance %s", token0BalanceUnwr());
+
+        if (borrowedToken0 > token0BalanceUnwr()) {
+            ALMBaseLib.swapExactOutput(token1, token0, borrowedToken0 - token0BalanceUnwr());
+        }
+
+        console.log("flDEBT ETH after %s", borrowedToken1);
+        console.log("wethBalance after %s", token1BalanceUnwr());
 
         if (borrowedToken1 > token1BalanceUnwr())
             ALMBaseLib.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
 
-        if (borrowedToken1 > token1BalanceUnwr())
-            ALMBaseLib.swapExactInput(token1, token0, borrowedToken1 - token1BalanceUnwr());
+        console.log("flDEBT USDC after %s", borrowedToken0);
+        console.log("usdcBalance after %s", token0BalanceUnwr());
 
-        if (borrowedToken0 < token0BalanceUnwr())
-            lendingAdapter.repayLong((token0BalanceUnwr() - borrowedToken0).wrap(t0Dec));
+        console.log("here");
 
         return true;
     }
@@ -222,14 +238,19 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS, uint256 _targetDL, uint256 _targetDS) = abi
             .decode(data, (int256, int256, int256, int256, uint256, uint256));
 
-        if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
-        else if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
+            console.log("deltaCL", deltaCL);
+            console.log("deltaCS", deltaCS);
+            console.log("deltaDL", deltaDL);
+            console.log("deltaDS", deltaDS);
 
+        if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
-        else if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
 
         if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
         if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
+
+        if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
+        if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
 
         if (deltaDL != 0) lendingAdapter.borrowLong(_targetDL - lendingAdapter.getBorrowedLong());
         if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
@@ -280,15 +301,17 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             console.log("targetDL", targetDL);
             console.log("targetDS", targetDS);
 
-            deltaCL = (int256(targetCL - lendingAdapter.getCollateralLong()));
-            deltaCS = (int256(targetCS - lendingAdapter.getCollateralShort()));
-            deltaDL = (int256(targetDL - lendingAdapter.getBorrowedLong()));
-            deltaDS = (int256(targetDS - lendingAdapter.getBorrowedShort()));
+            console.log("here");
 
-            // console.log("deltaCL", deltaCL);
-            // console.log("deltaCS", deltaCS);
-            // console.log("deltaDL", deltaDL);
-            // console.log("deltaDS", deltaDS);
+            deltaCL = int256(targetCL) - int256(lendingAdapter.getCollateralLong());
+            deltaCS = int256(targetCS) - int256(lendingAdapter.getCollateralShort());
+            deltaDL = int256(targetDL) - int256(lendingAdapter.getBorrowedLong());
+            deltaDS = int256(targetDS) - int256(lendingAdapter.getBorrowedShort());
+
+            console.log("deltaCL", deltaCL);
+            console.log("deltaCS", deltaCS);
+            console.log("deltaDL", deltaDL);
+            console.log("deltaDS", deltaDS);
         }
 
         if (deltaCL > 0) ethToFl += uint256(deltaCL);
