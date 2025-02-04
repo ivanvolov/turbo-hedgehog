@@ -42,7 +42,7 @@ contract ALMGeneralTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(19_955_703);
 
-        initialSQRTPrice = getPoolSQRTPrice(ALMBaseLib.ETH_USDC_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getPoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -65,7 +65,14 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_long() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        IBase(address(lendingAdapter)).setComponents(address(hook), alice.addr, alice.addr, alice.addr, alice.addr);
+        IBase(address(lendingAdapter)).setComponents(
+            address(hook),
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr
+        );
 
         // ** Approve to Morpho
         vm.startPrank(alice.addr);
@@ -105,7 +112,14 @@ contract ALMGeneralTest is ALMTestBase {
     function test_aave_lending_adapter_short() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
-        IBase(address(lendingAdapter)).setComponents(address(hook), alice.addr, alice.addr, alice.addr, alice.addr);
+        IBase(address(lendingAdapter)).setComponents(
+            address(hook),
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr
+        );
 
         // ** Approve to LA
         vm.startPrank(alice.addr);

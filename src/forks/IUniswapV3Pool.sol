@@ -2,6 +2,8 @@
 pragma solidity >=0.5.0;
 
 interface IUniswapV3Pool {
+    function fee() external view returns (uint24);
+
     function slot0()
         external
         view

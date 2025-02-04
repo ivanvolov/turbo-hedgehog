@@ -42,7 +42,7 @@ contract ETHALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(19_955_703);
 
-        initialSQRTPrice = getPoolSQRTPrice(ALMBaseLib.ETH_USDC_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getPoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -393,9 +393,7 @@ contract ETHALMTest is ALMTestBase {
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
         vm.stopPrank();
-
         test_deposit_rebalance();
-
         console.log("price  (1)", getHookPrice());
         console.log("oracle (1)", oracle.price());
         // ** Swap Up In
@@ -404,7 +402,6 @@ contract ETHALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
             swapUSDC_WETH_In(usdcToSwap);
         }
-
         // ** Swap Down Out
         {
             uint256 usdcToGetFSwap = 17987491283 * 5; // Yevhen, why is this test breaks here on swap?
@@ -412,19 +409,16 @@ contract ETHALMTest is ALMTestBase {
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
             swapWETH_USDC_Out(usdcToGetFSwap);
         }
-
         // ** Make oracle change with swap price
         vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
         console.log("price  (2)", getHookPrice());
         console.log("oracle (2)", oracle.price());
-
         // ** Withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
         }
-
         // ** Deposit
         //{
         //    uint256 _amountToDep = 20 ether;
@@ -432,7 +426,6 @@ contract ETHALMTest is ALMTestBase {
         //    vm.prank(alice.addr);
         //    hook.deposit(alice.addr, _amountToDep);
         //}
-
         // ** Swap Up out
         {
             uint256 wethToGetFSwap = 4626903915919660000;
@@ -440,24 +433,20 @@ contract ETHALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
             swapUSDC_WETH_Out(wethToGetFSwap);
         }
-
         // ** Swap Down In
         {
             uint256 wethToSwap = 4696832668752530000;
             deal(address(WETH), address(swapper.addr), wethToSwap);
             swapWETH_USDC_In(wethToSwap);
         }
-
         // ** Make oracle change with swap price
         console.log("preOraclePrice", oracle.price());
         vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
         console.log("hookPrice", getHookPrice());
         console.log("postOraclePrice", oracle.price());
-
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(1e15);
-
         // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -485,7 +474,8 @@ contract ETHALMTest is ALMTestBase {
                 address(newAdapter),
                 address(positionManager),
                 address(oracle),
-                migrationContract.addr
+                migrationContract.addr,
+                address(swapAdapter)
             );
         }
 
@@ -493,6 +483,7 @@ contract ETHALMTest is ALMTestBase {
         {
             IBase(address(lendingAdapter)).setComponents(
                 address(hook),
+                migrationContract.addr,
                 migrationContract.addr,
                 migrationContract.addr,
                 migrationContract.addr,
@@ -540,7 +531,8 @@ contract ETHALMTest is ALMTestBase {
                 address(newAdapter),
                 address(positionManager),
                 address(oracle),
-                address(rebalanceAdapter)
+                address(rebalanceAdapter),
+                address(swapAdapter)
             );
 
             IBase(address(newAdapter)).setComponents(
@@ -548,7 +540,8 @@ contract ETHALMTest is ALMTestBase {
                 address(newAdapter),
                 address(positionManager),
                 address(oracle),
-                address(rebalanceAdapter)
+                address(rebalanceAdapter),
+                address(swapAdapter)
             );
 
             IBase(address(positionManager)).setComponents(
@@ -556,7 +549,8 @@ contract ETHALMTest is ALMTestBase {
                 address(newAdapter),
                 address(positionManager),
                 address(oracle),
-                address(rebalanceAdapter)
+                address(rebalanceAdapter),
+                address(swapAdapter)
             );
 
             IBase(address(rebalanceAdapter)).setComponents(
@@ -564,7 +558,8 @@ contract ETHALMTest is ALMTestBase {
                 address(newAdapter),
                 address(positionManager),
                 address(oracle),
-                address(rebalanceAdapter)
+                address(rebalanceAdapter),
+                address(swapAdapter)
             );
             vm.stopPrank();
         }

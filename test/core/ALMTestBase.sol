@@ -20,6 +20,7 @@ import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
+import {UniswapV3SwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
 import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries
@@ -34,6 +35,8 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
@@ -45,11 +48,14 @@ abstract contract ALMTestBase is Test, Deployers {
     uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts. TODO: witch to set in production?
     SRebalanceAdapter rebalanceAdapter;
 
+    address constant TARGET_SWAP_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
+
     TestERC20 USDC;
     TestERC20 WETH;
 
     ILendingAdapter lendingAdapter;
     IPositionManager positionManager;
+    ISwapAdapter swapAdapter;
     IOracle oracle;
 
     TestAccount deployer;
@@ -81,6 +87,7 @@ abstract contract ALMTestBase is Test, Deployers {
         // MARK: Deploying modules and setting up parameters
         lendingAdapter = new AaveLendingAdapter();
         positionManager = new PositionManager();
+        swapAdapter = new UniswapV3SwapAdapter();
         oracle = new Oracle();
         rebalanceAdapter = new SRebalanceAdapter();
 
@@ -90,7 +97,8 @@ abstract contract ALMTestBase is Test, Deployers {
             address(lendingAdapter),
             address(positionManager),
             address(oracle),
-            address(rebalanceAdapter)
+            address(rebalanceAdapter),
+            address(swapAdapter)
         );
 
         IBase(address(lendingAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
@@ -99,7 +107,8 @@ abstract contract ALMTestBase is Test, Deployers {
             address(lendingAdapter),
             address(positionManager),
             address(oracle),
-            address(rebalanceAdapter)
+            address(rebalanceAdapter),
+            address(swapAdapter)
         );
 
         IBase(address(positionManager)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
@@ -108,8 +117,20 @@ abstract contract ALMTestBase is Test, Deployers {
             address(lendingAdapter),
             address(positionManager),
             address(oracle),
-            address(rebalanceAdapter)
+            address(rebalanceAdapter),
+            address(swapAdapter)
         );
+
+        IBase(address(swapAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec);
+        IBase(address(swapAdapter)).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter),
+            address(swapAdapter)
+        );
+        IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(TARGET_SWAP_POOL);
 
         IBase(address(rebalanceAdapter)).setTokens(_token0, _token1, _token0Dec, _token1Dec); // * Notice: tokens should be set first in all contracts
         IBase(address(rebalanceAdapter)).setComponents(
@@ -117,7 +138,8 @@ abstract contract ALMTestBase is Test, Deployers {
             address(lendingAdapter),
             address(positionManager),
             address(oracle),
-            address(rebalanceAdapter)
+            address(rebalanceAdapter),
+            address(swapAdapter)
         );
 
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);

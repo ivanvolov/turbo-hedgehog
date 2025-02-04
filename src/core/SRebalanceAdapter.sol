@@ -57,8 +57,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     function _postSetTokens() internal override {
         IERC20(token0).approve(lendingPool, type(uint256).max);
         IERC20(token1).approve(lendingPool, type(uint256).max);
-        IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-        IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
     }
 
     function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
@@ -121,7 +119,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         uint256 oraclePrice = oracle.price();
 
-        uint256 priceThreshold = oraclePrice < oraclePriceAtLastRebalance ? 1e18 - oraclePrice.div(oraclePriceAtLastRebalance) : oraclePriceAtLastRebalance.div(oraclePrice) - 1e18;
+        uint256 priceThreshold = oraclePrice < oraclePriceAtLastRebalance
+            ? 1e18 - oraclePrice.div(oraclePriceAtLastRebalance)
+            : oraclePriceAtLastRebalance.div(oraclePrice) - 1e18;
 
         console.log("priceThreshold %s", priceThreshold);
 
@@ -156,11 +156,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("USDC balance after %s", token0BalanceUnwr());
         console.log("WETH balance after %s", token1BalanceUnwr());
 
-        if (token0BalanceUnwr() != 0)
-            lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
+        if (token0BalanceUnwr() != 0) lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
 
-        if (token1BalanceUnwr() != 0)
-            lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
+        if (token1BalanceUnwr() != 0) lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
 
         console.log("USDC balance after %s", token0BalanceUnwr());
         console.log("WETH balance after %s", token1BalanceUnwr());
@@ -216,14 +214,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("usdcBalance %s", token0BalanceUnwr());
 
         if (borrowedToken0 > token0BalanceUnwr()) {
-            ALMBaseLib.swapExactOutput(token1, token0, borrowedToken0 - token0BalanceUnwr());
+            swapAdapter.swapExactOutput(token1, token0, borrowedToken0 - token0BalanceUnwr());
         }
 
         console.log("flDEBT ETH after %s", borrowedToken1);
         console.log("wethBalance after %s", token1BalanceUnwr());
 
         if (borrowedToken1 > token1BalanceUnwr())
-            ALMBaseLib.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
+            swapAdapter.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
 
         console.log("flDEBT USDC after %s", borrowedToken0);
         console.log("usdcBalance after %s", token0BalanceUnwr());
@@ -238,10 +236,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS, uint256 _targetDL, uint256 _targetDS) = abi
             .decode(data, (int256, int256, int256, int256, uint256, uint256));
 
-            console.log("deltaCL", deltaCL);
-            console.log("deltaCS", deltaCS);
-            console.log("deltaDL", deltaDL);
-            console.log("deltaDS", deltaDS);
+        console.log("deltaCL", deltaCL);
+        console.log("deltaCS", deltaCS);
+        console.log("deltaDL", deltaDL);
+        console.log("deltaDS", deltaDS);
 
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));

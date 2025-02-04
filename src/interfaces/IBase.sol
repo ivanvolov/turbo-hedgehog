@@ -14,7 +14,8 @@ interface IBase {
         address _lendingAdapter,
         address _positionManager,
         address _oracle,
-        address _rebalanceAdapter
+        address _rebalanceAdapter,
+        address _swapAdapter
     ) external;
 
     function transferOwnership(address newOwner) external;

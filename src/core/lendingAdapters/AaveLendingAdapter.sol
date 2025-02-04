@@ -29,8 +29,8 @@ contract AaveLendingAdapter is Base, ILendingAdapter {
 
     // @Notice: baseToken is name token0, and quoteToken is name token1
     function _postSetTokens() internal override {
-        IERC20(token1).approve(getPool(), type(uint256).max);
         IERC20(token0).approve(getPool(), type(uint256).max);
+        IERC20(token1).approve(getPool(), type(uint256).max);
     }
 
     function getPool() public view returns (address) {

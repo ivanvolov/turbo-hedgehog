@@ -38,7 +38,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(19_955_703);
 
-        initialSQRTPrice = getPoolSQRTPrice(ALMBaseLib.ETH_USDC_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getPoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);

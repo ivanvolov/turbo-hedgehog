@@ -10,6 +10,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 
 abstract contract Base is IBase {
@@ -35,6 +36,7 @@ abstract contract Base is IBase {
     IPositionManager public positionManager;
     IOracle public oracle;
     IRebalanceAdapter public rebalanceAdapter;
+    ISwapAdapter public swapAdapter;
 
     constructor(address initialOwner) {
         owner = initialOwner;
@@ -50,14 +52,15 @@ abstract contract Base is IBase {
         _postSetTokens();
     }
 
-    function _postSetTokens() internal virtual {}
+    function _postSetTokens() internal virtual {} // TODO: Maybe do "only one approve" here on all tokens in the child contracts like with modules
 
     function setComponents(
         address _alm,
         address _lendingAdapter,
         address _positionManager,
         address _oracle,
-        address _rebalanceAdapter
+        address _rebalanceAdapter,
+        address _swapAdapter
     ) external onlyOwner {
         alm = IALM(_alm);
         oracle = IOracle(_oracle);
@@ -70,6 +73,10 @@ abstract contract Base is IBase {
         ALMBaseLib.approveSingle(token0, address(positionManager), _positionManager, type(uint256).max);
         ALMBaseLib.approveSingle(token1, address(positionManager), _positionManager, type(uint256).max);
         positionManager = IPositionManager(_positionManager);
+
+        ALMBaseLib.approveSingle(token0, address(swapAdapter), _swapAdapter, type(uint256).max);
+        ALMBaseLib.approveSingle(token1, address(swapAdapter), _swapAdapter, type(uint256).max);
+        swapAdapter = ISwapAdapter(_swapAdapter);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
@@ -106,7 +113,8 @@ abstract contract Base is IBase {
             msg.sender != address(alm) &&
             msg.sender != address(lendingAdapter) &&
             msg.sender != address(positionManager) &&
-            msg.sender != address(rebalanceAdapter)
+            msg.sender != address(rebalanceAdapter) &&
+            msg.sender != address(swapAdapter)
         ) revert NotModule();
 
         _;

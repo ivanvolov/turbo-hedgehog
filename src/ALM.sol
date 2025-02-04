@@ -161,18 +161,18 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (isInvertAssets) {
             int256 delWETHdebt = int256(amounts[1] + premiums[1]) - int256(token1Balance(false));
             if (delWETHdebt > 0) {
-                ALMBaseLib.swapExactOutput(token0, token1, uint256(delWETHdebt));
+                swapAdapter.swapExactOutput(token0, token1, uint256(delWETHdebt));
             } else if (delWETHdebt < 0) {
-                ALMBaseLib.swapExactInput(token1, token0, ALMMathLib.abs(delWETHdebt));
+                swapAdapter.swapExactInput(token1, token0, ALMMathLib.abs(delWETHdebt));
             }
 
             console.log("here");
         } else {
             int256 delUSDCdebt = int256(amounts[0] + premiums[0]) - int256(token0Balance(false));
             if (delUSDCdebt > 0) {
-                ALMBaseLib.swapExactOutput(token1, token0, uint256(delUSDCdebt));
+                swapAdapter.swapExactOutput(token1, token0, uint256(delUSDCdebt));
             } else if (delUSDCdebt < 0) {
-                ALMBaseLib.swapExactInput(token0, token1, ALMMathLib.abs(delUSDCdebt));
+                swapAdapter.swapExactInput(token0, token1, ALMMathLib.abs(delUSDCdebt));
             }
         }
 

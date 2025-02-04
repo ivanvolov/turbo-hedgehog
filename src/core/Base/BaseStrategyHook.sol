@@ -55,8 +55,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     function _postSetTokens() internal override {
         IERC20(token0).approve(lendingPool, type(uint256).max);
         IERC20(token1).approve(lendingPool, type(uint256).max);
-        IERC20(token0).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
-        IERC20(token1).approve(ALMBaseLib.SWAP_ROUTER, type(uint256).max);
     }
 
     function setTickDelta(int24 _tickDelta) external onlyOwner {
