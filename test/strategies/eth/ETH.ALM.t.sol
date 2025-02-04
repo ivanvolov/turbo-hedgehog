@@ -42,7 +42,7 @@ contract ETHALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(19_955_703);
 
-        initialSQRTPrice = getPoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -449,12 +449,7 @@ contract ETHALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        console.log("oraclePrice", oracle.price());
-        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
-        console.log("hookPrice  ", getHookPrice());
-        console.log("v3poolprice", getPoolPrice(TARGET_SWAP_POOL));
-        setPoolPrice(hook.sqrtPriceCurrent(), false, 8000 ether);
-        console.log("v3poolprice", getPoolPrice(TARGET_SWAP_POOL));
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // // ** Rebalance
         // vm.prank(deployer.addr);

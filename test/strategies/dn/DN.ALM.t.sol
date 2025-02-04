@@ -41,7 +41,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(19_955_703);
 
-        initialSQRTPrice = getPoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 

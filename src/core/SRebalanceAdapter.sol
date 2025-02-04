@@ -254,7 +254,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
     }
 
-    // --- Math functions ---
+    // --- Math functions --- //
 
     // @Notice: this function is mainly for removing stack too deep error
     function _rebalanceCalculations(
@@ -375,7 +375,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         require(deviationShort <= maxDeviationShort, "D2");
     }
 
-    // --- Helpers ---
+    // --- Helpers --- //
 
     function token0BalanceUnwr() internal view returns (uint256) {
         return IERC20(token0).balanceOf(address(this));

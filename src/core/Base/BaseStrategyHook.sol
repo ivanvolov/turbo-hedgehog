@@ -133,7 +133,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         tickLower = tick + tickDelta;
     }
 
-    // --- Deltas calculation ---
+    // --- Deltas calculation --- //
 
     function getZeroForOneDeltas(
         int256 amountSpecified
@@ -239,7 +239,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         amountAdjusted = amount + (amount * fee) / 1e18;
     }
 
-    // --- Modifiers ---
+    // --- Modifiers --- //
 
     /// @dev Only allows execution for the authorized pool
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {

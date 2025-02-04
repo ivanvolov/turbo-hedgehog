@@ -86,7 +86,7 @@ abstract contract Base is IBase {
         emit OwnershipTransferred(oldOwner, owner);
     }
 
-    // --- Modifiers ---
+    // --- Modifiers --- //
 
     modifier onlyOwner() {
         if (owner != msg.sender) {

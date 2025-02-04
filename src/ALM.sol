@@ -179,7 +179,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         return true;
     }
 
-    // --- Swapping logic ---
+    // --- Swapping logic --- //
 
     function beforeSwap(
         address,
@@ -274,7 +274,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
-    // --- Helpers ---
+    // --- Helpers --- //
 
     function token0Balance(bool wrap) public view returns (uint256) {
         return wrap ? IERC20(token0).balanceOf(address(this)).wrap(t0Dec) : IERC20(token0).balanceOf(address(this));
@@ -284,7 +284,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         return wrap ? IERC20(token1).balanceOf(address(this)).wrap(t1Dec) : IERC20(token1).balanceOf(address(this));
     }
 
-    // --- Math functions ---
+    // --- Math functions --- //
 
     //TODO: I would remove balances, cause money can't be withdraws from ALM so no need to account for them
     function TVL() public view returns (uint256) {

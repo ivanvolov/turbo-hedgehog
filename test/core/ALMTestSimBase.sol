@@ -32,7 +32,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
     uint256 numberOfSwaps;
     uint256 expectedPoolPriceForConversion;
 
-    // --- Logic ---
+    // --- Logic --- //
 
     function approve_accounts() public override {
         super.approve_accounts();
@@ -136,7 +136,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         }
     }
 
-    // --- Save state helpers ---
+    // --- Save state helpers --- //
 
     function save_pool_state() internal {
         uint128 liquidity = hook.liquidity();

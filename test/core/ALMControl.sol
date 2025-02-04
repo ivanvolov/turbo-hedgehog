@@ -21,7 +21,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
-import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
+import {TestMathLib} from "@test/libraries/TestMathLib.sol";
 
 // ** contracts
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
@@ -47,11 +47,11 @@ contract ALMControl is BaseHook, ERC20 {
 
     constructor(IPoolManager _manager, address _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
         alm = IALM(_alm);
-        tickLower = nearestUsableTick(alm.tickLower(), 2);
-        tickUpper = nearestUsableTick(alm.tickUpper(), 2);
+        tickLower = TestMathLib.nearestUsableTick(alm.tickLower(), 2);
+        tickUpper = TestMathLib.nearestUsableTick(alm.tickUpper(), 2);
     }
 
-    // --- Logic ---
+    // --- Logic --- //
 
     // @Notice: This should be called after the target hook is rebalanced
     function rebalance() external {
@@ -72,8 +72,8 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        tickLower = nearestUsableTick(alm.tickLower(), 2);
-        tickUpper = nearestUsableTick(alm.tickUpper(), 2);
+        tickLower = TestMathLib.nearestUsableTick(alm.tickLower(), 2);
+        tickUpper = TestMathLib.nearestUsableTick(alm.tickUpper(), 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
 
@@ -174,7 +174,7 @@ contract ALMControl is BaseHook, ERC20 {
         return "";
     }
 
-    // --- Math ---
+    // --- Math --- //
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return
@@ -261,6 +261,7 @@ contract ALMControl is BaseHook, ERC20 {
             );
     }
 
+    // TODO: optimize, already in MATHLib
     function _getPriceFromTick(int24 tick) internal pure returns (uint256) {
         uint160 sqrtRatioAtTick = TickMath.getSqrtPriceAtTick(tick);
         //const = 2^192
@@ -279,25 +280,5 @@ contract ALMControl is BaseHook, ERC20 {
     ) internal pure returns (uint128) {
         v = v.mul(p);
         return uint128(v.div((p.sqrt()).mul(2e18) - pL.sqrt() - p.div(pH.sqrt())).mul(digits));
-    }
-
-    function nearestUsableTick(int24 tick_, uint24 tickSpacing) internal pure returns (int24 result) {
-        result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);
-
-        if (result < TickMath.MIN_TICK) {
-            result += int24(tickSpacing);
-        } else if (result > TickMath.MAX_TICK) {
-            result -= int24(tickSpacing);
-        }
-    }
-
-    function divRound(int128 x, int128 y) internal pure returns (int128 result) {
-        int128 quot = ABDKMath64x64.div(x, y);
-        result = quot >> 64;
-
-        // Check if remainder is greater than 0.5
-        if (quot % 2 ** 64 >= 0x8000000000000000) {
-            result += 1;
-        }
     }
 }
