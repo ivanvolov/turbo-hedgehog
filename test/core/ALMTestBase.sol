@@ -37,6 +37,9 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+import {ISwapRouter} from "@forks/ISwapRouter.sol";
+import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
@@ -62,6 +65,7 @@ abstract contract ALMTestBase is Test, Deployers {
     TestAccount alice;
     TestAccount migrationContract;
     TestAccount swapper;
+    TestAccount marketMaker;
     TestAccount zero;
 
     uint256 almId;
@@ -179,6 +183,7 @@ abstract contract ALMTestBase is Test, Deployers {
         alice = TestAccountLib.createTestAccount("alice");
         migrationContract = TestAccountLib.createTestAccount("migrationContract");
         swapper = TestAccountLib.createTestAccount("swapper");
+        marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
     }
 
@@ -192,13 +197,48 @@ abstract contract ALMTestBase is Test, Deployers {
         USDC.approve(address(swapRouter), type(uint256).max);
         WETH.approve(address(swapRouter), type(uint256).max);
         vm.stopPrank();
+
+        vm.startPrank(marketMaker.addr);
+        USDC.approve(address(0xE592427A0AEce92De3Edee1F18E0157C05861564), type(uint256).max);
+        WETH.approve(address(0xE592427A0AEce92De3Edee1F18E0157C05861564), type(uint256).max);
+        vm.stopPrank();
     }
 
     // -- Uniswap V3 -- //
 
     function getPoolSQRTPrice(address pool) public view returns (uint160) {
-        (int24 arithmeticMeanTick, ) = OracleLibrary.consult(pool, 1);
-        return TickMathV3.getSqrtRatioAtTick(arithmeticMeanTick);
+        (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+        return sqrtPriceX96;
+    }
+
+    function getHookPrice() public view returns (uint256) {
+        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()));
+    }
+
+    function getPoolPrice(address pool) public view returns (uint256) {
+        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(getPoolSQRTPrice(pool)));
+    }
+
+    function setPoolPrice(uint160 sqrtPrice, bool _in, uint256 amountIn) public returns (uint160) {
+        console.log("sqrtPrice to set    ", sqrtPrice);
+        console.log("sqrtPrice before set", getPoolSQRTPrice(TARGET_SWAP_POOL));
+
+        deal(_in ? address(USDC) : address(WETH), address(marketMaker.addr), amountIn);
+        vm.startPrank(marketMaker.addr);
+        ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564).exactInputSingle(
+            ISwapRouter.ExactInputSingleParams({
+                tokenIn: _in ? address(USDC) : address(WETH),
+                tokenOut: _in ? address(WETH) : address(USDC),
+                fee: 500,
+                recipient: msg.sender,
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            })
+        );
+        vm.stopPrank();
+        console.log("sqrtPrice after set ", getPoolSQRTPrice(TARGET_SWAP_POOL));
     }
 
     // -- Uniswap V4 -- //
@@ -301,10 +341,6 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     // --- Utils ---
-
-    function getHookPrice() public view returns (uint256) {
-        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(hook.sqrtPriceCurrent()));
-    }
 
     // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals
     function c6to18(uint256 amountIn6Decimals) internal pure returns (uint256) {
