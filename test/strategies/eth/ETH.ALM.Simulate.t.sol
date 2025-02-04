@@ -283,6 +283,9 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             hookControl.rebalance();
 
             save_rebalance_data(priceThreshold, auctionTriggerTime);
+
+            // ** Make oracle change with swap price
+            alignOraclesAndPools(hook.sqrtPriceCurrent());
         }
     }
 
@@ -376,5 +379,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
 
         save_withdraw_data(shares1, shares2, actor, balanceWETH, balanceUSDC, balanceWETHcontrol, balanceUSDCcontrol);
         vm.stopPrank();
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
     }
 }

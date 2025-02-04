@@ -134,6 +134,9 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             }
 
             save_rebalance_data(priceThreshold, auctionTriggerTime);
+
+            // ** Make oracle change with swap price
+            alignOraclesAndPools(hook.sqrtPriceCurrent());
         }
     }
 
@@ -151,5 +154,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         save_deposit_data(amount, actor, 0, 0, 0, delShares, 0);
         vm.stopPrank();
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
     }
 }

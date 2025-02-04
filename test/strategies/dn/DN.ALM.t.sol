@@ -137,6 +137,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw() public {
         test_deposit_rebalance();
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -152,6 +154,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw_revert_min_out() public {
         test_deposit_rebalance();
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -331,16 +334,14 @@ contract DeltaNeutralALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
-        // console.log("price (1)", getHookPrice());
         test_deposit_rebalance_swap_price_up_in();
-        // console.log("price (2)", getHookPrice());
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
         rebalanceAdapter.rebalance(slippage);
-
-        // ** Make oracle change with swap price
-        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
 
         // ** Second rebalance
         {

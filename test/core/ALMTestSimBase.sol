@@ -125,6 +125,9 @@ abstract contract ALMTestSimBase is ALMTestBase {
             );
             vm.ffi(inputs);
         }
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
     }
 
     function _rebalanceOrError(uint256 s) internal returns (bool success) {

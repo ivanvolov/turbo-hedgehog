@@ -138,9 +138,11 @@ contract ETHALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw() public {
         test_deposit_rebalance();
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
         part_withdraw();
     }
 
+    // @Notice: this is needed for composability testing
     function part_withdraw() public {
         assertEqBalanceStateZero(alice.addr);
 
@@ -166,6 +168,7 @@ contract ETHALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw_revert_min_out() public {
         test_deposit_rebalance();
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -179,7 +182,7 @@ contract ETHALMTest is ALMTestBase {
         part_swap_price_up_in();
     }
 
-    // @Notice: this is needed for composability testing letter
+    // @Notice: this is needed for composability testing
     function part_swap_price_up_in() public {
         uint256 usdcToSwap = 17897776432;
 
@@ -365,16 +368,14 @@ contract ETHALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
-        // console.log("price (1)", getHookPrice());
         test_deposit_rebalance_swap_price_up_in();
-        // console.log("price (2)", getHookPrice());
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
         rebalanceAdapter.rebalance(slippage);
-
-        // ** Make oracle change with swap price
-        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
 
         // ** Second rebalance
         {
@@ -395,8 +396,9 @@ contract ETHALMTest is ALMTestBase {
 
         vm.stopPrank();
         test_deposit_rebalance();
-        console.log("price  (1)", getHookPrice());
-        console.log("oracle (1)", oracle.price());
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
         {
@@ -407,16 +409,14 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 17987491283 * 5; // Yevhen, why is this test breaks here on swap?
+            uint256 usdcToGetFSwap = 17987491283 * 5;
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
             swapWETH_USDC_Out(usdcToGetFSwap);
         }
 
         // ** Make oracle change with swap price
-        vm.mockCall(address(hook.oracle()), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
-        console.log("price  (2)", getHookPrice());
-        console.log("oracle (2)", oracle.price());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -424,6 +424,9 @@ contract ETHALMTest is ALMTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
         }
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Deposit
         //{
@@ -454,6 +457,10 @@ contract ETHALMTest is ALMTestBase {
         // // ** Rebalance
         // vm.prank(deployer.addr);
         // rebalanceAdapter.rebalance(1e15);
+
+        // ** Make oracle change with swap price
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
         // // ** Full withdraw
         // {
         //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);

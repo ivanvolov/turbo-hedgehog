@@ -17,9 +17,9 @@ tssl:
 	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
 
 te:
-	clear && forge test -vv --match-contract ETHALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
 tel:
-	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
 td:
 	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
 tdl:
