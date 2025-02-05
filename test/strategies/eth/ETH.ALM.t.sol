@@ -19,6 +19,9 @@ import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.s
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
@@ -29,6 +32,8 @@ import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface
 contract ETHALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
+
+    using PRBMathUD60x18 for uint256;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
@@ -386,9 +391,43 @@ contract ETHALMTest is ALMTestBase {
         }
     }
 
+    function checkSwap (uint256 liquidity, uint160 preSqrtPrice, uint160 postSqrtPrice) public returns (uint256, uint256) {
+        
+        uint256 deltaX;
+        uint256 deltaY;
+        {
+        uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+        uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+
+        //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower());
+        uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
+
+        uint256 preX = liquidity * 1e27 * (priceUpper.sqrt() - prePrice.sqrt()) / (priceUpper * prePrice).sqrt();
+        uint256 postX = liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt()) / (priceUpper * postPrice).sqrt();
+        
+        uint256 preY = liquidity * (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt()) / 1e12;
+        uint256 postY = liquidity * (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt()) / 1e12;
+
+        deltaX = postX > preX ? postX - preX : preX - postX;
+        deltaY = postY > preY ? postY - preY : preY - postY;
+
+        console.log("delta X %s", deltaX);
+        console.log("delta Y %s", deltaY);
+
+        }
+
+        return (deltaX, deltaY);
+
+    }
+
+
+
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-        // positionManager.setFees(5 * 1e16);
+        
+        uint256 fee = 0;
+        
+        positionManager.setFees(fee);
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
 
@@ -402,16 +441,56 @@ contract ETHALMTest is ALMTestBase {
         {
             uint256 usdcToSwap = 17897776432 * 10;
             deal(address(USDC), address(swapper.addr), usdcToSwap);
-            swapUSDC_WETH_In(usdcToSwap);
+
+            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            console.log("delta WETH %s", deltaWETH);
+
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = checkSwap(uint256(hook.liquidity()) / 1e12, uint160(preSqrtPrice), uint160(postSqrtPrice));
+            assertApproxEqAbs(deltaWETH, deltaX, 1e14);
+            assertApproxEqAbs(usdcToSwap * (1e18-fee) / 1e18, deltaY, 1e5);
+
         }
 
         // ** Swap Down Out
+<<<<<<< Updated upstream
         //{
         //    uint256 usdcToGetFSwap = 17987491283 * 5;
         //    (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
         //    deal(address(WETH), address(swapper.addr), wethToSwapQ);
         //    swapWETH_USDC_Out(usdcToGetFSwap);
         //}
+=======
+        {
+            uint256 usdcToGetFSwap = 10000e6;
+            (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+            deal(address(WETH), address(swapper.addr), wethToSwapQ);
+            
+            int256 preCL = int256(lendingAdapter.getCollateralLong());
+            int256 preCS = int256(c18to6(lendingAdapter.getCollateralShort()));
+            int256 preDL = int256(c18to6(lendingAdapter.getBorrowedLong())) ;
+            int256 preDS = int256(lendingAdapter.getBorrowedShort());
+
+            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_Out(usdcToGetFSwap);
+
+            console.log("delta WETH %s", deltaWETH);
+            console.log("delta USDC %s", deltaUSDC);
+
+            console.log("deltaCL %s", uint256(int256(lendingAdapter.getCollateralLong()) - preCL));
+            console.log("deltaCS %s", uint256(int256(c18to6(lendingAdapter.getCollateralShort())) - preCS));
+            console.log("deltaDL %s", uint256(int256(c18to6(lendingAdapter.getBorrowedLong())) - preDL));
+            console.log("deltaDS %s", uint256(int256(lendingAdapter.getBorrowedShort()) - preDS));
+
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = checkSwap(uint256(hook.liquidity()) / 1e12, uint160(preSqrtPrice), uint160(postSqrtPrice));
+            assertApproxEqAbs(deltaWETH, deltaX, 1e14);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1e5);
+        }
+>>>>>>> Stashed changes
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
