@@ -386,48 +386,50 @@ contract ETHALMTest is ALMTestBase {
             vm.prank(deployer.addr);
             rebalanceAdapter.rebalance(slippage);
 
-            // assertEqBalanceStateZero(address(hook));
-            // assertEqPositionState(180477474306962171598, 311830756139, 467412423459, 40146211506948696394);
-            // assertApproxEqAbs(hook.TVL(), 100310997799059398554, 1e1);
+            assertEqBalanceStateZero(address(hook));
+            assertEqPositionState(180477474306962171598, 311830756139, 467628623007, 40146211506948696394);
+            assertApproxEqAbs(hook.TVL(), 100255384799449037450, 1e1);
         }
     }
 
-    function checkSwap (uint256 liquidity, uint160 preSqrtPrice, uint160 postSqrtPrice) public returns (uint256, uint256) {
-        
+    function checkSwap(
+        uint256 liquidity,
+        uint160 preSqrtPrice,
+        uint160 postSqrtPrice
+    ) public returns (uint256, uint256) {
         uint256 deltaX;
         uint256 deltaY;
         {
-        uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+            uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+            uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-        //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower());
-        uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
+            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower());
+            uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
 
-        uint256 preX = liquidity * 1e27 * (priceUpper.sqrt() - prePrice.sqrt()) / (priceUpper * prePrice).sqrt();
-        uint256 postX = liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt()) / (priceUpper * postPrice).sqrt();
-        
-        uint256 preY = liquidity * (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt()) / 1e12;
-        uint256 postY = liquidity * (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt()) / 1e12;
+            uint256 preX = (liquidity * 1e27 * (priceUpper.sqrt() - prePrice.sqrt())) / (priceUpper * prePrice).sqrt();
+            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
+                (priceUpper * postPrice).sqrt();
 
-        deltaX = postX > preX ? postX - preX : preX - postX;
-        deltaY = postY > preY ? postY - preY : preY - postY;
+            uint256 preY = (liquidity *
+                (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+            uint256 postY = (liquidity *
+                (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
 
-        console.log("delta X %s", deltaX);
-        console.log("delta Y %s", deltaY);
+            deltaX = postX > preX ? postX - preX : preX - postX;
+            deltaY = postY > preY ? postY - preY : preY - postY;
 
+            console.log("delta X %s", deltaX);
+            console.log("delta Y %s", deltaY);
         }
 
         return (deltaX, deltaY);
-
     }
-
-
 
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-        
+
         uint256 fee = 0;
-        
+
         positionManager.setFees(fee);
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
@@ -449,10 +451,13 @@ contract ETHALMTest is ALMTestBase {
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = checkSwap(uint256(hook.liquidity()) / 1e12, uint160(preSqrtPrice), uint160(postSqrtPrice));
+            (uint256 deltaX, uint256 deltaY) = checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
             assertApproxEqAbs(deltaWETH, deltaX, 1e14);
-            assertApproxEqAbs(usdcToSwap * (1e18-fee) / 1e18, deltaY, 1e5);
-
+            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e5);
         }
 
         // ** Swap Down Out
@@ -460,10 +465,10 @@ contract ETHALMTest is ALMTestBase {
             uint256 usdcToGetFSwap = 10000e6;
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
-            
+
             int256 preCL = int256(lendingAdapter.getCollateralLong());
             int256 preCS = int256(c18to6(lendingAdapter.getCollateralShort()));
-            int256 preDL = int256(c18to6(lendingAdapter.getBorrowedLong())) ;
+            int256 preDL = int256(c18to6(lendingAdapter.getBorrowedLong()));
             int256 preDS = int256(lendingAdapter.getBorrowedShort());
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -479,7 +484,11 @@ contract ETHALMTest is ALMTestBase {
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = checkSwap(uint256(hook.liquidity()) / 1e12, uint160(preSqrtPrice), uint160(postSqrtPrice));
+            (uint256 deltaX, uint256 deltaY) = checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
             assertApproxEqAbs(deltaWETH, deltaX, 1e14);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e5);
         }
