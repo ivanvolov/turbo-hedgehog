@@ -330,22 +330,11 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
-        vm.prank(swapper.addr);
-        BalanceDelta delta = swapRouter.swap(
-            _key,
-            IPoolManager.SwapParams(
-                zeroForOne,
-                amount,
-                zeroForOne == true ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
-            ),
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
-            ""
-        );
-        return (uint256(int256(delta.amount0())), uint256(int256(delta.amount1())));
+        (int256 delta0, int256 delta1) = __swap(zeroForOne, amount, _key);
+        return (ALMMathLib.abs(delta0), ALMMathLib.abs(delta1));
     }
 
     function __swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (int256, int256) {
-        // console.log("> __swap");
         uint256 wethBefore = WETH.balanceOf(swapper.addr);
         uint256 usdcBefore = USDC.balanceOf(swapper.addr);
 
@@ -361,11 +350,11 @@ abstract contract ALMTestBase is Test, Deployers {
             ""
         );
         if (zeroForOne) {
-            assertEq(usdcBefore - USDC.balanceOf(swapper.addr), uint256(int256(-delta.amount0())));
-            assertEq(WETH.balanceOf(swapper.addr) - wethBefore, uint256(int256(delta.amount1())));
+            assertEq(usdcBefore - USDC.balanceOf(swapper.addr), ALMMathLib.abs(delta.amount0()));
+            assertEq(WETH.balanceOf(swapper.addr) - wethBefore, ALMMathLib.abs(delta.amount1()));
         } else {
-            assertEq(USDC.balanceOf(swapper.addr) - usdcBefore, uint256(int256(delta.amount0())));
-            assertEq(wethBefore - WETH.balanceOf(swapper.addr), uint256(int256(-delta.amount1())));
+            assertEq(USDC.balanceOf(swapper.addr) - usdcBefore, ALMMathLib.abs(delta.amount0()));
+            assertEq(wethBefore - WETH.balanceOf(swapper.addr), ALMMathLib.abs(delta.amount1()));
         }
         return (int256(delta.amount0()), int256(delta.amount1()));
     }

@@ -147,7 +147,7 @@ contract ETHALMTest is ALMTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
-        assertEqBalanceState(alice.addr, 99671469151079068801, 0);
+        assertEqBalanceState(alice.addr, 99720500710190637665, 0);
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(hook.TVL(), 0, 1e4);
         assertEqBalanceStateZero(address(hook));
@@ -155,6 +155,8 @@ contract ETHALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw_on_shutdown() public {
         test_deposit_rebalance();
+
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
         hook.setShutdown(true);

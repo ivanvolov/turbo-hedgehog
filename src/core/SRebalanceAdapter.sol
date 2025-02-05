@@ -118,6 +118,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         uint256 oraclePrice = oracle.price();
 
+        console.log(oraclePrice.div(oraclePriceAtLastRebalance));
+        console.log(oraclePriceAtLastRebalance.div(oraclePrice));
+
         uint256 priceThreshold = oraclePrice < oraclePriceAtLastRebalance
             ? 1e18 - oraclePrice.div(oraclePriceAtLastRebalance)
             : oraclePriceAtLastRebalance.div(oraclePrice) - 1e18;
@@ -141,7 +144,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         console.log("slippage %s", slippage);
 
-        (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + int256(slippage));
+        (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         address[] memory assets = new address[](2);
         uint256[] memory amounts = new uint256[](2);
@@ -257,7 +260,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     // @Notice: this function is mainly for removing stack too deep error
     function _rebalanceCalculations(
-        int256 k
+        uint256 k
     ) internal view returns (uint256 ethToFl, uint256 usdcToFl, bytes memory data) {
         // console.log("> rebalanceCalculations");
         // console.log("k %s", k);
@@ -317,15 +320,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaDS < 0) ethToFl += uint256(-deltaDS);
 
         console.log("k %s", k);
-
-        data = abi.encode(
-            deltaCL,
-            deltaCS,
-            deltaDL,
-            deltaDS,
-            uint256(targetDL).mul(uint256(k)),
-            uint256(targetDS).mul(uint256(k))
-        );
+        data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS, targetDL.mul(k), targetDS.mul(k));
     }
 
     function calcLiquidity() public view returns (uint128) {

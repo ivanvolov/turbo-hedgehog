@@ -164,7 +164,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         if (assets[0] == token0) lendingAdapter.repayLong(amounts[0].wrap(t0Dec));
-        if (assets[0] == token1 || assets.length == 2) lendingAdapter.repayLong(amounts[1].wrap(t1Dec));
+        if (assets[0] == token1 || assets.length == 2) lendingAdapter.repayShort(amounts[1].wrap(t1Dec));
 
         lendingAdapter.removeCollateralLong(uCL);
         lendingAdapter.removeCollateralShort(uCS);
