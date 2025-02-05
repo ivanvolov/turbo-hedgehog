@@ -11,11 +11,6 @@ import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 
-// ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
-
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {ALMControl} from "@test/core/ALMControl.sol";

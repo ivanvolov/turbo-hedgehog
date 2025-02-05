@@ -13,11 +13,6 @@ import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 
-// ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
-
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";

@@ -16,7 +16,6 @@ import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
@@ -111,19 +110,34 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         console.log("TVL %s", preTVL);
 
-        if (uDS == 0 || uDL == 0) revert ZeroDebt(); //TODO
         _burn(msg.sender, sharesOut);
-
-        address[] memory assets = new address[](2);
-        uint256[] memory amounts = new uint256[](2);
-        uint256[] memory modes = new uint256[](2);
-        (assets[0], amounts[0], modes[0]) = (token0, uDL.unwrap(t0Dec), 0);
-        (assets[1], amounts[1], modes[1]) = (token1, uDS.unwrap(t1Dec), 0);
-        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
+        if (uDS != 0 && uDL != 0) {
+            address[] memory assets = new address[](2);
+            uint256[] memory amounts = new uint256[](2);
+            uint256[] memory modes = new uint256[](2);
+            (assets[0], amounts[0], modes[0]) = (token0, uDL.unwrap(t0Dec), 0);
+            (assets[1], amounts[1], modes[1]) = (token1, uDS.unwrap(t1Dec), 0);
+            LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
+        } else if (uDS == 0 && uDL == 0) {
+            lendingAdapter.removeCollateralLong(uCL);
+            lendingAdapter.removeCollateralShort(uCS);
+            if (isInvertAssets) swapAdapter.swapExactOutput(token1, token0, token1Balance(false));
+            else swapAdapter.swapExactInput(token0, token1, token0Balance(false));
+        } else if (uDL > 0) {
+            address[] memory assets = new address[](1);
+            uint256[] memory amounts = new uint256[](1);
+            uint256[] memory modes = new uint256[](1);
+            (assets[0], amounts[0], modes[0]) = (token0, uDL.unwrap(t0Dec), 0);
+            LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
+        } else {
+            address[] memory assets = new address[](1);
+            uint256[] memory amounts = new uint256[](1);
+            uint256[] memory modes = new uint256[](1);
+            (assets[0], amounts[0], modes[0]) = (token1, uDS.unwrap(t1Dec), 0);
+            LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), abi.encode(uCL, uCS), 0);
+        }
 
         if (isInvertAssets) {
-            console.log("usdcBalance %s", token0Balance(false));
-
             if (token0Balance(false) < minAmountOut) revert NotMinOutWithdraw();
             IERC20(token0).transfer(to, token0Balance(false));
         } else {
@@ -138,7 +152,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function executeOperation(
-        address[] calldata,
+        address[] calldata assets,
         uint256[] calldata amounts,
         uint256[] calldata premiums,
         address,
@@ -149,34 +163,46 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
-        lendingAdapter.repayLong(amounts[0].wrap(t0Dec));
-        lendingAdapter.repayShort(amounts[1].wrap(t1Dec));
+        if (assets[0] == token0) lendingAdapter.repayLong(amounts[0].wrap(t0Dec));
+        if (assets[0] == token1 || assets.length == 2) lendingAdapter.repayLong(amounts[1].wrap(t1Dec));
 
         lendingAdapter.removeCollateralLong(uCL);
         lendingAdapter.removeCollateralShort(uCS);
 
-        // console.log("WETH balance", token1Balance(true));
-        // console.log("USDC balance", token0Balance(true));
-
-        if (isInvertAssets) {
-            int256 delWETHdebt = int256(amounts[1] + premiums[1]) - int256(token1Balance(false));
-            if (delWETHdebt > 0) {
-                swapAdapter.swapExactOutput(token0, token1, uint256(delWETHdebt));
-            } else if (delWETHdebt < 0) {
-                swapAdapter.swapExactInput(token1, token0, ALMMathLib.abs(delWETHdebt));
+        if (assets.length == 2) {
+            if (isInvertAssets) {
+                _ensureEnoughBalance(amounts[1] + premiums[1], token0);
+            } else {
+                _ensureEnoughBalance(amounts[0] + premiums[0], token0);
             }
-
-            console.log("here");
-        } else {
-            int256 delUSDCdebt = int256(amounts[0] + premiums[0]) - int256(token0Balance(false));
-            if (delUSDCdebt > 0) {
-                swapAdapter.swapExactOutput(token1, token0, uint256(delUSDCdebt));
-            } else if (delUSDCdebt < 0) {
-                swapAdapter.swapExactInput(token0, token1, ALMMathLib.abs(delUSDCdebt));
+        } else if (assets[0] == token0) {
+            if (isInvertAssets) {
+                swapAdapter.swapExactInput(token1, token0, token1Balance(false));
+            } else {
+                _ensureEnoughBalance(amounts[0] + premiums[0], token0);
+            }
+        } else if (assets[0] == token1) {
+            if (isInvertAssets) {
+                _ensureEnoughBalance(amounts[1] + premiums[1], token1);
+            } else {
+                swapAdapter.swapExactInput(token0, token1, token0Balance(false));
             }
         }
 
         return true;
+    }
+
+    function _ensureEnoughBalance(uint256 balance, address token) internal {
+        int256 delBalance = int256(balance) - int256(token == token0 ? token0Balance(false) : token1Balance(false));
+        if (delBalance > 0) {
+            swapAdapter.swapExactOutput(otherToken(token), token, uint256(delBalance));
+        } else if (delBalance < 0) {
+            swapAdapter.swapExactInput(token, otherToken(token), ALMMathLib.abs(delBalance));
+        }
+    }
+
+    function otherToken(address token) internal view returns (address) {
+        return token == token0 ? token1 : token0;
     }
 
     // --- Swapping logic --- //

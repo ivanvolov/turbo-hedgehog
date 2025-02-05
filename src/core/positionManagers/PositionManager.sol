@@ -4,8 +4,6 @@ pragma solidity ^0.8.25;
 import "forge-std/console.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 

@@ -16,7 +16,6 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.
 import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** contracts

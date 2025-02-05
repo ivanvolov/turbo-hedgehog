@@ -14,8 +14,6 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 
 // ** libraries
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-import {ErrorsLib} from "@forks/morpho/libraries/ErrorsLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts

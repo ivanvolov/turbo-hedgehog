@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-// ** contracts
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
-
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
@@ -12,6 +9,7 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract Base is IBase {
     error OwnableUnauthorizedAccount(address account);
@@ -66,17 +64,22 @@ abstract contract Base is IBase {
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        ALMBaseLib.approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        ALMBaseLib.approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
+        _approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max);
+        _approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
         lendingAdapter = ILendingAdapter(_lendingAdapter);
 
-        ALMBaseLib.approveSingle(token0, address(positionManager), _positionManager, type(uint256).max);
-        ALMBaseLib.approveSingle(token1, address(positionManager), _positionManager, type(uint256).max);
+        _approveSingle(token0, address(positionManager), _positionManager, type(uint256).max);
+        _approveSingle(token1, address(positionManager), _positionManager, type(uint256).max);
         positionManager = IPositionManager(_positionManager);
 
-        ALMBaseLib.approveSingle(token0, address(swapAdapter), _swapAdapter, type(uint256).max);
-        ALMBaseLib.approveSingle(token1, address(swapAdapter), _swapAdapter, type(uint256).max);
+        _approveSingle(token0, address(swapAdapter), _swapAdapter, type(uint256).max);
+        _approveSingle(token1, address(swapAdapter), _swapAdapter, type(uint256).max);
         swapAdapter = ISwapAdapter(_swapAdapter);
+    }
+
+    function _approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {
+        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).approve(moduleOld, 0);
+        if (moduleNew != address(this)) IERC20(token).approve(moduleNew, amount);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {

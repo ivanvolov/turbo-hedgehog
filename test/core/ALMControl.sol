@@ -21,7 +21,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
-import {TestMathLib} from "@test/libraries/TestMathLib.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
@@ -47,8 +47,8 @@ contract ALMControl is BaseHook, ERC20 {
 
     constructor(IPoolManager _manager, address _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
         alm = IALM(_alm);
-        tickLower = TestMathLib.nearestUsableTick(alm.tickLower(), 2);
-        tickUpper = TestMathLib.nearestUsableTick(alm.tickUpper(), 2);
+        tickLower = TestLib.nearestUsableTick(alm.tickLower(), 2);
+        tickUpper = TestLib.nearestUsableTick(alm.tickUpper(), 2);
     }
 
     // --- Logic --- //
@@ -72,8 +72,8 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        tickLower = TestMathLib.nearestUsableTick(alm.tickLower(), 2);
-        tickUpper = TestMathLib.nearestUsableTick(alm.tickUpper(), 2);
+        tickLower = TestLib.nearestUsableTick(alm.tickLower(), 2);
+        tickUpper = TestLib.nearestUsableTick(alm.tickUpper(), 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
 
@@ -234,7 +234,6 @@ contract ALMControl is BaseHook, ERC20 {
         uint256 owed0 = FullMath.mulDiv(feeGrowthInside0LastX128, liquidity, FixedPoint128.Q128);
 
         uint256 owed1 = FullMath.mulDiv(feeGrowthInside1LastX128, liquidity, FixedPoint128.Q128);
-        //TODO: check if this fee calculation is working good
         return (amount0 + owed0, amount1 + owed1);
     }
 

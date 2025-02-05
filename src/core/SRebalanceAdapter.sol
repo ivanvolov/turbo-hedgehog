@@ -16,7 +16,6 @@ import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 

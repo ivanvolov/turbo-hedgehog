@@ -24,12 +24,10 @@ import {UniswapV3SwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.
 import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries
-import {ALMBaseLib} from "@src/libraries/ALMBaseLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
-import {TestMathLib} from "@test/libraries/TestMathLib.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
 import {TickMath as TickMathV3} from "@forks/uniswap-v3/libraries/TickMath.sol";
-import {OracleLibrary} from "@forks/uniswap-v3/libraries/OracleLibrary.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
@@ -160,7 +158,7 @@ abstract contract ALMTestBase is Test, Deployers {
             Currency.wrap(_token0),
             Currency.wrap(_token1),
             poolFee,
-            TestMathLib.getTickSpacingFromFee(poolFee),
+            TestLib.getTickSpacingFromFee(poolFee),
             hook
         ); // pre-compute key in order to restrict hook to this pool
 
@@ -178,9 +176,9 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function create_accounts_and_tokens() public virtual {
-        WETH = TestERC20(ALMBaseLib.WETH);
+        WETH = TestERC20(TestLib.WETH);
         vm.label(address(WETH), "WETH");
-        USDC = TestERC20(ALMBaseLib.USDC);
+        USDC = TestERC20(TestLib.USDC);
         vm.label(address(USDC), "USDC");
 
         deployer = TestAccountLib.createTestAccount("deployer");
@@ -242,9 +240,9 @@ abstract contract ALMTestBase is Test, Deployers {
         ).slot0();
         bytes32 newSlot0Value = packSlot0(
             hook.sqrtPriceCurrent(),
-            TestMathLib.nearestUsableTick(
+            TestLib.nearestUsableTick(
                 ALMMathLib.getTickFromSqrtPrice(newSqrtPrice),
-                uint24(TestMathLib.getTickSpacingFromFee(getFeeFromV3Pool(TARGET_SWAP_POOL)))
+                uint24(TestLib.getTickSpacingFromFee(getFeeFromV3Pool(TARGET_SWAP_POOL)))
             ),
             obIndex,
             obC,
