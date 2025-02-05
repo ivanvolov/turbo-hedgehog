@@ -400,18 +400,18 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 17897776432;
+            uint256 usdcToSwap = 17897776432 * 10;
             deal(address(USDC), address(swapper.addr), usdcToSwap);
             swapUSDC_WETH_In(usdcToSwap);
         }
 
         // ** Swap Down Out
-        {
-            uint256 usdcToGetFSwap = 17987491283 * 5;
-            (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-            deal(address(WETH), address(swapper.addr), wethToSwapQ);
-            swapWETH_USDC_Out(usdcToGetFSwap);
-        }
+        //{
+        //    uint256 usdcToGetFSwap = 17987491283 * 5;
+        //    (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        //    deal(address(WETH), address(swapper.addr), wethToSwapQ);
+        //    swapWETH_USDC_Out(usdcToGetFSwap);
+        //}
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
@@ -453,18 +453,18 @@ contract ETHALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // // ** Rebalance
-        // vm.prank(deployer.addr);
-        // rebalanceAdapter.rebalance(1e15);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(1e15);
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // // ** Full withdraw
-        // {
-        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //     vm.prank(alice.addr);
-        //     hook.withdraw(alice.addr, sharesToWithdraw, 0);
-        // }
+        {
+            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            vm.prank(alice.addr);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        }
     }
 
     function test_lending_adapter_migration() public {
