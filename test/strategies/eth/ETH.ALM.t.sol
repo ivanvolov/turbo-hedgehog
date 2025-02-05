@@ -455,14 +455,6 @@ contract ETHALMTest is ALMTestBase {
         }
 
         // ** Swap Down Out
-<<<<<<< Updated upstream
-        //{
-        //    uint256 usdcToGetFSwap = 17987491283 * 5;
-        //    (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        //    deal(address(WETH), address(swapper.addr), wethToSwapQ);
-        //    swapWETH_USDC_Out(usdcToGetFSwap);
-        //}
-=======
         {
             uint256 usdcToGetFSwap = 10000e6;
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -490,7 +482,6 @@ contract ETHALMTest is ALMTestBase {
             assertApproxEqAbs(deltaWETH, deltaX, 1e14);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e5);
         }
->>>>>>> Stashed changes
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
