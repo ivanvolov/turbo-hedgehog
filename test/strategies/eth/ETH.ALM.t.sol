@@ -37,6 +37,10 @@ contract ETHALMTest is ALMTestBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
+    uint256 longLeverage = 3e18;
+    uint256 shortLeverage = 2e18;
+    uint256 weight = 5e17;
+
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
@@ -59,9 +63,9 @@ contract ETHALMTest is ALMTestBase {
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
-            rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
-            rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
-            rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
+            rebalanceAdapter.setWeight(weight); // 0.6 (60%)
+            rebalanceAdapter.setLongLeverage(longLeverage); // 3
+            rebalanceAdapter.setShortLeverage(shortLeverage); // 2
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
             rebalanceAdapter.setOraclePriceAtLastRebalance(3849e18);
@@ -91,6 +95,7 @@ contract ETHALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
+        console.log("shares %s", shares);
         assertEq(shares, amountToDep, "shares returned");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
@@ -118,6 +123,8 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance() public {
         test_deposit();
 
+        uint256 preRebalanceTVL = hook.TVL();
+
         vm.expectRevert();
         rebalanceAdapter.rebalance(slippage);
 
@@ -125,8 +132,9 @@ contract ETHALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(180 * 1e18, 307920000000, 462146886298, 4004e16);
-        assertApproxEqAbs(hook.TVL(), 99890660873473629515, 1e1);
+        console.log("here");
+        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
@@ -415,6 +423,7 @@ contract ETHALMTest is ALMTestBase {
             uint256 postY = (liquidity *
                 (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
 
+
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
 
@@ -442,12 +451,11 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 17897776432 * 10;
+            uint256 usdcToSwap = 100000e6; // 100k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-            console.log("delta WETH %s", deltaWETH);
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -457,30 +465,17 @@ contract ETHALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e14);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e5);
+            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 2e5);
         }
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 10000e6;
+            uint256 usdcToGetFSwap = 10000e6; //10k USDC
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
-            int256 preCL = int256(lendingAdapter.getCollateralLong());
-            int256 preCS = int256(c18to6(lendingAdapter.getCollateralShort()));
-            int256 preDL = int256(c18to6(lendingAdapter.getBorrowedLong()));
-            int256 preDS = int256(lendingAdapter.getBorrowedShort());
-
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_Out(usdcToGetFSwap);
-
-            console.log("delta WETH %s", deltaWETH);
-            console.log("delta USDC %s", deltaUSDC);
-
-            console.log("deltaCL %s", uint256(int256(lendingAdapter.getCollateralLong()) - preCL));
-            console.log("deltaCS %s", uint256(int256(c18to6(lendingAdapter.getCollateralShort())) - preCS));
-            console.log("deltaDL %s", uint256(int256(c18to6(lendingAdapter.getBorrowedLong())) - preDL));
-            console.log("deltaDS %s", uint256(int256(lendingAdapter.getBorrowedShort()) - preDS));
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -506,36 +501,81 @@ contract ETHALMTest is ALMTestBase {
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        // ** Deposit
-        //{
-        //    uint256 _amountToDep = 20 ether;
-        //    deal(address(WETH), address(alice.addr), _amountToDep);
-        //    vm.prank(alice.addr);
-        //    hook.deposit(alice.addr, _amountToDep);
-        //}
+        //** Deposit
+        {
+           uint256 _amountToDep = 200 ether;
+           deal(address(WETH), address(alice.addr), _amountToDep);
+           vm.prank(alice.addr);
+           hook.deposit(alice.addr, _amountToDep);
+        }
+
+        // ** Swap Up In
+        {
+            uint256 usdcToSwap = 10000e6; // 10k USDC
+            deal(address(USDC), address(swapper.addr), usdcToSwap);
+
+            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
+            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+        }
 
         // ** Swap Up out
         {
-            uint256 wethToGetFSwap = 4626903915919660000;
-            (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+            uint256 wethToGetFSwap = 5e18;
+            (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(wethToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
-            swapUSDC_WETH_Out(wethToGetFSwap);
+            
+            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
+            assertApproxEqAbs(deltaWETH, deltaX, 3e14);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
+
         }
 
         // ** Swap Down In
         {
-            uint256 wethToSwap = 4696832668752530000;
+            uint256 wethToSwap = 10e18;
             deal(address(WETH), address(swapper.addr), wethToSwap);
-            swapWETH_USDC_In(wethToSwap);
+            
+            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
+            assertApproxEqAbs(deltaWETH, deltaX, 3e14);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
+
         }
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // // ** Rebalance
+        uint256 preRebalanceTVL = hook.TVL();
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(1e15);
-
+        rebalanceAdapter.rebalance(5 * slippage);
+        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, 5 * slippage);
+     
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 

@@ -106,9 +106,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         console.log("uDL %s", uDL);
         console.log("uDS %s", uDS);
 
+        //TODO remove from here
         uint256 preTVL = alm.TVL();
 
-        console.log("TVL %s", preTVL);
+        console.log("PRE TVL %s", preTVL);
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0) {

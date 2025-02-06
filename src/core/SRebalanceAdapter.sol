@@ -151,8 +151,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         // console.log("usdcToFl", usdcToFl);
         LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
 
-        console.log("USDC balance after %s", token0BalanceUnwr());
-        console.log("WETH balance after %s", token1BalanceUnwr());
+        console.log("USDC balance before %s", token0BalanceUnwr());
+        console.log("WETH balance before %s", token1BalanceUnwr());
 
         if (token0BalanceUnwr() != 0) lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
 
@@ -215,13 +215,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             swapAdapter.swapExactOutput(token1, token0, borrowedToken0 - token0BalanceUnwr());
         }
 
-        console.log("flDEBT ETH after %s", borrowedToken1);
         console.log("wethBalance after %s", token1BalanceUnwr());
+        console.log("usdcBalance after %s", token0BalanceUnwr());
 
         if (borrowedToken1 > token1BalanceUnwr())
             swapAdapter.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
 
-        console.log("flDEBT USDC after %s", borrowedToken0);
+        console.log("wethBalance after %s", token1BalanceUnwr());
         console.log("usdcBalance after %s", token0BalanceUnwr());
 
         console.log("here");
@@ -320,6 +320,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
+
+        console.log("post TVL %s", alm.TVL());
+
         uint256 VLP;
         if (invertAssets) {
             VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
@@ -328,7 +331,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         }
 
         console.log("VLP %s", VLP);
-        console.log("price      %s", oraclePriceAtLastRebalance);
+        console.log("currentOraclePrice %s", oracle.price());
+        console.log("priceAtLastRebalance      %s", oraclePriceAtLastRebalance);
         console.log("priceUpper %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())));
         console.log("priceLower %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower())));
 

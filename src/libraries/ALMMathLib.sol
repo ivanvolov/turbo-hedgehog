@@ -103,14 +103,14 @@ library ALMMathLib {
         uint256 DL,
         uint256 price
     ) internal pure returns (uint256) {
-        // console.log("getTVL");
-        // console.log("EH %s", EH); // WETH
-        // console.log("UH %s", UH); // USDC
-        // console.log("CL %s", CL); // WETH
-        // console.log("DS %s", DS); // WETH
-        // console.log("CS %s", CS); // USDC
-        // console.log("DL %s", DL); // USDC
-        // console.log("price %s", price);
+        //console.log("getTVL");
+        //console.log("EH %s", EH); // WETH
+        //console.log("UH %s", UH); // USDC
+        //console.log("CL %s", CL); // WETH
+        //console.log("DS %s", DS); // WETH
+        //console.log("CS %s", CS); // USDC
+        //console.log("DL %s", DL); // USDC
+        //console.log("price %s", price);
         // console.log("A", int256(EH) + int256(CL) - int256(DS));
         // console.log("B", ((int256(CS) + int256(UH) - int256(DL)) * int256(price)) / 1e18);
         return
@@ -147,7 +147,7 @@ library ALMMathLib {
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        return VLP.div(uint256(2 * 1e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+        return VLP.div(uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
     function getUserAmounts(

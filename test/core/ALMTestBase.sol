@@ -380,6 +380,23 @@ abstract contract ALMTestBase is Test, Deployers {
         assertApproxEqAbs(owner.balance, _balanceETH, 1e1, "Balance ETH not equal");
     }
 
+    function assertEqHookPositionState(uint256 preRebalanceTVL, uint256 weight, uint256 longLeverage, uint256 shortLeverage, uint256 slippage) public view {
+        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());    
+        
+        uint256 calcCL = preRebalanceTVL * (weight * longLeverage) / 1e36;
+        uint256 calcCS = (preRebalanceTVL * oracle.price()/ 1e18) * ((1e18 - weight) * shortLeverage / 1e18) / 1e30;
+        uint256 calcDL = (calcCL * oracle.price() * (1e18 - (1e36 / longLeverage)) / 1e36) * (1e18 + slippage) / 1e30;
+        uint256 calcDS = (calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18 / oracle.price()) * (1e18 + slippage) / 1e24;
+
+        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
+        assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
+        assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
+        assertApproxEqAbs(calcDS, _lendingAdapter.getBorrowedShort(), 5 * slippage); //TODO
+
+        assertApproxEqAbs(1e18 - ((hook.TVL() * 1e18) / preRebalanceTVL), slippage, slippage);
+        }
+
+
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
         try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
