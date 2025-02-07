@@ -25,6 +25,7 @@ import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {TickMath as TickMathV3} from "@forks/uniswap-v3/libraries/TickMath.sol";
@@ -44,6 +45,7 @@ import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface
 abstract contract ALMTestBase is Test, Deployers {
     using TestAccountLib for TestAccount;
     using CurrencyLibrary for Currency;
+    using PRBMathUD60x18 for uint256;
 
     uint160 initialSQRTPrice;
     ALM hook;
@@ -399,13 +401,15 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
             1e24;
 
-        uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort() ? calcDS - _lendingAdapter.getBorrowedShort() : _lendingAdapter.getBorrowedShort() - calcDS;
+        uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort()
+            ? calcDS - _lendingAdapter.getBorrowedShort()
+            : _lendingAdapter.getBorrowedShort() - calcDS;
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
-        assertApproxEqAbs((diffDS * 1e18) / calcDS , slippage, slippage); //TODO
+        assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage); //TODO
         assertApproxEqAbs(1e18 - ((hook.TVL() * 1e18) / preRebalanceTVL), slippage, slippage);
     }
 
@@ -426,6 +430,41 @@ abstract contract ALMTestBase is Test, Deployers {
         assertApproxEqAbs(c18to6(_lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
         assertApproxEqAbs(c18to6(_lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
         assertApproxEqAbs(_lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
+    }
+
+    // --- Test math --- //
+
+    function _checkSwap(
+        uint256 liquidity,
+        uint160 preSqrtPrice,
+        uint160 postSqrtPrice
+    ) public view returns (uint256, uint256) {
+        uint256 deltaX;
+        uint256 deltaY;
+        {
+            uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+            uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+
+            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower());
+            uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
+
+            uint256 preX = (liquidity * 1e27 * (priceUpper.sqrt() - prePrice.sqrt())) / (priceUpper * prePrice).sqrt();
+            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
+                (priceUpper * postPrice).sqrt();
+
+            uint256 preY = (liquidity *
+                (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+            uint256 postY = (liquidity *
+                (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+
+            deltaX = postX > preX ? postX - preX : preX - postX;
+            deltaY = postY > preY ? postY - preY : preY - postY;
+
+            console.log("delta X %s", deltaX);
+            console.log("delta Y %s", deltaY);
+        }
+
+        return (deltaX, deltaY);
     }
 
     // --- Utils --- //
