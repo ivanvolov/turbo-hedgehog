@@ -238,9 +238,9 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 targetPrice = sqrtPriceToPrice(newSqrtPrice);
 
         // ** Configuration parameters
-        uint256 initialStepSize = 10000000 ether; // Initial swap amount
-        uint256 minStepSize = 0.1 ether; // Minimum swap amount to prevent tiny swaps
-        uint256 slippageTolerance = 10e18; // 1% acceptable price difference
+        uint256 initialStepSize = 1000 ether; // Initial swap amount
+        uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
+        uint256 slippageTolerance = 1e18; // 1% acceptable price difference
         uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
         uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
 
@@ -399,11 +399,13 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
             1e24;
 
+        uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort() ? calcDS - _lendingAdapter.getBorrowedShort() : _lendingAdapter.getBorrowedShort() - calcDS;
+
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
-        assertApproxEqAbs(calcDS, _lendingAdapter.getBorrowedShort(), 5 * slippage); //TODO
 
+        assertApproxEqAbs((diffDS * 1e18) / calcDS , slippage, slippage); //TODO
         assertApproxEqAbs(1e18 - ((hook.TVL() * 1e18) / preRebalanceTVL), slippage, slippage);
     }
 

@@ -117,9 +117,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("priceAtLastRebalance %s", oraclePriceAtLastRebalance);
 
         uint256 oraclePrice = oracle.price();
-        uint256 priceThreshold = oraclePrice > oraclePriceAtLastRebalance
-            ? oraclePrice.div(oraclePriceAtLastRebalance) - 1e18
-            : 1e18 - oraclePriceAtLastRebalance.div(oraclePrice);
+        uint256 cachedRatio = oraclePrice.div(oraclePriceAtLastRebalance);
+        uint256 priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
 
         console.log("priceThreshold %s", priceThreshold);
 
