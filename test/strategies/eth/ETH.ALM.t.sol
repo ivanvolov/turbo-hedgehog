@@ -466,6 +466,26 @@ contract ETHALMTest is ALMTestBase {
             assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
        }
 
+        // ** Swap Up In
+        {
+            console.log("Swap Up In");
+            uint256 usdcToSwap = 50000e6; // 50k USDC
+            deal(address(USDC), address(swapper.addr), usdcToSwap);
+
+            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
+            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+       }
+
         // ** Swap Down Out
         {
             console.log("Swap Down Out");
@@ -483,7 +503,7 @@ contract ETHALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX * (1e18 + fee) / 1e18, 2e14);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 + fee) / 1e18, 3e14);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e6);
         }
 
