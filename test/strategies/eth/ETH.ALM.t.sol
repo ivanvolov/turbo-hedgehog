@@ -134,7 +134,6 @@ contract ETHALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
         console.log("here");
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
-        
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
@@ -423,7 +422,6 @@ contract ETHALMTest is ALMTestBase {
             uint256 postY = (liquidity *
                 (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
 
-
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
 
@@ -503,10 +501,10 @@ contract ETHALMTest is ALMTestBase {
 
         //** Deposit
         {
-           uint256 _amountToDep = 200 ether;
-           deal(address(WETH), address(alice.addr), _amountToDep);
-           vm.prank(alice.addr);
-           hook.deposit(alice.addr, _amountToDep);
+            uint256 _amountToDep = 200 ether;
+            deal(address(WETH), address(alice.addr), _amountToDep);
+            vm.prank(alice.addr);
+            hook.deposit(alice.addr, _amountToDep);
         }
 
         // ** Swap Up In
@@ -533,7 +531,7 @@ contract ETHALMTest is ALMTestBase {
             uint256 wethToGetFSwap = 5e18;
             (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(wethToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
-            
+
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
@@ -545,14 +543,13 @@ contract ETHALMTest is ALMTestBase {
             );
             assertApproxEqAbs(deltaWETH, deltaX, 3e14);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
-
         }
 
         // ** Swap Down In
         {
             uint256 wethToSwap = 10e18;
             deal(address(WETH), address(swapper.addr), wethToSwap);
-            
+
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
@@ -564,22 +561,21 @@ contract ETHALMTest is ALMTestBase {
             );
             assertApproxEqAbs(deltaWETH, deltaX, 3e14);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
-
         }
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        // // ** Rebalance
+        // ** Rebalance
         uint256 preRebalanceTVL = hook.TVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(5 * slippage);
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, 5 * slippage);
-     
+
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        // // ** Full withdraw
+        // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);

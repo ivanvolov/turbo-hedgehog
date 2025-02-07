@@ -235,32 +235,64 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function setV3PoolPrice(uint160 newSqrtPrice) public {
-        (, , uint16 obIndex, uint16 obC, uint16 obCN, uint8 feeProtocol, bool unlocked) = IUniswapV3Pool(
-            TARGET_SWAP_POOL
-        ).slot0();
-        bytes32 newSlot0Value = packSlot0(
-            hook.sqrtPriceCurrent(),
-            TestLib.nearestUsableTick(
-                ALMMathLib.getTickFromSqrtPrice(newSqrtPrice),
-                uint24(TestLib.getTickSpacingFromFee(getFeeFromV3Pool(TARGET_SWAP_POOL)))
-            ),
-            obIndex,
-            obC,
-            obCN,
-            feeProtocol,
-            unlocked
-        );
+        uint256 targetPrice = sqrtPriceToPrice(newSqrtPrice);
 
-        vm.store(TARGET_SWAP_POOL, bytes32(uint256(0)), newSlot0Value);
+        // ** Configuration parameters
+        uint256 initialStepSize = 10000000 ether; // Initial swap amount
+        uint256 minStepSize = 0.1 ether; // Minimum swap amount to prevent tiny swaps
+        uint256 slippageTolerance = 10e18; // 1% acceptable price difference
+        uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
+        uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
+
+        uint256 currentPrice = getV3PoolPrice(TARGET_SWAP_POOL);
+        uint256 previousPrice = currentPrice;
+        uint256 stepSize = initialStepSize;
+
+        uint256 iterations = 0;
+        while (true) {
+            uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
+            if (priceDiff <= slippageTolerance) break;
+            iterations++;
+
+            bool isUsdcToEth = currentPrice < targetPrice;
+
+            // Convert ETH step size to USDC equivalent if needed
+            uint256 swapAmount = isUsdcToEth ? (stepSize * currentPrice) / 1e30 : stepSize; // Keep as ETH amount
+            _doV3Swap(isUsdcToEth, swapAmount);
+
+            // Get new price and calculate improvement
+            previousPrice = currentPrice;
+            currentPrice = getV3PoolPrice(TARGET_SWAP_POOL);
+            uint256 newPriceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
+
+            // Adaptive step size adjustment
+            if (newPriceDiff < priceDiff) {
+                // Moving in right direction - gentle decay
+                stepSize = (stepSize * adaptiveDecayBase) / 100;
+            } else {
+                // Overshot or wrong direction - aggressive decay
+                stepSize = (stepSize * aggressiveDecayBase) / 100;
+            }
+
+            // Ensure minimum step size
+            if (stepSize < minStepSize) {
+                stepSize = minStepSize;
+            }
+        }
+
+        console.log("Final price adjustment results:");
+        console.log("Target price:", targetPrice);
+        console.log("Final price:", currentPrice);
+        console.log("iterations:", iterations);
     }
 
-    function doV3Swap(bool _in, uint256 amountIn) public returns (uint160) {
-        deal(_in ? address(USDC) : address(WETH), address(marketMaker.addr), amountIn);
+    function _doV3Swap(bool zeroForOne, uint256 amountIn) public returns (uint256 amountOut) {
+        deal(zeroForOne ? address(USDC) : address(WETH), address(marketMaker.addr), amountIn);
         vm.startPrank(marketMaker.addr);
-        uint256 amountsOut = ISwapRouter(UNISWAP_V3_ROUTER).exactInputSingle(
+        amountOut = ISwapRouter(UNISWAP_V3_ROUTER).exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
-                tokenIn: _in ? address(USDC) : address(WETH),
-                tokenOut: _in ? address(WETH) : address(USDC),
+                tokenIn: zeroForOne ? address(USDC) : address(WETH),
+                tokenOut: zeroForOne ? address(WETH) : address(USDC),
                 fee: getFeeFromV3Pool(TARGET_SWAP_POOL),
                 recipient: msg.sender,
                 deadline: block.timestamp,
@@ -270,45 +302,15 @@ abstract contract ALMTestBase is Test, Deployers {
             })
         );
         vm.stopPrank();
-        console.log("%s => %s", amountIn, amountsOut);
+    }
+
+    function doV3Swap(bool zeroForOne, uint256 amountIn) public {
+        uint256 amountOut = _doV3Swap(zeroForOne, amountIn);
+        console.log("%s => %s", amountIn, amountOut);
     }
 
     function getFeeFromV3Pool(address pool) public view returns (uint24) {
         return IUniswapV3Pool(pool).fee();
-    }
-
-    function packSlot0(
-        uint160 _sqrtPriceX96,
-        int24 _tick,
-        uint16 _observationIndex,
-        uint16 _observationCardinality,
-        uint16 _observationCardinalityNext,
-        uint8 _feeProtocol,
-        bool _unlocked
-    ) public pure returns (bytes32) {
-        uint256 packedValue;
-
-        // Pack values from right to left
-        packedValue = uint256(_sqrtPriceX96) & ((1 << 160) - 1); // first 160 bits
-
-        // Pack tick (24 bits) - need special handling for negative values
-        uint256 tickAbs;
-        if (_tick < 0) {
-            tickAbs = uint256(uint24(-_tick));
-            tickAbs |= (1 << 23); // Set sign bit
-        } else {
-            tickAbs = uint256(uint24(_tick));
-        }
-        packedValue |= (tickAbs << 160);
-
-        // Pack the rest of the values
-        packedValue |= uint256(_observationIndex) << 184; // 16 bits
-        packedValue |= uint256(_observationCardinality) << 200; // 16 bits
-        packedValue |= uint256(_observationCardinalityNext) << 216; // 16 bits
-        packedValue |= uint256(_feeProtocol) << 232; // 8 bits
-        packedValue |= uint256(_unlocked ? 1 : 0) << 240; // 1 bit
-
-        return bytes32(packedValue);
     }
 
     // --- Uniswap V4 --- //
@@ -380,13 +382,22 @@ abstract contract ALMTestBase is Test, Deployers {
         assertApproxEqAbs(owner.balance, _balanceETH, 1e1, "Balance ETH not equal");
     }
 
-    function assertEqHookPositionState(uint256 preRebalanceTVL, uint256 weight, uint256 longLeverage, uint256 shortLeverage, uint256 slippage) public view {
-        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());    
-        
-        uint256 calcCL = preRebalanceTVL * (weight * longLeverage) / 1e36;
-        uint256 calcCS = (preRebalanceTVL * oracle.price()/ 1e18) * ((1e18 - weight) * shortLeverage / 1e18) / 1e30;
-        uint256 calcDL = (calcCL * oracle.price() * (1e18 - (1e36 / longLeverage)) / 1e36) * (1e18 + slippage) / 1e30;
-        uint256 calcDS = (calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18 / oracle.price()) * (1e18 + slippage) / 1e24;
+    function assertEqHookPositionState(
+        uint256 preRebalanceTVL,
+        uint256 weight,
+        uint256 longLeverage,
+        uint256 shortLeverage,
+        uint256 slippage
+    ) public view {
+        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());
+
+        uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / 1e36;
+        uint256 calcCS = (((preRebalanceTVL * oracle.price()) / 1e18) * (((1e18 - weight) * shortLeverage) / 1e18)) /
+            1e30;
+        uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
+            1e30;
+        uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
+            1e24;
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
@@ -394,8 +405,7 @@ abstract contract ALMTestBase is Test, Deployers {
         assertApproxEqAbs(calcDS, _lendingAdapter.getBorrowedShort(), 5 * slippage); //TODO
 
         assertApproxEqAbs(1e18 - ((hook.TVL() * 1e18) / preRebalanceTVL), slippage, slippage);
-        }
-
+    }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests

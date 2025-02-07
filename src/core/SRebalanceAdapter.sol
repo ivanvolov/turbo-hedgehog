@@ -320,7 +320,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-
         console.log("post TVL %s", alm.TVL());
 
         uint256 VLP;
