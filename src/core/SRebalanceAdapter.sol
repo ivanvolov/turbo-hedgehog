@@ -230,16 +230,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     // @Notice: this function is mainly for removing stack too deep error
     function _positionManagement(bytes calldata data) internal {
-        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS, uint256 _targetDL, uint256 _targetDS) = abi
-            .decode(data, (int256, int256, int256, int256, uint256, uint256));
-
-        console.log("deltaCL", deltaCL);
-        console.log("deltaCS", deltaCS);
-        console.log("deltaDL", deltaDL);
-        console.log("deltaDS", deltaDS);
-
-        console.log("USDC balance %s", token0BalanceUnwr());
-        console.log("WETH balance %s", token1BalanceUnwr());
+        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi
+            .decode(data, (int256, int256, int256, int256));
 
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
@@ -250,15 +242,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
 
-        console.log("CL %s", lendingAdapter.getCollateralLong());
-        console.log("CS %s", lendingAdapter.getCollateralShort());
-        console.log("DL %s", lendingAdapter.getBorrowedLong());
-        console.log("DS %s", lendingAdapter.getBorrowedShort());
-
-        console.log("diff %s", _targetDL - lendingAdapter.getBorrowedLong());
-
-        if (deltaDL > 0) lendingAdapter.borrowLong(_targetDL); 
-        if (deltaDS > 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
+        if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL)); 
+        if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS)); 
     }
 
     // --- Math functions --- //
@@ -301,6 +286,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             }
 
+            //borrow additional funds to cover slippage
+            targetDL = targetDL.mul(k);
+            targetDS = targetDS.mul(k);
+
             console.log("targetCL", targetCL);
             console.log("targetCS", targetCS);
             console.log("targetDL", targetDL);
@@ -325,7 +314,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaDS < 0) ethToFl += uint256(-deltaDS);
 
         console.log("k %s", k);
-        data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS, targetDL.mul(k), targetDS.mul(k));
+        data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
     function calcLiquidity() public view returns (uint128) {

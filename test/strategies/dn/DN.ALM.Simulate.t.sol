@@ -31,7 +31,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(21787748);
+        vm.rollFork(21817163);
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();

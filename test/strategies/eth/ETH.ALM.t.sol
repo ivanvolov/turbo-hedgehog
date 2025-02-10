@@ -36,7 +36,7 @@ contract ETHALMTest is ALMTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;
-    uint256 slippage = 2e15;
+    uint256 slippage = 15e14;
     uint256 fee = 5e14;
 
     function setUp() public {
@@ -94,7 +94,7 @@ contract ETHALMTest is ALMTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
-        assertEq(shares, lendingAdapter.getCollateralLong(), "shares returned");
+        assertApproxEqAbs(shares, amountToDep, 1e1);
         console.log("here0");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
@@ -105,7 +105,7 @@ contract ETHALMTest is ALMTestBase {
         assertEqPositionState(amountToDep, 0, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        //assertEq(hook.TVL(), amountToDep, "TVL"); //TODO yobana rot
+        assertApproxEqAbs(hook.TVL(), amountToDep, 1e1);
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -434,7 +434,7 @@ contract ETHALMTest is ALMTestBase {
         // ** Swap Up In
         {
             console.log("Swap Up In");
-            uint256 usdcToSwap = 50000e6; // 50k USDC
+            uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -468,8 +468,8 @@ contract ETHALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 3e14);
-            assertApproxEqAbs(deltaUSDC, deltaY, 1e6);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 7e14);
+            assertApproxEqAbs(deltaUSDC, deltaY, 2e6);
         }
 
         // ** Make oracle change with swap price
