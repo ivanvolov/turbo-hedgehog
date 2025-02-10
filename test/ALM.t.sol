@@ -60,6 +60,36 @@ contract ALMGeneralTest is ALMTestBase {
         );
     }
 
+    function test_lending_adapter_flash_loan_single() public {
+        address testAddress = address(this);
+        vm.mockCall(testAddress, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
+
+        // ** Enable Alice to call the adapter
+        vm.prank(deployer.addr);
+        IBase(address(lendingAdapter)).setComponents(
+            testAddress,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr
+        );
+
+        // ** Approve to LA
+        WETH.approve(address(lendingAdapter), type(uint256).max);
+        USDC.approve(address(lendingAdapter), type(uint256).max);
+
+        assertEqBalanceStateZero(testAddress);
+        lendingAdapter.flashLoanSingle(address(USDC), 1000 * 1e6, "0x2");
+    }
+
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public view {
+        assertEq(token, address(USDC), "token should be USDC");
+        assertEq(amount, 1000 * 1e6, "amount should be 1000 USDC");
+        assertEq(data, "0x2", "data should eq");
+        assertEqBalanceState(address(this), 0, amount);
+    }
+
     function test_lending_adapter_long() public {
         uint256 expectedPrice = 2776;
 

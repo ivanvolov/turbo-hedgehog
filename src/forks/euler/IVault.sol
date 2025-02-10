@@ -19,6 +19,8 @@ interface IEulerVault {
     function repay(uint256 amount, address receiver) external returns (uint256);
 
     function withdraw(uint256 amount, address receiver, address owner) external returns (uint256);
+
+    function flashLoan(uint256 amount, bytes calldata data) external;
 }
 
 // TODO: remove this

@@ -368,11 +368,12 @@ abstract contract ALMTestBase is Test, Deployers {
     // --- Custom assertions --- //
 
     function assertEqBalanceStateZero(address owner) public view {
-        assertEqBalanceState(owner, 0, 0, 0);
+        assertEqBalanceState(owner, 0, 0);
     }
 
     function assertEqBalanceState(address owner, uint256 _balanceWETH, uint256 _balanceUSDC) public view {
-        assertEqBalanceState(owner, _balanceWETH, _balanceUSDC, 0);
+        assertApproxEqAbs(WETH.balanceOf(owner), _balanceWETH, 1e5, "Balance WETH not equal");
+        assertApproxEqAbs(USDC.balanceOf(owner), _balanceUSDC, 1e1, "Balance USDC not equal");
     }
 
     function assertEqBalanceState(
@@ -381,8 +382,7 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 _balanceUSDC,
         uint256 _balanceETH
     ) public view {
-        assertApproxEqAbs(WETH.balanceOf(owner), _balanceWETH, 1e5, "Balance WETH not equal");
-        assertApproxEqAbs(USDC.balanceOf(owner), _balanceUSDC, 1e1, "Balance USDC not equal");
+        assertEqBalanceState(owner, _balanceWETH, _balanceUSDC);
         assertApproxEqAbs(owner.balance, _balanceETH, 1e1, "Balance ETH not equal");
     }
 

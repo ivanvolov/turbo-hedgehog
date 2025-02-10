@@ -5,6 +5,9 @@ pragma solidity ^0.8.25;
 import {Id} from "@forks/morpho/IMorpho.sol";
 
 interface ILendingAdapter {
+    // ** Flashloan
+    function flashLoanSingle(address token, uint256 amount, bytes calldata data) external;
+
     // ** Long market
     function getBorrowedLong() external view returns (uint256);
 
@@ -35,4 +38,8 @@ interface ILendingAdapter {
     function syncLong() external;
 
     function syncShort() external;
+}
+
+interface IFlashLoanReceiver {
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external;
 }

@@ -15,7 +15,7 @@ import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapter.sol";
 
 contract EulerLendingAdapter is Base, ILendingAdapter {
     using TokenWrapperLib for uint256;
@@ -49,6 +49,25 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         require(accountId < 256, "Invalid account ID");
         // XOR the last byte of the address with the account ID
         return address(uint160(address(this)) ^ uint160(accountId));
+    }
+
+    // ** Flashloan
+
+    function flashLoanSingle(address token, uint256 amount, bytes calldata data) public onlyModule notPaused {
+        bytes memory _data = abi.encode(msg.sender, token, amount, data);
+        vault0.flashLoan(amount, _data);
+    }
+
+    function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
+        require(msg.sender == address(vault0) || msg.sender == address(vault1), "M0");
+        (address sender, address token, uint256 amount, bytes memory data) = abi.decode(
+            _data,
+            (address, address, uint256, bytes)
+        );
+        IERC20(token).transfer(sender, amount);
+        IFlashLoanReceiver(sender).onFlashLoanSingle(token, amount, data);
+        IERC20(token).transferFrom(sender, msg.sender, amount);
+        return "";
     }
 
     // ** Long market
