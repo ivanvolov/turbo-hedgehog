@@ -18,7 +18,7 @@ import {Deployers} from "v4-core-test/utils/Deployers.sol";
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
+import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UniswapV3SwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
 import {Oracle} from "@src/core/Oracle.sol";
@@ -39,7 +39,6 @@ import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {ISwapRouter} from "@forks/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
     using TestAccountLib for TestAccount;
@@ -91,7 +90,10 @@ abstract contract ALMTestBase is Test, Deployers {
         // MARK END
 
         // MARK: Deploying modules and setting up parameters
-        lendingAdapter = new AaveLendingAdapter();
+        lendingAdapter = new EulerLendingAdapter(
+            0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9,
+            0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2
+        );
         positionManager = new PositionManager();
         swapAdapter = new UniswapV3SwapAdapter();
         oracle = new Oracle();

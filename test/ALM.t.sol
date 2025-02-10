@@ -18,7 +18,7 @@ import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
-import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
+import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {Base} from "@src/core/base/Base.sol";
@@ -38,9 +38,9 @@ contract ALMGeneralTest is ALMTestBase {
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(19_955_703);
+        vm.rollFork(21787748);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -60,54 +60,9 @@ contract ALMGeneralTest is ALMTestBase {
         );
     }
 
-    function test_aave_lending_adapter_long() public {
-        // ** Enable Alice to call the adapter
-        vm.prank(deployer.addr);
-        IBase(address(lendingAdapter)).setComponents(
-            address(hook),
-            alice.addr,
-            alice.addr,
-            alice.addr,
-            alice.addr,
-            alice.addr
-        );
+    function test_lending_adapter_long() public {
+        uint256 expectedPrice = 2776;
 
-        // ** Approve to Morpho
-        vm.startPrank(alice.addr);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
-
-        // ** Add collateral
-        uint256 wethToSupply = 1e18;
-        deal(address(WETH), address(alice.addr), wethToSupply);
-        lendingAdapter.addCollateralLong(wethToSupply);
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
-        assertEqBalanceStateZero(alice.addr);
-
-        // ** Borrow
-        uint256 usdcToBorrow = ((wethToSupply * 3843) / 1e12) / 2;
-        lendingAdapter.borrowLong(c6to18(usdcToBorrow));
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), c6to18(usdcToBorrow), 1e1);
-        assertEqBalanceState(alice.addr, 0, usdcToBorrow);
-
-        // ** Repay
-        lendingAdapter.repayLong(c6to18(usdcToBorrow));
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
-        assertEqBalanceStateZero(alice.addr);
-
-        // ** Remove collateral
-        lendingAdapter.removeCollateralLong(wethToSupply);
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
-        assertEqBalanceState(alice.addr, wethToSupply, 0);
-
-        vm.stopPrank();
-    }
-
-    function test_aave_lending_adapter_short() public {
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
         IBase(address(lendingAdapter)).setComponents(
@@ -125,31 +80,145 @@ contract ALMGeneralTest is ALMTestBase {
         USDC.approve(address(lendingAdapter), type(uint256).max);
 
         // ** Add collateral
-        uint256 usdcToSupply = 3843 * 1e6;
+        uint256 wethToSupply = 1e18;
+        deal(address(WETH), address(alice.addr), wethToSupply);
+        lendingAdapter.addCollateralLong(wethToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
+        assertEqBalanceStateZero(alice.addr);
+
+        // ** Borrow
+        uint256 usdcToBorrow = ((wethToSupply * expectedPrice) / 1e12) / 2;
+        lendingAdapter.borrowLong(c6to18(usdcToBorrow));
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), c6to18(usdcToBorrow), 1e1);
+        assertEqBalanceState(alice.addr, 0, usdcToBorrow);
+
+        // ** Repay
+        lendingAdapter.repayLong(c6to18(usdcToBorrow));
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
+        assertEqBalanceStateZero(alice.addr);
+
+        // ** Remove collateral
+        lendingAdapter.removeCollateralLong(lendingAdapter.getCollateralLong());
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
+        assertEqBalanceState(alice.addr, wethToSupply, 0);
+
+        vm.stopPrank();
+    }
+
+    function test_lending_adapter_short() public {
+        uint256 expectedPrice = 2776;
+        // ** Enable Alice to call the adapter
+        vm.prank(deployer.addr);
+        IBase(address(lendingAdapter)).setComponents(
+            address(hook),
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr
+        );
+
+        // ** Approve to LA
+        vm.startPrank(alice.addr);
+        WETH.approve(address(lendingAdapter), type(uint256).max);
+        USDC.approve(address(lendingAdapter), type(uint256).max);
+
+        // ** Add collateral
+        uint256 usdcToSupply = expectedPrice * 1e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
         lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Borrow
-        uint256 wethToBorrow = ((usdcToSupply * 1e12) / 3843) / 2;
+        uint256 wethToBorrow = ((usdcToSupply * 1e12) / expectedPrice) / 2;
         lendingAdapter.borrowShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), wethToBorrow, 1e1);
         assertEqBalanceState(alice.addr, wethToBorrow, 0);
 
         // ** Repay
         lendingAdapter.repayShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), 1e1);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Remove collateral
-        lendingAdapter.removeCollateralShort(c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 1e1);
+        lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, c6to18(1e1));
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToSupply);
+
+        vm.stopPrank();
+    }
+
+    function test_lending_adapter_in_parallel() public {
+        uint256 expectedPrice = 2776;
+
+        // ** Enable Alice to call the adapter
+        vm.prank(deployer.addr);
+        IBase(address(lendingAdapter)).setComponents(
+            address(hook),
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr
+        );
+
+        // ** Approve to LA
+        vm.startPrank(alice.addr);
+        WETH.approve(address(lendingAdapter), type(uint256).max);
+        USDC.approve(address(lendingAdapter), type(uint256).max);
+
+        // ** Add Collateral for Long (WETH)
+        uint256 wethToSupply = 1e18;
+        deal(address(WETH), address(alice.addr), wethToSupply);
+        lendingAdapter.addCollateralLong(wethToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
+
+        // ** Add Collateral for Short (USDC)
+        uint256 usdcToSupply = expectedPrice * 1e6;
+        deal(address(USDC), address(alice.addr), usdcToSupply);
+        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
+
+        // ** Borrow USDC (against WETH)
+        uint256 usdcToBorrow = ((wethToSupply * expectedPrice) / 1e12) / 2;
+        lendingAdapter.borrowLong(c6to18(usdcToBorrow));
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), c6to18(usdcToBorrow), 1e1);
+        assertEqBalanceState(alice.addr, 0, usdcToBorrow);
+
+        // ** Borrow WETH (against USDC)
+        uint256 wethToBorrow = ((usdcToSupply * 1e12) / expectedPrice) / 2;
+        lendingAdapter.borrowShort(wethToBorrow);
+        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), wethToBorrow, 1e1);
+        assertEqBalanceState(alice.addr, wethToBorrow, usdcToBorrow);
+
+        // ** Repay USDC Loan
+        lendingAdapter.repayLong(c6to18(usdcToBorrow));
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
+
+        // ** Repay WETH Loan
+        lendingAdapter.repayShort(wethToBorrow);
+        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
+
+        // ** Remove WETH Collateral
+        lendingAdapter.removeCollateralLong(lendingAdapter.getCollateralLong());
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, 1e1);
+
+        // ** Remove USDC Collateral
+        lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, c6to18(1e1));
+
+        assertEqBalanceState(alice.addr, wethToSupply, usdcToSupply);
 
         vm.stopPrank();
     }

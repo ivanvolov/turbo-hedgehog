@@ -15,10 +15,9 @@ import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
-import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
-
+import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 
@@ -40,9 +39,9 @@ contract ETHALMTest is ALMTestBase {
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(19_955_703);
+        vm.rollFork(21787748);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -559,7 +558,10 @@ contract ETHALMTest is ALMTestBase {
         ILendingAdapter newAdapter;
         {
             vm.startPrank(deployer.addr);
-            newAdapter = new AaveLendingAdapter();
+            newAdapter = new EulerLendingAdapter(
+                0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9,
+                0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2
+            );
             IBase(address(newAdapter)).setTokens(address(USDC), address(WETH), 6, 18);
             IBase(address(newAdapter)).setComponents(
                 address(hook),
