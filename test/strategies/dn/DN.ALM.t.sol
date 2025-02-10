@@ -15,7 +15,6 @@ import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
-import {AaveLendingAdapter} from "@src/core/lendingAdapters/AaveLendingAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
@@ -41,9 +40,9 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(19_955_703);
+        vm.rollFork(21787748);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 3843 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -82,7 +81,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         hook.withdraw(alice.addr, 10, 0);
     }
 
-    uint256 amountToDep = 100 * 3843 * 1e6;
+    uint256 amountToDep = 100 * 2776 * 1e6;
 
     function test_deposit() public {
         assertEq(hook.TVL(), 0, "TVL");

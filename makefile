@@ -24,8 +24,11 @@ td:
 	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
 tdl:
 	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
+
 tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
+tgl:
+	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_"
 
 spell:
 	clear && cspell "**/*.*"
