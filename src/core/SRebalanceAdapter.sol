@@ -192,7 +192,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         // console.log("executeOperation");
         require(msg.sender == lendingPool, "M0");
         _positionManagement(data);
-
+        console.log("here");
         // console.log("afterCL %s", lendingAdapter.getCollateralLong());
         // console.log("afterCS %s", lendingAdapter.getCollateralShort());
         // console.log("afterDL %s", lendingAdapter.getBorrowedLong());
@@ -238,6 +238,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("deltaDL", deltaDL);
         console.log("deltaDS", deltaDS);
 
+        console.log("USDC balance %s", token0BalanceUnwr());
+        console.log("WETH balance %s", token1BalanceUnwr());
+
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
 
@@ -247,8 +250,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
 
-        if (deltaDL != 0) lendingAdapter.borrowLong(_targetDL - lendingAdapter.getBorrowedLong());
-        if (deltaDS != 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
+        console.log("CL %s", lendingAdapter.getCollateralLong());
+        console.log("CS %s", lendingAdapter.getCollateralShort());
+        console.log("DL %s", lendingAdapter.getBorrowedLong());
+        console.log("DS %s", lendingAdapter.getBorrowedShort());
+
+        console.log("diff %s", _targetDL - lendingAdapter.getBorrowedLong());
+
+        if (deltaDL > 0) lendingAdapter.borrowLong(_targetDL); 
+        if (deltaDS > 0) lendingAdapter.borrowShort(_targetDS - lendingAdapter.getBorrowedShort());
     }
 
     // --- Math functions --- //

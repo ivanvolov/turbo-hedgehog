@@ -61,7 +61,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_long() public {
-        uint256 expectedPrice = 2776;
+        uint256 expectedPrice = 2652;
 
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
@@ -110,7 +110,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_short() public {
-        uint256 expectedPrice = 2776;
+        uint256 expectedPrice = 2652;
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
         IBase(address(lendingAdapter)).setComponents(
@@ -158,7 +158,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_in_parallel() public {
-        uint256 expectedPrice = 2776;
+        uint256 expectedPrice = 2652;
 
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);

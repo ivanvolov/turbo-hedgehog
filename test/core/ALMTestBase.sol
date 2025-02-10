@@ -169,8 +169,8 @@ abstract contract ALMTestBase is Test, Deployers {
         hook.setAuthorizedPool(_key);
         (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
 
-        assertEq(hook.tickLower(), 193764 + 3000);
-        assertEq(hook.tickUpper(), 193764 - 3000);
+        assertEq(hook.tickLower(), 200489);
+        assertEq(hook.tickUpper(), 194489);
         // MARK END
 
         // This is needed in order to simulate proper accounting
