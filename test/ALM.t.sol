@@ -38,7 +38,7 @@ contract ALMGeneralTest is ALMTestBase {
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(21787748);
+        vm.rollFork(21817163);
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
 
@@ -129,7 +129,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_long() public {
-        uint256 expectedPrice = 2776;
+        uint256 expectedPrice = 2652;
 
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
@@ -178,7 +178,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_short() public {
-        uint256 expectedPrice = 2776;
+        uint256 expectedPrice = 2652;
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);
         IBase(address(lendingAdapter)).setComponents(
@@ -226,7 +226,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_lending_adapter_in_parallel() public {
-        uint256 expectedPrice = 2776;
+        uint256 expectedPrice = 2652;
 
         // ** Enable Alice to call the adapter
         vm.prank(deployer.addr);

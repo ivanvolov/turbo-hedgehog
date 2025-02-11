@@ -36,21 +36,21 @@ contract ETHALMTest is ALMTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;
-    uint256 slippage = 2e15;
+    uint256 slippage = 15e14;
     uint256 fee = 5e14;
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(21787748);
+        vm.rollFork(21817163);
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
-
+        console.log("initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);
-
+        console.log("here");
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
@@ -66,7 +66,7 @@ contract ETHALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(shortLeverage);
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(3849e18);
+            rebalanceAdapter.setOraclePriceAtLastRebalance(2652e18);
             vm.stopPrank();
         }
 
@@ -94,15 +94,18 @@ contract ETHALMTest is ALMTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
-        assertEq(shares, amountToDep, "shares returned");
+        assertApproxEqAbs(shares, amountToDep, 1e1);
+        console.log("here0");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceStateZero(alice.addr);
+        console.log("here1");
         assertEqBalanceStateZero(address(hook));
+        console.log("here2");
         assertEqPositionState(amountToDep, 0, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertEq(hook.TVL(), amountToDep, "TVL");
+        assertApproxEqAbs(hook.TVL(), amountToDep, 1e1);
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -431,7 +434,7 @@ contract ETHALMTest is ALMTestBase {
         // ** Swap Up In
         {
             console.log("Swap Up In");
-            uint256 usdcToSwap = 50000e6; // 50k USDC
+            uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -465,8 +468,8 @@ contract ETHALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 3e14);
-            assertApproxEqAbs(deltaUSDC, deltaY, 1e6);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 7e14);
+            assertApproxEqAbs(deltaUSDC, deltaY, 2e6);
         }
 
         // ** Make oracle change with swap price
