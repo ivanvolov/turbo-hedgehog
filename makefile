@@ -26,9 +26,9 @@ tdl:
 	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
 
 tg:
-	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_lending_adapter_flash_loan"
+	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_lending_adapter_"
 tgl:
-	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_lending_adapter_flash_loan"
+	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_lending_adapter_"
 
 spell:
 	clear && cspell "**/*.*"

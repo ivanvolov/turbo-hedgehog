@@ -8,6 +8,14 @@ interface ILendingAdapter {
     // ** Flashloan
     function flashLoanSingle(address token, uint256 amount, bytes calldata data) external;
 
+    function flashLoanTwoTokens(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1,
+        bytes calldata data
+    ) external;
+
     // ** Long market
     function getBorrowedLong() external view returns (uint256);
 
@@ -42,4 +50,12 @@ interface ILendingAdapter {
 
 interface IFlashLoanReceiver {
     function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external;
+
+    function onFlashLoanTwoTokens(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1,
+        bytes calldata data
+    ) external;
 }

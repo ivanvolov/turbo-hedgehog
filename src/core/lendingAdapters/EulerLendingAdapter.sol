@@ -17,6 +17,8 @@ import {Base} from "@src/core/base/Base.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapter.sol";
 
+//TODO: all errors to codes or better to libs.
+
 contract EulerLendingAdapter is Base, ILendingAdapter {
     using TokenWrapperLib for uint256;
 
@@ -54,20 +56,72 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     // ** Flashloan
 
     function flashLoanSingle(address token, uint256 amount, bytes calldata data) public onlyModule notPaused {
-        bytes memory _data = abi.encode(msg.sender, token, amount, data);
-        vault0.flashLoan(amount, _data);
+        bytes memory _data = abi.encode(uint8(0), msg.sender, token, amount, data);
+        getVaultByToken(token).flashLoan(amount, _data);
+    }
+
+    function flashLoanTwoTokens(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1,
+        bytes calldata data
+    ) public onlyModule notPaused {
+        bytes memory _data = abi.encode(uint8(2), msg.sender, token0, amount0, token1, amount1, data);
+        getVaultByToken(token0).flashLoan(amount0, _data);
     }
 
     function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
         require(msg.sender == address(vault0) || msg.sender == address(vault1), "M0");
-        (address sender, address token, uint256 amount, bytes memory data) = abi.decode(
-            _data,
-            (address, address, uint256, bytes)
-        );
-        IERC20(token).transfer(sender, amount);
-        IFlashLoanReceiver(sender).onFlashLoanSingle(token, amount, data);
-        IERC20(token).transferFrom(sender, msg.sender, amount);
+
+        uint8 loanType = abi.decode(_data, (uint8));
+
+        if (loanType == 0) {
+            (, address sender, address token, uint256 amount, bytes memory data) = abi.decode(
+                _data,
+                (uint8, address, address, uint256, bytes)
+            );
+            IERC20(token).transfer(sender, amount);
+            IFlashLoanReceiver(sender).onFlashLoanSingle(token, amount, data);
+            IERC20(token).transferFrom(sender, msg.sender, amount);
+        } else if (loanType == 2) {
+            (
+                ,
+                address sender,
+                address token0,
+                uint256 amount0,
+                address token1,
+                uint256 amount1,
+                bytes memory data
+            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+
+            bytes memory __data = abi.encode(uint8(1), sender, token0, amount0, token1, amount1, data);
+            getVaultByToken(token1).flashLoan(amount1, __data);
+            IERC20(token0).transferFrom(sender, msg.sender, amount0);
+        } else if (loanType == 1) {
+            (
+                ,
+                address sender,
+                address token0,
+                uint256 amount0,
+                address token1,
+                uint256 amount1,
+                bytes memory data
+            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+
+            IERC20(token0).transfer(sender, amount0);
+            IERC20(token1).transfer(sender, amount1);
+            IFlashLoanReceiver(sender).onFlashLoanTwoTokens(token0, amount0, token1, amount1, data);
+            IERC20(token1).transferFrom(sender, msg.sender, amount1);
+        } else revert("M2");
+
         return "";
+    }
+
+    function getVaultByToken(address token) public view returns (IEulerVault) {
+        if (vault0.asset() == token) return vault0;
+        else if (vault1.asset() == token) return vault1;
+        else revert("M1");
     }
 
     // ** Long market

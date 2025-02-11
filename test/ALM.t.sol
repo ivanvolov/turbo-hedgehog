@@ -90,6 +90,44 @@ contract ALMGeneralTest is ALMTestBase {
         assertEqBalanceState(address(this), 0, amount);
     }
 
+    function test_lending_adapter_flash_loan_two_tokens() public {
+        address testAddress = address(this);
+        vm.mockCall(testAddress, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
+
+        // ** Enable Alice to call the adapter
+        vm.prank(deployer.addr);
+        IBase(address(lendingAdapter)).setComponents(
+            testAddress,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr,
+            alice.addr
+        );
+
+        // ** Approve to LA
+        WETH.approve(address(lendingAdapter), type(uint256).max);
+        USDC.approve(address(lendingAdapter), type(uint256).max);
+
+        assertEqBalanceStateZero(testAddress);
+        lendingAdapter.flashLoanTwoTokens(address(USDC), 1000 * 1e6, address(WETH), 1 ether, "0x3");
+    }
+
+    function onFlashLoanTwoTokens(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1,
+        bytes calldata data
+    ) public view {
+        assertEq(token0, address(USDC), "token should be USDC");
+        assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
+        assertEq(token1, address(WETH), "token should be WETH");
+        assertEq(amount1, 1 ether, "amount should be 1 WETH");
+        assertEq(data, "0x3", "data should eq");
+        assertEqBalanceState(address(this), amount1, amount0);
+    }
+
     function test_lending_adapter_long() public {
         uint256 expectedPrice = 2776;
 
