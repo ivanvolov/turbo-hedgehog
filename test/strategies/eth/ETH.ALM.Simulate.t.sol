@@ -33,7 +33,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);

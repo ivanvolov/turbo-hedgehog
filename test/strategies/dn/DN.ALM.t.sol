@@ -42,7 +42,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
@@ -81,7 +81,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         hook.withdraw(alice.addr, 10, 0);
     }
 
-    uint256 amountToDep = 100 * 2776 * 1e6;
+    uint256 amountToDep = 100 * 2652 * 1e6;
 
     function test_deposit() public {
         assertEq(hook.TVL(), 0, "TVL");

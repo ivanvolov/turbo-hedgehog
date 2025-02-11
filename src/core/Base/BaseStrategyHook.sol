@@ -27,15 +27,10 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ILendingPool} from "@src/interfaces/IAave.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
-
-    // AaveV2
-    address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
-    ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
 
     uint128 public liquidity;
     uint160 public sqrtPriceCurrent;
@@ -50,11 +45,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bytes32 public authorizedPool;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
-
-    function _postSetTokens() internal override {
-        IERC20(token0).approve(lendingPool, type(uint256).max);
-        IERC20(token1).approve(lendingPool, type(uint256).max);
-    }
 
     function setTickDelta(int24 _tickDelta) external onlyOwner {
         tickDelta = _tickDelta;

@@ -17,6 +17,7 @@ abstract contract Base is IBase {
     error NotALM();
     error NotRebalanceAdapter();
     error NotModule();
+    error NotLendingAdapter();
     error ContractPaused();
     error ContractShutdown();
 
@@ -107,6 +108,12 @@ abstract contract Base is IBase {
     /// @dev Only the rebalance adapter may call this function
     modifier onlyRebalanceAdapter() {
         if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter();
+        _;
+    }
+
+    /// @dev Only the lending adapter may call this function
+    modifier onlyLendingAdapter() {
+        if (msg.sender != address(lendingAdapter)) revert NotLendingAdapter();
         _;
     }
 

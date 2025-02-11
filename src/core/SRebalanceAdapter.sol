@@ -23,7 +23,6 @@ import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
-import {ILendingPool} from "@src/interfaces/IAave.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
@@ -37,10 +36,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public oraclePriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
 
-    // ** AaveV2
-    address constant lendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
-    ILendingPool constant LENDING_POOL = ILendingPool(lendingPool);
-
     // ** Parameters
     uint256 public rebalancePriceThreshold;
     uint256 public rebalanceTimeThreshold;
@@ -52,11 +47,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     bool public invertAssets = false;
 
     constructor() Base(msg.sender) {}
-
-    function _postSetTokens() internal override {
-        IERC20(token0).approve(lendingPool, type(uint256).max);
-        IERC20(token1).approve(lendingPool, type(uint256).max);
-    }
 
     function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
         rebalancePriceThreshold = _rebalancePriceThreshold;
@@ -140,21 +130,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("slippage %s", slippage);
 
         (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
-
-        address[] memory assets = new address[](2);
-        uint256[] memory amounts = new uint256[](2);
-        uint256[] memory modes = new uint256[](2);
-        (assets[0], amounts[0], modes[0]) = (token0, usdcToFl.unwrap(t0Dec), 0);
-        (assets[1], amounts[1], modes[1]) = (token1, ethToFl.unwrap(t1Dec), 0);
-        // console.log("ethToFl", ethToFl);
-        // console.log("usdcToFl", usdcToFl);
-        LENDING_POOL.flashLoan(address(this), assets, amounts, modes, address(this), data, 0);
+        lendingAdapter.flashLoanTwoTokens(token0, usdcToFl.unwrap(t0Dec), token1, ethToFl.unwrap(t1Dec), data);
 
         console.log("USDC balance before %s", token0BalanceUnwr());
         console.log("WETH balance before %s", token1BalanceUnwr());
 
         if (token0BalanceUnwr() != 0) lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
-
         if (token1BalanceUnwr() != 0) lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
 
         console.log("USDC balance after %s", token0BalanceUnwr());
@@ -182,56 +163,42 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("RebalanceDone");
     }
 
-    function executeOperation(
-        address[] calldata,
-        uint256[] calldata amounts,
-        uint256[] calldata premiums,
-        address,
+    function onFlashLoanTwoTokens(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1,
         bytes calldata data
-    ) external notPaused notShutdown returns (bool) {
-        // console.log("executeOperation");
-        require(msg.sender == lendingPool, "M0");
+    ) external notPaused notShutdown onlyLendingAdapter {
         _positionManagement(data);
-        console.log("here");
         // console.log("afterCL %s", lendingAdapter.getCollateralLong());
         // console.log("afterCS %s", lendingAdapter.getCollateralShort());
         // console.log("afterDL %s", lendingAdapter.getBorrowedLong());
         // console.log("afterDS %s", lendingAdapter.getBorrowedShort());
 
-        uint256 borrowedToken0 = amounts[0] + premiums[0];
-        uint256 borrowedToken1 = amounts[1] + premiums[1];
-
         // ** Flash loan management
-
-        console.log("premium0 %s", premiums[0]);
-        console.log("premium1 %s", premiums[1]);
-        console.log("flDEBT ETH %s", borrowedToken1);
+        console.log("flDEBT ETH %s", amount1);
         console.log("wethBalance %s", token1BalanceUnwr());
-        console.log("flDEBT USDC %s", borrowedToken0);
+        console.log("flDEBT USDC %s", amount0);
         console.log("usdcBalance %s", token0BalanceUnwr());
 
-        if (borrowedToken0 > token0BalanceUnwr()) {
-            swapAdapter.swapExactOutput(token1, token0, borrowedToken0 - token0BalanceUnwr());
-        }
+        if (amount0 > token0BalanceUnwr()) swapAdapter.swapExactOutput(token1, token0, amount0 - token0BalanceUnwr());
 
         console.log("wethBalance after %s", token1BalanceUnwr());
         console.log("usdcBalance after %s", token0BalanceUnwr());
 
-        if (borrowedToken1 > token1BalanceUnwr())
-            swapAdapter.swapExactOutput(token0, token1, borrowedToken1 - token1BalanceUnwr());
+        if (amount1 > token1BalanceUnwr()) swapAdapter.swapExactOutput(token0, token1, amount1 - token1BalanceUnwr());
 
         console.log("wethBalance after %s", token1BalanceUnwr());
         console.log("usdcBalance after %s", token0BalanceUnwr());
-
-        console.log("here");
-
-        return true;
     }
 
     // @Notice: this function is mainly for removing stack too deep error
     function _positionManagement(bytes calldata data) internal {
-        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi
-            .decode(data, (int256, int256, int256, int256));
+        (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi.decode(
+            data,
+            (int256, int256, int256, int256)
+        );
 
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
@@ -242,8 +209,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
 
-        if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL)); 
-        if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS)); 
+        if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
+        if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS));
     }
 
     // --- Math functions --- //

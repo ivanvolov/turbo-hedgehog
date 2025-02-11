@@ -44,7 +44,7 @@ contract ETHALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2776 usdc for eth (but in reversed tokens order)
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         console.log("initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
