@@ -127,19 +127,19 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
 
-        console.log("slippage %s", slippage);
+        // console.log("slippage %s", slippage);
 
         (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
         lendingAdapter.flashLoanTwoTokens(token0, usdcToFl.unwrap(t0Dec), token1, ethToFl.unwrap(t1Dec), data);
 
-        console.log("USDC balance before %s", token0BalanceUnwr());
-        console.log("WETH balance before %s", token1BalanceUnwr());
+        // console.log("USDC balance before %s", token0BalanceUnwr());
+        // console.log("WETH balance before %s", token1BalanceUnwr());
 
         if (token0BalanceUnwr() != 0) lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
         if (token1BalanceUnwr() != 0) lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
 
-        console.log("USDC balance after %s", token0BalanceUnwr());
-        console.log("WETH balance after %s", token1BalanceUnwr());
+        // console.log("USDC balance after %s", token0BalanceUnwr());
+        // console.log("WETH balance after %s", token1BalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();
@@ -154,7 +154,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
 
-        console.log("sqrtPriceAtLastRebalance %s", sqrtPriceAtLastRebalance);
+        // console.log("sqrtPriceAtLastRebalance %s", sqrtPriceAtLastRebalance);
 
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
@@ -170,6 +170,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amount1,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
+        console.log("> onFlashLoanTwoTokens");
         _positionManagement(data);
         // console.log("afterCL %s", lendingAdapter.getCollateralLong());
         // console.log("afterCS %s", lendingAdapter.getCollateralShort());
@@ -200,17 +201,26 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             (int256, int256, int256, int256)
         );
 
+        console.log("(1)");
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
+        console.log("(2)");
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
+        console.log("(3)");
 
         if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
+        console.log("(4)");
         if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
+        console.log("(5)");
 
         if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
+        console.log("(6)");
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
+        console.log("(7)");
 
         if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
+        console.log("(8)");
         if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS));
+        console.log("(9)");
     }
 
     // --- Math functions --- //
@@ -261,8 +271,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             console.log("targetCS", targetCS);
             console.log("targetDL", targetDL);
             console.log("targetDS", targetDS);
-
-            console.log("here");
 
             deltaCL = int256(targetCL) - int256(lendingAdapter.getCollateralLong());
             deltaCS = int256(targetCS) - int256(lendingAdapter.getCollateralShort());

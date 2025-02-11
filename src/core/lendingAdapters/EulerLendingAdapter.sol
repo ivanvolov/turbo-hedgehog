@@ -26,12 +26,16 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     IEVC evc = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
     IEulerVault vault0;
     IEulerVault vault1;
+    IEulerVault flVault0;
+    IEulerVault flVault1;
     address public subAccount0 = getSubAccountAddress(1);
     address public subAccount1 = getSubAccountAddress(2);
 
-    constructor(address _vault0, address _vault1) Base(msg.sender) {
+    constructor(address _vault0, address _vault1, address _flVault0, address _flVault1) Base(msg.sender) {
         vault0 = IEulerVault(_vault0);
         vault1 = IEulerVault(_vault1);
+        flVault0 = IEulerVault(_flVault0);
+        flVault1 = IEulerVault(_flVault1);
 
         evc.enableController(subAccount0, address(vault0));
         evc.enableCollateral(subAccount0, address(vault1));
@@ -72,7 +76,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
-        require(msg.sender == address(vault0) || msg.sender == address(vault1), "M0");
+        require(msg.sender == address(flVault0) || msg.sender == address(flVault1), "M0");
 
         uint8 loanType = abi.decode(_data, (uint8));
 
@@ -119,8 +123,8 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function getVaultByToken(address token) public view returns (IEulerVault) {
-        if (vault0.asset() == token) return vault0;
-        else if (vault1.asset() == token) return vault1;
+        if (flVault0.asset() == token) return flVault0;
+        else if (flVault1.asset() == token) return flVault1;
         else revert("M1");
     }
 
@@ -135,6 +139,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function borrowLong(uint256 amount) external onlyModule notPaused notShutdown {
+        // console.log("borrowLong");
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
         items[0] = IEVC.BatchItem({
             targetContract: address(vault0),
@@ -146,11 +151,13 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayLong(uint256 amount) external onlyModule notPaused {
+        // console.log("repayLong");
         IERC20(token0).transferFrom(msg.sender, address(this), amount.unwrap(t0Dec));
         vault0.repay(amount.unwrap(t0Dec), subAccount0);
     }
 
     function removeCollateralLong(uint256 amount) external onlyModule notPaused {
+        // console.log("removeCollateralLong");
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
         items[0] = IEVC.BatchItem({
             targetContract: address(vault1),
@@ -162,6 +169,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
+        // console.log("addCollateralLong");
         IERC20(token1).transferFrom(msg.sender, address(this), amount.unwrap(t1Dec));
         vault1.mint(vault1.convertToShares(amount.unwrap(t1Dec)), subAccount0);
     }
@@ -177,6 +185,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function borrowShort(uint256 amount) external onlyModule notPaused notShutdown {
+        // console.log("borrowShort");
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
         items[0] = IEVC.BatchItem({
             targetContract: address(vault1),
@@ -188,11 +197,13 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayShort(uint256 amount) external onlyModule notPaused {
+        // console.log("repayShort");
         IERC20(token1).transferFrom(msg.sender, address(this), amount.unwrap(t1Dec));
         vault1.repay(amount.unwrap(t1Dec), subAccount1);
     }
 
     function removeCollateralShort(uint256 amount) external onlyModule notPaused {
+        // console.log("removeCollateralShort");
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
         items[0] = IEVC.BatchItem({
             targetContract: address(vault0),
@@ -204,6 +215,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
+        // console.log("addCollateralShort");
         IERC20(token0).transferFrom(msg.sender, address(this), amount.unwrap(t0Dec));
         vault0.mint(vault0.convertToShares(amount.unwrap(t0Dec)), subAccount1);
     }

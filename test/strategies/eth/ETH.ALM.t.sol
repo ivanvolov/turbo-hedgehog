@@ -50,7 +50,6 @@ contract ETHALMTest is ALMTestBase {
 
         create_accounts_and_tokens();
         init_hook(address(USDC), address(WETH), 6, 18);
-        console.log("here");
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
@@ -95,13 +94,10 @@ contract ETHALMTest is ALMTestBase {
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
         assertApproxEqAbs(shares, amountToDep, 1e1);
-        console.log("here0");
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceStateZero(alice.addr);
-        console.log("here1");
         assertEqBalanceStateZero(address(hook));
-        console.log("here2");
         assertEqPositionState(amountToDep, 0, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
@@ -129,9 +125,7 @@ contract ETHALMTest is ALMTestBase {
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-
         assertEqBalanceStateZero(address(hook));
-        console.log("here");
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
     }
 
@@ -586,7 +580,9 @@ contract ETHALMTest is ALMTestBase {
             vm.startPrank(deployer.addr);
             newAdapter = new EulerLendingAdapter(
                 0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9,
-                0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2
+                0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2,
+                0xcBC9B61177444A793B85442D3a953B90f6170b7D,
+                0x716bF454066a84F39A2F78b5707e79a9d64f1225
             );
             IBase(address(newAdapter)).setTokens(address(USDC), address(WETH), 6, 18);
             IBase(address(newAdapter)).setComponents(

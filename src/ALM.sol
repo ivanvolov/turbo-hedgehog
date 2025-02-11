@@ -80,17 +80,17 @@ contract ALM is BaseStrategyHook, ERC20 {
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
         console.log("Withdraw");
 
-        console.log("sharesOut %s", sharesOut);
-        console.log("totalSupply %s", totalSupply());
+        // console.log("sharesOut %s", sharesOut);
+        // console.log("totalSupply %s", totalSupply());
 
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
 
-        console.log("preCL %s", lendingAdapter.getCollateralLong());
-        console.log("preCS %s", lendingAdapter.getCollateralShort());
-        console.log("preDL %s", lendingAdapter.getBorrowedLong());
-        console.log("preDS %s", lendingAdapter.getBorrowedShort());
+        // console.log("preCL %s", lendingAdapter.getCollateralLong());
+        // console.log("preCS %s", lendingAdapter.getCollateralShort());
+        // console.log("preDL %s", lendingAdapter.getBorrowedLong());
+        // console.log("preDS %s", lendingAdapter.getBorrowedShort());
 
         (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = ALMMathLib.getUserAmounts(
             totalSupply(),
@@ -101,15 +101,12 @@ contract ALM is BaseStrategyHook, ERC20 {
             lendingAdapter.getBorrowedShort()
         );
 
-        console.log("uCL %s", uCL);
-        console.log("uCS %s", uCS);
-        console.log("uDL %s", uDL);
-        console.log("uDS %s", uDS);
+        // console.log("uCL %s", uCL);
+        // console.log("uCS %s", uCS);
+        // console.log("uDL %s", uDL);
+        // console.log("uDS %s", uDS);
 
-        //TODO remove from here
-        uint256 preTVL = alm.TVL();
-
-        console.log("PRE TVL %s", preTVL);
+        // console.log("PRE TVL %s", alm.TVL());
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0) {
@@ -137,7 +134,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();
-        console.log("liquidity %s", liquidity);
+        // console.log("liquidity %s", liquidity);
 
         console.log("WithdrawDone");
     }
