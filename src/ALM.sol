@@ -23,7 +23,6 @@ import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 
 // ** interfaces
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 

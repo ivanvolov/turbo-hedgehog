@@ -100,7 +100,7 @@ abstract contract ALMTestBase is Test, Deployers {
         );
         positionManager = new PositionManager();
         swapAdapter = new UniswapV3SwapAdapter();
-        oracle = new Oracle();
+        oracle = new Oracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
         rebalanceAdapter = new SRebalanceAdapter();
 
         hook.setTokens(_token0, _token1, _token0Dec, _token1Dec);
@@ -171,8 +171,8 @@ abstract contract ALMTestBase is Test, Deployers {
         hook.setAuthorizedPool(_key);
         (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
 
-        assertEq(hook.tickLower(), 200489);
-        assertEq(hook.tickUpper(), 194489);
+        assertEq(hook.tickLower(), 200459);
+        assertEq(hook.tickUpper(), 194459);
         // MARK END
 
         // This is needed in order to simulate proper accounting

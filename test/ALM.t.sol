@@ -27,7 +27,6 @@ import {Base} from "@src/core/base/Base.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
@@ -88,6 +87,10 @@ contract ALMGeneralTest is ALMTestBase {
         assertEq(amount, 1000 * 1e6, "amount should be 1000 USDC");
         assertEq(data, "0x2", "data should eq");
         assertEqBalanceState(address(this), 0, amount);
+    }
+
+    function test_oracle() public view {
+        assertEq(oracle.price(), 2660 * 1e18, "price should eq");
     }
 
     function test_lending_adapter_flash_loan_two_tokens() public {
