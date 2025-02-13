@@ -9,6 +9,10 @@ import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {TestERC20} from "v4-core/test/TestERC20.sol";
+
+// ** libraries
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -25,6 +29,9 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
+    TestERC20 WETH = TestERC20(TestLib.WETH);
+    TestERC20 USDC = TestERC20(TestLib.USDC);
+
     function setUp() public {
         clear_snapshots();
 
@@ -34,8 +41,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
-        create_accounts_and_tokens();
-        init_hook(address(USDC), address(WETH), 6, 18);
+        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        init_hook(6, 18);
 
         // Setting up strategy params
         {

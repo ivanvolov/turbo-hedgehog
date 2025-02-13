@@ -12,9 +12,11 @@ import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
+import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -34,6 +36,9 @@ contract ALMGeneralTest is ALMTestBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
+    TestERC20 WETH = TestERC20(TestLib.WETH);
+    TestERC20 USDC = TestERC20(TestLib.USDC);
+
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
@@ -43,16 +48,16 @@ contract ALMGeneralTest is ALMTestBase {
 
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens();
-        init_hook(address(USDC), address(WETH), 6, 18);
+        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        init_hook(6, 18);
         approve_accounts();
     }
 
     function test_hook_deployment_exploit_revert() public {
         vm.expectRevert();
         (key, ) = initPool(
-            Currency.wrap(address(USDC)),
-            Currency.wrap(address(WETH)),
+            Currency.wrap(address(TOKEN0)),
+            Currency.wrap(address(TOKEN1)),
             hook,
             poolFee + 1, //TODO: check this again. Is fee +1 prove this test case?
             initialSQRTPrice

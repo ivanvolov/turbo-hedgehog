@@ -11,6 +11,10 @@ import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
+import {TestERC20} from "v4-core/test/TestERC20.sol";
+
+// ** libraries
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -37,6 +41,9 @@ contract ETHALMTest is ALMTestBase {
     uint256 slippage = 15e14;
     uint256 fee = 5e14;
 
+    TestERC20 WETH = TestERC20(TestLib.WETH);
+    TestERC20 USDC = TestERC20(TestLib.USDC);
+
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
@@ -46,8 +53,8 @@ contract ETHALMTest is ALMTestBase {
         console.log("initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens();
-        init_hook(address(USDC), address(WETH), 6, 18);
+        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        init_hook(6, 18);
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
@@ -687,5 +694,22 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Check if the same test case works for the new lending adapter
         part_swap_price_up_in();
+    }
+
+    // ** Helpers
+    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, int256(amount), key);
+    }
+
+    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, -int256(amount), key);
+    }
+
+    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(true, int256(amount), key);
+    }
+
+    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(true, -int256(amount), key);
     }
 }

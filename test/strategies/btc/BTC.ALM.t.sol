@@ -7,6 +7,10 @@ import "forge-std/console.sol";
 // ** v4 imports
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
+import {TestERC20} from "v4-core/test/TestERC20.sol";
+
+// ** libraries
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -24,6 +28,9 @@ contract BTCALMTest is ALMTestBase {
     uint256 slippage = 15e14;
     uint256 fee = 5e14;
 
+    TestERC20 WETH = TestERC20(TestLib.WETH);
+    TestERC20 USDC = TestERC20(TestLib.USDC);
+
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
@@ -33,8 +40,8 @@ contract BTCALMTest is ALMTestBase {
         console.log("initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens();
-        init_hook(address(USDC), address(WETH), 6, 18);
+        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        init_hook(6, 18);
         // Setting up strategy params
         {
             vm.startPrank(deployer.addr);
@@ -114,7 +121,7 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            (, uint256 deltaWETH) = _swap(true, -int256(usdcToSwap), key);
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -134,7 +141,7 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            (, uint256 deltaWETH) = _swap(true, -int256(usdcToSwap), key);
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -155,7 +162,7 @@ contract BTCALMTest is ALMTestBase {
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_Out(usdcToGetFSwap);
+            (uint256 deltaUSDC, uint256 deltaWETH) = _swap(false, int256(usdcToGetFSwap), key);
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -196,7 +203,7 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            (, uint256 deltaWETH) = _swap(true, -int256(usdcToSwap), key);
 
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -217,7 +224,7 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
+            (uint256 deltaUSDC, uint256 deltaWETH) = _swap(true, int256(wethToGetFSwap), key);
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
@@ -236,7 +243,7 @@ contract BTCALMTest is ALMTestBase {
             deal(address(WETH), address(swapper.addr), wethToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
+            (uint256 deltaUSDC, uint256 deltaWETH) = _swap(false, -int256(wethToSwap), key);
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
