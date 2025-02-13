@@ -54,8 +54,17 @@ contract ETHALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        create_lending_adapter(
+            TestLib.eulerUSDCVault1,
+            TestLib.eulerWETHVault1,
+            TestLib.eulerUSDCVault2,
+            TestLib.eulerWETHVault2
+        );
+        create_oracle(TestLib.chainlink_feed_WETH);
         init_hook(6, 18);
-        // Setting up strategy params
+        assertEq(hook.tickLower(), 200459);
+        assertEq(hook.tickUpper(), 194459);
+        // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);

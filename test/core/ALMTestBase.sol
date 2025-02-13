@@ -52,7 +52,7 @@ abstract contract ALMTestBase is Test, Deployers {
     uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts. TODO: witch to set in production?
     SRebalanceAdapter rebalanceAdapter;
 
-    address constant TARGET_SWAP_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
+    address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
     address constant UNISWAP_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     TestERC20 TOKEN0;
@@ -77,6 +77,37 @@ abstract contract ALMTestBase is Test, Deployers {
 
     // --- Shortcuts  --- //
 
+    function create_accounts_and_tokens(
+        address _token0,
+        string memory _token0Name,
+        address _token1,
+        string memory _token1Name
+    ) public virtual {
+        TOKEN0 = TestERC20(_token0);
+        vm.label(_token0, _token0Name);
+        TOKEN1 = TestERC20(_token1);
+        vm.label(_token1, _token1Name);
+        token0Name = _token0Name;
+        token1Name = _token1Name;
+
+        deployer = TestAccountLib.createTestAccount("deployer");
+        alice = TestAccountLib.createTestAccount("alice");
+        migrationContract = TestAccountLib.createTestAccount("migrationContract");
+        swapper = TestAccountLib.createTestAccount("swapper");
+        marketMaker = TestAccountLib.createTestAccount("marketMaker");
+        zero = TestAccountLib.createTestAccount("zero");
+    }
+
+    function create_lending_adapter(address _vault0, address _vault1, address _flVault0, address _flVault1) internal {
+        vm.prank(deployer.addr);
+        lendingAdapter = new EulerLendingAdapter(_vault0, _vault1, _flVault0, _flVault1);
+    }
+
+    function create_oracle(address feed) internal {
+        vm.prank(deployer.addr);
+        oracle = new Oracle(feed);
+    }
+
     function init_hook(uint8 _token0Dec, uint8 _token1Dec) internal {
         vm.startPrank(deployer.addr);
 
@@ -96,15 +127,10 @@ abstract contract ALMTestBase is Test, Deployers {
         // MARK END
 
         // MARK: Deploying modules and setting up parameters
-        lendingAdapter = new EulerLendingAdapter(
-            0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9,
-            0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2,
-            0xcBC9B61177444A793B85442D3a953B90f6170b7D,
-            0x716bF454066a84F39A2F78b5707e79a9d64f1225
-        );
+        // @Notice: lendingAdapter should already be created
         positionManager = new PositionManager();
         swapAdapter = new UniswapV3SwapAdapter();
-        oracle = new Oracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
+        // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter();
 
         hook.setTokens(address(TOKEN0), address(TOKEN1), _token0Dec, _token1Dec);
@@ -180,36 +206,12 @@ abstract contract ALMTestBase is Test, Deployers {
             poolFee,
             initialSQRTPrice
         );
-
-        assertEq(hook.tickLower(), 200459);
-        assertEq(hook.tickUpper(), 194459);
         // MARK END
 
         // This is needed in order to simulate proper accounting
         deal(address(TOKEN0), address(manager), 1000 ether);
         deal(address(TOKEN1), address(manager), 1000 ether);
         vm.stopPrank();
-    }
-
-    function create_accounts_and_tokens(
-        address _token0,
-        string memory _token0Name,
-        address _token1,
-        string memory _token1Name
-    ) public virtual {
-        TOKEN0 = TestERC20(_token0);
-        vm.label(_token0, _token0Name);
-        TOKEN1 = TestERC20(_token1);
-        vm.label(_token1, _token1Name);
-        token0Name = _token0Name;
-        token1Name = _token1Name;
-
-        deployer = TestAccountLib.createTestAccount("deployer");
-        alice = TestAccountLib.createTestAccount("alice");
-        migrationContract = TestAccountLib.createTestAccount("migrationContract");
-        swapper = TestAccountLib.createTestAccount("swapper");
-        marketMaker = TestAccountLib.createTestAccount("marketMaker");
-        zero = TestAccountLib.createTestAccount("zero");
     }
 
     function approve_accounts() public virtual {

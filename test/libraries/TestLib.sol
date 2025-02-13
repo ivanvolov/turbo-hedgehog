@@ -7,7 +7,21 @@ import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
 
 library TestLib {
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address constant cbBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+
+    address constant eulerUSDCVault1 = 0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9;
+    address constant eulerUSDCVault2 = 0xcBC9B61177444A793B85442D3a953B90f6170b7D;
+    address constant eulerWETHVault1 = 0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2;
+    address constant eulerWETHVault2 = 0x716bF454066a84F39A2F78b5707e79a9d64f1225;
+    address constant eulerBTCVault1 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
+    address constant eulerBTCVault2 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
+
+    address constant uniswap_v3_cbBTC_USDC_POOL = 0x54E58c986818903d2d86dAfE03f5F5E6C2cA6710;
+    address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
+
+    address constant chainlink_feed_WETH = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    address constant chainlink_feed_BTC = 0x2665701293fCbEB223D11A08D826563EDcCE423A;
 
     function nearestUsableTick(int24 tick_, uint24 tickSpacing) public pure returns (int24 result) {
         result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);

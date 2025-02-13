@@ -49,6 +49,13 @@ contract ALMGeneralTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        create_lending_adapter(
+            TestLib.eulerUSDCVault1,
+            TestLib.eulerWETHVault1,
+            TestLib.eulerUSDCVault2,
+            TestLib.eulerWETHVault2
+        );
+        create_oracle(TestLib.chainlink_feed_WETH);
         init_hook(6, 18);
         approve_accounts();
     }

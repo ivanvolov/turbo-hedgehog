@@ -28,21 +28,32 @@ contract BTCALMTest is ALMTestBase {
     uint256 slippage = 15e14;
     uint256 fee = 5e14;
 
-    TestERC20 WETH = TestERC20(TestLib.WETH);
+    TestERC20 BTC = TestERC20(TestLib.cbBTC);
     TestERC20 USDC = TestERC20(TestLib.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
+        TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
+        console.log("initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
-        init_hook(6, 18);
-        // Setting up strategy params
+        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.cbBTC, "BTC");
+        create_lending_adapter(
+            TestLib.eulerUSDCVault1,
+            TestLib.eulerBTCVault1,
+            TestLib.eulerUSDCVault2,
+            TestLib.eulerBTCVault2
+        );
+        create_oracle(TestLib.chainlink_feed_BTC);
+        init_hook(6, 8);
+        assertEq(hook.tickLower(), 164372);
+        assertEq(hook.tickUpper(), 158372);
+        // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
@@ -60,7 +71,6 @@ contract BTCALMTest is ALMTestBase {
             rebalanceAdapter.setOraclePriceAtLastRebalance(2652e18);
             vm.stopPrank();
         }
-
         approve_accounts();
     }
 
@@ -70,9 +80,9 @@ contract BTCALMTest is ALMTestBase {
         assertEq(hook.TVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
-        deal(address(WETH), address(alice.addr), amountToDep);
-        vm.prank(alice.addr);
+        deal(address(BTC), address(alice.addr), amountToDep);
 
+        vm.prank(alice.addr);
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
         assertApproxEqAbs(shares, amountToDep, 1e1);
@@ -159,7 +169,7 @@ contract BTCALMTest is ALMTestBase {
             console.log("Swap Down Out");
             uint256 usdcToGetFSwap = 100000e6; //100k USDC
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-            deal(address(WETH), address(swapper.addr), wethToSwapQ);
+            deal(address(BTC), address(swapper.addr), wethToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = _swap(false, int256(usdcToGetFSwap), key);
@@ -191,7 +201,7 @@ contract BTCALMTest is ALMTestBase {
         // ** Deposit
         {
             uint256 _amountToDep = 200 ether;
-            deal(address(WETH), address(alice.addr), _amountToDep);
+            deal(address(BTC), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep);
         }
@@ -240,7 +250,7 @@ contract BTCALMTest is ALMTestBase {
         {
             console.log("Swap Down In");
             uint256 wethToSwap = 10e18;
-            deal(address(WETH), address(swapper.addr), wethToSwap);
+            deal(address(BTC), address(swapper.addr), wethToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = _swap(false, -int256(wethToSwap), key);
