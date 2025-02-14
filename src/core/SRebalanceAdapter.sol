@@ -132,14 +132,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
         lendingAdapter.flashLoanTwoTokens(token0, usdcToFl.unwrap(t0Dec), token1, ethToFl.unwrap(t1Dec), data);
 
-        // console.log("USDC balance before %s", token0BalanceUnwr());
-        // console.log("WETH balance before %s", token1BalanceUnwr());
+        console.log("USDC balance before %s", token0BalanceUnwr());
+        console.log("WETH balance before %s", token1BalanceUnwr());
 
         if (token0BalanceUnwr() != 0) lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
         if (token1BalanceUnwr() != 0) lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
 
-        // console.log("USDC balance after %s", token0BalanceUnwr());
-        // console.log("WETH balance after %s", token1BalanceUnwr());
+        console.log("USDC balance after %s", token0BalanceUnwr());
+        console.log("WETH balance after %s", token1BalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();

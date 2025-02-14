@@ -419,10 +419,14 @@ abstract contract ALMTestBase is Test, Deployers {
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
+
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
-        assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage); //TODO
-        assertApproxEqAbs(1e18 - ((hook.TVL() * 1e18) / preRebalanceTVL), slippage, slippage);
+        assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
+
+        uint256 tvlRatio = hook.TVL() > preRebalanceTVL ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18 : 1e18 - (hook.TVL() * 1e18 ) / preRebalanceTVL;
+
+        assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
@@ -457,10 +461,10 @@ abstract contract ALMTestBase is Test, Deployers {
             uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
             uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower());
+            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
             uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
 
-            uint256 preX = (liquidity * 1e27 * (priceUpper.sqrt() - prePrice.sqrt())) / (priceUpper * prePrice).sqrt();
+            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) / (priceUpper * prePrice / 1e18).sqrt();
             uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
                 (priceUpper * postPrice).sqrt();
 
@@ -472,8 +476,9 @@ abstract contract ALMTestBase is Test, Deployers {
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
 
-            console.log("delta X %s", deltaX);
-            console.log("delta Y %s", deltaY);
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
+
         }
 
         return (deltaX, deltaY);

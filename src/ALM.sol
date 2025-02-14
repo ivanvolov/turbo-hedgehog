@@ -55,6 +55,11 @@ contract ALM is BaseStrategyHook, ERC20 {
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
         console.log("Deposit");
 
+        console.log("CL %s", lendingAdapter.getCollateralLong());
+        console.log("CS %s", lendingAdapter.getCollateralShort());
+        console.log("DL %s", lendingAdapter.getBorrowedLong());
+        console.log("DS %s", lendingAdapter.getBorrowedShort());
+
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
@@ -70,6 +75,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
+
+        console.log("CL %s", lendingAdapter.getCollateralLong());
+        console.log("CS %s", lendingAdapter.getCollateralShort());
+        console.log("DL %s", lendingAdapter.getBorrowedLong());
+        console.log("DS %s", lendingAdapter.getBorrowedShort());
 
         console.log("DepositDone");
 
