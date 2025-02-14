@@ -575,8 +575,8 @@ contract ETHALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH * (1e18 - fee) / 1e18, deltaX, 42e13); //TODO: Y, error is here
-            assertApproxEqAbs(deltaUSDC, deltaY, 1e7); //TODO: Y, error is here
+            assertApproxEqAbs(deltaWETH * (1e18 - fee) / 1e18, deltaX, 42e13);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
         }
 
         // ** Make oracle change with swap price

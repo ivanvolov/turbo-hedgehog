@@ -419,7 +419,46 @@ abstract contract ALMTestBase is Test, Deployers {
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
+        assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
+        assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
+
+        uint256 tvlRatio = hook.TVL() > preRebalanceTVL ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18 : 1e18 - (hook.TVL() * 1e18 ) / preRebalanceTVL;
+
+        assertApproxEqAbs(tvlRatio, slippage, slippage);
+    }
+
+    function assertEqHookPositionStateDN(
+        uint256 preRebalanceTVL,
+        uint256 weight,
+        uint256 longLeverage,
+        uint256 shortLeverage,
+        uint256 slippage
+    ) public view {
+        console.log("preRebalance TVL %s", preRebalanceTVL);
+
+        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());
+
+        uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / oracle.price() / 1e18;
+
+        uint256 calcCS = (preRebalanceTVL * (1e18 - weight) * shortLeverage / 1e48);
+
+        uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
+            1e30;
+        uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
+            1e24;
+
+        uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort()
+            ? calcDS - _lendingAdapter.getBorrowedShort()
+            : _lendingAdapter.getBorrowedShort() - calcDS;
+
+        console.log("calcCL %s", calcCL);
+        console.log("calcCS %s", calcCS);
+        console.log("calcDL %s", calcDL);
+        console.log("calcDS %s", calcDS);
+
+        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
+        assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
         assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
