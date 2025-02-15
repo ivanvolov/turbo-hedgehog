@@ -113,7 +113,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(0, amountToDep, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        //assertApproxEqAbs(hook.TVL(), amountToDep * 1e12, 1e1); //TODO decimals???
+        //assertApproxEqAbs(hook.TVL(), amountToDep * 1e12, 1e1, "tvl"); //TODO decimals???
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -139,6 +139,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         assertEqBalanceStateZero(address(hook));
+        //TODO: add values assert here
         assertEqHookPositionStateDN(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
     }
 
@@ -162,7 +163,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
         assertEqBalanceState(alice.addr, 0, 382821699797);
         assertEqPositionState(0, 0, 0, 0);
-        assertApproxEqAbs(hook.TVL(), 0, 1e4);
+        assertApproxEqAbs(hook.TVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
     }
 
@@ -193,7 +194,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(127203067009042942864, 634095000000, 325455619970, 107675718430408932339); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1270696828650359021354068986114864); //done
-        assertApproxEqAbs(hook.TVL(), 383800144709162306510725, 1e1); //done
+        assertApproxEqAbs(hook.TVL(), 383800144709162306510725, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
@@ -214,7 +215,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(127191707510837842319, 634095000000, 325424629883, 107672330509891621649); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1270687346133515048399874137317894); //done
-        assertApproxEqAbs(hook.TVL(), 383800452193642003358830, 1e1); //done
+        assertApproxEqAbs(hook.TVL(), 383800452193642003358830, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
@@ -233,7 +234,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(142496520789896237819, 634095000000, 366762698992, 112236923943996757149); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1283463275764576390572897434700206); //done
-        assertApproxEqAbs(hook.TVL(), 383801489267867101098830, 1e1); //done
+        assertApproxEqAbs(hook.TVL(), 383801489267867101098830, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
@@ -255,7 +256,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(142490645304660059804, 634095000000, 366746987307, 112235171606294739144); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1283458371112389064549618491520823);
-        assertApproxEqAbs(hook.TVL(), 383801330958008119220340, 1e1);
+        assertApproxEqAbs(hook.TVL(), 383801330958008119220340, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
@@ -276,7 +277,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(127206841451532771596, 634095000000, 325455619970, 107676844141326951434); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1270699979424613322261916498096605); //done
-        assertApproxEqAbs(hook.TVL(), 383810339676982201803538, 1e1); //done
+        assertApproxEqAbs(hook.TVL(), 383810339676982201803538, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
@@ -299,7 +300,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(127191707510837842319, 634095000000, 325414317354, 107672330509891621649); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1270687346133515048399874137317894); //done
-        assertApproxEqAbs(hook.TVL(), 383810764722642003358830, 1e1); //done
+        assertApproxEqAbs(hook.TVL(), 383810764722642003358830, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
@@ -320,7 +321,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(142496520789896237819, 634095000000, 366752394374, 112236923943996757149); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1283460059010425431940345967281013); //done
-        assertApproxEqAbs(hook.TVL(), 383811793885867101098830, 1e1); //done
+        assertApproxEqAbs(hook.TVL(), 383811793885867101098830, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -344,7 +345,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(142494495849448009474, 634095000000, 366746987307, 112236320014389390800); //done
 
         assertEq(hook.sqrtPriceCurrent(), 1283458371112389064549618491520823);
-        assertApproxEqAbs(hook.TVL(), 383811731482140623276226, 1e1);
+        assertApproxEqAbs(hook.TVL(), 383811731482140623276226, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
@@ -364,7 +365,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
             assertEqBalanceStateZero(address(hook));
             assertEqPositionState(133540952742063250489, 634512119140, 345709572523, 108919957825396922361);
-            assertApproxEqAbs(hook.TVL(), 384517738407321332953535, 1e1);
+            assertApproxEqAbs(hook.TVL(), 384517738407321332953535, 1e1, "tvl");
         }
     }
 
@@ -377,9 +378,6 @@ contract DeltaNeutralALMTest is ALMTestBase {
 
         vm.stopPrank();
         test_deposit_rebalance();
-
-        // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
@@ -518,7 +516,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH * (1e18 - fee) / 1e18, deltaX, 42e13); 
+            assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 42e13);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
         }
 
@@ -540,147 +538,6 @@ contract DeltaNeutralALMTest is ALMTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0);
         }
-
-
-        //     // ** Swap Up In
-        //     {
-        //         console.log("Swap Up In");
-        //         uint256 usdcToSwap = 50000e6; // 50k USDC
-        //         deal(address(USDC), address(swapper.addr), usdcToSwap);
-
-        //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-
-        //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-        //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //             uint256(hook.liquidity()) / 1e12,
-        //             uint160(preSqrtPrice),
-        //             uint160(postSqrtPrice)
-        //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-        //         assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-        //     }
-
-        //     // ** Swap Down Out
-        //     {
-        //         console.log("Swap Down Out");
-        //         uint256 usdcToGetFSwap = 100000e6; //100k USDC
-        //         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        //         deal(address(WETH), address(swapper.addr), wethToSwapQ);
-
-        //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_Out(usdcToGetFSwap);
-
-        //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-        //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //             uint256(hook.liquidity()) / 1e12,
-        //             uint160(preSqrtPrice),
-        //             uint160(postSqrtPrice)
-        //         );
-        //         assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 3e14);
-        //         assertApproxEqAbs(deltaUSDC, deltaY, 1e6);
-        //     }
-
-        //     // ** Make oracle change with swap price
-        //     alignOraclesAndPools(hook.sqrtPriceCurrent());
-
-        //     // ** Withdraw
-        //     {
-        //         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //         vm.prank(alice.addr);
-        //         hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
-        //     }
-
-        //     // ** Make oracle change with swap price
-        //     alignOraclesAndPools(hook.sqrtPriceCurrent());
-
-        //     //** Deposit
-        //     {
-        //         uint256 _amountToDep = 200 * 3849 * 1e6;
-        //         deal(address(USDC), address(alice.addr), _amountToDep);
-        //         vm.prank(alice.addr);
-        //         hook.deposit(alice.addr, _amountToDep);
-        //     }
-
-        //     // ** Swap Up In
-        //     {
-        //         console.log("Swap Up In");
-        //         uint256 usdcToSwap = 10000e6; // 10k USDC
-        //         deal(address(USDC), address(swapper.addr), usdcToSwap);
-
-        //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-
-        //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-        //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //             uint256(hook.liquidity()) / 1e12,
-        //             uint160(preSqrtPrice),
-        //             uint160(postSqrtPrice)
-        //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-        //         assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-        //     }
-
-        //     // ** Swap Up out
-        //     {
-        //         console.log("Swap Up Out");
-        //         uint256 wethToGetFSwap = 5e18;
-        //         (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        //         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
-
-        //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
-        //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-        //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //             uint256(hook.liquidity()) / 1e12,
-        //             uint160(preSqrtPrice),
-        //             uint160(postSqrtPrice)
-        //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 3e14);
-        //         assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
-        //     }
-
-        //     // ** Swap Down In
-        //     {
-        //         console.log("Swap Down In");
-        //         uint256 wethToSwap = 10e18;
-        //         deal(address(WETH), address(swapper.addr), wethToSwap);
-
-        //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
-        //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-        //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //             uint256(hook.liquidity()) / 1e12,
-        //             uint160(preSqrtPrice),
-        //             uint160(postSqrtPrice)
-        //         );
-        //         assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 4e14);
-        //         assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
-        //     }
-
-        //     // ** Make oracle change with swap price
-        //     alignOraclesAndPools(hook.sqrtPriceCurrent());
-
-        //     // ** Rebalance
-        //     uint256 preRebalanceTVL = hook.TVL();
-        //     vm.prank(deployer.addr);
-        //     rebalanceAdapter.rebalance(slippage);
-        //     assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
-
-        //     // ** Make oracle change with swap price
-        //     alignOraclesAndPools(hook.sqrtPriceCurrent());
-
-        //     // ** Full withdraw
-        //     {
-        //         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //         vm.prank(alice.addr);
-        //         hook.withdraw(alice.addr, sharesToWithdraw, 0);
-        //     }
     }
 
     // ** Helpers

@@ -423,7 +423,9 @@ abstract contract ALMTestBase is Test, Deployers {
 
         assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
-        uint256 tvlRatio = hook.TVL() > preRebalanceTVL ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18 : 1e18 - (hook.TVL() * 1e18 ) / preRebalanceTVL;
+        uint256 tvlRatio = hook.TVL() > preRebalanceTVL
+            ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
+            : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
@@ -441,7 +443,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
         uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / oracle.price() / 1e18;
 
-        uint256 calcCS = (preRebalanceTVL * (1e18 - weight) * shortLeverage / 1e48);
+        uint256 calcCS = ((preRebalanceTVL * (1e18 - weight) * shortLeverage) / 1e48);
 
         uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
             1e30;
@@ -463,10 +465,17 @@ abstract contract ALMTestBase is Test, Deployers {
 
         assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
-        uint256 tvlRatio = hook.TVL() > preRebalanceTVL ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18 : 1e18 - (hook.TVL() * 1e18 ) / preRebalanceTVL;
+        uint256 tvlRatio = hook.TVL() > preRebalanceTVL
+            ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
+            : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
+
+    uint256 public assertEqPSThresholdCL = 1e5;
+    uint256 public assertEqPSThresholdCS = 1e1;
+    uint256 public assertEqPSThresholdDL = 1e1;
+    uint256 public assertEqPSThresholdDS = 1e5;
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
@@ -481,10 +490,10 @@ abstract contract ALMTestBase is Test, Deployers {
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
-        assertApproxEqAbs(_lendingAdapter.getCollateralLong(), CL, 1e5, "CL not equal");
-        assertApproxEqAbs(c18to6(_lendingAdapter.getCollateralShort()), CS, 1e1, "CS not equal");
-        assertApproxEqAbs(c18to6(_lendingAdapter.getBorrowedLong()), DL, 1e1, "DL not equal");
-        assertApproxEqAbs(_lendingAdapter.getBorrowedShort(), DS, 1e5, "DS not equal");
+        assertApproxEqAbs(_lendingAdapter.getCollateralLong(), CL, assertEqPSThresholdCL, "CL not equal");
+        assertApproxEqAbs(c18to6(_lendingAdapter.getCollateralShort()), CS, assertEqPSThresholdCS, "CS not equal");
+        assertApproxEqAbs(c18to6(_lendingAdapter.getBorrowedLong()), DL, assertEqPSThresholdDL, "DL not equal");
+        assertApproxEqAbs(_lendingAdapter.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
     }
 
     // --- Test math --- //
@@ -503,7 +512,8 @@ abstract contract ALMTestBase is Test, Deployers {
             //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
             uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
 
-            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) / (priceUpper * prePrice / 1e18).sqrt();
+            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
+                ((priceUpper * prePrice) / 1e18).sqrt();
             uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
                 (priceUpper * postPrice).sqrt();
 
@@ -517,7 +527,6 @@ abstract contract ALMTestBase is Test, Deployers {
 
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
-
         }
 
         return (deltaX, deltaY);
