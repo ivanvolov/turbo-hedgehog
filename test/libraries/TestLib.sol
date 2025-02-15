@@ -14,10 +14,10 @@ library TestLib {
     address constant eulerUSDCVault2 = 0xcBC9B61177444A793B85442D3a953B90f6170b7D;
     address constant eulerWETHVault1 = 0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2;
     address constant eulerWETHVault2 = 0x716bF454066a84F39A2F78b5707e79a9d64f1225;
-    address constant eulerBTCVault1 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
-    address constant eulerBTCVault2 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
+    address constant eulerBTCVault1 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
+    address constant eulerBTCVault2 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
 
-    address constant uniswap_v3_cbBTC_USDC_POOL = 0x54E58c986818903d2d86dAfE03f5F5E6C2cA6710;
+    address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
 
     address constant chainlink_feed_WETH = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;

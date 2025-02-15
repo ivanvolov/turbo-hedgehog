@@ -129,8 +129,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         // console.log("slippage %s", slippage);
 
-        (uint256 ethToFl, uint256 usdcToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
-        lendingAdapter.flashLoanTwoTokens(token0, usdcToFl.unwrap(t0Dec), token1, ethToFl.unwrap(t1Dec), data);
+        (uint256 token0ToFl, uint256 token1ToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
+        console.log("token0fl %s", token0ToFl.unwrap(t0Dec));
+        console.log("token1fl %s", token1ToFl.unwrap(t1Dec));
+        lendingAdapter.flashLoanTwoTokens(token0, token0ToFl.unwrap(t0Dec), token1, token1ToFl.unwrap(t1Dec), data);
 
         console.log("USDC balance before %s", token0BalanceUnwr());
         console.log("WETH balance before %s", token1BalanceUnwr());
@@ -217,6 +219,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
         console.log("(7)");
 
+        console.log("CL %s", (lendingAdapter.getCollateralLong()).unwrap(t1Dec));
+        console.log("CS %s", (lendingAdapter.getCollateralShort()).unwrap(t0Dec));
+
+        console.log("deltaDL %s", uint256(deltaDL).unwrap(t0Dec));
+        console.log("deltaDS %s", uint256(deltaDS).unwrap(t1Dec));
+
         if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
         console.log("(8)");
         if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS));
@@ -228,7 +236,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     // @Notice: this function is mainly for removing stack too deep error
     function _rebalanceCalculations(
         uint256 k
-    ) internal view returns (uint256 ethToFl, uint256 usdcToFl, bytes memory data) {
+    ) internal view returns (uint256 token0ToFl, uint256 token1ToFl, bytes memory data) {
         // console.log("> rebalanceCalculations");
         // console.log("k %s", k);
         uint256 targetDL;
@@ -283,12 +291,16 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             console.log("deltaDS", deltaDS);
         }
 
-        if (deltaCL > 0) ethToFl += uint256(deltaCL);
-        if (deltaCS > 0) usdcToFl += uint256(deltaCS);
-        if (deltaDL < 0) usdcToFl += uint256(-deltaDL);
-        if (deltaDS < 0) ethToFl += uint256(-deltaDS);
+        if (deltaCL > 0) token1ToFl += uint256(deltaCL);
+        if (deltaCS > 0) token0ToFl += uint256(deltaCS);
+        if (deltaDL < 0) token0ToFl += uint256(-deltaDL);
+        if (deltaDS < 0) token1ToFl += uint256(-deltaDS);
 
         console.log("k %s", k);
+
+        console.log("token0ToFl %s", token0ToFl);        
+        console.log("token1ToFl %s", token1ToFl);
+
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 

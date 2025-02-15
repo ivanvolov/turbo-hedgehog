@@ -141,11 +141,14 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     function borrowLong(uint256 amount) external onlyModule notPaused notShutdown {
         // console.log("borrowLong");
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
+
+        console.log("borrowLong %s", amount.unwrap(t0Dec));
+
         items[0] = IEVC.BatchItem({
             targetContract: address(vault0),
             onBehalfOfAccount: subAccount0,
             value: 0,
-            data: abi.encodeCall(IEulerVault.borrow, (amount.unwrap(t0Dec), msg.sender))
+            data: abi.encodeCall(IEulerVault.borrow, (1, msg.sender))
         });
         evc.batch(items);
     }
@@ -187,6 +190,9 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     function borrowShort(uint256 amount) external onlyModule notPaused notShutdown {
         // console.log("borrowShort");
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
+
+        console.log("borrowShort %s", amount.unwrap(t1Dec));
+
         items[0] = IEVC.BatchItem({
             targetContract: address(vault1),
             onBehalfOfAccount: subAccount1,
