@@ -30,7 +30,7 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
 // This test illustrates the pool with the reversed order of currencies. The main asset first and the stable next.
-contract ETHSALMTest is ALMTestBase {
+contract ETHRALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
 
