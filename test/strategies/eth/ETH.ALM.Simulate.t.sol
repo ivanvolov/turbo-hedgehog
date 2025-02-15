@@ -13,6 +13,7 @@ import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -23,14 +24,16 @@ import {ALMTestSimBase} from "@test/core/ALMTestSimBase.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ETHALMSimulationTest is ALMTestSimBase {
     using PoolIdLibrary for PoolId;
+    using SafeERC20 for IERC20;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    TestERC20 WETH = TestERC20(TestLib.WETH);
-    TestERC20 USDC = TestERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(TestLib.WETH);
+    IERC20 USDC = IERC20(TestLib.USDC);
 
     function setUp() public {
         clear_snapshots();
@@ -314,8 +317,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             balanceUSDCcontrol = amount / 1e8 - USDC.balanceOf(actor);
 
             // ** Clear up account
-            WETH.transfer(zero.addr, WETH.balanceOf(actor));
-            USDC.transfer(zero.addr, USDC.balanceOf(actor));
+            WETH.safeTransfer(zero.addr, WETH.balanceOf(actor));
+            USDC.safeTransfer(zero.addr, USDC.balanceOf(actor));
 
             delSharesControl = hookControl.balanceOf(actor) - delSharesControl;
         }
@@ -329,8 +332,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             balanceWETH = amount - WETH.balanceOf(actor);
 
             // ** Clear up account
-            WETH.transfer(zero.addr, WETH.balanceOf(actor));
-            USDC.transfer(zero.addr, USDC.balanceOf(actor));
+            WETH.safeTransfer(zero.addr, WETH.balanceOf(actor));
+            USDC.safeTransfer(zero.addr, USDC.balanceOf(actor));
 
             delShares = hook.balanceOf(actor) - delShares;
         }
@@ -366,8 +369,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             balanceUSDCcontrol = USDC.balanceOf(actor);
 
             // ** Clear up account
-            WETH.transfer(zero.addr, WETH.balanceOf(actor));
-            USDC.transfer(zero.addr, USDC.balanceOf(actor));
+            WETH.safeTransfer(zero.addr, WETH.balanceOf(actor));
+            USDC.safeTransfer(zero.addr, USDC.balanceOf(actor));
         }
 
         uint256 balanceWETH;
@@ -381,8 +384,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             balanceUSDC = USDC.balanceOf(actor);
 
             // ** Clear up account
-            WETH.transfer(zero.addr, WETH.balanceOf(actor));
-            USDC.transfer(zero.addr, USDC.balanceOf(actor));
+            WETH.safeTransfer(zero.addr, WETH.balanceOf(actor));
+            USDC.safeTransfer(zero.addr, USDC.balanceOf(actor));
         }
 
         save_withdraw_data(shares1, shares2, actor, balanceWETH, balanceUSDC, balanceWETHcontrol, balanceUSDCcontrol);

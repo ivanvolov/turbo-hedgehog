@@ -23,15 +23,20 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
+// ** libraries
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ETHALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
+    using SafeERC20 for IERC20;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
@@ -41,8 +46,8 @@ contract ETHALMTest is ALMTestBase {
     uint256 slippage = 15e14; //0.15%
     uint256 fee = 5e14; //0.05%
 
-    TestERC20 WETH = TestERC20(TestLib.WETH);
-    TestERC20 USDC = TestERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(TestLib.WETH);
+    IERC20 USDC = IERC20(TestLib.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -645,8 +650,8 @@ contract ETHALMTest is ALMTestBase {
             deal(address(WETH), migrationContract.addr, DSbefore);
 
             vm.startPrank(migrationContract.addr);
-            USDC.approve(address(lendingAdapter), type(uint256).max);
-            WETH.approve(address(lendingAdapter), type(uint256).max);
+            USDC.forceApprove(address(lendingAdapter), type(uint256).max);
+            WETH.forceApprove(address(lendingAdapter), type(uint256).max);
 
             lendingAdapter.repayLong(DLbefore);
             lendingAdapter.repayShort(DSbefore);
@@ -657,8 +662,8 @@ contract ETHALMTest is ALMTestBase {
 
         // ** Create the same position in the new lending adapter
         {
-            USDC.approve(address(newAdapter), type(uint256).max);
-            WETH.approve(address(newAdapter), type(uint256).max);
+            USDC.forceApprove(address(newAdapter), type(uint256).max);
+            WETH.forceApprove(address(newAdapter), type(uint256).max);
 
             newAdapter.addCollateralLong(CLbefore);
             newAdapter.addCollateralShort(CSbefore);
@@ -666,8 +671,8 @@ contract ETHALMTest is ALMTestBase {
             newAdapter.borrowShort(DSbefore);
 
             // @Notice: Here we repay our FL
-            USDC.transfer(zero.addr, DLbefore);
-            WETH.transfer(zero.addr, DSbefore);
+            USDC.safeTransfer(zero.addr, DLbefore);
+            WETH.safeTransfer(zero.addr, DSbefore);
             vm.stopPrank();
         }
 

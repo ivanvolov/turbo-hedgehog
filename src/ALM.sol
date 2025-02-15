@@ -17,6 +17,7 @@ import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
@@ -33,6 +34,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
     using TokenWrapperLib for uint256;
+    using SafeERC20 for IERC20;
 
     constructor(
         IPoolManager manager,
@@ -65,10 +67,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 TVL1 = TVL();
 
         if (isInvertAssets) {
-            IERC20(token0).transferFrom(msg.sender, address(this), amountIn);
+            IERC20(token0).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(token0Balance(true));
         } else {
-            IERC20(token1).transferFrom(msg.sender, address(this), amountIn);
+            IERC20(token1).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(token1Balance(true));
         }
 
@@ -136,10 +138,10 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         if (isInvertAssets) {
             if (token0Balance(false) < minAmountOut) revert NotMinOutWithdraw();
-            IERC20(token0).transfer(to, token0Balance(false));
+            IERC20(token0).safeTransfer(to, token0Balance(false));
         } else {
             if (token1Balance(false) < minAmountOut) revert NotMinOutWithdraw();
-            IERC20(token1).transfer(to, token1Balance(false));
+            IERC20(token1).safeTransfer(to, token1Balance(false));
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();

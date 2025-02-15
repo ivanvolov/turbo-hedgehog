@@ -10,6 +10,9 @@ import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
 
+// ** libraries
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
@@ -23,6 +26,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract PositionManager is Base, IPositionManager {
     using FixedPointMathLib for uint256;
     using TokenWrapperLib for uint256;
+    using SafeERC20 for IERC20;
 
     uint256 public k1 = 1e18 / 2;
     uint256 public k2 = 1e18 / 2;
@@ -41,7 +45,7 @@ contract PositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 delta0, uint256 delta1) external onlyALM notPaused notShutdown {
-        IERC20(token0).transferFrom(address(alm), address(this), delta0.unwrap(t0Dec));
+        IERC20(token0).safeTransferFrom(address(alm), address(this), delta0.unwrap(t0Dec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;
@@ -54,11 +58,11 @@ contract PositionManager is Base, IPositionManager {
 
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(delta1));
 
-        IERC20(token1).transfer(address(alm), delta1.unwrap(t1Dec));
+        IERC20(token1).safeTransfer(address(alm), delta1.unwrap(t1Dec));
     }
 
     function positionAdjustmentPriceDown(uint256 delta0, uint256 delta1) external onlyALM notPaused notShutdown {
-        IERC20(token1).transferFrom(address(alm), address(this), delta1.unwrap(t1Dec));
+        IERC20(token1).safeTransferFrom(address(alm), address(this), delta1.unwrap(t1Dec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Add k1 * dETH to long as collateral;
@@ -72,7 +76,7 @@ contract PositionManager is Base, IPositionManager {
         }
         lendingAdapter.borrowLong(delta0);
 
-        IERC20(token0).transfer(address(alm), delta0.unwrap(t0Dec));
+        IERC20(token0).safeTransfer(address(alm), delta0.unwrap(t0Dec));
     }
 
     function getSwapFees(bool, int256) external view returns (uint256) {

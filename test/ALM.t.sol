@@ -17,6 +17,7 @@ import {TestERC20} from "v4-core/test/TestERC20.sol";
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -29,15 +30,17 @@ import {Base} from "@src/core/base/Base.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
+    using SafeERC20 for IERC20;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    TestERC20 WETH = TestERC20(TestLib.WETH);
-    TestERC20 USDC = TestERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(TestLib.WETH);
+    IERC20 USDC = IERC20(TestLib.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -87,8 +90,8 @@ contract ALMGeneralTest is ALMTestBase {
         );
 
         // ** Approve to LA
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
         assertEqBalanceStateZero(testAddress);
         lendingAdapter.flashLoanSingle(address(USDC), 1000 * 1e6, "0x2");
@@ -121,8 +124,8 @@ contract ALMGeneralTest is ALMTestBase {
         );
 
         // ** Approve to LA
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
         assertEqBalanceStateZero(testAddress);
         lendingAdapter.flashLoanTwoTokens(address(USDC), 1000 * 1e6, address(WETH), 1 ether, "0x3");
@@ -159,8 +162,8 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** Approve to LA
         vm.startPrank(alice.addr);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
         // ** Add collateral
         uint256 wethToSupply = 1e18;
@@ -207,8 +210,8 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** Approve to LA
         vm.startPrank(alice.addr);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
         // ** Add collateral
         uint256 usdcToSupply = expectedPrice * 1e6;
@@ -256,8 +259,8 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** Approve to LA
         vm.startPrank(alice.addr);
-        WETH.approve(address(lendingAdapter), type(uint256).max);
-        USDC.approve(address(lendingAdapter), type(uint256).max);
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
         // ** Add Collateral for Long (WETH)
         uint256 wethToSupply = 1e18;

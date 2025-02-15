@@ -12,7 +12,11 @@ import {ISwapRouter} from "@forks/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// ** libraries
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
+    using SafeERC20 for IERC20;
     address public targetPool;
 
     address constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
@@ -20,8 +24,8 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     constructor() Base(msg.sender) {}
 
     function _postSetTokens() internal override {
-        IERC20(token0).approve(SWAP_ROUTER, type(uint256).max);
-        IERC20(token1).approve(SWAP_ROUTER, type(uint256).max);
+        IERC20(token0).forceApprove(SWAP_ROUTER, type(uint256).max);
+        IERC20(token1).forceApprove(SWAP_ROUTER, type(uint256).max);
     }
 
     function setTargetPool(address _targetPool) external onlyOwner {
@@ -29,7 +33,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     }
 
     function swapExactInput(address tokenIn, address tokenOut, uint256 amountIn) external onlyModule returns (uint256) {
-        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         return
             ISwapRouter(SWAP_ROUTER).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
@@ -50,7 +54,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
         address tokenOut,
         uint256 amountOut
     ) external onlyModule returns (uint256 amountIn) {
-        IERC20(tokenIn).transferFrom(msg.sender, address(this), IERC20(tokenIn).balanceOf(msg.sender));
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), IERC20(tokenIn).balanceOf(msg.sender));
         amountIn = ISwapRouter(SWAP_ROUTER).exactOutputSingle(
             ISwapRouter.ExactOutputSingleParams({
                 tokenIn: tokenIn,
@@ -65,6 +69,6 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
         );
 
         if (IERC20(tokenIn).balanceOf(address(this)) > 0)
-            IERC20(tokenIn).transfer(msg.sender, IERC20(tokenIn).balanceOf(address(this)));
+            IERC20(tokenIn).safeTransfer(msg.sender, IERC20(tokenIn).balanceOf(address(this)));
     }
 }

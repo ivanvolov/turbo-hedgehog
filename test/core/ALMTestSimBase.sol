@@ -13,11 +13,16 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {ALMTestBase} from "./ALMTestBase.sol";
 import {ALMControl} from "@test/core/ALMControl.sol";
 
+// ** libraries
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract ALMTestSimBase is ALMTestBase {
     using CurrencyLibrary for Currency;
+    using SafeERC20 for IERC20;
 
     ALMControl hookControl;
     PoolKey keyControl;
@@ -37,18 +42,18 @@ abstract contract ALMTestSimBase is ALMTestBase {
     function approve_accounts() public override {
         super.approve_accounts();
         vm.startPrank(swapper.addr);
-        TOKEN0.approve(address(hookControl), type(uint256).max);
-        TOKEN1.approve(address(hookControl), type(uint256).max);
+        TOKEN0.forceApprove(address(hookControl), type(uint256).max);
+        TOKEN1.forceApprove(address(hookControl), type(uint256).max);
         vm.stopPrank();
     }
 
     function approve_actor(address actor) internal {
         vm.startPrank(actor);
-        TOKEN0.approve(address(hook), type(uint256).max);
-        TOKEN1.approve(address(hook), type(uint256).max);
+        TOKEN0.forceApprove(address(hook), type(uint256).max);
+        TOKEN1.forceApprove(address(hook), type(uint256).max);
 
-        TOKEN0.approve(address(hookControl), type(uint256).max);
-        TOKEN1.approve(address(hookControl), type(uint256).max);
+        TOKEN0.forceApprove(address(hookControl), type(uint256).max);
+        TOKEN1.forceApprove(address(hookControl), type(uint256).max);
         vm.stopPrank();
     }
 

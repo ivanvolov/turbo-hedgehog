@@ -11,7 +11,12 @@ import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// ** libraries
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 abstract contract Base is IBase {
+    using SafeERC20 for IERC20;
+
     error OwnableUnauthorizedAccount(address account);
     error OwnableInvalidOwner(address owner);
     error NotALM();
@@ -79,8 +84,8 @@ abstract contract Base is IBase {
     }
 
     function _approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).approve(moduleOld, 0);
-        if (moduleNew != address(this)) IERC20(token).approve(moduleNew, amount);
+        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).forceApprove(moduleOld, 0);
+        if (moduleNew != address(this)) IERC20(token).forceApprove(moduleNew, amount);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
