@@ -63,11 +63,11 @@ contract ETHRALMTest is ALMTestBase {
             TestLib.eulerWETHVault2,
             TestLib.eulerUSDTVault2
         );
-        create_oracle(TestLib.chainlink_feed_WETH);
+        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(18, 6);
-        assertEq(hook.tickLower(), 200459);
-        assertEq(hook.tickUpper(), 194459);
+        assertEq(hook.tickLower(), 200458);
+        assertEq(hook.tickUpper(), 194458);
 
         // ** Setting up strategy params
         {

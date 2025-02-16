@@ -109,9 +109,9 @@ abstract contract ALMTestBase is Test, Deployers {
         lendingAdapter = new EulerLendingAdapter(_vault0, _vault1, _flVault0, _flVault1);
     }
 
-    function create_oracle(address feed) internal {
+    function create_oracle(address feed0, address feed1) internal {
         vm.prank(deployer.addr);
-        oracle = new Oracle(feed);
+        oracle = new Oracle(feed0, feed1);
     }
 
     function init_hook(uint8 _token0Dec, uint8 _token1Dec) internal {

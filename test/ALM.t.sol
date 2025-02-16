@@ -60,7 +60,7 @@ contract ALMGeneralTest is ALMTestBase {
             TestLib.eulerUSDCVault2,
             TestLib.eulerWETHVault2
         );
-        create_oracle(TestLib.chainlink_feed_WETH);
+        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         init_hook(6, 18);
         approve_accounts();
     }

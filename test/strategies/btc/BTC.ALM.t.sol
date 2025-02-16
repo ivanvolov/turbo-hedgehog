@@ -62,7 +62,7 @@ contract BTCALMTest is ALMTestBase {
             TestLib.eulerUSDCVault2,
             TestLib.eulerBTCVault2
         );
-        create_oracle(TestLib.chainlink_feed_BTC);
+        create_oracle(TestLib.chainlink_feed_BTC, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(6, 8);
         // assertEq(hook.tickLower(), 164372);
