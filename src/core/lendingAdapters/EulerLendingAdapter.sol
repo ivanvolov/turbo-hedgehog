@@ -148,7 +148,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
             targetContract: address(vault0),
             onBehalfOfAccount: subAccount0,
             value: 0,
-            data: abi.encodeCall(IEulerVault.borrow, (1, msg.sender))
+            data: abi.encodeCall(IEulerVault.borrow, (amount.unwrap(t0Dec), msg.sender))
         });
         evc.batch(items);
     }
