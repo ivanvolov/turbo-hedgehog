@@ -166,8 +166,7 @@ library ALMMathLib {
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
         console.log("price Input: %s", price);
-        console.log("ln : %s", PRBMathUD60x18.ln(price * 1e12));
-        return int24(int256(PRBMathUD60x18.ln(price * 1e12)) / 99995000333297); // todo price decimals wrap / unwrap
+        return int24(int256(PRBMathUD60x18.ln(price)) / 99995000333297);
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
