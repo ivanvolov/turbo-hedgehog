@@ -21,16 +21,16 @@ te:
 tel:
 	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_deposit\b"
 tb:
-	clear && forge test -vv --match-contract BTCALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract BTCALMTest --match-test "test_deposit\b"
 tbl:
-	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_deposit\b"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_deposit\b"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_deposit\b"
 
 tg:
-	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
+	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_price_conversation"
 tgl:
 	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_"
 

@@ -28,6 +28,8 @@ library TestLib {
 
     // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     address constant chainlink_feed_WETH = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    address constant chainlink_feed_USDC = 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
+    address constant chainlink_feed_USDT = 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D;
     address constant chainlink_feed_BTC = 0x2665701293fCbEB223D11A08D826563EDcCE423A;
 
     function nearestUsableTick(int24 tick_, uint24 tickSpacing) public pure returns (int24 result) {
