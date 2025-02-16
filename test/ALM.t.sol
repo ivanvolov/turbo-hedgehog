@@ -102,6 +102,46 @@ contract ALMGeneralTest is ALMTestBase {
         assertApproxEqAbs(price, lastRoundPrice, 3e18);
     }
 
+    function test_price_conversation_CBBTC_USDC() public pure {
+        uint256 lastRoundPriceCBBTC = (9746369236640 * 1e18) / 1e8;
+        uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
+        uint256 lastRoundPrice = (lastRoundPriceCBBTC * 1e18) / lastRoundPriceUSDC;
+
+        // ** HRprice to tick
+        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, true, 8 - 6));
+        assertApproxEqAbs(tick, -68825, 1e1);
+
+        // ** Human readable price (HRprice) to sqrtPrice
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(
+            ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, true, 8 - 6))
+        );
+        assertApproxEqAbs(sqrtPrice, 2537807876084519460502185164, 2e23);
+
+        // // ** HRprice from tick
+        // uint256 price = ALMMathLib.reversePriceTesting(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
+        // assertApproxEqAbs(price, lastRoundPrice, 1e1);
+    }
+
+    function test_price_conversation_WBTC_USDC() public pure {
+        uint256 lastRoundPriceWBTC = (9714669236640 * 1e18) / 1e8;
+        uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
+        uint256 lastRoundPrice = (lastRoundPriceWBTC * 1e18) / lastRoundPriceUSDC;
+
+        // ** HRprice to tick
+        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, false, 8 - 6));
+        assertApproxEqAbs(tick, 68796, 1e1);
+
+        // ** Human readable price (HRprice) to sqrtPrice
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(
+            ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, false, 8 - 6))
+        );
+        assertApproxEqAbs(sqrtPrice, 2470039624898724190709868109667, 23e20);
+
+        // // ** HRprice from tick
+        // uint256 price = ALMMathLib.reversePriceTesting(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
+        // assertApproxEqAbs(price, lastRoundPrice, 1e1);
+    }
+
     function test_hook_deployment_exploit_revert() public {
         vm.expectRevert();
         (key, ) = initPool(
