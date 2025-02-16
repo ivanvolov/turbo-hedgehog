@@ -67,6 +67,8 @@ abstract contract ALMTestBase is Test, Deployers {
     uint8 token0Dec;
     uint8 token1Dec;
 
+    bool invertedPool = true;
+
     ILendingAdapter lendingAdapter;
     IPositionManager positionManager;
     ISwapAdapter swapAdapter;
@@ -85,8 +87,10 @@ abstract contract ALMTestBase is Test, Deployers {
 
     function create_accounts_and_tokens(
         address _token0,
+        uint8 _token0Dec,
         string memory _token0Name,
         address _token1,
+        uint8 _token1Dec,
         string memory _token1Name
     ) public virtual {
         TOKEN0 = IERC20(_token0);
@@ -95,6 +99,8 @@ abstract contract ALMTestBase is Test, Deployers {
         vm.label(_token1, _token1Name);
         token0Name = _token0Name;
         token1Name = _token1Name;
+        token0Dec = _token0Dec;
+        token1Dec = _token1Dec;
 
         deployer = TestAccountLib.createTestAccount("deployer");
         alice = TestAccountLib.createTestAccount("alice");
@@ -114,9 +120,8 @@ abstract contract ALMTestBase is Test, Deployers {
         oracle = new Oracle(feed0, feed1);
     }
 
-    function init_hook(uint8 _token0Dec, uint8 _token1Dec) internal {
-        token0Dec = _token0Dec;
-        token1Dec = _token1Dec;
+    function init_hook(bool _invertedPool) internal {
+        invertedPool = _invertedPool;
         vm.startPrank(deployer.addr);
 
         // MARK: UniV4 hook deployment process
@@ -142,6 +147,7 @@ abstract contract ALMTestBase is Test, Deployers {
         rebalanceAdapter = new SRebalanceAdapter();
 
         hook.setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        hook.setIsInvertedPool(invertedPool);
         hook.setComponents(
             address(hook),
             address(lendingAdapter),
@@ -263,7 +269,10 @@ abstract contract ALMTestBase is Test, Deployers {
         return sqrtPriceX96;
     }
 
-    bool invertedPool = true;
+    function getV3PoolTick(address pool) public view returns (int24) {
+        (, int24 tick, , , , , ) = IUniswapV3Pool(pool).slot0();
+        return tick;
+    }
 
     function _sqrtPriceToOraclePrice(uint160 sqrtPriceX96) internal view returns (uint256) {
         return
@@ -382,6 +391,14 @@ abstract contract ALMTestBase is Test, Deployers {
 
     // --- Custom assertions --- //
 
+    uint256 public assertEqPSThresholdCL;
+    uint256 public assertEqPSThresholdCS;
+    uint256 public assertEqPSThresholdDL;
+    uint256 public assertEqPSThresholdDS;
+
+    uint8 public assertLDecimals;
+    uint8 public assertSDecimals;
+
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
     }
@@ -400,16 +417,6 @@ abstract contract ALMTestBase is Test, Deployers {
             string.concat("Balance ", token1Name, " not equal")
         );
     }
-
-    // function assertEqBalanceState(
-    //     address owner,
-    //     uint256 _balanceWETH,
-    //     uint256 _balanceUSDC,
-    //     uint256 _balanceETH
-    // ) public view {
-    //     assertEqBalanceState(owner, _balanceWETH, _balanceUSDC);
-    //     assertApproxEqAbs(owner.balance, _balanceETH, 1e1, "Balance ETH not equal");
-    // }
 
     function assertEqHookPositionState(
         uint256 preRebalanceTVL,
@@ -486,14 +493,6 @@ abstract contract ALMTestBase is Test, Deployers {
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
-
-    uint256 public assertEqPSThresholdCL = 1e5;
-    uint256 public assertEqPSThresholdCS = 1e1;
-    uint256 public assertEqPSThresholdDL = 1e1;
-    uint256 public assertEqPSThresholdDS = 1e5;
-
-    uint8 public assertLDecimals = 18;
-    uint8 public assertSDecimals = 6;
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests

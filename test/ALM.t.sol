@@ -49,11 +49,23 @@ contract ALMGeneralTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
+        // ** Setting up test environments params
+        {
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            assertEqPSThresholdCL = 1e5;
+            assertEqPSThresholdCS = 1e1;
+            assertEqPSThresholdDL = 1e1;
+            assertEqPSThresholdDS = 1e5;
+
+            assertLDecimals = 18;
+            assertSDecimals = 8;
+        }
+
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
             TestLib.eulerWETHVault1,
@@ -61,7 +73,7 @@ contract ALMGeneralTest is ALMTestBase {
             TestLib.eulerWETHVault2
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        init_hook(6, 18);
+        init_hook(true);
         approve_accounts();
     }
 

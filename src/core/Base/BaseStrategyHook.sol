@@ -126,7 +126,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 uint8(ALMMathLib.absSub(t0Dec, t1Dec))
             )
         );
-        console.log("_updateBoundaries tick: %s", uint256(int256(tick)));
+        console.log("_updateBoundaries tick:");
+        console.log(tick);
 
         // Here it's inverted due to currencies order
         tickUpper = tick - tickDelta;

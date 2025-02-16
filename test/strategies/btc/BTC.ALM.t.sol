@@ -40,7 +40,6 @@ contract BTCALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
-            invertedPool = true;
             assertEqPSThresholdCL = TW.wrap(1e1, 8);
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -55,7 +54,7 @@ contract BTCALMTest is ALMTestBase {
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.cbBTC, "BTC");
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
             TestLib.eulerBTCVault1,
@@ -64,7 +63,7 @@ contract BTCALMTest is ALMTestBase {
         );
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
-        init_hook(6, 8);
+        init_hook(true);
         // assertEq(hook.tickLower(), 164372);
         // assertEq(hook.tickUpper(), 158372);
 
@@ -72,7 +71,7 @@ contract BTCALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
-            hook.setIsInvertedPool(true);
+            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setFees(0);

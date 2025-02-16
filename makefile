@@ -17,9 +17,9 @@ tssl:
 	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
 
 te:
-	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_deposit\b"
+	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_deposit_rebalance\b"
 tel:
-	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_deposit\b"
+	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_deposit_rebalance\b"
 tb:
 	clear && forge test -vv --match-contract BTCALMTest --match-test "test_deposit\b"
 tbl:

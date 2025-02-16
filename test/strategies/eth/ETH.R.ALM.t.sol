@@ -41,7 +41,6 @@ contract ETHRALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDT_POOL;
-            invertedPool = false;
             assertEqPSThresholdCL = 1e1;
             assertEqPSThresholdCS = TW.wrap(1e1, 6);
             assertEqPSThresholdDL = TW.wrap(1e1, 6);
@@ -54,9 +53,10 @@ contract ETHRALMTest is ALMTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
+        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.WETH, "WETH", TestLib.USDT, "USDT");
+        create_accounts_and_tokens(TestLib.WETH, 18, "WETH", TestLib.USDT, 6, "USDT");
         create_lending_adapter(
             TestLib.eulerWETHVault1,
             TestLib.eulerUSDTVault1,
@@ -65,15 +65,15 @@ contract ETHRALMTest is ALMTestBase {
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
         console.log("oracle: initialPrice %s", oracle.price());
-        init_hook(18, 6);
-        assertEq(hook.tickLower(), 200458);
-        assertEq(hook.tickUpper(), 194458);
+        init_hook(false);
+        assertEq(hook.tickLower(), -194460);
+        assertEq(hook.tickUpper(), -200460);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
-            hook.setIsInvertedPool(false);
+            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setFees(0);

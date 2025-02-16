@@ -42,7 +42,6 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
-            invertedPool = true;
             assertEqPSThresholdCL = 1e5;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -54,7 +53,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
-        create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
             TestLib.eulerWETHVault1,
@@ -62,13 +61,13 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             TestLib.eulerWETHVault2
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        init_hook(6, 18);
+        init_hook(true);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
-            hook.setIsInvertedPool(true);
+            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(1e18);
             rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setFees(0);
