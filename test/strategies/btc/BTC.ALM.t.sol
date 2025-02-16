@@ -46,9 +46,9 @@ contract BTCALMTest is ALMTestBase {
             assertEqPSThresholdDS = TW.wrap(1e1, 8);
         }
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
-        console.log("initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("initialSQRTPrice %s", initialSQRTPrice);
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
+        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
+        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.cbBTC, "BTC");
@@ -59,9 +59,11 @@ contract BTCALMTest is ALMTestBase {
             TestLib.eulerBTCVault2
         );
         create_oracle(TestLib.chainlink_feed_BTC);
+        console.log("oracle: initialPrice %s", oracle.price());
         init_hook(6, 8);
         assertEq(hook.tickLower(), 164372);
         assertEq(hook.tickUpper(), 158372);
+
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);

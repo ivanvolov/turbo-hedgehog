@@ -5,29 +5,17 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 // ** v4 imports
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
+import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-
-// ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
 // This test illustrates the pool with the reversed order of currencies. The main asset first and the stable next.
 contract ETHRALMTest is ALMTestBase {
@@ -49,36 +37,44 @@ contract ETHRALMTest is ALMTestBase {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
+
         // ** Setting up test environments params
         {
-            // TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
-            // assertEqPSThresholdCL = TW.wrap(1e1, 8);
-            // assertEqPSThresholdCS = 1e1;
-            // assertEqPSThresholdDL = 1e1;
-            // assertEqPSThresholdDS = TW.wrap(1e1, 8);
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDT_POOL;
+            revertPool = false;
+            assertEqPSThresholdCL = 1e1;
+            assertEqPSThresholdCS = TW.wrap(1e1, 6);
+            assertEqPSThresholdDL = TW.wrap(1e1, 6);
+            assertEqPSThresholdDS = 1e1;
+
+            assertLDecimals = 6;
+            assertSDecimals = 18;
         }
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
-        console.log("initialSQRTPrice %s", initialSQRTPrice);
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
+        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
+        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.WETH, "WETH", 0xdAC17F958D2ee523a2206206994597C13D831ec7, "USDT");
+        create_accounts_and_tokens(TestLib.WETH, "WETH", TestLib.USDT, "USDT");
         create_lending_adapter(
-            TestLib.eulerUSDCVault1,
             TestLib.eulerWETHVault1,
-            TestLib.eulerUSDCVault2,
-            TestLib.eulerWETHVault2
+            TestLib.eulerUSDTVault1,
+            TestLib.eulerWETHVault2,
+            TestLib.eulerUSDTVault2
         );
         create_oracle(TestLib.chainlink_feed_WETH);
-        init_hook(6, 18);
+        console.log("oracle: initialPrice %s", oracle.price());
+        init_hook(18, 6);
         assertEq(hook.tickLower(), 200459);
         assertEq(hook.tickUpper(), 194459);
+
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(false);
+            hook.setIsInvertAssets(true);
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
-            rebalanceAdapter.setIsInvertAssets(false);
+            rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setFees(0);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
@@ -103,16 +99,15 @@ contract ETHRALMTest is ALMTestBase {
 
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
-
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
+
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
-
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(amountToDep, 0, 0, 0);
 
+        assertEqPositionState(0, amountToDep, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
         assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");

@@ -47,8 +47,9 @@ contract DeltaNeutralALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
-
+        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
+        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
+        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
@@ -59,6 +60,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
             TestLib.eulerWETHVault2
         );
         create_oracle(TestLib.chainlink_feed_WETH);
+        console.log("oracle: initialPrice %s", oracle.price());
         init_hook(6, 18);
         assertEq(hook.tickLower(), 200459);
         assertEq(hook.tickUpper(), 194459);

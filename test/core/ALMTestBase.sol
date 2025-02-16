@@ -29,7 +29,8 @@ import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {TickMath as TickMathV3} from "@forks/uniswap-v3/libraries/TickMath.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
@@ -41,11 +42,13 @@ import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {ISwapRouter} from "@forks/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
     using TestAccountLib for TestAccount;
     using CurrencyLibrary for Currency;
     using PRBMathUD60x18 for uint256;
+    using SafeERC20 for IERC20;
 
     uint160 initialSQRTPrice;
     ALM hook;
@@ -55,8 +58,8 @@ abstract contract ALMTestBase is Test, Deployers {
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
     address constant UNISWAP_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
-    TestERC20 TOKEN0;
-    TestERC20 TOKEN1;
+    IERC20 TOKEN0;
+    IERC20 TOKEN1;
 
     string token0Name;
     string token1Name;
@@ -83,9 +86,9 @@ abstract contract ALMTestBase is Test, Deployers {
         address _token1,
         string memory _token1Name
     ) public virtual {
-        TOKEN0 = TestERC20(_token0);
+        TOKEN0 = IERC20(_token0);
         vm.label(_token0, _token0Name);
-        TOKEN1 = TestERC20(_token1);
+        TOKEN1 = IERC20(_token1);
         vm.label(_token1, _token1Name);
         token0Name = _token0Name;
         token1Name = _token1Name;
@@ -216,18 +219,18 @@ abstract contract ALMTestBase is Test, Deployers {
 
     function approve_accounts() public virtual {
         vm.startPrank(alice.addr);
-        TOKEN0.approve(address(hook), type(uint256).max);
-        TOKEN1.approve(address(hook), type(uint256).max);
+        TOKEN0.forceApprove(address(hook), type(uint256).max);
+        TOKEN1.forceApprove(address(hook), type(uint256).max);
         vm.stopPrank();
 
         vm.startPrank(swapper.addr);
-        TOKEN0.approve(address(swapRouter), type(uint256).max);
-        TOKEN1.approve(address(swapRouter), type(uint256).max);
+        TOKEN0.forceApprove(address(swapRouter), type(uint256).max);
+        TOKEN1.forceApprove(address(swapRouter), type(uint256).max);
         vm.stopPrank();
 
         vm.startPrank(marketMaker.addr);
-        TOKEN0.approve(address(UNISWAP_V3_ROUTER), type(uint256).max);
-        TOKEN1.approve(address(UNISWAP_V3_ROUTER), type(uint256).max);
+        TOKEN0.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
+        TOKEN1.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
         vm.stopPrank();
     }
 
@@ -246,7 +249,7 @@ abstract contract ALMTestBase is Test, Deployers {
         return sqrtPriceToPrice(hook.sqrtPriceCurrent());
     }
 
-    function sqrtPriceToPrice(uint160 sqrtPriceX96) public view returns (uint256) {
+    function sqrtPriceToPrice(uint160 sqrtPriceX96) public pure returns (uint256) {
         return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96));
     }
 
@@ -255,8 +258,14 @@ abstract contract ALMTestBase is Test, Deployers {
         return sqrtPriceX96;
     }
 
+    bool revertPool = true;
+
     function getV3PoolPrice(address pool) public view returns (uint256) {
-        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(getV3PoolSQRTPrice(pool)));
+        if (revertPool) {
+            return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(getV3PoolSQRTPrice(pool)));
+        } else {
+            return ALMMathLib.getPriceFromSqrtPriceX96(getV3PoolSQRTPrice(pool));
+        }
     }
 
     function setV3PoolPrice(uint160 newSqrtPrice) public {
@@ -477,23 +486,46 @@ abstract contract ALMTestBase is Test, Deployers {
     uint256 public assertEqPSThresholdDL = 1e1;
     uint256 public assertEqPSThresholdDS = 1e5;
 
+    uint8 public assertLDecimals = 18;
+    uint8 public assertSDecimals = 6;
+
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
         try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
-            console.log("CL", _lendingAdapter.getCollateralLong());
-            console.log("CS", c18to6(_lendingAdapter.getCollateralShort()));
-            console.log("DL", c18to6(_lendingAdapter.getBorrowedLong()));
-            console.log("DS", _lendingAdapter.getBorrowedShort());
+            console.log("CL", TW.unwrap(_lendingAdapter.getCollateralLong(), assertLDecimals));
+            console.log("CS", TW.unwrap(_lendingAdapter.getCollateralShort(), assertSDecimals));
+            console.log("DL", TW.unwrap(_lendingAdapter.getBorrowedLong(), assertLDecimals));
+            console.log("DS", TW.unwrap(_lendingAdapter.getBorrowedShort(), assertSDecimals));
             _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
-        assertApproxEqAbs(_lendingAdapter.getCollateralLong(), CL, assertEqPSThresholdCL, "CL not equal");
-        assertApproxEqAbs(c18to6(_lendingAdapter.getCollateralShort()), CS, assertEqPSThresholdCS, "CS not equal");
-        assertApproxEqAbs(c18to6(_lendingAdapter.getBorrowedLong()), DL, assertEqPSThresholdDL, "DL not equal");
-        assertApproxEqAbs(_lendingAdapter.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
+        assertApproxEqAbs(
+            TW.unwrap(_lendingAdapter.getCollateralLong(), assertLDecimals),
+            CL,
+            assertEqPSThresholdCL,
+            "CL not equal"
+        );
+        assertApproxEqAbs(
+            TW.unwrap(_lendingAdapter.getCollateralShort(), assertSDecimals),
+            CS,
+            assertEqPSThresholdCS,
+            "CS not equal"
+        );
+        assertApproxEqAbs(
+            TW.unwrap(_lendingAdapter.getBorrowedLong(), assertLDecimals),
+            DL,
+            assertEqPSThresholdDL,
+            "DL not equal"
+        );
+        assertApproxEqAbs(
+            TW.unwrap(_lendingAdapter.getBorrowedShort(), assertSDecimals),
+            DS,
+            assertEqPSThresholdDS,
+            "DS not equal"
+        );
     }
 
     // --- Test math --- //

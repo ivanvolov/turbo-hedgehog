@@ -147,7 +147,7 @@ library ALMMathLib {
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        return VLP.div(uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+        return VLP.div(uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6; //TODO: I bet this is not universal
     }
 
     function getUserAmounts(
@@ -165,8 +165,8 @@ library ALMMathLib {
 
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
-        console.log("price Input %s", price);
-        return int24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
+        console.log("price Input: %s", price);
+        return int24(int256(PRBMathUD60x18.ln(price)) / 99995000333297);
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
@@ -180,7 +180,9 @@ library ALMMathLib {
     }
 
     function reversePrice(uint256 price) internal pure returns (uint256) {
-        return uint256(1e30).div(price); // TODO: this can change according to decimals and order
+        // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        // return uint256(1e30).div(price); // TODO: this can change according to decimals and order
+        return price.div(uint256(1e30));
     }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
