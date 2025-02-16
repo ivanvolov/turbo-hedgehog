@@ -56,7 +56,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
             assertEqPSThresholdDS = 1e5;
 
             assertLDecimals = 18;
-            assertSDecimals = 8;
+            assertSDecimals = 6;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -120,7 +120,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        //assertApproxEqAbs(shares, amountToDep * 1e12, 1e1); //TODO decimals???
+        //assertApproxEqAbs(shares, amountToDep * 1e12, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceStateZero(alice.addr);
@@ -128,7 +128,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(0, amountToDep, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        //assertApproxEqAbs(hook.TVL(), amountToDep * 1e12, 1e1, "tvl"); //TODO decimals???
+        //assertApproxEqAbs(hook.TVL(), amountToDep * 1e12, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
