@@ -61,7 +61,6 @@ contract ETHALMTest is ALMTestBase {
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
             assertEqPSThresholdDS = 1e5;
-
             assertLDecimals = 18;
             assertSDecimals = 8;
         }
@@ -128,13 +127,13 @@ contract ETHALMTest is ALMTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
+
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
-
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(amountToDep, 0, 0, 0);
 
+        assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
         assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");

@@ -61,20 +61,20 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
 
     // ** Flashloan
 
-    function flashLoanSingle(address token, uint256 amount, bytes calldata data) public onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(0), msg.sender, token, amount, data);
-        getVaultByToken(token).flashLoan(amount, _data);
+    function flashLoanSingle(address asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
+        bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
+        getVaultByToken(asset).flashLoan(amount, _data);
     }
 
     function flashLoanTwoTokens(
-        address token0,
+        address asset0,
         uint256 amount0,
-        address token1,
+        address asset1,
         uint256 amount1,
         bytes calldata data
     ) public onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(2), msg.sender, token0, amount0, token1, amount1, data);
-        getVaultByToken(token0).flashLoan(amount0, _data);
+        bytes memory _data = abi.encode(uint8(2), msg.sender, asset0, amount0, asset1, amount1, data);
+        getVaultByToken(asset0).flashLoan(amount0, _data);
     }
 
     function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
@@ -83,42 +83,42 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         uint8 loanType = abi.decode(_data, (uint8));
 
         if (loanType == 0) {
-            (, address sender, address token, uint256 amount, bytes memory data) = abi.decode(
+            (, address sender, address asset, uint256 amount, bytes memory data) = abi.decode(
                 _data,
                 (uint8, address, address, uint256, bytes)
             );
-            IERC20(token).safeTransfer(sender, amount);
-            IFlashLoanReceiver(sender).onFlashLoanSingle(token, amount, data);
-            IERC20(token).safeTransferFrom(sender, msg.sender, amount);
+            IERC20(asset).safeTransfer(sender, amount);
+            IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
+            IERC20(asset).safeTransferFrom(sender, msg.sender, amount);
         } else if (loanType == 2) {
             (
                 ,
                 address sender,
-                address token0,
+                address asset0,
                 uint256 amount0,
-                address token1,
+                address asset1,
                 uint256 amount1,
                 bytes memory data
             ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
 
-            bytes memory __data = abi.encode(uint8(1), sender, token0, amount0, token1, amount1, data);
-            getVaultByToken(token1).flashLoan(amount1, __data);
-            IERC20(token0).safeTransferFrom(sender, msg.sender, amount0);
+            bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
+            getVaultByToken(asset1).flashLoan(amount1, __data);
+            IERC20(asset0).safeTransferFrom(sender, msg.sender, amount0);
         } else if (loanType == 1) {
             (
                 ,
                 address sender,
-                address token0,
+                address asset0,
                 uint256 amount0,
-                address token1,
+                address asset1,
                 uint256 amount1,
                 bytes memory data
             ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
 
-            IERC20(token0).safeTransfer(sender, amount0);
-            IERC20(token1).safeTransfer(sender, amount1);
-            IFlashLoanReceiver(sender).onFlashLoanTwoTokens(token0, amount0, token1, amount1, data);
-            IERC20(token1).safeTransferFrom(sender, msg.sender, amount1);
+            IERC20(asset0).safeTransfer(sender, amount0);
+            IERC20(asset1).safeTransfer(sender, amount1);
+            IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
+            IERC20(asset1).safeTransferFrom(sender, msg.sender, amount1);
         } else revert("M2");
 
         return "";

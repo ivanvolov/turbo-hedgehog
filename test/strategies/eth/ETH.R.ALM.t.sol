@@ -45,9 +45,8 @@ contract ETHRALMTest is ALMTestBase {
             assertEqPSThresholdCS = TW.wrap(1e1, 6);
             assertEqPSThresholdDL = TW.wrap(1e1, 6);
             assertEqPSThresholdDS = 1e1;
-
-            assertLDecimals = 6;
-            assertSDecimals = 18;
+            assertLDecimals = 18;
+            assertSDecimals = 6;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -58,10 +57,10 @@ contract ETHRALMTest is ALMTestBase {
 
         create_accounts_and_tokens(TestLib.WETH, 18, "WETH", TestLib.USDT, 6, "USDT");
         create_lending_adapter(
-            TestLib.eulerWETHVault1,
             TestLib.eulerUSDTVault1,
-            TestLib.eulerWETHVault2,
-            TestLib.eulerUSDTVault2
+            TestLib.eulerWETHVault1,
+            TestLib.eulerUSDTVault2,
+            TestLib.eulerWETHVault2
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
         console.log("oracle: initialPrice %s", oracle.price());
@@ -72,10 +71,10 @@ contract ETHRALMTest is ALMTestBase {
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(true);
+            hook.setIsInvertAssets(false);
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
-            rebalanceAdapter.setIsInvertAssets(true);
+            rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setFees(0);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
@@ -108,7 +107,7 @@ contract ETHRALMTest is ALMTestBase {
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(0, amountToDep, 0, 0);
+        assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
         assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");

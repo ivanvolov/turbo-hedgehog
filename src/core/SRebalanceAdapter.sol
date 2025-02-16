@@ -44,7 +44,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public shortLeverage;
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
-    bool public invertAssets = false;
+    bool public isInvertAssets = false;
 
     constructor() Base(msg.sender) {}
 
@@ -89,7 +89,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
-        invertAssets = _isInvertAssets;
+        isInvertAssets = _isInvertAssets;
     }
 
     // ** Logic
@@ -260,7 +260,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             uint256 targetCL;
             uint256 targetCS;
             uint256 price = oracle.price();
-            if (invertAssets) {
+            if (isInvertAssets) {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
 
@@ -311,7 +311,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("post TVL %s", alm.TVL());
 
         uint256 VLP;
-        if (invertAssets) {
+        if (isInvertAssets) {
             VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
         } else {
             VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());

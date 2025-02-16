@@ -146,7 +146,7 @@ abstract contract ALMTestBase is Test, Deployers {
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter();
 
-        hook.setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        _setTokens(address(hook)); // * Notice: tokens should be set first in all contracts
         hook.setIsInvertedPool(invertedPool);
         hook.setComponents(
             address(hook),
@@ -157,7 +157,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(lendingAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        _setTokens(address(lendingAdapter));
         IBase(address(lendingAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -177,7 +177,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(swapAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        _setTokens(address(swapAdapter));
         IBase(address(swapAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -188,7 +188,7 @@ abstract contract ALMTestBase is Test, Deployers {
         );
         IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(TARGET_SWAP_POOL);
 
-        IBase(address(rebalanceAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec); // * Notice: tokens should be set first in all contracts
+        _setTokens(address(rebalanceAdapter));
         IBase(address(rebalanceAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -226,6 +226,11 @@ abstract contract ALMTestBase is Test, Deployers {
         deal(address(TOKEN0), address(manager), 1000 ether);
         deal(address(TOKEN1), address(manager), 1000 ether);
         vm.stopPrank();
+    }
+
+    function _setTokens(address module) internal {
+        if (invertedPool) IBase(module).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        else IBase(module).setTokens(address(TOKEN1), address(TOKEN0), token1Dec, token0Dec);
     }
 
     function approve_accounts() public virtual {
