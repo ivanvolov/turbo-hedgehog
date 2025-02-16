@@ -41,6 +41,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bool public shutdown = false;
     int24 public tickDelta = 3000;
     bool public isInvertAssets = false;
+    bool public isInvertedPool = true;
     uint256 public swapPriceThreshold;
     bytes32 public authorizedPool;
 
@@ -64,6 +65,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
         isInvertAssets = _isInvertAssets;
+    }
+
+    function setIsInvertedPool(bool _isInvertedPool) external onlyOwner {
+        isInvertedPool = _isInvertedPool;
     }
 
     function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {
@@ -114,7 +119,13 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function _updateBoundaries() internal {
         console.log("_updateBoundaries price: %s", oracle.price());
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oracle.price()));
+        int24 tick = ALMMathLib.getTickFromPrice(
+            ALMMathLib.getPoolPriceFromOraclePrice(
+                oracle.price(),
+                isInvertedPool,
+                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+            )
+        );
         console.log("_updateBoundaries tick: %s", uint256(int256(tick)));
 
         // Here it's inverted due to currencies order

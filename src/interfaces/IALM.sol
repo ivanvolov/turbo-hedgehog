@@ -38,6 +38,8 @@ interface IALM {
 
     function sqrtPriceCurrent() external view returns (uint160);
 
+    function isInvertedPool() external view returns (bool);
+
     function TVL() external view returns (uint256);
 
     function updateSqrtPrice(uint160 _sqrtPrice) external;

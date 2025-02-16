@@ -40,6 +40,7 @@ contract BTCALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
+            invertedPool = true;
             assertEqPSThresholdCL = TW.wrap(1e1, 8);
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -71,6 +72,7 @@ contract BTCALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
+            hook.setIsInvertedPool(true);
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setFees(0);

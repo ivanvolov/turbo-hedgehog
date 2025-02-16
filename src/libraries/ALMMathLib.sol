@@ -179,24 +179,24 @@ library ALMMathLib {
         // TODO: witch is better test: (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
     }
 
-    function reversePrice(uint256 price) internal pure returns (uint256) {
-        // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        return uint256(1e30).div(price); // TODO: this can change according to decimals and order
-        // return price.div(uint256(1e30));
-    }
-
-    function reversePriceTesting(
+    function getPoolPriceFromOraclePrice(
         uint256 price,
         bool reversedOrder,
         uint8 decimalsDelta
     ) internal pure returns (uint256) {
-        // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        uint256 ratio = 1e18 * (10 ** decimalsDelta);
-        if (reversedOrder) {
-            return ratio.div(price);
-        } else {
-            return price.div(ratio);
-        }
+        uint256 ratio = 1e18 * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        if (reversedOrder) return ratio.div(price);
+        return price.div(ratio);
+    }
+
+    function getOraclePriceFromPoolPrice(
+        uint256 price,
+        bool reversedOrder,
+        uint8 decimalsDelta
+    ) internal pure returns (uint256) {
+        uint256 ratio = 1e18 * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        if (reversedOrder) return ratio.div(price);
+        return ratio.mul(price);
     }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {

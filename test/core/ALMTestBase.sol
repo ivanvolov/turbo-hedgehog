@@ -64,6 +64,9 @@ abstract contract ALMTestBase is Test, Deployers {
     string token0Name;
     string token1Name;
 
+    uint8 token0Dec;
+    uint8 token1Dec;
+
     ILendingAdapter lendingAdapter;
     IPositionManager positionManager;
     ISwapAdapter swapAdapter;
@@ -112,6 +115,8 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function init_hook(uint8 _token0Dec, uint8 _token1Dec) internal {
+        token0Dec = _token0Dec;
+        token1Dec = _token1Dec;
         vm.startPrank(deployer.addr);
 
         // MARK: UniV4 hook deployment process
@@ -136,7 +141,7 @@ abstract contract ALMTestBase is Test, Deployers {
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter();
 
-        hook.setTokens(address(TOKEN0), address(TOKEN1), _token0Dec, _token1Dec);
+        hook.setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
         hook.setComponents(
             address(hook),
             address(lendingAdapter),
@@ -146,7 +151,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(lendingAdapter)).setTokens(address(TOKEN0), address(TOKEN1), _token0Dec, _token1Dec);
+        IBase(address(lendingAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
         IBase(address(lendingAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -156,7 +161,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(positionManager)).setTokens(address(TOKEN0), address(TOKEN1), _token0Dec, _token1Dec);
+        IBase(address(positionManager)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
         IBase(address(positionManager)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -166,7 +171,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(swapAdapter)).setTokens(address(TOKEN0), address(TOKEN1), _token0Dec, _token1Dec);
+        IBase(address(swapAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
         IBase(address(swapAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -177,7 +182,7 @@ abstract contract ALMTestBase is Test, Deployers {
         );
         IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(TARGET_SWAP_POOL);
 
-        IBase(address(rebalanceAdapter)).setTokens(address(TOKEN0), address(TOKEN1), _token0Dec, _token1Dec); // * Notice: tokens should be set first in all contracts
+        IBase(address(rebalanceAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec); // * Notice: tokens should be set first in all contracts
         IBase(address(rebalanceAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -238,7 +243,7 @@ abstract contract ALMTestBase is Test, Deployers {
         vm.mockCall(
             address(hook.oracle()),
             abi.encodeWithSelector(IOracle.price.selector),
-            abi.encode(sqrtPriceToPrice(newSqrtPrice))
+            abi.encode(_sqrtPriceToOraclePrice(newSqrtPrice))
         );
         setV3PoolPrice(newSqrtPrice);
     }
@@ -246,12 +251,11 @@ abstract contract ALMTestBase is Test, Deployers {
     // --- Uniswap V3 --- //
 
     function getHookPrice() public view returns (uint256) {
-        return sqrtPriceToPrice(hook.sqrtPriceCurrent());
+        return _sqrtPriceToOraclePrice(hook.sqrtPriceCurrent());
     }
 
-    //TODO: this
-    function sqrtPriceToPrice(uint160 sqrtPriceX96) public pure returns (uint256) {
-        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96));
+    function getV3PoolPrice(address pool) public view returns (uint256) {
+        return _sqrtPriceToOraclePrice(getV3PoolSQRTPrice(pool));
     }
 
     function getV3PoolSQRTPrice(address pool) public view returns (uint160) {
@@ -259,19 +263,19 @@ abstract contract ALMTestBase is Test, Deployers {
         return sqrtPriceX96;
     }
 
-    bool revertPool = true;
+    bool invertedPool = true;
 
-    //TODO: this
-    function getV3PoolPrice(address pool) public view returns (uint256) {
-        if (revertPool) {
-            return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(getV3PoolSQRTPrice(pool)));
-        } else {
-            return ALMMathLib.getPriceFromSqrtPriceX96(getV3PoolSQRTPrice(pool));
-        }
+    function _sqrtPriceToOraclePrice(uint160 sqrtPriceX96) internal view returns (uint256) {
+        return
+            ALMMathLib.getOraclePriceFromPoolPrice(
+                ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
+                invertedPool,
+                uint8(ALMMathLib.absSub(token0Dec, token1Dec))
+            );
     }
 
     function setV3PoolPrice(uint160 newSqrtPrice) public {
-        uint256 targetPrice = sqrtPriceToPrice(newSqrtPrice);
+        uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
 
         // ** Configuration parameters
         uint256 initialStepSize = 1000 ether; // Initial swap amount

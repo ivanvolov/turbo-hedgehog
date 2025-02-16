@@ -39,6 +39,19 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
+        // ** Setting up test environments params
+        {
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            invertedPool = true;
+            assertEqPSThresholdCL = 1e5;
+            assertEqPSThresholdCS = 1e1;
+            assertEqPSThresholdDL = 1e1;
+            assertEqPSThresholdDS = 1e5;
+
+            assertLDecimals = 18;
+            assertSDecimals = 8;
+        }
+
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
         create_accounts_and_tokens(TestLib.USDC, "USDC", TestLib.WETH, "WETH");
@@ -55,6 +68,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
+            hook.setIsInvertedPool(true);
             hook.setSwapPriceThreshold(1e18);
             rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setFees(0);

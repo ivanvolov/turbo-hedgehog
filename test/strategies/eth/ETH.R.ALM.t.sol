@@ -41,7 +41,7 @@ contract ETHRALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDT_POOL;
-            revertPool = false;
+            invertedPool = false;
             assertEqPSThresholdCL = 1e1;
             assertEqPSThresholdCS = TW.wrap(1e1, 6);
             assertEqPSThresholdDL = TW.wrap(1e1, 6);
@@ -73,6 +73,7 @@ contract ETHRALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
+            hook.setIsInvertedPool(false);
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(true);
             positionManager.setFees(0);

@@ -28,6 +28,7 @@ import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IBase} from "@src/interfaces/IBase.sol";
 
 /// @title ALM Control hook for simulation
 /// @author IVikkk
@@ -216,7 +217,7 @@ contract ALMControl is BaseHook, ERC20 {
     }
 
     function TVL(uint256 amount0, uint256 amount1) public view returns (uint256) {
-        return amount1 + (amount0 * 1e30) / _calcCurrentPrice(); //TODO: change to oracle
+        return amount1 + (amount0 * 1e30) / IBase(address(alm)).oracle().price();
     }
 
     function getUniswapPositionAmounts() public view returns (uint256, uint256) {
@@ -239,11 +240,6 @@ contract ALMControl is BaseHook, ERC20 {
 
     function getPositionInfo() public view returns (uint128, uint256, uint256) {
         return poolManager.getPositionInfo(key.toId(), address(this), tickUpper, tickLower, bytes32(""));
-    }
-
-    function _calcCurrentPrice() public view returns (uint256) {
-        (uint160 sqrtPriceX96, ) = getTick();
-        return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96));
     }
 
     // ** Helpers

@@ -147,16 +147,19 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         checkDeviations();
 
         // ** Update state
-        //sqrtPriceAtLastRebalance = alm.sqrtPriceCurrent();
         oraclePriceAtLastRebalance = oracle.price();
 
         sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
-            ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oraclePriceAtLastRebalance))
+            ALMMathLib.getTickFromPrice(
+                ALMMathLib.getPoolPriceFromOraclePrice(
+                    oraclePriceAtLastRebalance,
+                    alm.isInvertedPool(),
+                    uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+                )
+            )
         );
 
         alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
-
-        // console.log("sqrtPriceAtLastRebalance %s", sqrtPriceAtLastRebalance);
 
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
@@ -298,7 +301,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         console.log("k %s", k);
 
-        console.log("token0ToFl %s", token0ToFl);        
+        console.log("token0ToFl %s", token0ToFl);
         console.log("token1ToFl %s", token1ToFl);
 
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
@@ -317,14 +320,36 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("VLP %s", VLP);
         console.log("currentOraclePrice %s", oracle.price());
         console.log("priceAtLastRebalance      %s", oraclePriceAtLastRebalance);
-        console.log("priceUpper %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())));
-        console.log("priceLower %s", ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower())));
+        console.log(
+            "priceUpper %s",
+            ALMMathLib.getOraclePriceFromPoolPrice(
+                ALMMathLib.getPriceFromTick(alm.tickUpper()),
+                alm.isInvertedPool(),
+                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+            )
+        );
+        console.log(
+            "priceLower %s",
+            ALMMathLib.getOraclePriceFromPoolPrice(
+                ALMMathLib.getPriceFromTick(alm.tickLower()),
+                alm.isInvertedPool(),
+                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+            )
+        );
 
         uint256 liquidity = ALMMathLib.getL(
             VLP,
             oraclePriceAtLastRebalance,
-            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickUpper())),
-            ALMMathLib.reversePrice(ALMMathLib.getPriceFromTick(alm.tickLower()))
+            ALMMathLib.getOraclePriceFromPoolPrice(
+                ALMMathLib.getPriceFromTick(alm.tickUpper()),
+                alm.isInvertedPool(),
+                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+            ),
+            ALMMathLib.getOraclePriceFromPoolPrice(
+                ALMMathLib.getPriceFromTick(alm.tickLower()),
+                alm.isInvertedPool(),
+                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+            )
         );
         console.log("liquidity %s", liquidity);
         return uint128(liquidity);

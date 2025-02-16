@@ -54,6 +54,19 @@ contract ETHALMTest is ALMTestBase {
         vm.selectFork(mainnetFork);
         vm.rollFork(21817163);
 
+        // ** Setting up test environments params
+        {
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            invertedPool = true;
+            assertEqPSThresholdCL = 1e5;
+            assertEqPSThresholdCS = 1e1;
+            assertEqPSThresholdDL = 1e1;
+            assertEqPSThresholdDS = 1e5;
+
+            assertLDecimals = 18;
+            assertSDecimals = 8;
+        }
+
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
@@ -76,6 +89,7 @@ contract ETHALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
+            hook.setIsInvertedPool(true);
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setFees(0);
