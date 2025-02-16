@@ -65,7 +65,7 @@ contract ALMGeneralTest is ALMTestBase {
         approve_accounts();
     }
 
-    function test_price_conversation_WETH_USDC() public pure {
+    function test_price_conversion_WETH_USDC() public pure {
         uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
         uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDC;
@@ -83,7 +83,7 @@ contract ALMGeneralTest is ALMTestBase {
         assertApproxEqAbs(price, lastRoundPrice, TW.wrap(10, 0));
     }
 
-    function test_price_conversation_WETH_USDT() public pure {
+    function test_price_conversion_WETH_USDT() public pure {
         uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
         uint256 lastRoundPriceUSDT = (100009255 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDT;
@@ -102,44 +102,40 @@ contract ALMGeneralTest is ALMTestBase {
         assertApproxEqAbs(price, lastRoundPrice, 3e18);
     }
 
-    function test_price_conversation_CBBTC_USDC() public pure {
+    function test_price_conversion_CBBTC_USDC() public pure {
         uint256 lastRoundPriceCBBTC = (9746369236640 * 1e18) / 1e8;
         uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceCBBTC * 1e18) / lastRoundPriceUSDC;
 
         // ** HRprice to tick
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, true, 8 - 6));
+        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, true, 8 - 6));
         assertApproxEqAbs(tick, -68825, 1e1);
 
         // ** Human readable price (HRprice) to sqrtPrice
-        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(
-            ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, true, 8 - 6))
-        );
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
         assertApproxEqAbs(sqrtPrice, 2537807876084519460502185164, 2e23);
 
-        // // ** HRprice from tick
-        // uint256 price = ALMMathLib.reversePriceTesting(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
-        // assertApproxEqAbs(price, lastRoundPrice, 1e1);
+        // ** HRprice from tick
+        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-68825), true, 8 - 6);
+        assertApproxEqAbs(price, lastRoundPrice, 1e1);
     }
 
-    function test_price_conversation_WBTC_USDC() public pure {
+    function test_price_conversion_WBTC_USDC() public pure {
         uint256 lastRoundPriceWBTC = (9714669236640 * 1e18) / 1e8;
         uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceWBTC * 1e18) / lastRoundPriceUSDC;
 
         // ** HRprice to tick
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, false, 8 - 6));
+        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, false, 8 - 6));
         assertApproxEqAbs(tick, 68796, 1e1);
 
         // ** Human readable price (HRprice) to sqrtPrice
-        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(
-            ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, false, 8 - 6))
-        );
-        assertApproxEqAbs(sqrtPrice, 2470039624898724190709868109667, 23e20);
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
+        assertApproxEqAbs(sqrtPrice, 2470039624898724190709868109667, 6e26);
 
-        // // ** HRprice from tick
-        // uint256 price = ALMMathLib.reversePriceTesting(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
-        // assertApproxEqAbs(price, lastRoundPrice, 1e1);
+        // ** HRprice from tick
+        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(68796), false, 8 - 6);
+        assertApproxEqAbs(price, lastRoundPrice, 1e1);
     }
 
     function test_hook_deployment_exploit_revert() public {

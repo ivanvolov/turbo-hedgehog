@@ -30,7 +30,7 @@ tdl:
 	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_deposit\b"
 
 tg:
-	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_price_conversation"
+	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_price_conversion"
 tgl:
 	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_"
 
