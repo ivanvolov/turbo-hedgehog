@@ -26,7 +26,7 @@ contract BTCALMTest is ALMTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;
-    uint256 slippage = 15e14;
+    uint256 slippage = 50e14;
     uint256 fee = 5e14;
 
     TestERC20 BTC = TestERC20(TestLib.cbBTC);
@@ -79,7 +79,7 @@ contract BTCALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(shortLeverage);
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(2652e18);
+            rebalanceAdapter.setOraclePriceAtLastRebalance(98177692366400000000000);
             vm.stopPrank();
         }
         approve_accounts();

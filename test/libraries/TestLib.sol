@@ -18,8 +18,8 @@ library TestLib {
     address constant eulerUSDTVault2 = 0x313603FA690301b0CaeEf8069c065862f9162162;
     address constant eulerWETHVault1 = 0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2;
     address constant eulerWETHVault2 = 0x716bF454066a84F39A2F78b5707e79a9d64f1225;
-    address constant eulerBTCVault1 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
-    address constant eulerBTCVault2 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
+    address constant eulerBTCVault1 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
+    address constant eulerBTCVault2 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
     address constant uniswap_v3_cbBTC_USDC_POOL = 0x54E58c986818903d2d86dAfE03f5F5E6C2cA6710;
