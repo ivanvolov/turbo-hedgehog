@@ -100,18 +100,32 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 lastRoundPriceUSDT = (100009255 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDT;
 
+        int24 targetTick = -197309;
+        int24 targetLowerTick = targetTick - 3000;
+        int24 targetUpperTick = targetTick + 3000;
+
         // ** HRprice to tick
         int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, false, 18 - 6));
-        assertApproxEqAbs(tick, -197309, 1e1);
+        assertApproxEqAbs(tick, targetTick, 1e1);
 
         // ** Human readable price (HRprice) to sqrtPrice
         uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
         assertApproxEqAbs(sqrtPrice, 4117174797023293996373463, 23e20);
 
         // ** Tick to HRprice
-        console.log(ALMMathLib.getPriceFromTick(-197309));
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
+        console.log(ALMMathLib.getPriceFromTick(targetTick));
+        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetTick), false, 18 - 6);
+        uint256 priceUpper = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetUpperTick), false, 18 - 6);
+        uint256 priceLower = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetLowerTick), false, 18 - 6);
         assertApproxEqAbs(price, lastRoundPrice, 3e18);
+
+        console.log("price %s", price);
+        console.log("priceUpper %s", priceUpper);
+        console.log("priceLower %s", priceLower);
+
+        uint128 liquidity = uint128(ALMMathLib.getL(ALMMathLib.getVLP(100e18 * price / 1e18, 5e17, 3e18, 2e18), price, priceUpper, priceLower));
+        console.log("liquidity %s", liquidity);
+        assertApproxEqAbs(liquidity, 46634530208923600, 1e8);
     }
 
     function test_price_conversion_CBBTC_USDC() public pure {
@@ -119,17 +133,35 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceCBBTC * 1e18) / lastRoundPriceUSDC;
 
+        int24 targetTick = -68825;
+        int24 targetLowerTick = targetTick + 3000;
+        int24 targetUpperTick = targetTick - 3000;
+
         // ** HRprice to tick
         int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, true, 8 - 6));
-        assertApproxEqAbs(tick, -68825, 1e1);
+        assertApproxEqAbs(tick, targetTick, 1e1);
 
         // ** Human readable price (HRprice) to sqrtPrice
         uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
         assertApproxEqAbs(sqrtPrice, 2537807876084519460502185164, 2e23);
 
         // ** HRprice from tick
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-68825), true, 8 - 6);
+        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetTick), true, 8 - 6);
+        uint256 priceUpper = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetUpperTick), true, 8 - 6);
+        uint256 priceLower = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetLowerTick), true, 8 - 6);
         assertApproxEqAbs(price, lastRoundPrice, 1e18);
+
+        console.log("price %s", price);
+        console.log("priceUpper %s", priceUpper);
+        console.log("priceLower %s", priceLower);
+
+        uint256 VLP = ALMMathLib.getVLP(100e18 * price / 1e18, 5e17, 3e18, 2e18);
+        console.log("VLP %s", VLP);
+
+        uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
+        console.log("liquidity %s", liquidity);
+
+        assertApproxEqAbs(liquidity, 280185113050771000, 1e8);
     }
 
     function test_price_conversion_WBTC_USDC() public pure {
@@ -137,17 +169,36 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
         uint256 lastRoundPrice = (lastRoundPriceWBTC * 1e18) / lastRoundPriceUSDC;
 
+        int24 targetTick = 68796;
+        int24 targetLowerTick = targetTick - 3000;
+        int24 targetUpperTick = targetTick + 3000;
+
         // ** HRprice to tick
         int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, false, 8 - 6));
-        assertApproxEqAbs(tick, 68796, 1e1);
+
+        assertApproxEqAbs(tick, targetTick, 1e1);
 
         // ** Human readable price (HRprice) to sqrtPrice
         uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
         assertApproxEqAbs(sqrtPrice, 2470039624898724190709868109667, 6e26);
 
         // ** HRprice from tick
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(68796), false, 8 - 6);
+        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetTick), false, 8 - 6);
+        uint256 priceUpper = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetUpperTick), false, 8 - 6);
+        uint256 priceLower = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetLowerTick), false, 8 - 6);
         assertApproxEqAbs(price, lastRoundPrice, 35e18);
+
+        console.log("price %s", price);
+        console.log("priceUpper %s", priceUpper);
+        console.log("priceLower %s", priceLower);
+
+        uint256 VLP = ALMMathLib.getVLP(100e18 * price / 1e18, 5e17, 3e18, 2e18);
+        console.log("VLP %s", VLP);
+
+        uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
+        console.log("liquidity %s", liquidity);
+
+        assertApproxEqAbs(liquidity, 279779159321772000, 1e8);
     }
 
     function test_hook_deployment_exploit_revert() public {

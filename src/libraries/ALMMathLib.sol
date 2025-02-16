@@ -147,6 +147,13 @@ library ALMMathLib {
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
+
+        console.log("a %s", uint256(2e18).mul(price.sqrt()));
+        console.log("b %s", priceLower.sqrt());
+        console.log("c %s", price.div(priceUpper.sqrt()));
+        console.log("d %s", uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()));
+        console.log("VLP %s", VLP);
+
         return VLP.div(uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6; //TODO: I bet this is not universal
     }
 

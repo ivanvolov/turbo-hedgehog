@@ -108,7 +108,7 @@ contract ETHRALMTest is ALMTestBase {
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(0, amountToDep, 0, 0);
+        assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
         assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
