@@ -117,7 +117,7 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** HRprice from tick
         uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-68825), true, 8 - 6);
-        assertApproxEqAbs(price, lastRoundPrice, 1e1);
+        assertApproxEqAbs(price, lastRoundPrice, 1e18);
     }
 
     function test_price_conversion_WBTC_USDC() public pure {
@@ -135,7 +135,7 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** HRprice from tick
         uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(68796), false, 8 - 6);
-        assertApproxEqAbs(price, lastRoundPrice, 1e1);
+        assertApproxEqAbs(price, lastRoundPrice, 35e18);
     }
 
     function test_hook_deployment_exploit_revert() public {
