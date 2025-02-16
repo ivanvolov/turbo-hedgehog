@@ -22,7 +22,7 @@ library TestLib {
     address constant eulerBTCVault2 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
-    address constant uniswap_v3_cbBTC_USDC_POOL = 0x54E58c986818903d2d86dAfE03f5F5E6C2cA6710;
+    address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
 
