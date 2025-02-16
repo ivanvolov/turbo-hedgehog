@@ -166,7 +166,7 @@ library ALMMathLib {
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
         console.log("price Input: %s", price);
-        return int24(int256(PRBMathUD60x18.ln(price)) / 99995000333297);
+        return int24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
@@ -181,8 +181,22 @@ library ALMMathLib {
 
     function reversePrice(uint256 price) internal pure returns (uint256) {
         // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        // return uint256(1e30).div(price); // TODO: this can change according to decimals and order
-        return price.div(uint256(1e30));
+        return uint256(1e30).div(price); // TODO: this can change according to decimals and order
+        // return price.div(uint256(1e30));
+    }
+
+    function reversePriceTesting(
+        uint256 price,
+        bool reversedOrder,
+        uint8 decimalsDelta
+    ) internal pure returns (uint256) {
+        // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        uint256 ratio = 1e18 * (10 ** decimalsDelta);
+        if (reversedOrder) {
+            return ratio.div(price);
+        } else {
+            return price.div(ratio);
+        }
     }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {

@@ -249,6 +249,7 @@ abstract contract ALMTestBase is Test, Deployers {
         return sqrtPriceToPrice(hook.sqrtPriceCurrent());
     }
 
+    //TODO: this
     function sqrtPriceToPrice(uint160 sqrtPriceX96) public pure returns (uint256) {
         return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96));
     }
@@ -260,6 +261,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
     bool revertPool = true;
 
+    //TODO: this
     function getV3PoolPrice(address pool) public view returns (uint256) {
         if (revertPool) {
             return ALMMathLib.reversePrice(ALMMathLib.getPriceFromSqrtPriceX96(getV3PoolSQRTPrice(pool)));

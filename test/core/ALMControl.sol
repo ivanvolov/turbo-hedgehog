@@ -216,7 +216,7 @@ contract ALMControl is BaseHook, ERC20 {
     }
 
     function TVL(uint256 amount0, uint256 amount1) public view returns (uint256) {
-        return amount1 + (amount0 * 1e30) / _calcCurrentPrice();
+        return amount1 + (amount0 * 1e30) / _calcCurrentPrice(); //TODO: change to oracle
     }
 
     function getUniswapPositionAmounts() public view returns (uint256, uint256) {

@@ -18,6 +18,8 @@ import {TestERC20} from "v4-core/test/TestERC20.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -61,6 +63,46 @@ contract ALMGeneralTest is ALMTestBase {
         create_oracle(TestLib.chainlink_feed_WETH);
         init_hook(6, 18);
         approve_accounts();
+    }
+
+    function test_price_conversation_WETH_USDC() public pure {
+        uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
+        uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
+        uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDC;
+
+        // ** HRprice to tick
+        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, true, 18 - 6));
+        assertApproxEqAbs(tick, 197293, 1e2);
+
+        // ** Human readable price (HRprice) to sqrtPrice
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(
+            ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, true, 18 - 6))
+        );
+        assertApproxEqAbs(sqrtPrice, 1523499582928038240140392754132197, 2e30);
+
+        // ** HRprice from tick
+        uint256 price = ALMMathLib.reversePriceTesting(ALMMathLib.getPriceFromTick(197293), true, 18 - 6);
+        assertApproxEqAbs(price, lastRoundPrice, TW.wrap(10, 0));
+    }
+
+    function test_price_conversation_WETH_USDT() public pure {
+        uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
+        uint256 lastRoundPriceUSDT = (100009255 * 1e18) / 1e8;
+        uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDT;
+
+        // ** HRprice to tick
+        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, false, 18 - 6));
+        assertApproxEqAbs(tick, -197309, 1e1);
+
+        // ** Human readable price (HRprice) to sqrtPrice
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(
+            ALMMathLib.getTickFromPrice(ALMMathLib.reversePriceTesting(lastRoundPrice, false, 18 - 6))
+        );
+        assertApproxEqAbs(sqrtPrice, 4117174797023293996373463, 23e20);
+
+        // // ** HRprice from tick
+        // uint256 price = ALMMathLib.reversePriceTesting(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
+        // assertApproxEqAbs(price, lastRoundPrice, 1e1);
     }
 
     function test_hook_deployment_exploit_revert() public {

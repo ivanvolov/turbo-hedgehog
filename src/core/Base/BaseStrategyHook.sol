@@ -113,9 +113,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     function _updateBoundaries() internal {
-        console.log("price: %s", oracle.price());
+        console.log("_updateBoundaries price: %s", oracle.price());
         int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.reversePrice(oracle.price()));
-        console.log("tick: %s", uint256(int256(tick)));
+        console.log("_updateBoundaries tick: %s", uint256(int256(tick)));
 
         // Here it's inverted due to currencies order
         tickUpper = tick - tickDelta;
