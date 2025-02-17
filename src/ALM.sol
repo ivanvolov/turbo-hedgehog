@@ -224,58 +224,58 @@ contract ALM is BaseStrategyHook, ERC20 {
         refreshReserves();
 
         if (params.zeroForOne) {
-            // If user is selling Token 0 and buying Token 1 (USDC => WETH)
-            console.log("> USDC => WETH");
+            // If user is selling Token 0 and buying Token 1 (BASE => QUOTE)
+            console.log("> BASE => QUOTE");
             (
                 BeforeSwapDelta beforeSwapDelta,
-                uint256 wethOut,
-                uint256 usdcIn,
+                uint256 token0In,
+                uint256 token1Out,
                 uint160 sqrtPriceNext
             ) = getZeroForOneDeltas(params.amountSpecified);
-            // console.log("> wethOut", wethOut);
-            // console.log("> usdcIn", usdcIn);
 
             checkSwapDeviations(sqrtPriceNext);
 
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
-            key.currency0.take(poolManager, address(this), usdcIn, false);
-
-            positionManager.positionAdjustmentPriceUp(usdcIn.wrap(bDec), wethOut.wrap(qDec)); //TODO: This should be ordered I believe
+            key.currency0.take(poolManager, address(this), token0In, false);
+            if (isInvertedPool) positionManager.positionAdjustmentPriceUp(token0In.wrap(bDec), token1Out.wrap(qDec));
+            else positionManager.positionAdjustmentPriceDown(token1Out.wrap(bDec), token0In.wrap(qDec));
+            console.log("Position adjusted");
 
             // We also need to create a debit so user could take it back from the PM.
-            key.currency1.settle(poolManager, address(this), wethOut, false);
+            key.currency1.settle(poolManager, address(this), token1Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
+            console.log("settled");
             return beforeSwapDelta;
         } else {
-            // If user is selling Token 1 and buying Token 0 (WETH => USDC)
-            console.log("> WETH => USDC");
+            // If user is selling Token 1 and buying Token 0 (QUOTE => BASE)
+            console.log("> QUOTE => BASE");
             (
                 BeforeSwapDelta beforeSwapDelta,
-                uint256 wethIn,
-                uint256 usdcOut,
+                uint256 token0Out,
+                uint256 token1In,
                 uint160 sqrtPriceNext
             ) = getOneForZeroDeltas(params.amountSpecified);
-            // console.log("> wethIn", wethIn);
-            // console.log("> usdcOut", usdcOut);
-            key.currency1.take(poolManager, address(this), wethIn, false);
+            key.currency1.take(poolManager, address(this), token1In, false);
 
             checkSwapDeviations(sqrtPriceNext);
+            if (isInvertedPool) positionManager.positionAdjustmentPriceDown(token0Out.wrap(bDec), token1In.wrap(qDec));
+            else positionManager.positionAdjustmentPriceUp(token1In.wrap(bDec), token0Out.wrap(qDec));
+            console.log("Position adjusted");
 
-            positionManager.positionAdjustmentPriceDown(usdcOut.wrap(bDec), wethIn.wrap(qDec)); //TODO: This should be ordered I believe
-
-            key.currency0.settle(poolManager, address(this), usdcOut, false);
+            key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
+            console.log("settled");
             return beforeSwapDelta;
         }
     }
 
     function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256, uint256) {
         if (zeroForOne) {
-            (, uint256 wethOut, uint256 usdcIn, ) = getZeroForOneDeltas(amountSpecified);
+            (, uint256 usdcIn, uint256 wethOut, ) = getZeroForOneDeltas(amountSpecified);
             return (usdcIn, wethOut);
         } else {
-            (, uint256 wethIn, uint256 usdcOut, ) = getOneForZeroDeltas(amountSpecified);
+            (, uint256 usdcOut, uint256 wethIn, ) = getOneForZeroDeltas(amountSpecified);
             return (usdcOut, wethIn);
         }
     }

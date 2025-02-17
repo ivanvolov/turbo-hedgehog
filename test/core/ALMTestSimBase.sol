@@ -42,18 +42,18 @@ abstract contract ALMTestSimBase is ALMTestBase {
     function approve_accounts() public override {
         super.approve_accounts();
         vm.startPrank(swapper.addr);
-        TOKEN0.forceApprove(address(hookControl), type(uint256).max);
-        TOKEN1.forceApprove(address(hookControl), type(uint256).max);
+        BASE.forceApprove(address(hookControl), type(uint256).max);
+        QUOTE.forceApprove(address(hookControl), type(uint256).max);
         vm.stopPrank();
     }
 
     function approve_actor(address actor) internal {
         vm.startPrank(actor);
-        TOKEN0.forceApprove(address(hook), type(uint256).max);
-        TOKEN1.forceApprove(address(hook), type(uint256).max);
+        BASE.forceApprove(address(hookControl), type(uint256).max);
+        QUOTE.forceApprove(address(hook), type(uint256).max);
 
-        TOKEN0.forceApprove(address(hookControl), type(uint256).max);
-        TOKEN1.forceApprove(address(hookControl), type(uint256).max);
+        BASE.forceApprove(address(hookControl), type(uint256).max);
+        QUOTE.forceApprove(address(hookControl), type(uint256).max);
         vm.stopPrank();
     }
 
@@ -66,10 +66,11 @@ abstract contract ALMTestSimBase is ALMTestBase {
         hookControl = ALMControl(hookAddress);
         vm.label(address(hookControl), "hookControl");
 
+        (address _token0, address _token1) = getTokensInOrder();
         // ** Pool deployment
         (keyControl, ) = initPool(
-            Currency.wrap(address(TOKEN0)),
-            Currency.wrap(address(TOKEN1)),
+            Currency.wrap(_token0),
+            Currency.wrap(_token1),
             hookControl,
             poolFee,
             initialSQRTPrice

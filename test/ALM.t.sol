@@ -232,9 +232,10 @@ contract ALMGeneralTest is ALMTestBase {
 
     function test_hook_deployment_exploit_revert() public {
         vm.expectRevert();
+        (address _token0, address _token1) = getTokensInOrder();
         (key, ) = initPool(
-            Currency.wrap(address(TOKEN0)),
-            Currency.wrap(address(TOKEN1)),
+            Currency.wrap(_token0),
+            Currency.wrap(_token1),
             hook,
             poolFee + 1, //TODO: check this again. Is fee +1 prove this test case?
             initialSQRTPrice

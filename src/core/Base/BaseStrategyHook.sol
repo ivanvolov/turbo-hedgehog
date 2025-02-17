@@ -139,86 +139,94 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function getZeroForOneDeltas(
         int256 amountSpecified
-    ) internal view returns (BeforeSwapDelta beforeSwapDelta, uint256 wethOut, uint256 usdcIn, uint160 sqrtPriceNext) {
+    )
+        internal
+        view
+        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0In, uint256 token1Out, uint160 sqrtPriceNext)
+    {
         if (amountSpecified > 0) {
             // console.log("> amount specified positive");
-            wethOut = uint256(amountSpecified);
-            console.log("wethOut %s", wethOut);
+            token1Out = uint256(amountSpecified);
+            console.log("token1Out %s", token1Out);
 
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, wethOut);
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            usdcIn = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            usdcIn = adjustForFeesUp(usdcIn, true, amountSpecified);
-            console.log("usdcIn %s", usdcIn);
+            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            token0In = adjustForFeesUp(token0In, true, amountSpecified);
+            console.log("token0In %s", token0In);
 
             beforeSwapDelta = toBeforeSwapDelta(
-                -int128(uint128(wethOut)), // specified token = token1
-                int128(uint128(usdcIn)) // unspecified token = token0
+                -int128(uint128(token1Out)), // specified token = token1
+                int128(uint128(token0In)) // unspecified token = token0
             );
         } else {
             // console.log("> amount specified negative");
-            usdcIn = uint256(-amountSpecified);
-            console.log("usdcIn %s", usdcIn);
+            token0In = uint256(-amountSpecified);
+            console.log("token0In %s", token0In);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
-                adjustForFeesDown(usdcIn, true, amountSpecified)
+                adjustForFeesDown(token0In, true, amountSpecified)
             );
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            wethOut = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            console.log("wethOut %s", wethOut);
+            token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            console.log("token1Out %s", token1Out);
 
             beforeSwapDelta = toBeforeSwapDelta(
-                int128(uint128(usdcIn)), // specified token = token0
-                -int128(uint128(wethOut)) // unspecified token = token1
+                int128(uint128(token0In)), // specified token = token0
+                -int128(uint128(token1Out)) // unspecified token = token1
             );
         }
     }
 
     function getOneForZeroDeltas(
         int256 amountSpecified
-    ) internal view returns (BeforeSwapDelta beforeSwapDelta, uint256 wethIn, uint256 usdcOut, uint160 sqrtPriceNext) {
+    )
+        internal
+        view
+        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0Out, uint256 token1In, uint160 sqrtPriceNext)
+    {
         if (amountSpecified > 0) {
             // console.log("> amount specified positive");
-            usdcOut = uint256(amountSpecified);
-            console.log("usdcOut %s", usdcOut);
+            token0Out = uint256(amountSpecified);
+            console.log("token0Out %s", token0Out);
 
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, usdcOut);
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            wethIn = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            wethIn = adjustForFeesUp(wethIn, false, amountSpecified);
-            console.log("wethIn %s", wethIn);
+            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            token1In = adjustForFeesUp(token1In, false, amountSpecified);
+            console.log("token1In %s", token1In);
 
             beforeSwapDelta = toBeforeSwapDelta(
-                -int128(uint128(usdcOut)), // specified token = token0
-                int128(uint128(wethIn)) // unspecified token = token1
+                -int128(uint128(token0Out)), // specified token = token0
+                int128(uint128(token1In)) // unspecified token = token1
             );
         } else {
             // console.log("> amount specified negative");
-            wethIn = uint256(-amountSpecified);
-            console.log("wethIn %s", wethIn);
+            token1In = uint256(-amountSpecified);
+            console.log("token1In %s", token1In);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
                 sqrtPriceCurrent,
                 liquidity,
-                adjustForFeesDown(wethIn, false, amountSpecified)
+                adjustForFeesDown(token1In, false, amountSpecified)
             );
             console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
             console.log("sqrtPriceNext %s", sqrtPriceNext);
 
-            usdcOut = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            console.log("usdcOut %s", usdcOut);
+            token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            console.log("token0Out %s", token0Out);
 
             beforeSwapDelta = toBeforeSwapDelta(
-                int128(uint128(wethIn)), // specified token = token1
-                -int128(uint128(usdcOut)) // unspecified token = token0
+                int128(uint128(token1In)), // specified token = token1
+                -int128(uint128(token0Out)) // unspecified token = token0
             );
         }
     }

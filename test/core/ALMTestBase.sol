@@ -59,14 +59,14 @@ abstract contract ALMTestBase is Test, Deployers {
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
     address constant UNISWAP_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
-    IERC20 TOKEN0;
-    IERC20 TOKEN1;
+    IERC20 BASE;
+    IERC20 QUOTE;
 
-    string token0Name;
-    string token1Name;
+    string baseName;
+    string quoteName;
 
-    uint8 token0Dec;
-    uint8 token1Dec;
+    uint8 bDec;
+    uint8 qDec;
 
     bool invertedPool = true;
 
@@ -87,21 +87,21 @@ abstract contract ALMTestBase is Test, Deployers {
     // --- Shortcuts  --- //
 
     function create_accounts_and_tokens(
-        address _token0,
-        uint8 _token0Dec,
-        string memory _token0Name,
-        address _token1,
-        uint8 _token1Dec,
-        string memory _token1Name
+        address _base,
+        uint8 _bDec,
+        string memory _baseName,
+        address _quote,
+        uint8 _qDec,
+        string memory _quoteName
     ) public virtual {
-        TOKEN0 = IERC20(_token0);
-        vm.label(_token0, _token0Name);
-        TOKEN1 = IERC20(_token1);
-        vm.label(_token1, _token1Name);
-        token0Name = _token0Name;
-        token1Name = _token1Name;
-        token0Dec = _token0Dec;
-        token1Dec = _token1Dec;
+        BASE = IERC20(_base);
+        vm.label(_base, _baseName);
+        QUOTE = IERC20(_quote);
+        vm.label(_quote, _quoteName);
+        baseName = _baseName;
+        quoteName = _quoteName;
+        bDec = _bDec;
+        qDec = _qDec;
 
         deployer = TestAccountLib.createTestAccount("deployer");
         alice = TestAccountLib.createTestAccount("alice");
@@ -174,105 +174,79 @@ abstract contract ALMTestBase is Test, Deployers {
 
         _setTokens(address(hook)); // * Notice: tokens should be set first in all contracts
         hook.setIsInvertedPool(invertedPool);
-        hook.setComponents(
-            address(hook),
-            address(lendingAdapter),
-            address(positionManager),
-            address(oracle),
-            address(rebalanceAdapter),
-            address(swapAdapter)
-        );
+        _setComponents(address(hook));
 
         _setTokens(address(lendingAdapter));
-        IBase(address(lendingAdapter)).setComponents(
-            address(hook),
-            address(lendingAdapter),
-            address(positionManager),
-            address(oracle),
-            address(rebalanceAdapter),
-            address(swapAdapter)
-        );
+        _setComponents(address(lendingAdapter));
 
-        IBase(address(positionManager)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
-        IBase(address(positionManager)).setComponents(
-            address(hook),
-            address(lendingAdapter),
-            address(positionManager),
-            address(oracle),
-            address(rebalanceAdapter),
-            address(swapAdapter)
-        );
+        _setTokens(address(positionManager));
+        _setComponents(address(positionManager));
 
         _setTokens(address(swapAdapter));
-        IBase(address(swapAdapter)).setComponents(
-            address(hook),
-            address(lendingAdapter),
-            address(positionManager),
-            address(oracle),
-            address(rebalanceAdapter),
-            address(swapAdapter)
-        );
+        _setComponents(address(swapAdapter));
         IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(TARGET_SWAP_POOL);
 
         _setTokens(address(rebalanceAdapter));
-        IBase(address(rebalanceAdapter)).setComponents(
-            address(hook),
-            address(lendingAdapter),
-            address(positionManager),
-            address(oracle),
-            address(rebalanceAdapter),
-            address(swapAdapter)
-        );
-
+        _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
         rebalanceAdapter.setOraclePriceAtLastRebalance(0);
         rebalanceAdapter.setTimeAtLastRebalance(0);
         // MARK END
 
+        (address _token0, address _token1) = getTokensInOrder();
+
         // MARK: Pool deployment
         PoolKey memory _key = PoolKey(
-            Currency.wrap(address(TOKEN0)),
-            Currency.wrap(address(TOKEN1)),
+            Currency.wrap(_token0),
+            Currency.wrap(_token1),
             poolFee,
             TestLib.getTickSpacingFromFee(poolFee),
             hook
         ); // pre-compute key in order to restrict hook to this pool
 
         hook.setAuthorizedPool(_key);
-        (key, ) = initPool(
-            Currency.wrap(address(TOKEN0)),
-            Currency.wrap(address(TOKEN1)),
-            hook,
-            poolFee,
-            initialSQRTPrice
-        );
+        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
         // MARK END
 
         // This is needed in order to simulate proper accounting
-        deal(address(TOKEN0), address(manager), 1000 ether);
-        deal(address(TOKEN1), address(manager), 1000 ether);
+        deal(address(BASE), address(manager), 1000 ether);
+        deal(address(QUOTE), address(manager), 1000 ether);
         vm.stopPrank();
     }
 
+    function getTokensInOrder() internal view returns (address, address) {
+        return !invertedPool ? (address(QUOTE), address(BASE)) : (address(BASE), address(QUOTE));
+    }
+
     function _setTokens(address module) internal {
-        if (invertedPool) IBase(module).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
-        else IBase(module).setTokens(address(TOKEN1), address(TOKEN0), token1Dec, token0Dec);
+        IBase(module).setTokens(address(BASE), address(QUOTE), bDec, qDec);
+    }
+
+    function _setComponents(address module) internal {
+        IBase(module).setComponents(
+            address(hook),
+            address(lendingAdapter),
+            address(positionManager),
+            address(oracle),
+            address(rebalanceAdapter),
+            address(swapAdapter)
+        );
     }
 
     function approve_accounts() public virtual {
         vm.startPrank(alice.addr);
-        TOKEN0.forceApprove(address(hook), type(uint256).max);
-        TOKEN1.forceApprove(address(hook), type(uint256).max);
+        BASE.forceApprove(address(hook), type(uint256).max);
+        QUOTE.forceApprove(address(hook), type(uint256).max);
         vm.stopPrank();
 
         vm.startPrank(swapper.addr);
-        TOKEN0.forceApprove(address(swapRouter), type(uint256).max);
-        TOKEN1.forceApprove(address(swapRouter), type(uint256).max);
+        BASE.forceApprove(address(swapRouter), type(uint256).max);
+        QUOTE.forceApprove(address(swapRouter), type(uint256).max);
         vm.stopPrank();
 
         vm.startPrank(marketMaker.addr);
-        TOKEN0.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
-        TOKEN1.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
+        BASE.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
+        QUOTE.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
         vm.stopPrank();
     }
 
@@ -310,7 +284,7 @@ abstract contract ALMTestBase is Test, Deployers {
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
                 invertedPool,
-                uint8(ALMMathLib.absSub(token0Dec, token1Dec))
+                uint8(ALMMathLib.absSub(bDec, qDec))
             );
     }
 
@@ -329,16 +303,21 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 stepSize = initialStepSize;
 
         uint256 iterations = 0;
-        while (true) {
+        while (iterations < 50) {
             uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
             if (priceDiff <= slippageTolerance) break;
             iterations++;
+            // console.log("Iteration:", iterations);
+            // console.log("Current Price:", currentPrice);
+            // console.log("Price Diff:", priceDiff);
 
-            bool isUsdcToEth = currentPrice < targetPrice;
+            bool isZeroForOne = currentPrice >= targetPrice;
+            if (invertedPool) isZeroForOne = !isZeroForOne;
+            uint256 swapAmount = stepSize;
+            if ((isZeroForOne && invertedPool) || (!isZeroForOne && !invertedPool))
+                swapAmount = (stepSize * currentPrice) / 1e30;
 
-            // Convert ETH step size to USDC equivalent if needed
-            uint256 swapAmount = isUsdcToEth ? (stepSize * currentPrice) / 1e30 : stepSize; // Keep as ETH amount
-            _doV3Swap(isUsdcToEth, swapAmount);
+            _doV3InputSwap(isZeroForOne, swapAmount);
 
             // Get new price and calculate improvement
             previousPrice = currentPrice;
@@ -347,32 +326,31 @@ abstract contract ALMTestBase is Test, Deployers {
 
             // Adaptive step size adjustment
             if (newPriceDiff < priceDiff) {
-                // Moving in right direction - gentle decay
-                stepSize = (stepSize * adaptiveDecayBase) / 100;
+                stepSize = (stepSize * adaptiveDecayBase) / 100; // Moving in right direction
             } else {
-                // Overshot or wrong direction - aggressive decay
-                stepSize = (stepSize * aggressiveDecayBase) / 100;
+                stepSize = (stepSize * aggressiveDecayBase) / 100; // Overshot or wrong direction
             }
 
             // Ensure minimum step size
-            if (stepSize < minStepSize) {
-                stepSize = minStepSize;
-            }
+            if (stepSize < minStepSize) stepSize = minStepSize;
         }
+
+        if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
 
         console.log("Final price adjustment results:");
         console.log("Target price:", targetPrice);
         console.log("Final price:", currentPrice);
-        console.log("iterations:", iterations);
+        console.log("Iterations:", iterations);
     }
 
-    function _doV3Swap(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
-        deal(zeroForOne ? address(TOKEN0) : address(TOKEN1), address(marketMaker.addr), amountIn);
+    function _doV3InputSwap(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
+        (address _token0, address _token1) = getTokensInOrder();
+        deal(zeroForOne ? _token0 : _token1, address(marketMaker.addr), amountIn);
         vm.startPrank(marketMaker.addr);
         amountOut = ISwapRouter(UNISWAP_V3_ROUTER).exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
-                tokenIn: zeroForOne ? address(TOKEN0) : address(TOKEN1),
-                tokenOut: zeroForOne ? address(TOKEN1) : address(TOKEN0),
+                tokenIn: zeroForOne ? _token0 : _token1,
+                tokenOut: zeroForOne ? _token1 : _token0,
                 fee: getFeeFromV3Pool(TARGET_SWAP_POOL),
                 recipient: msg.sender,
                 deadline: block.timestamp,
@@ -396,8 +374,9 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function __swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (int256, int256) {
-        uint256 token0Before = TOKEN0.balanceOf(swapper.addr);
-        uint256 token1Before = TOKEN1.balanceOf(swapper.addr);
+        (address _token0, address _token1) = getTokensInOrder();
+        uint256 token0Before = IERC20(_token0).balanceOf(swapper.addr);
+        uint256 token1Before = IERC20(_token1).balanceOf(swapper.addr);
 
         vm.prank(swapper.addr);
         BalanceDelta delta = swapRouter.swap(
@@ -411,11 +390,11 @@ abstract contract ALMTestBase is Test, Deployers {
             ""
         );
         if (zeroForOne) {
-            assertEq(token0Before - TOKEN0.balanceOf(swapper.addr), ALMMathLib.abs(delta.amount0()));
-            assertEq(TOKEN1.balanceOf(swapper.addr) - token1Before, ALMMathLib.abs(delta.amount1()));
+            assertEq(token0Before - IERC20(_token0).balanceOf(swapper.addr), ALMMathLib.abs(delta.amount0()));
+            assertEq(IERC20(_token1).balanceOf(swapper.addr) - token1Before, ALMMathLib.abs(delta.amount1()));
         } else {
-            assertEq(TOKEN0.balanceOf(swapper.addr) - token0Before, ALMMathLib.abs(delta.amount0()));
-            assertEq(token1Before - TOKEN1.balanceOf(swapper.addr), ALMMathLib.abs(delta.amount1()));
+            assertEq(IERC20(_token0).balanceOf(swapper.addr) - token0Before, ALMMathLib.abs(delta.amount0()));
+            assertEq(token1Before - IERC20(_token1).balanceOf(swapper.addr), ALMMathLib.abs(delta.amount1()));
         }
         return (int256(delta.amount0()), int256(delta.amount1()));
     }
@@ -435,18 +414,8 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function assertEqBalanceState(address owner, uint256 _balanceT1, uint256 _balanceT0) public view {
-        assertApproxEqAbs(
-            TOKEN1.balanceOf(owner),
-            _balanceT1,
-            1e5,
-            string.concat("Balance ", token0Name, " not equal")
-        );
-        assertApproxEqAbs(
-            TOKEN0.balanceOf(owner),
-            _balanceT0,
-            1e1,
-            string.concat("Balance ", token1Name, " not equal")
-        );
+        assertApproxEqAbs(QUOTE.balanceOf(owner), _balanceT1, 1e5, string.concat("Balance ", baseName, " not equal"));
+        assertApproxEqAbs(BASE.balanceOf(owner), _balanceT0, 1e1, string.concat("Balance ", quoteName, " not equal"));
     }
 
     function assertEqHookPositionState(
