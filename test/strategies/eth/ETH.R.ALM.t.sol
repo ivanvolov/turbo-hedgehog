@@ -10,7 +10,6 @@ import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
@@ -41,10 +40,10 @@ contract ETHRALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDT_POOL;
-            assertEqPSThresholdCL = 1e1;
-            assertEqPSThresholdCS = TW.wrap(1e1, 6);
-            assertEqPSThresholdDL = TW.wrap(1e1, 6);
-            assertEqPSThresholdDS = 1e1;
+            assertEqPSThresholdCL = 1e5;
+            assertEqPSThresholdCS = 1e1;
+            assertEqPSThresholdDL = 1e1;
+            assertEqPSThresholdDS = 1e5;
             assertLDecimals = 18;
             assertSDecimals = 6;
         }
@@ -58,9 +57,13 @@ contract ETHRALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.WETH, 18, "WETH", TestLib.USDT, 6, "USDT");
         create_lending_adapter(
             TestLib.eulerUSDTVault1,
+            3000000 * 1e6,
             TestLib.eulerWETHVault1,
+            0,
             TestLib.eulerUSDTVault2,
-            TestLib.eulerWETHVault2
+            3000000 * 1e6,
+            TestLib.eulerWETHVault2,
+            0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
         console.log("oracle: initialPrice %s", oracle.price());

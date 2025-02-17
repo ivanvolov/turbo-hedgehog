@@ -24,8 +24,8 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     constructor() Base(msg.sender) {}
 
     function _postSetTokens() internal override {
-        IERC20(token0).forceApprove(SWAP_ROUTER, type(uint256).max);
-        IERC20(token1).forceApprove(SWAP_ROUTER, type(uint256).max);
+        IERC20(base).forceApprove(SWAP_ROUTER, type(uint256).max);
+        IERC20(quote).forceApprove(SWAP_ROUTER, type(uint256).max);
     }
 
     function setTargetPool(address _targetPool) external onlyOwner {

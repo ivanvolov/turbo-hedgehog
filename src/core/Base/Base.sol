@@ -30,10 +30,10 @@ abstract contract Base is IBase {
 
     address public owner;
 
-    address public token0;
-    address public token1;
-    uint8 public t0Dec;
-    uint8 public t1Dec;
+    address public base;
+    address public quote;
+    uint8 public bDec;
+    uint8 public qDec;
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
@@ -47,11 +47,11 @@ abstract contract Base is IBase {
         emit OwnershipTransferred(address(0), initialOwner);
     }
 
-    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external onlyOwner {
-        token0 = _token0;
-        token1 = _token1;
-        t0Dec = _t0Dec;
-        t1Dec = _t1Dec;
+    function setTokens(address _base, address _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
+        base = _base;
+        quote = _quote;
+        bDec = _bDec;
+        qDec = _qDec;
 
         _postSetTokens();
     }
@@ -70,16 +70,16 @@ abstract contract Base is IBase {
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        _approveSingle(token0, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        _approveSingle(token1, address(lendingAdapter), _lendingAdapter, type(uint256).max);
+        _approveSingle(base, address(lendingAdapter), _lendingAdapter, type(uint256).max);
+        _approveSingle(quote, address(lendingAdapter), _lendingAdapter, type(uint256).max);
         lendingAdapter = ILendingAdapter(_lendingAdapter);
 
-        _approveSingle(token0, address(positionManager), _positionManager, type(uint256).max);
-        _approveSingle(token1, address(positionManager), _positionManager, type(uint256).max);
+        _approveSingle(base, address(positionManager), _positionManager, type(uint256).max);
+        _approveSingle(quote, address(positionManager), _positionManager, type(uint256).max);
         positionManager = IPositionManager(_positionManager);
 
-        _approveSingle(token0, address(swapAdapter), _swapAdapter, type(uint256).max);
-        _approveSingle(token1, address(swapAdapter), _swapAdapter, type(uint256).max);
+        _approveSingle(base, address(swapAdapter), _swapAdapter, type(uint256).max);
+        _approveSingle(quote, address(swapAdapter), _swapAdapter, type(uint256).max);
         swapAdapter = ISwapAdapter(_swapAdapter);
     }
 

@@ -129,19 +129,19 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         // console.log("slippage %s", slippage);
 
-        (uint256 token0ToFl, uint256 token1ToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
-        console.log("token0fl %s", token0ToFl.unwrap(t0Dec));
-        console.log("token1fl %s", token1ToFl.unwrap(t1Dec));
-        lendingAdapter.flashLoanTwoTokens(token0, token0ToFl.unwrap(t0Dec), token1, token1ToFl.unwrap(t1Dec), data);
+        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
+        console.log("basefl %s", baseToFl.unwrap(bDec));
+        console.log("quotefl %s", quoteToFl.unwrap(qDec));
+        lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
 
-        console.log("USDC balance before %s", token0BalanceUnwr());
-        console.log("WETH balance before %s", token1BalanceUnwr());
+        console.log("USDC balance before %s", baseBalanceUnwr());
+        console.log("WETH balance before %s", quoteBalanceUnwr());
 
-        if (token0BalanceUnwr() != 0) lendingAdapter.repayLong((token0BalanceUnwr()).wrap(t0Dec));
-        if (token1BalanceUnwr() != 0) lendingAdapter.repayShort((token1BalanceUnwr()).wrap(t1Dec));
+        if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
+        if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
 
-        console.log("USDC balance after %s", token0BalanceUnwr());
-        console.log("WETH balance after %s", token1BalanceUnwr());
+        console.log("USDC balance after %s", baseBalanceUnwr());
+        console.log("WETH balance after %s", quoteBalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();
@@ -154,7 +154,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 ALMMathLib.getPoolPriceFromOraclePrice(
                     oraclePriceAtLastRebalance,
                     alm.isInvertedPool(),
-                    uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+                    uint8(ALMMathLib.absSub(bDec, qDec))
                 )
             )
         );
@@ -169,9 +169,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function onFlashLoanTwoTokens(
-        address token0,
+        address base,
         uint256 amount0,
-        address token1,
+        address quote,
         uint256 amount1,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
@@ -184,19 +184,19 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         // ** Flash loan management
         console.log("flDEBT ETH %s", amount1);
-        console.log("wethBalance %s", token1BalanceUnwr());
+        console.log("wethBalance %s", quoteBalanceUnwr());
         console.log("flDEBT USDC %s", amount0);
-        console.log("usdcBalance %s", token0BalanceUnwr());
+        console.log("usdcBalance %s", baseBalanceUnwr());
 
-        if (amount0 > token0BalanceUnwr()) swapAdapter.swapExactOutput(token1, token0, amount0 - token0BalanceUnwr());
+        if (amount0 > baseBalanceUnwr()) swapAdapter.swapExactOutput(quote, base, amount0 - baseBalanceUnwr());
 
-        console.log("wethBalance after %s", token1BalanceUnwr());
-        console.log("usdcBalance after %s", token0BalanceUnwr());
+        console.log("wethBalance after %s", quoteBalanceUnwr());
+        console.log("usdcBalance after %s", baseBalanceUnwr());
 
-        if (amount1 > token1BalanceUnwr()) swapAdapter.swapExactOutput(token0, token1, amount1 - token1BalanceUnwr());
+        if (amount1 > quoteBalanceUnwr()) swapAdapter.swapExactOutput(base, quote, amount1 - quoteBalanceUnwr());
 
-        console.log("wethBalance after %s", token1BalanceUnwr());
-        console.log("usdcBalance after %s", token0BalanceUnwr());
+        console.log("wethBalance after %s", quoteBalanceUnwr());
+        console.log("usdcBalance after %s", baseBalanceUnwr());
     }
 
     // @Notice: this function is mainly for removing stack too deep error
@@ -222,11 +222,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
         console.log("(7)");
 
-        console.log("CL %s", (lendingAdapter.getCollateralLong()).unwrap(t1Dec));
-        console.log("CS %s", (lendingAdapter.getCollateralShort()).unwrap(t0Dec));
+        console.log("CL %s", (lendingAdapter.getCollateralLong()).unwrap(qDec));
+        console.log("CS %s", (lendingAdapter.getCollateralShort()).unwrap(bDec));
 
-        console.log("deltaDL %s", uint256(deltaDL).unwrap(t0Dec));
-        console.log("deltaDS %s", uint256(deltaDS).unwrap(t1Dec));
+        console.log("deltaDL %s", uint256(deltaDL).unwrap(bDec));
+        console.log("deltaDS %s", uint256(deltaDS).unwrap(qDec));
 
         if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
         console.log("(8)");
@@ -239,7 +239,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     // @Notice: this function is mainly for removing stack too deep error
     function _rebalanceCalculations(
         uint256 k
-    ) internal view returns (uint256 token0ToFl, uint256 token1ToFl, bytes memory data) {
+    ) internal view returns (uint256 baseToFl, uint256 quoteToFl, bytes memory data) {
         // console.log("> rebalanceCalculations");
         // console.log("k %s", k);
         uint256 targetDL;
@@ -294,15 +294,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             console.log("deltaDS", deltaDS);
         }
 
-        if (deltaCL > 0) token1ToFl += uint256(deltaCL);
-        if (deltaCS > 0) token0ToFl += uint256(deltaCS);
-        if (deltaDL < 0) token0ToFl += uint256(-deltaDL);
-        if (deltaDS < 0) token1ToFl += uint256(-deltaDS);
+        if (deltaCL > 0) quoteToFl += uint256(deltaCL);
+        if (deltaCS > 0) baseToFl += uint256(deltaCS);
+        if (deltaDL < 0) baseToFl += uint256(-deltaDL);
+        if (deltaDS < 0) quoteToFl += uint256(-deltaDS);
 
         console.log("k %s", k);
 
-        console.log("token0ToFl %s", token0ToFl);
-        console.log("token1ToFl %s", token1ToFl);
+        console.log("baseToFl %s", baseToFl);
+        console.log("quoteToFl %s", quoteToFl);
 
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
@@ -325,7 +325,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickUpper()),
                 alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+                uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
         console.log(
@@ -333,7 +333,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickLower()),
                 alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+                uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
 
@@ -343,12 +343,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickUpper()),
                 alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+                uint8(ALMMathLib.absSub(bDec, qDec))
             ),
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickLower()),
                 alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(t0Dec, t1Dec))
+                uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
         console.log("liquidity %s", liquidity);
@@ -380,11 +380,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     // --- Helpers --- //
 
-    function token0BalanceUnwr() internal view returns (uint256) {
-        return IERC20(token0).balanceOf(address(this));
+    function baseBalanceUnwr() internal view returns (uint256) {
+        return IERC20(base).balanceOf(address(this));
     }
 
-    function token1BalanceUnwr() internal view returns (uint256) {
-        return IERC20(token1).balanceOf(address(this));
+    function quoteBalanceUnwr() internal view returns (uint256) {
+        return IERC20(quote).balanceOf(address(this));
     }
 }

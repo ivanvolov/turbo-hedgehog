@@ -62,7 +62,7 @@ contract ETHALMTest is ALMTestBase {
             assertEqPSThresholdDL = 1e1;
             assertEqPSThresholdDS = 1e5;
             assertLDecimals = 18;
-            assertSDecimals = 8;
+            assertSDecimals = 6;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -73,9 +73,13 @@ contract ETHALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
+            0,
             TestLib.eulerWETHVault1,
+            0,
             TestLib.eulerUSDCVault2,
-            TestLib.eulerWETHVault2
+            0,
+            TestLib.eulerWETHVault2,
+            0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());

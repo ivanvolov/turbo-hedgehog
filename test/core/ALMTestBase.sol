@@ -42,6 +42,7 @@ import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {ISwapRouter} from "@forks/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
+import {IEulerVault} from "@forks/euler/IVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
@@ -110,9 +111,34 @@ abstract contract ALMTestBase is Test, Deployers {
         zero = TestAccountLib.createTestAccount("zero");
     }
 
-    function create_lending_adapter(address _vault0, address _vault1, address _flVault0, address _flVault1) internal {
+    function create_lending_adapter(
+        address _vault0,
+        uint256 deposit0,
+        address _vault1,
+        uint256 deposit1,
+        address _flVault0,
+        uint256 deposit3,
+        address _flVault1,
+        uint256 deposit4
+    ) internal {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(_vault0, _vault1, _flVault0, _flVault1);
+        _deposit_to_euler(_vault0, deposit0);
+        _deposit_to_euler(_vault1, deposit1);
+        _deposit_to_euler(_flVault0, deposit3);
+        _deposit_to_euler(_flVault1, deposit4);
+    }
+
+    function _deposit_to_euler(address _vault, uint256 toSupply) internal {
+        if (toSupply == 0) return;
+        IEulerVault vault = IEulerVault(_vault);
+        address asset = vault.asset();
+        deal(asset, address(marketMaker.addr), toSupply);
+
+        vm.startPrank(marketMaker.addr);
+        IERC20(asset).forceApprove(_vault, type(uint256).max);
+        vault.mint(vault.convertToShares(toSupply), marketMaker.addr);
+        vm.stopPrank();
     }
 
     function create_oracle(address feed0, address feed1) internal {

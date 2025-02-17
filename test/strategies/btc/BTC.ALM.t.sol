@@ -57,9 +57,13 @@ contract BTCALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
+            0,
             TestLib.eulerBTCVault1,
+            0,
             TestLib.eulerUSDCVault2,
-            TestLib.eulerBTCVault2
+            0,
+            TestLib.eulerBTCVault2,
+            0
         );
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
