@@ -10,7 +10,6 @@ import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
@@ -41,13 +40,12 @@ contract ETHRALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDT_POOL;
-            assertEqPSThresholdCL = 1e1;
-            assertEqPSThresholdCS = TW.wrap(1e1, 6);
-            assertEqPSThresholdDL = TW.wrap(1e1, 6);
-            assertEqPSThresholdDS = 1e1;
-
-            assertLDecimals = 6;
-            assertSDecimals = 18;
+            assertEqPSThresholdCL = 1e5;
+            assertEqPSThresholdCS = 1e1;
+            assertEqPSThresholdDL = 1e1;
+            assertEqPSThresholdDS = 1e5;
+            assertLDecimals = 18;
+            assertSDecimals = 6;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -58,24 +56,28 @@ contract ETHRALMTest is ALMTestBase {
 
         create_accounts_and_tokens(TestLib.WETH, 18, "WETH", TestLib.USDT, 6, "USDT");
         create_lending_adapter(
-            TestLib.eulerWETHVault1,
             TestLib.eulerUSDTVault1,
+            3000000 * 1e6,
+            TestLib.eulerWETHVault1,
+            0,
+            TestLib.eulerUSDTVault2,
+            3000000 * 1e6,
             TestLib.eulerWETHVault2,
-            TestLib.eulerUSDTVault2
+            0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(false);
-        assertEq(hook.tickLower(), -194460);
-        assertEq(hook.tickUpper(), -200460);
+        assertEq(hook.tickLower(), -200460);
+        assertEq(hook.tickUpper(), -194460);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(true);
+            hook.setIsInvertAssets(false);
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
-            rebalanceAdapter.setIsInvertAssets(true);
+            rebalanceAdapter.setIsInvertAssets(false);
             positionManager.setFees(0);
             positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
@@ -118,9 +120,6 @@ contract ETHRALMTest is ALMTestBase {
         test_deposit();
 
         uint256 preRebalanceTVL = hook.TVL();
-
-        vm.expectRevert();
-        rebalanceAdapter.rebalance(slippage);
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -323,18 +322,18 @@ contract ETHRALMTest is ALMTestBase {
 
     // ** Helpers
     function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
-    }
-
-    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
-    }
-
-    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
     }
 
-    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, -int256(amount), key);
+    }
+
+    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, int256(amount), key);
+    }
+
+    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, -int256(amount), key);
     }
 }

@@ -7,7 +7,7 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 interface IBase {
     function oracle() external view returns (IOracle);
 
-    function setTokens(address _token0, address _token1, uint8 _t0Dec, uint8 _t1Dec) external;
+    function setTokens(address _base, address _quote, uint8 _t0Dec, uint8 _t1Dec) external;
 
     function setComponents(
         address _alm,

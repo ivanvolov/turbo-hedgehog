@@ -8,24 +8,24 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
 
 contract Oracle is IOracle {
-    AggregatorV3Interface internal feedBased;
-    AggregatorV3Interface internal feedTarget;
+    AggregatorV3Interface internal feedBase;
+    AggregatorV3Interface internal feedQuote;
 
-    constructor(address _feedTarget, address _feedBased) {
-        feedTarget = AggregatorV3Interface(_feedTarget);
-        feedBased = AggregatorV3Interface(_feedBased);
+    constructor(address _feedQuote, address _feedBase) {
+        feedQuote = AggregatorV3Interface(_feedQuote);
+        feedBase = AggregatorV3Interface(_feedBase);
     }
 
     function price() external view returns (uint256) {
-        (, int256 _priceTarget, , , ) = feedTarget.latestRoundData();
-        uint8 decimalsTarget = feedTarget.decimals();
-        (, int256 _priceBased, , , ) = feedBased.latestRoundData();
-        uint8 decimalsBased = feedBased.decimals();
+        (, int256 _priceQuote, , , ) = feedQuote.latestRoundData();
+        uint8 decimalsQuote = feedQuote.decimals();
+        (, int256 _priceBase, , , ) = feedBase.latestRoundData();
+        uint8 decimalsBase = feedBase.decimals();
 
-        if (_priceBased < 0 || _priceTarget < 0) revert("O1");
+        if (_priceBase < 0 || _priceQuote < 0) revert("O1");
 
-        uint256 priceBased = (uint256(_priceBased) * 1e18) / (10 ** decimalsBased);
-        uint256 priceTarget = (uint256(_priceTarget) * 1e18) / (10 ** decimalsTarget);
-        return (priceTarget * 1e18) / priceBased;
+        uint256 priceBase = (uint256(_priceBase) * 1e18) / (10 ** decimalsBase);
+        uint256 priceQuote = (uint256(_priceQuote) * 1e18) / (10 ** decimalsQuote);
+        return (priceQuote * 1e18) / priceBase;
     }
 }

@@ -44,7 +44,7 @@ interface IALM {
 
     function updateSqrtPrice(uint160 _sqrtPrice) external;
 
-    function token0Balance(bool wrap) external view returns (uint256);
+    function baseBalance(bool wrap) external view returns (uint256);
 
-    function token1Balance(bool wrap) external view returns (uint256);
+    function quoteBalance(bool wrap) external view returns (uint256);
 }

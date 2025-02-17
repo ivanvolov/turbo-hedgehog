@@ -61,9 +61,8 @@ contract ETHALMTest is ALMTestBase {
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
             assertEqPSThresholdDS = 1e5;
-
             assertLDecimals = 18;
-            assertSDecimals = 8;
+            assertSDecimals = 6;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -74,9 +73,13 @@ contract ETHALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
+            0,
             TestLib.eulerWETHVault1,
+            0,
             TestLib.eulerUSDCVault2,
-            TestLib.eulerWETHVault2
+            0,
+            TestLib.eulerWETHVault2,
+            0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
@@ -128,13 +131,13 @@ contract ETHALMTest is ALMTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
+
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
-
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        assertEqPositionState(amountToDep, 0, 0, 0);
 
+        assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
         assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");

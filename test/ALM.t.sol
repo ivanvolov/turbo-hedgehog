@@ -68,9 +68,13 @@ contract ALMGeneralTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
+            0,
             TestLib.eulerWETHVault1,
+            0,
             TestLib.eulerUSDCVault2,
-            TestLib.eulerWETHVault2
+            0,
+            TestLib.eulerWETHVault2,
+            0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         init_hook(true);

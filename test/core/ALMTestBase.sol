@@ -42,6 +42,7 @@ import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {ISwapRouter} from "@forks/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
+import {IEulerVault} from "@forks/euler/IVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 abstract contract ALMTestBase is Test, Deployers {
@@ -110,9 +111,34 @@ abstract contract ALMTestBase is Test, Deployers {
         zero = TestAccountLib.createTestAccount("zero");
     }
 
-    function create_lending_adapter(address _vault0, address _vault1, address _flVault0, address _flVault1) internal {
+    function create_lending_adapter(
+        address _vault0,
+        uint256 deposit0,
+        address _vault1,
+        uint256 deposit1,
+        address _flVault0,
+        uint256 deposit2,
+        address _flVault1,
+        uint256 deposit3
+    ) internal {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(_vault0, _vault1, _flVault0, _flVault1);
+        _deposit_to_euler(_vault0, deposit0);
+        _deposit_to_euler(_vault1, deposit1);
+        _deposit_to_euler(_flVault0, deposit2);
+        _deposit_to_euler(_flVault1, deposit3);
+    }
+
+    function _deposit_to_euler(address _vault, uint256 toSupply) internal {
+        if (toSupply == 0) return;
+        IEulerVault vault = IEulerVault(_vault);
+        address asset = vault.asset();
+        deal(asset, address(marketMaker.addr), toSupply);
+
+        vm.startPrank(marketMaker.addr);
+        IERC20(asset).forceApprove(_vault, type(uint256).max);
+        vault.mint(vault.convertToShares(toSupply), marketMaker.addr);
+        vm.stopPrank();
     }
 
     function create_oracle(address feed0, address feed1) internal {
@@ -146,7 +172,7 @@ abstract contract ALMTestBase is Test, Deployers {
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter();
 
-        hook.setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        _setTokens(address(hook)); // * Notice: tokens should be set first in all contracts
         hook.setIsInvertedPool(invertedPool);
         hook.setComponents(
             address(hook),
@@ -157,7 +183,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(lendingAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        _setTokens(address(lendingAdapter));
         IBase(address(lendingAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -177,7 +203,7 @@ abstract contract ALMTestBase is Test, Deployers {
             address(swapAdapter)
         );
 
-        IBase(address(swapAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        _setTokens(address(swapAdapter));
         IBase(address(swapAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -188,7 +214,7 @@ abstract contract ALMTestBase is Test, Deployers {
         );
         IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(TARGET_SWAP_POOL);
 
-        IBase(address(rebalanceAdapter)).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec); // * Notice: tokens should be set first in all contracts
+        _setTokens(address(rebalanceAdapter));
         IBase(address(rebalanceAdapter)).setComponents(
             address(hook),
             address(lendingAdapter),
@@ -226,6 +252,11 @@ abstract contract ALMTestBase is Test, Deployers {
         deal(address(TOKEN0), address(manager), 1000 ether);
         deal(address(TOKEN1), address(manager), 1000 ether);
         vm.stopPrank();
+    }
+
+    function _setTokens(address module) internal {
+        if (invertedPool) IBase(module).setTokens(address(TOKEN0), address(TOKEN1), token0Dec, token1Dec);
+        else IBase(module).setTokens(address(TOKEN1), address(TOKEN0), token1Dec, token0Dec);
     }
 
     function approve_accounts() public virtual {

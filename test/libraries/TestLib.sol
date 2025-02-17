@@ -14,8 +14,8 @@ library TestLib {
     // ** https://app.euler.finance/?asset=USDT&network=ethereum
     address constant eulerUSDCVault1 = 0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9;
     address constant eulerUSDCVault2 = 0xcBC9B61177444A793B85442D3a953B90f6170b7D;
-    address constant eulerUSDTVault1 = 0x7c280DBDEf569e96c7919251bD2B0edF0734C5A8;
-    address constant eulerUSDTVault2 = 0x313603FA690301b0CaeEf8069c065862f9162162;
+    address constant eulerUSDTVault1 = 0x313603FA690301b0CaeEf8069c065862f9162162;
+    address constant eulerUSDTVault2 = 0x7c280DBDEf569e96c7919251bD2B0edF0734C5A8;
     address constant eulerWETHVault1 = 0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2;
     address constant eulerWETHVault2 = 0x716bF454066a84F39A2F78b5707e79a9d64f1225;
     address constant eulerBTCVault1 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
