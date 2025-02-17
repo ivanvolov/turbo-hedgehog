@@ -117,16 +117,16 @@ abstract contract ALMTestBase is Test, Deployers {
         address _vault1,
         uint256 deposit1,
         address _flVault0,
-        uint256 deposit3,
+        uint256 deposit2,
         address _flVault1,
-        uint256 deposit4
+        uint256 deposit3
     ) internal {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(_vault0, _vault1, _flVault0, _flVault1);
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
-        _deposit_to_euler(_flVault0, deposit3);
-        _deposit_to_euler(_flVault1, deposit4);
+        _deposit_to_euler(_flVault0, deposit2);
+        _deposit_to_euler(_flVault1, deposit3);
     }
 
     function _deposit_to_euler(address _vault, uint256 toSupply) internal {

@@ -125,9 +125,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         console.log("_updateBoundaries tick:");
         console.log(tick);
 
-        // Here it's inverted due to currencies order
-        tickUpper = tick - tickDelta;
-        tickLower = tick + tickDelta;
+        if (isInvertedPool) {
+            // Here it's inverted due to currencies order
+            tickUpper = tick - tickDelta;
+            tickLower = tick + tickDelta;
+        } else {
+            tickUpper = tick + tickDelta;
+            tickLower = tick - tickDelta;
+        }
     }
 
     // --- Deltas calculation --- //

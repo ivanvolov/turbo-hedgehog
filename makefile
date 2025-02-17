@@ -21,9 +21,9 @@ te:
 tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_deposit_rebalance\b"
 ter:
-	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_deposit_rebalance\b"
+	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_lifecycle\b"
 terl:
-	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_deposit_rebalance\b"
+	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_lifecycle\b"
 tb:
 	clear && forge test -vv --match-contract BTCALMTest --match-test "test_deposit_rebalance\b"
 tbl:

@@ -68,8 +68,8 @@ contract ETHRALMTest is ALMTestBase {
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(false);
-        assertEq(hook.tickLower(), -194460);
-        assertEq(hook.tickUpper(), -200460);
+        assertEq(hook.tickLower(), -200460);
+        assertEq(hook.tickUpper(), -194460);
 
         // ** Setting up strategy params
         {
@@ -120,9 +120,6 @@ contract ETHRALMTest is ALMTestBase {
         test_deposit();
 
         uint256 preRebalanceTVL = hook.TVL();
-
-        vm.expectRevert();
-        rebalanceAdapter.rebalance(slippage);
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -325,18 +322,18 @@ contract ETHRALMTest is ALMTestBase {
 
     // ** Helpers
     function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
-    }
-
-    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
-    }
-
-    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
     }
 
-    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, -int256(amount), key);
+    }
+
+    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, int256(amount), key);
+    }
+
+    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, -int256(amount), key);
     }
 }

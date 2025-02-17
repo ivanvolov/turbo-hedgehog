@@ -224,9 +224,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         console.log("CL %s", (lendingAdapter.getCollateralLong()).unwrap(qDec));
         console.log("CS %s", (lendingAdapter.getCollateralShort()).unwrap(bDec));
+        console.log("DL %s", (lendingAdapter.getBorrowedLong()).unwrap(qDec));
+        console.log("DS %s", (lendingAdapter.getBorrowedShort()).unwrap(bDec));
 
-        console.log("deltaDL %s", uint256(deltaDL).unwrap(bDec));
-        console.log("deltaDS %s", uint256(deltaDS).unwrap(qDec));
+        // console.log("deltaDL %s", uint256(deltaDL).unwrap(bDec));
+        // console.log("deltaDS %s", uint256(deltaDS).unwrap(qDec));
 
         if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
         console.log("(8)");
