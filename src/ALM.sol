@@ -264,6 +264,8 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256, uint256) {
+        console.log("here");
+
         if (zeroForOne) {
             (, uint256 usdcIn, uint256 wethOut, ) = getZeroForOneDeltas(amountSpecified);
             return (usdcIn, wethOut);

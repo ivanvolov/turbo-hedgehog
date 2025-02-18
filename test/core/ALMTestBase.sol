@@ -546,6 +546,45 @@ abstract contract ALMTestBase is Test, Deployers {
         return (deltaX, deltaY);
     }
 
+function _checkSwapReverse(
+        uint256 liquidity,
+        uint160 preSqrtPrice,
+        uint160 postSqrtPrice
+    ) public view returns (uint256, uint256) {
+        uint256 deltaX;
+        uint256 deltaY;
+        {
+            uint256 prePrice = 1e12 * ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+            uint256 postPrice = 1e12 * ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+
+            console.log("prePrice %s", prePrice);
+            console.log("postPrice %s", postPrice);
+
+            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
+            uint256 priceUpper = 1e12 * ALMMathLib.getPriceFromTick(hook.tickUpper());
+
+            console.log("priceUpper %s", priceUpper);
+
+            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
+                ((priceUpper * prePrice) / 1e18).sqrt();
+            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
+                (priceUpper * postPrice).sqrt();
+
+            uint256 preY = (liquidity *
+                (prePrice.sqrt() - (1e12 * ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+            uint256 postY = (liquidity *
+                (postPrice.sqrt() - (1e12 * ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+
+            deltaX = postX > preX ? postX - preX : preX - postX;
+            deltaY = postY > preY ? postY - preY : preY - postY;
+
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
+        }
+
+        return (deltaX, deltaY);
+    }
+
     // --- Utils --- //
 
     // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals
