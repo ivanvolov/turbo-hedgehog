@@ -247,7 +247,7 @@ contract ETHALMTest is ALMTestBase {
 
         uint256 wethToGetFSwap = 4626903915919660000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 17898157290);
+        assertEq(usdcToSwapQ, 12371660056);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 

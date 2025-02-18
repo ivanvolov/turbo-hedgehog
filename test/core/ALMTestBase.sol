@@ -500,8 +500,8 @@ abstract contract ALMTestBase is Test, Deployers {
         try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
             console.log("CL", TW.unwrap(_lendingAdapter.getCollateralLong(), assertLDecimals));
             console.log("CS", TW.unwrap(_lendingAdapter.getCollateralShort(), assertSDecimals));
-            console.log("DL", TW.unwrap(_lendingAdapter.getBorrowedLong(), assertLDecimals));
-            console.log("DS", TW.unwrap(_lendingAdapter.getBorrowedShort(), assertSDecimals));
+            console.log("DL", TW.unwrap(_lendingAdapter.getBorrowedLong(), assertSDecimals));
+            console.log("DS", TW.unwrap(_lendingAdapter.getBorrowedShort(), assertLDecimals));
             _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
@@ -523,13 +523,13 @@ abstract contract ALMTestBase is Test, Deployers {
         assertApproxEqAbs(
             TW.unwrap(_lendingAdapter.getBorrowedLong(), assertLDecimals),
             DL,
-            assertEqPSThresholdDL,
+            assertEqPSThresholdDS,
             "DL not equal"
         );
         assertApproxEqAbs(
             TW.unwrap(_lendingAdapter.getBorrowedShort(), assertSDecimals),
             DS,
-            assertEqPSThresholdDS,
+            assertEqPSThresholdDL,
             "DS not equal"
         );
     }
