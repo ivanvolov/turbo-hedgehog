@@ -26,6 +26,7 @@ import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract DeltaNeutralALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
@@ -74,7 +75,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
-        init_hook(true);
+        init_hook(true, false);
         assertEq(hook.tickLower(), 200458);
         assertEq(hook.tickUpper(), 194458);
 
@@ -85,8 +86,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(true);
-            positionManager.setFees(0);
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            IPositionManagerStandard(address(positionManager)).setFees(0);
+            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(weight);
@@ -277,7 +278,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
         uint256 usdcToSwap = 20594068491; //done
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -298,7 +299,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         uint256 wethToGetFSwap = 5331823310823070000; //done
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -322,7 +323,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         uint256 wethToSwap = 5408396534130190000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -342,7 +343,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         uint256 usdcToGetFSwap = 20697298845; //done
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -387,7 +388,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
 
-        positionManager.setFees(fee);
+        IPositionManagerStandard(address(positionManager)).setFees(fee);
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
 
@@ -500,7 +501,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         {
             console.log("Swap Up Out");
             uint256 wethToGetFSwap = 5e18;
-            (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+            (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();

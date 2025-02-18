@@ -23,6 +23,7 @@ import {ALMTestSimBase} from "@test/core/ALMTestSimBase.sol";
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
     using PoolIdLibrary for PoolId;
@@ -62,7 +63,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        init_hook(true);
+        init_hook(true, false);
 
         // ** Setting up strategy params
         {
@@ -71,8 +72,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(1e18);
             rebalanceAdapter.setIsInvertAssets(true);
-            positionManager.setFees(0);
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            IPositionManagerStandard(address(positionManager)).setFees(0);
+            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(45 * 1e16); // 0.45 (45%)
@@ -92,7 +93,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
     function test_swaps_simulation() public {
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e16);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e16);
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();

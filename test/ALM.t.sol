@@ -74,7 +74,7 @@ contract ALMGeneralTest is ALMTestBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        init_hook(true);
+        init_hook(true, false);
         approve_accounts();
     }
 

@@ -25,6 +25,7 @@ import {IALM} from "@src/interfaces/IALM.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract ETHALMSimulationTest is ALMTestSimBase {
     using PoolIdLibrary for PoolId;
@@ -65,7 +66,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        init_hook(true);
+        init_hook(true, false);
 
         // ** Setting up strategy params
         {
@@ -73,9 +74,9 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             hook.setIsInvertAssets(false);
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); // (sqrt(1.1)-1) or max 10% price change
-            positionManager.setFees(0);
+            IPositionManagerStandard(address(positionManager)).setFees(0);
+            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setIsInvertAssets(false);
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
             rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
             rebalanceAdapter.setWeight(6 * 1e17); // 0.6 (60%)
@@ -242,7 +243,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
 
     function test_swaps_simulation() public {
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e16);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e16);
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();
