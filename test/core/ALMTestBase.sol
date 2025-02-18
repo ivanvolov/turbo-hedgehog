@@ -506,8 +506,8 @@ abstract contract ALMTestBase is Test, Deployers {
         ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
         assertApproxEqAbs(TW.unwrap(_leA.getCollateralLong(), qDec), CL, assertEqPSThresholdCL, "CL not equal");
         assertApproxEqAbs(TW.unwrap(_leA.getCollateralShort(), bDec), CS, assertEqPSThresholdCS, "CS not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedLong(), qDec), DL, assertEqPSThresholdDS, "DL not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedShort(), bDec), DS, assertEqPSThresholdDL, "DS not equal");
+        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedLong(), bDec), DL, assertEqPSThresholdDL, "DL not equal");
+        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedShort(), qDec), DS, assertEqPSThresholdDS, "DS not equal");
     }
 
     // --- Test math --- //
