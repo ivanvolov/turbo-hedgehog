@@ -5,15 +5,12 @@ import "forge-std/console.sol";
 
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {Position} from "v4-core/libraries/Position.sol";
-import {Currency} from "v4-core/types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
-import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -29,7 +26,6 @@ import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
-    using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
 
     uint128 public liquidity;
@@ -147,15 +143,15 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         if (amountSpecified > 0) {
             // console.log("> amount specified positive");
             token1Out = uint256(amountSpecified);
-            console.log("token1Out %s", token1Out);
+            // console.log("token1Out %s", token1Out);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
-            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
-            console.log("sqrtPriceNext %s", sqrtPriceNext);
+            // console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
+            // console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             token0In = adjustForFeesUp(token0In, true, amountSpecified);
-            console.log("token0In %s", token0In);
+            // console.log("token0In %s", token0In);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(token1Out)), // specified token = token1
@@ -164,18 +160,18 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         } else {
             // console.log("> amount specified negative");
             token0In = uint256(-amountSpecified);
-            console.log("token0In %s", token0In);
+            // console.log("token0In %s", token0In);
 
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
                 adjustForFeesDown(token0In, true, amountSpecified)
             );
-            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
-            console.log("sqrtPriceNext %s", sqrtPriceNext);
+            // console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
+            // console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            console.log("token1Out %s", token1Out);
+            // console.log("token1Out %s", token1Out);
 
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(token0In)), // specified token = token0
@@ -192,7 +188,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         returns (BeforeSwapDelta beforeSwapDelta, uint256 token0Out, uint256 token1In, uint160 sqrtPriceNext)
     {
         if (amountSpecified > 0) {
-            // console.log("> amount specified positive");
+            console.log("> amount specified positive");
             token0Out = uint256(amountSpecified);
             console.log("token0Out %s", token0Out);
 
@@ -209,7 +205,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 int128(uint128(token1In)) // unspecified token = token1
             );
         } else {
-            // console.log("> amount specified negative");
+            console.log("> amount specified negative");
             token1In = uint256(-amountSpecified);
             console.log("token1In %s", token1In);
 

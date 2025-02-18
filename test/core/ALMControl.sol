@@ -15,7 +15,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
+import {CurrencySettler} from "@forks/uniswap-v4/CurrencySettler.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
 // ** libraries

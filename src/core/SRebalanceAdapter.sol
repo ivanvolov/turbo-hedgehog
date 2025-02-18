@@ -3,17 +3,6 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-// ** v4 imports
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
-import {Currency} from "v4-core/types/Currency.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
-
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
