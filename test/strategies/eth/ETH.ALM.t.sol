@@ -32,6 +32,7 @@ import {IBase} from "@src/interfaces/IBase.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract ETHALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
@@ -81,7 +82,7 @@ contract ETHALMTest is ALMTestBase {
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
-        init_hook(true);
+        init_hook(true, false);
         assertEq(hook.tickLower(), 200458);
         assertEq(hook.tickUpper(), 194458);
 
@@ -92,8 +93,8 @@ contract ETHALMTest is ALMTestBase {
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(false);
-            positionManager.setFees(0);
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            IPositionManagerStandard(address(positionManager)).setFees(0);
+            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(weight);
@@ -101,7 +102,6 @@ contract ETHALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(shortLeverage);
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(2652e18);
             vm.stopPrank();
         }
 
@@ -323,7 +323,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         uint256 usdcToSwap = 12146292769;
 
@@ -346,7 +346,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         uint256 wethToGetFSwap = 4543037198334830000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -371,7 +371,7 @@ contract ETHALMTest is ALMTestBase {
         uint256 wethToSwap = 4611698430797450000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -392,7 +392,7 @@ contract ETHALMTest is ALMTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        positionManager.setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
 
         uint256 usdcToGetFSwap = 12207177586;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -438,7 +438,7 @@ contract ETHALMTest is ALMTestBase {
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
 
-        positionManager.setFees(fee);
+        IPositionManagerStandard(address(positionManager)).setFees(fee);
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
 

@@ -83,7 +83,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         console.log("DL %s", lendingAdapter.getBorrowedLong());
         console.log("DS %s", lendingAdapter.getBorrowedShort());
 
-        console.log("DepositDone");
+        console.log("DepositDone\n");
 
         return (amountIn, _shares);
     }
@@ -141,7 +141,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         liquidity = rebalanceAdapter.calcLiquidity();
         // console.log("liquidity %s", liquidity);
 
-        console.log("WithdrawDone");
+        console.log("WithdrawDone\n");
     }
 
     function onFlashLoanTwoTokens(
@@ -263,15 +263,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
-    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256, uint256) {
-        console.log("here");
-
+    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
         if (zeroForOne) {
-            (, uint256 usdcIn, uint256 wethOut, ) = getZeroForOneDeltas(amountSpecified);
-            return (usdcIn, wethOut);
+            (, token0, token1, ) = getZeroForOneDeltas(amountSpecified);
         } else {
-            (, uint256 usdcOut, uint256 wethIn, ) = getOneForZeroDeltas(amountSpecified);
-            return (usdcOut, wethIn);
+            (, token0, token1, ) = getOneForZeroDeltas(amountSpecified);
         }
     }
 

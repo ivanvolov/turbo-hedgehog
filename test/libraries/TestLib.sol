@@ -25,6 +25,7 @@ library TestLib {
     address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
+    address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
 
     // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     address constant chainlink_feed_WETH = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;

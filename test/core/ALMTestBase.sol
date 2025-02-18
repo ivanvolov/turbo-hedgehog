@@ -20,6 +20,7 @@ import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
+import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapV3SwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
 import {Oracle} from "@src/core/Oracle.sol";
 
@@ -145,7 +146,7 @@ abstract contract ALMTestBase is Test, Deployers {
         oracle = new Oracle(feed0, feed1);
     }
 
-    function init_hook(bool _invertedPool) internal {
+    function init_hook(bool _invertedPool, bool isUnicord) internal {
         invertedPool = _invertedPool;
         vm.startPrank(deployer.addr);
 
@@ -166,7 +167,9 @@ abstract contract ALMTestBase is Test, Deployers {
 
         // MARK: Deploying modules and setting up parameters
         // @Notice: lendingAdapter should already be created
-        positionManager = new PositionManager();
+        if (isUnicord) positionManager = new UnicordPositionManager();
+        else positionManager = new PositionManager();
+
         swapAdapter = new UniswapV3SwapAdapter();
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter();
@@ -188,8 +191,9 @@ abstract contract ALMTestBase is Test, Deployers {
         _setTokens(address(rebalanceAdapter));
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
-        rebalanceAdapter.setOraclePriceAtLastRebalance(0);
+        rebalanceAdapter.setOraclePriceAtLastRebalance(oracle.price());
         rebalanceAdapter.setTimeAtLastRebalance(0);
+        rebalanceAdapter.setIsUnicord(isUnicord);
         // MARK END
 
         (address _token0, address _token1) = getTokensInOrder();

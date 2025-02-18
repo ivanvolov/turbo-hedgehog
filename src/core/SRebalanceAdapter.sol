@@ -34,6 +34,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
     bool public isInvertAssets = false;
+    bool public isUnicord = false;
 
     constructor() Base(msg.sender) {}
 
@@ -81,6 +82,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         isInvertAssets = _isInvertAssets;
     }
 
+    function setIsUnicord(bool _isUnicord) external onlyOwner {
+        isUnicord = _isUnicord;
+    }
+
     // ** Logic
 
     function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
@@ -119,18 +124,23 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         // console.log("slippage %s", slippage);
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
-        console.log("basefl %s", baseToFl.unwrap(bDec));
-        console.log("quotefl %s", quoteToFl.unwrap(qDec));
+        console.log("base Fl %s", baseToFl.unwrap(bDec));
+        console.log("quote Fl %s", quoteToFl.unwrap(qDec));
         lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
 
-        console.log("USDC balance before %s", baseBalanceUnwr());
-        console.log("WETH balance before %s", quoteBalanceUnwr());
+        console.log("Q balance before %s", quoteBalanceUnwr());
+        console.log("B balance before %s", baseBalanceUnwr());
 
-        if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
-        if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
+        if (isUnicord) {
+            if (baseBalanceUnwr() != 0) lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
+            if (quoteBalanceUnwr() != 0) lendingAdapter.addCollateralLong((quoteBalanceUnwr()).wrap(qDec));
+        } else {
+            if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
+            if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
+        }
 
-        console.log("USDC balance after %s", baseBalanceUnwr());
-        console.log("WETH balance after %s", quoteBalanceUnwr());
+        console.log("Q balance after %s", quoteBalanceUnwr());
+        console.log("B balance after %s", baseBalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();
@@ -154,38 +164,42 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         timeAtLastRebalance = block.timestamp;
         alm.updateLiquidity(calcLiquidity());
 
-        console.log("RebalanceDone");
+        console.log("RebalanceDone\n");
     }
 
     function onFlashLoanTwoTokens(
         address base,
-        uint256 amount0,
+        uint256 amountB,
         address quote,
-        uint256 amount1,
+        uint256 amountQ,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
         console.log("> onFlashLoanTwoTokens");
         _positionManagement(data);
-        // console.log("afterCL %s", lendingAdapter.getCollateralLong());
-        // console.log("afterCS %s", lendingAdapter.getCollateralShort());
-        // console.log("afterDL %s", lendingAdapter.getBorrowedLong());
-        // console.log("afterDS %s", lendingAdapter.getBorrowedShort());
+        console.log("afterCL %s", lendingAdapter.getCollateralLong());
+        console.log("afterCS %s", lendingAdapter.getCollateralShort());
+        console.log("afterDL %s", lendingAdapter.getBorrowedLong());
+        console.log("afterDS %s", lendingAdapter.getBorrowedShort());
+
+        // BASE = USDC
 
         // ** Flash loan management
-        console.log("flDEBT ETH %s", amount1);
-        console.log("wethBalance %s", quoteBalanceUnwr());
-        console.log("flDEBT USDC %s", amount0);
-        console.log("usdcBalance %s", baseBalanceUnwr());
+        console.log("flDEBT Q %s", amountQ);
+        console.log("quoteBalance %s", quoteBalanceUnwr());
+        console.log("flDEBT B %s", amountB);
+        console.log("baseBalance %s", baseBalanceUnwr());
 
-        if (amount0 > baseBalanceUnwr()) swapAdapter.swapExactOutput(quote, base, amount0 - baseBalanceUnwr());
+        if (amountB > baseBalanceUnwr()) {
+            console.log("I want to swap %s USDT to %s USDC", quoteBalanceUnwr(), amountB - baseBalanceUnwr());
+            swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr());
+        }
+        console.log("quoteBalance %s", quoteBalanceUnwr());
+        console.log("baseBalance %s", baseBalanceUnwr());
 
-        console.log("wethBalance after %s", quoteBalanceUnwr());
-        console.log("usdcBalance after %s", baseBalanceUnwr());
+        if (amountQ > quoteBalanceUnwr()) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr());
 
-        if (amount1 > quoteBalanceUnwr()) swapAdapter.swapExactOutput(base, quote, amount1 - quoteBalanceUnwr());
-
-        console.log("wethBalance after %s", quoteBalanceUnwr());
-        console.log("usdcBalance after %s", baseBalanceUnwr());
+        console.log("quoteBalance %s", quoteBalanceUnwr());
+        console.log("baseBalance %s", baseBalanceUnwr());
     }
 
     // @Notice: this function is mainly for removing stack too deep error
@@ -257,6 +271,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
                 targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
+            } else if (isUnicord) {
+                targetCL = alm.TVL().mul(weight).mul(2e18 - k);
+                targetCS = alm.TVL().mul(1e18 - weight).mul(2e18 - k);
+
+                targetDL = 0;
+                targetDS = 0;
             } else {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
