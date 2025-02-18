@@ -83,7 +83,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             rebalanceAdapter.setShortLeverage(2 * 1e18); // 2
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(1e18);
             vm.stopPrank();
         }
 

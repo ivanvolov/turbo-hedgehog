@@ -188,7 +188,7 @@ abstract contract ALMTestBase is Test, Deployers {
         _setTokens(address(rebalanceAdapter));
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
-        rebalanceAdapter.setOraclePriceAtLastRebalance(0);
+        rebalanceAdapter.setOraclePriceAtLastRebalance(oracle.price());
         rebalanceAdapter.setTimeAtLastRebalance(0);
         // MARK END
 

@@ -101,7 +101,6 @@ contract ETHALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(shortLeverage);
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(2652e18);
             vm.stopPrank();
         }
 

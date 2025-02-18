@@ -1,4 +1,6 @@
 counterparty
+UNICORDALM
+ETHRALMTest
 cowprotocol
 dogfood
 EOA

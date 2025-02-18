@@ -94,7 +94,6 @@ contract DeltaNeutralALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(shortLeverage);
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.01 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.01 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(1e18);
             vm.stopPrank();
         }
 

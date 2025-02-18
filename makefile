@@ -20,6 +20,10 @@ te:
 	clear && forge test -vv --match-contract ETHALMTest --match-test "test_lifecycle\b"
 tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_lifecycle\b"
+tu:
+	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_deposit_rebalance\b"
+tul:
+	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_deposit_rebalance\b"
 ter:
 	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_lifecycle\b"
 terl:

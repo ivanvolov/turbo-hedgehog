@@ -84,7 +84,6 @@ contract BTCALMTest is ALMTestBase {
             rebalanceAdapter.setShortLeverage(shortLeverage);
             rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
             rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
-            rebalanceAdapter.setOraclePriceAtLastRebalance(98177692366400000000000);
             vm.stopPrank();
         }
         approve_accounts();
