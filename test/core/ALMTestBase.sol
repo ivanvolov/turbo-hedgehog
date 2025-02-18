@@ -37,11 +37,11 @@ import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {IUniswapV3SwapAdapter} from "@src/interfaces/IUniswapV3SwapAdapter.sol";
+import {IUniswapV3SwapAdapter} from "@src/interfaces/swapAdapters/IUniswapV3SwapAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {ISwapRouter} from "@forks/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
-import {IEulerVault} from "@forks/euler/IVault.sol";
+import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
+import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
+import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 abstract contract ALMTestBase is Test, Deployers {

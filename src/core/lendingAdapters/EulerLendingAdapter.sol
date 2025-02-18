@@ -4,8 +4,8 @@ pragma solidity ^0.8.25;
 import "forge-std/console.sol";
 
 // ** Euler imports
-import {IEulerVault} from "@forks/euler/IVault.sol";
-import {IEVC} from "@forks/euler/IEVC.sol";
+import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
+import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
 
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";

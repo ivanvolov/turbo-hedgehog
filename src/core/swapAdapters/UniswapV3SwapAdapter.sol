@@ -8,8 +8,8 @@ import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {ISwapRouter} from "@forks/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@forks/IUniswapV3Pool.sol";
+import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
+import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
