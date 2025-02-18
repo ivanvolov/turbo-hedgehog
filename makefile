@@ -20,22 +20,18 @@ te:
 	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
 tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
-tu:
-	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_lifecycle\b"
-tul:
-	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_lifecycle\b"
 ter:
-	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_lifecycle\b"
+	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"
 terl:
-	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_lifecycle\b"
+	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_"
 tb:
 	clear && forge test -vv --match-contract BTCALMTest --match-test "test_deposit_rebalance\b"
 tbl:
 	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_deposit_rebalance\b"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle\b"
+	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle\b"
+	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
 
 tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
