@@ -149,6 +149,191 @@ contract UNICORDALMTest is ALMTestBase {
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
     }
 
+    function test_deposit_rebalance_swap_price_up_in() public {
+        test_deposit_rebalance();
+        uint256 usdcToSwap = 17897776432;
+
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwap);
+
+        (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
+        assertApproxEqAbs(deltaUSDT, 4626805947735540197, 1e4, "tvl");
+
+        assertEqBalanceState(swapper.addr, deltaUSDT, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(173406801524476855220, 307920000000, 444249109866, 38073607472212395416);
+
+        assertEq(hook.sqrtPriceCurrent(), 1270692167884249415165740426235478);
+        assertApproxEqAbs(hook.TVL(), 99913835812202105946, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_up_out() public {
+        test_deposit_rebalance();
+
+        uint256 usdtToGetFSwap = 4626903915919660000;
+        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
+        assertEq(usdcToSwapQ, 12371660056);
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
+
+        (, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
+        assertApproxEqAbs(deltaUSDT, 4626903915919660000, 1e1, "tvl");
+
+        assertEqBalanceState(swapper.addr, deltaUSDT, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(173406661919814484500, 307920000000, 444248729008, 38073565835734144500);
+
+        assertEq(hook.sqrtPriceCurrent(), 1270692033691648863352713011702213);
+        assertApproxEqAbs(hook.TVL(), 99913836793875091884, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_up_out_revert_deviations() public {
+        test_deposit_rebalance();
+
+        vm.prank(deployer.addr);
+        hook.setSwapPriceThreshold(3 * 1e15);
+
+        uint256 usdtToGetFSwap = 4626903915919660000;
+        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+
+        vm.expectRevert();
+        swapUSDC_USDT_Out(usdtToGetFSwap);
+    }
+
+    function test_deposit_rebalance_swap_price_down_in() public {
+        uint256 usdtToSwap = 4696832668752530000;
+        test_deposit_rebalance();
+
+        deal(address(USDT), address(swapper.addr), usdtToSwap);
+        assertEqBalanceState(swapper.addr, usdtToSwap, 0);
+
+        (uint256 deltaUSDC, ) = swapUSDT_USDC_In(usdtToSwap);
+        assertEq(deltaUSDC, 17987871838);
+
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(186692986552972355250, 307920000000, 480134758137, 42036153884219825249);
+
+        assertEq(hook.sqrtPriceCurrent(), 1283463286628492184493879892596945);
+        assertApproxEqAbs(hook.TVL(), 99914105171480511295, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_down_out() public {
+        test_deposit_rebalance();
+
+        uint256 usdcToGetFSwap = 17987491283;
+        (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        assertEq(usdtToSwapQ, 4696732800805156176);
+
+        deal(address(USDT), address(swapper.addr), usdtToSwapQ);
+        assertEqBalanceState(swapper.addr, usdtToSwapQ, 0);
+
+        (uint256 deltaUSDC, ) = swapUSDT_USDC_Out(usdcToGetFSwap);
+        assertEq(deltaUSDC, usdcToGetFSwap);
+
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(186692844241147347549, 307920000000, 480134377581, 42036111440342191374);
+
+        assertEq(hook.sqrtPriceCurrent(), 1283463149833677722315484726714060);
+        assertApproxEqAbs(hook.TVL(), 99914104174928305045, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_up_in_fees() public {
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+
+        uint256 usdcToSwap = 17897776432;
+
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwap);
+
+        (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
+        assertApproxEqAbs(deltaUSDT, 4624504019982289378, 1e4, "tvl");
+
+        assertEqBalanceState(swapper.addr, deltaUSDT, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(173410081771525237636, 307920000000, 444249109866, 38074585791507527014);
+
+        assertEq(hook.sqrtPriceCurrent(), 1270695320965775488682522591655933);
+        assertApproxEqAbs(hook.TVL(), 99916137739955356764, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_up_out_fees() public {
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+
+        uint256 usdtToGetFSwap = 4626903915919660000;
+        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
+        assertEq(usdcToSwapQ, 17907106368);
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+        assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
+
+        (, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
+        assertApproxEqAbs(deltaUSDT, 4626903915919660000, 1e1, "tvl");
+
+        assertEqBalanceState(swapper.addr, deltaUSDT, 0);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(173406661919814484500, 307920000000, 444239779931, 38073565835734144500);
+
+        assertEq(hook.sqrtPriceCurrent(), 1270692033691648863352713011702213);
+        assertApproxEqAbs(hook.TVL(), 99916161833365868709, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_down_in_fees() public {
+        uint256 usdtToSwap = 4696832668752530000;
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+
+        deal(address(USDT), address(swapper.addr), usdtToSwap);
+        assertEqBalanceState(swapper.addr, usdtToSwap, 0);
+
+        (uint256 deltaUSDC, ) = swapUSDT_USDC_In(usdtToSwap);
+        assertEq(deltaUSDC, 17978922963);
+
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(186692986552972355250, 307920000000, 480125809262, 42036153884219825249);
+
+        assertEq(hook.sqrtPriceCurrent(), 1283460069868909267964367933948804);
+        assertApproxEqAbs(hook.TVL(), 99916430158490124182, 1e1, "tvl");
+    }
+
+    function test_deposit_rebalance_swap_price_down_out_fees() public {
+        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+
+        uint256 usdcToGetFSwap = 17987491283;
+        (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        assertEq(usdtToSwapQ, 4699081167205558754);
+
+        deal(address(USDT), address(swapper.addr), usdtToSwapQ);
+        assertEqBalanceState(swapper.addr, usdtToSwapQ, 0);
+
+        (uint256 deltaUSDC, ) = swapUSDT_USDC_Out(usdcToGetFSwap);
+        assertEq(deltaUSDC, usdcToGetFSwap);
+
+        assertEqBalanceState(swapper.addr, 0, deltaUSDC);
+        assertEqBalanceState(address(hook), 0, 0);
+
+        assertEqPositionState(186696190663267921224, 307920000000, 480134377581, 42037109496062362469);
+
+        assertEq(hook.sqrtPriceCurrent(), 1283463149833677722315484726714060);
+        assertApproxEqAbs(hook.TVL(), 99916452541328707625, 1e1, "tvl");
+    }
+
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(fee);
