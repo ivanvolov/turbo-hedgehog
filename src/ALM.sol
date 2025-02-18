@@ -66,13 +66,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         refreshReserves();
         uint256 TVL1 = TVL();
 
-        console.log("!");
         if (isInvertAssets) {
-            console.log("1");
             IERC20(base).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(baseBalance(true));
         } else {
-            console.log("2");
             IERC20(quote).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }

@@ -406,9 +406,6 @@ abstract contract ALMTestBase is Test, Deployers {
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
 
-    uint8 public assertLDecimals;
-    uint8 public assertSDecimals;
-
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
     }
@@ -495,42 +492,22 @@ abstract contract ALMTestBase is Test, Deployers {
     }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
+        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
         try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
-            console.log("CL", TW.unwrap(_lendingAdapter.getCollateralLong(), assertLDecimals));
-            console.log("CS", TW.unwrap(_lendingAdapter.getCollateralShort(), assertSDecimals));
-            console.log("DL", TW.unwrap(_lendingAdapter.getBorrowedLong(), assertSDecimals));
-            console.log("DS", TW.unwrap(_lendingAdapter.getBorrowedShort(), assertLDecimals));
+            console.log("CL", TW.unwrap(_leA.getCollateralLong(), qDec));
+            console.log("CS", TW.unwrap(_leA.getCollateralShort(), bDec));
+            console.log("DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
+            console.log("DS", TW.unwrap(_leA.getBorrowedShort(), qDec));
             _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
-        assertApproxEqAbs(
-            TW.unwrap(_lendingAdapter.getCollateralLong(), assertLDecimals),
-            CL,
-            assertEqPSThresholdCL,
-            "CL not equal"
-        );
-        assertApproxEqAbs(
-            TW.unwrap(_lendingAdapter.getCollateralShort(), assertSDecimals),
-            CS,
-            assertEqPSThresholdCS,
-            "CS not equal"
-        );
-        assertApproxEqAbs(
-            TW.unwrap(_lendingAdapter.getBorrowedLong(), assertLDecimals),
-            DL,
-            assertEqPSThresholdDS,
-            "DL not equal"
-        );
-        assertApproxEqAbs(
-            TW.unwrap(_lendingAdapter.getBorrowedShort(), assertSDecimals),
-            DS,
-            assertEqPSThresholdDL,
-            "DS not equal"
-        );
+        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
+        assertApproxEqAbs(TW.unwrap(_leA.getCollateralLong(), qDec), CL, assertEqPSThresholdCL, "CL not equal");
+        assertApproxEqAbs(TW.unwrap(_leA.getCollateralShort(), bDec), CS, assertEqPSThresholdCS, "CS not equal");
+        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedLong(), qDec), DL, assertEqPSThresholdDS, "DL not equal");
+        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedShort(), bDec), DS, assertEqPSThresholdDL, "DS not equal");
     }
 
     // --- Test math --- //

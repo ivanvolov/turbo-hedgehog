@@ -44,8 +44,6 @@ contract ETHRALMTest is ALMTestBase {
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
             assertEqPSThresholdDS = 1e5;
-            assertLDecimals = 18;
-            assertSDecimals = 6;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);

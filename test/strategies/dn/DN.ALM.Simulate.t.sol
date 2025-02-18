@@ -46,9 +46,6 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
             assertEqPSThresholdDS = 1e5;
-
-            assertLDecimals = 18;
-            assertSDecimals = 8;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)

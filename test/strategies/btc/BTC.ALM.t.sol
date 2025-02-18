@@ -40,13 +40,10 @@ contract BTCALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
-            assertEqPSThresholdCL = TW.wrap(1e1, 8);
+            assertEqPSThresholdCL = 1e2;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = TW.wrap(1e1, 8);
-
-            assertLDecimals = 6;
-            assertSDecimals = 8;
+            assertEqPSThresholdDS = 1e2;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -57,19 +54,19 @@ contract BTCALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
         create_lending_adapter(
             TestLib.eulerUSDCVault1,
-            0,
-            TestLib.eulerBTCVault1,
+            2000000e6,
+            TestLib.eulerCbBTCVault1,
             0,
             TestLib.eulerUSDCVault2,
             0,
-            TestLib.eulerBTCVault2,
-            0
+            TestLib.eulerCbBTCVault2,
+            100e8
         );
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true);
-        // assertEq(hook.tickLower(), 164372);
-        // assertEq(hook.tickUpper(), 158372);
+        assertEq(hook.tickLower(), -65897);
+        assertEq(hook.tickUpper(), -71897);
 
         // ** Setting up strategy params
         {
@@ -100,19 +97,19 @@ contract BTCALMTest is ALMTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(BTC), address(alice.addr), amountToDep);
-
         vm.prank(alice.addr);
+
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
         console.log("shares %s", shares);
-        // assertApproxEqAbs(shares, 9999999999000000000, 1e1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
+        assertApproxEqAbs(shares, 9999999990000000000, 1e1);
+        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
-        // assertEqPositionState(amountToDep, 0, 0, 0);
 
+        assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        // assertApproxEqAbs(hook.TVL(), 9999999999000000000, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 9999999990000000000, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -122,9 +119,9 @@ contract BTCALMTest is ALMTestBase {
         uint256 preRebalanceTVL = hook.TVL();
 
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-        // assertEqBalanceStateZero(address(hook));
-        // // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO: Y, error is here
+        rebalanceAdapter.rebalance(slippage * 10);
+        assertEqBalanceStateZero(address(hook));
+        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO: Y, error is here
     }
 
     function test_lifecycle() public {
@@ -299,5 +296,22 @@ contract BTCALMTest is ALMTestBase {
         //         vm.prank(alice.addr);
         //         hook.withdraw(alice.addr, sharesToWithdraw, 0);
         //     }
+    }
+
+    // ** Helpers
+    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, int256(amount), key);
+    }
+
+    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, -int256(amount), key);
+    }
+
+    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(true, int256(amount), key);
+    }
+
+    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(true, -int256(amount), key);
     }
 }
