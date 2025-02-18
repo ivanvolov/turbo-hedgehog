@@ -12,7 +12,7 @@ import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {CurrencySettler} from "v4-core-test/utils/CurrencySettler.sol";
+import {CurrencySettler} from "@forks/uniswap-v4/CurrencySettler.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -224,8 +224,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         refreshReserves();
 
         if (params.zeroForOne) {
-            // If user is selling Token 0 and buying Token 1 (BASE => QUOTE)
-            console.log("> BASE => QUOTE");
+            // If user is selling Token 0 and buying Token 1 (TOKEN0 => TOKEN1)
+            console.log("> TOKEN0 => TOKEN1");
             (
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 token0In,
@@ -240,16 +240,14 @@ contract ALM is BaseStrategyHook, ERC20 {
             key.currency0.take(poolManager, address(this), token0In, false);
             if (isInvertedPool) positionManager.positionAdjustmentPriceUp(token0In.wrap(bDec), token1Out.wrap(qDec));
             else positionManager.positionAdjustmentPriceDown(token1Out.wrap(bDec), token0In.wrap(qDec));
-            console.log("Position adjusted");
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), token1Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
-            console.log("settled");
             return beforeSwapDelta;
         } else {
-            // If user is selling Token 1 and buying Token 0 (QUOTE => BASE)
-            console.log("> QUOTE => BASE");
+            // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
+            console.log("> TOKEN1 => TOKEN0");
             (
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 token0Out,
@@ -261,11 +259,9 @@ contract ALM is BaseStrategyHook, ERC20 {
             checkSwapDeviations(sqrtPriceNext);
             if (isInvertedPool) positionManager.positionAdjustmentPriceDown(token0Out.wrap(bDec), token1In.wrap(qDec));
             else positionManager.positionAdjustmentPriceUp(token1In.wrap(bDec), token0Out.wrap(qDec));
-            console.log("Position adjusted");
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
-            console.log("settled");
             return beforeSwapDelta;
         }
     }

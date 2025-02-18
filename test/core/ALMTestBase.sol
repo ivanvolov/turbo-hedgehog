@@ -9,11 +9,11 @@ import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
+import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
-import {Deployers} from "v4-core-test/utils/Deployers.sol";
+import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -378,7 +378,7 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 token0Before = IERC20(_token0).balanceOf(swapper.addr);
         uint256 token1Before = IERC20(_token1).balanceOf(swapper.addr);
 
-        vm.prank(swapper.addr);
+        vm.startPrank(swapper.addr);
         BalanceDelta delta = swapRouter.swap(
             _key,
             IPoolManager.SwapParams(
@@ -389,6 +389,7 @@ abstract contract ALMTestBase is Test, Deployers {
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
             ""
         );
+        vm.stopPrank();
         if (zeroForOne) {
             assertEq(token0Before - IERC20(_token0).balanceOf(swapper.addr), ALMMathLib.abs(delta.amount0()));
             assertEq(IERC20(_token1).balanceOf(swapper.addr) - token1Before, ALMMathLib.abs(delta.amount1()));
