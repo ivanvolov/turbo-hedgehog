@@ -28,7 +28,6 @@ import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {TickMath as TickMathV3} from "@forks/uniswap-v3/libraries/TickMath.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
