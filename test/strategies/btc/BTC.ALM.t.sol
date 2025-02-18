@@ -144,7 +144,7 @@ contract BTCALMTest is ALMTestBase {
         //         deal(address(USDC), address(swapper.addr), usdcToSwap);
 
         //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (, uint256 deltaWETH) = _swap(true, -int256(usdcToSwap), key);
+        //         (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
         //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -153,7 +153,7 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //         assertApproxEqAbs(deltaBTC, deltaX, 1e15);
         //         assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         //     }
 
@@ -164,7 +164,7 @@ contract BTCALMTest is ALMTestBase {
         //         deal(address(USDC), address(swapper.addr), usdcToSwap);
 
         //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (, uint256 deltaWETH) = _swap(true, -int256(usdcToSwap), key);
+        //         (, uint256 deltaBTC) = swapUSDC_BTC_IN(usdcToSwap);
 
         //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -173,7 +173,7 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //         assertApproxEqAbs(deltaBTC, deltaX, 1e15);
         //         assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         //     }
 
@@ -181,11 +181,11 @@ contract BTCALMTest is ALMTestBase {
         //     {
         //         console.log("Swap Down Out");
         //         uint256 usdcToGetFSwap = 100000e6; //100k USDC
-        //         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        //         deal(address(BTC), address(swapper.addr), wethToSwapQ);
+        //         (, uint256 btcToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        //         deal(address(BTC), address(swapper.addr), btcToSwapQ);
 
         //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (uint256 deltaUSDC, uint256 deltaWETH) = _swap(false, int256(usdcToGetFSwap), key);
+        //         (uint256 deltaUSDC, uint256 deltaBTC) = swapBTC_USDC_Out(usdcToGetFSwap);
 
         //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -194,7 +194,7 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 7e14);
+        //         assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + fee)) / 1e18, 7e14);
         //         assertApproxEqAbs(deltaUSDC, deltaY, 2e6);
         //     }
 
@@ -226,7 +226,7 @@ contract BTCALMTest is ALMTestBase {
         //         deal(address(USDC), address(swapper.addr), usdcToSwap);
 
         //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (, uint256 deltaWETH) = _swap(true, -int256(usdcToSwap), key);
+        //         (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
         //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -235,19 +235,19 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //         assertApproxEqAbs(deltaBTC, deltaX, 1e15);
         //         assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         //     }
 
         //     // ** Swap Up out
         //     {
         //         console.log("Swap Up Out");
-        //         uint256 wethToGetFSwap = 5e18;
-        //         (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+        //         uint256 btcToGetFSwap = 5e18;
+        //         (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(btcToGetFSwap));
         //         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
         //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (uint256 deltaUSDC, uint256 deltaWETH) = _swap(true, int256(wethToGetFSwap), key);
+        //         (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_Out(btcToGetFSwap);
         //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
         //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
@@ -255,18 +255,18 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         assertApproxEqAbs(deltaWETH, deltaX, 3e14);
+        //         assertApproxEqAbs(deltaBTC, deltaX, 3e14);
         //         assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
         //     }
 
         //     // ** Swap Down In
         //     {
         //         console.log("Swap Down In");
-        //         uint256 wethToSwap = 10e18;
-        //         deal(address(BTC), address(swapper.addr), wethToSwap);
+        //         uint256 btcToSwap = 10e18;
+        //         deal(address(BTC), address(swapper.addr), btcToSwap);
 
         //         uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //         (uint256 deltaUSDC, uint256 deltaWETH) = _swap(false, -int256(wethToSwap), key);
+        //         (uint256 deltaUSDC, uint256 deltaBTC) = swapBTC_USDC_In(btcToSwap);
         //         uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
         //         (uint256 deltaX, uint256 deltaY) = _checkSwap(
@@ -274,7 +274,7 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         // assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 4e14); //TODO: Y, error is here
+        //         // assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + fee)) / 1e18, 4e14); //TODO: Y, error is here
         //         // assertApproxEqAbs(deltaUSDC, deltaY, 1e7); //TODO: Y, error is here
         //     }
 
@@ -299,19 +299,19 @@ contract BTCALMTest is ALMTestBase {
     }
 
     // ** Helpers
-    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+    function swapBTC_USDC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, int256(amount), key);
     }
 
-    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
+    function swapBTC_USDC_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, -int256(amount), key);
     }
 
-    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
+    function swapUSDC_BTC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
     }
 
-    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+    function swapUSDC_BTC_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, -int256(amount), key);
     }
 }
