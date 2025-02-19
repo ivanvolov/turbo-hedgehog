@@ -106,6 +106,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         console.log("priceThreshold %s", priceThreshold);
 
+        console.log("rebalancePriceThreshold %s", rebalancePriceThreshold);
+
         return (priceThreshold >= rebalancePriceThreshold, priceThreshold);
     }
 

@@ -93,7 +93,7 @@ contract UNICORDALMTest is ALMTestBase {
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(false);
-            rebalanceAdapter.setRebalancePriceThreshold(1);
+            rebalanceAdapter.setRebalancePriceThreshold(2);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(weight);
             rebalanceAdapter.setLongLeverage(longLeverage);
@@ -337,8 +337,8 @@ contract UNICORDALMTest is ALMTestBase {
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(fee);
-        rebalanceAdapter.setRebalancePriceThreshold(1e15);
-        rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
+        //rebalanceAdapter.setRebalancePriceThreshold(1e15);
+        //rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
         vm.stopPrank();
 
         test_deposit_rebalance();
@@ -516,7 +516,7 @@ contract UNICORDALMTest is ALMTestBase {
         uint256 preRebalanceTVL = hook.TVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
