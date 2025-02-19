@@ -73,53 +73,55 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     uint256 _extraWethBefore;
 
-    // function test_lending_adapter_flash_loan_single() public {
-    //     address testAddress = address(this);
-    //     _fakeSetComponents(testAddress); // ** Enable testAddress to call the adapter
+    function test_lending_adapter_flash_loan_single() public {
+        address testAddress = address(this);
+        _fakeSetComponents(testAddress); // ** Enable testAddress to call the adapter
 
-    //     // ** Approve to LA
-    //     WETH.forceApprove(address(lendingAdapter), type(uint256).max);
-    //     USDC.forceApprove(address(lendingAdapter), type(uint256).max);
+        // ** Approve to LA
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
-    //     _extraWethBefore = WETH.balanceOf(testAddress);
-    //     assertEqBalanceState(testAddress, _extraWethBefore, 0);
-    //     lendingAdapter.flashLoanSingle(address(USDC), 1000 * 1e6, "0x2");
-    // }
+        _extraWethBefore = WETH.balanceOf(testAddress);
+        assertEqBalanceState(testAddress, _extraWethBefore, 0);
+        lendingAdapter.flashLoanSingle(address(USDC), 1000 * 1e6, "0x2");
+    }
 
-    // function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public view {
-    //     assertEq(token, address(USDC), "token should be USDC");
-    //     assertEq(amount, 1000 * 1e6, "amount should be 1000 USDC");
-    //     assertEq(data, "0x2", "data should eq");
-    //     assertEqBalanceState(address(this), _extraWethBefore, amount);
-    // }
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public view {
+        console.log("> onFlashLoanSingle");
+        assertEq(token, address(USDC), "token should be USDC");
+        assertEq(amount, 1000 * 1e6, "amount should be 1000 USDC");
+        assertEq(data, "0x2", "data should eq");
+        assertEqBalanceState(address(this), _extraWethBefore, amount);
+    }
 
-    // function test_lending_adapter_flash_loan_two_tokens() public {
-    //     address testAddress = address(this);
-    //     _fakeSetComponents(testAddress); // ** Enable testAddress to call the adapter
+    function test_lending_adapter_flash_loan_two_tokens() public {
+        address testAddress = address(this);
+        _fakeSetComponents(testAddress); // ** Enable testAddress to call the adapter
 
-    //     // ** Approve to LA
-    //     WETH.forceApprove(address(lendingAdapter), type(uint256).max);
-    //     USDC.forceApprove(address(lendingAdapter), type(uint256).max);
+        // ** Approve to LA
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
 
-    //     _extraWethBefore = WETH.balanceOf(testAddress);
-    //     assertEqBalanceState(testAddress, _extraWethBefore, 0);
-    //     lendingAdapter.flashLoanTwoTokens(address(USDC), 1000 * 1e6, address(WETH), 1 ether, "0x3");
-    // }
+        _extraWethBefore = WETH.balanceOf(testAddress);
+        assertEqBalanceState(testAddress, _extraWethBefore, 0);
+        lendingAdapter.flashLoanTwoTokens(address(USDC), 1000 * 1e6, address(WETH), 1 ether, "0x3");
+    }
 
-    // function onFlashLoanTwoTokens(
-    //     address token0,
-    //     uint256 amount0,
-    //     address token1,
-    //     uint256 amount1,
-    //     bytes calldata data
-    // ) public view {
-    //     assertEq(token0, address(USDC), "token should be USDC");
-    //     assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
-    //     assertEq(token1, address(WETH), "token should be WETH");
-    //     assertEq(amount1, 1 ether, "amount should be 1 WETH");
-    //     assertEq(data, "0x3", "data should eq");
-    //     assertEqBalanceState(address(this), _extraWethBefore + amount1, amount0);
-    // }
+    function onFlashLoanTwoTokens(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1,
+        bytes calldata data
+    ) public view {
+        console.log("> onFlashLoanTwoTokens");
+        assertEq(token0, address(USDC), "token should be USDC");
+        assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
+        assertEq(token1, address(WETH), "token should be WETH");
+        assertEq(amount1, 1 ether, "amount should be 1 WETH");
+        assertEq(data, "0x3", "data should eq");
+        assertEqBalanceState(address(this), _extraWethBefore + amount1, amount0);
+    }
 
     function test_lending_adapter_long() public {
         uint256 expectedPrice = 2652;

@@ -40,8 +40,8 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     // ** Flashloan
 
     function flashLoanSingle(address asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
-        // bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
-        // getVaultByToken(asset).flashLoan(amount, _data);
+        bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
+        morpho.flashLoan(asset, amount, _data);
     }
 
     function flashLoanTwoTokens(
@@ -51,71 +51,65 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         uint256 amount1,
         bytes calldata data
     ) public onlyModule notPaused {
-        // bytes memory _data = abi.encode(uint8(2), msg.sender, asset0, amount0, asset1, amount1, data);
-        // getVaultByToken(asset0).flashLoan(amount0, _data);
+        bytes memory _data = abi.encode(uint8(2), msg.sender, asset0, amount0, asset1, amount1, data);
+        morpho.flashLoan(asset0, amount0, _data);
     }
 
-    // function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
-    //     console.log("onFlashLoan");
-    //     require(msg.sender == address(flVault0) || msg.sender == address(flVault1), "M0");
+    function onMorphoFlashLoan(uint256, bytes calldata _data) external notPaused returns (bytes32) {
+        console.log("onFlashLoan");
+        require(msg.sender == address(morpho), "M0");
 
-    //     uint8 loanType = abi.decode(_data, (uint8));
+        uint8 loanType = abi.decode(_data, (uint8));
 
-    //     if (loanType == 0) {
-    //         (, address sender, address asset, uint256 amount, bytes memory data) = abi.decode(
-    //             _data,
-    //             (uint8, address, address, uint256, bytes)
-    //         );
-    //         IERC20(asset).safeTransfer(sender, amount);
-    //         console.log(asset);
-    //         console.log(amount);
-    //         IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
-    //         IERC20(asset).safeTransferFrom(sender, msg.sender, amount);
-    //     } else if (loanType == 2) {
-    //         console.log("2");
-    //         (
-    //             ,
-    //             address sender,
-    //             address asset0,
-    //             uint256 amount0,
-    //             address asset1,
-    //             uint256 amount1,
-    //             bytes memory data
-    //         ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+        if (loanType == 0) {
+            (, address sender, address asset, uint256 amount, bytes memory data) = abi.decode(
+                _data,
+                (uint8, address, address, uint256, bytes)
+            );
+            IERC20(asset).safeTransfer(sender, amount);
+            console.log(asset);
+            console.log(amount);
+            IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
+            IERC20(asset).safeTransferFrom(sender, address(this), amount);
+        } else if (loanType == 2) {
+            console.log("2");
+            (
+                ,
+                address sender,
+                address asset0,
+                uint256 amount0,
+                address asset1,
+                uint256 amount1,
+                bytes memory data
+            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
 
-    //         bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
-    //         console.log(asset1);
-    //         console.log(amount1);
-    //         getVaultByToken(asset1).flashLoan(amount1, __data);
-    //         IERC20(asset0).safeTransferFrom(sender, msg.sender, amount0);
-    //     } else if (loanType == 1) {
-    //         console.log("1");
-    //         (
-    //             ,
-    //             address sender,
-    //             address asset0,
-    //             uint256 amount0,
-    //             address asset1,
-    //             uint256 amount1,
-    //             bytes memory data
-    //         ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+            bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
+            console.log(asset1);
+            console.log(amount1);
+            morpho.flashLoan(asset1, amount1, __data);
+            IERC20(asset0).safeTransferFrom(sender, address(this), amount0);
+        } else if (loanType == 1) {
+            console.log("1");
+            (
+                ,
+                address sender,
+                address asset0,
+                uint256 amount0,
+                address asset1,
+                uint256 amount1,
+                bytes memory data
+            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
 
-    //         IERC20(asset0).safeTransfer(sender, amount0);
-    //         IERC20(asset1).safeTransfer(sender, amount1);
-    //         console.log(asset0);
-    //         console.log(amount0);
-    //         IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
-    //         IERC20(asset1).safeTransferFrom(sender, msg.sender, amount1);
-    //     } else revert("M2");
+            IERC20(asset0).safeTransfer(sender, amount0);
+            IERC20(asset1).safeTransfer(sender, amount1);
+            console.log(asset0);
+            console.log(amount0);
+            IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
+            IERC20(asset1).safeTransferFrom(sender, address(this), amount1);
+        } else revert("M2");
 
-    //     return "";
-    // }
-
-    // function getVaultByToken(address token) public view returns (IEulerVault) {
-    //     if (flVault0.asset() == token) return flVault0;
-    //     else if (flVault1.asset() == token) return flVault1;
-    //     else revert("M1");
-    // }
+        return "";
+    }
 
     // ** Long market
 
