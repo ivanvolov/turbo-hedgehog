@@ -271,13 +271,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
                 targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
-            } else if (isUnicord) {
-                targetCL = alm.TVL().mul(weight).mul(2e18 - k);
-                targetCS = alm.TVL().mul(1e18 - weight).mul(2e18 - k);
-
-                targetDL = 0;
-                targetDS = 0;
+                
             } else {
+                
                 targetCL = alm.TVL().mul(weight).mul(longLeverage);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
 
@@ -285,9 +281,23 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             }
 
-            //borrow additional funds to cover slippage
-            targetDL = targetDL.mul(k);
-            targetDS = targetDS.mul(k);
+            if (isUnicord) {
+
+                //discount to cover slippage
+                targetCL = targetCL.mul(2e18 - k);
+                targetCS = targetCS.mul(2e18 - k);
+
+                //no debt operations in unicord
+                targetDL = 0;
+                targetDS = 0;
+
+            } else {
+
+                //borrow additional funds to cover slippage
+                targetDL = targetDL.mul(k);
+                targetDS = targetDS.mul(k);
+
+            }
 
             console.log("targetCL", targetCL);
             console.log("targetCS", targetCS);

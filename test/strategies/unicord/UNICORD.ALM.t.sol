@@ -44,8 +44,8 @@ contract UNICORDALMTest is ALMTestBase {
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
     uint256 weight = 55e16; //50%
-    uint256 slippage = 15e14; //0.15%
-    uint256 fee = 5e14; //0.05%
+    uint256 slippage = 5e14; //0.15%
+    uint256 fee = 1e14; //0.05%
 
     IERC20 USDT = IERC20(TestLib.USDT);
     IERC20 USDC = IERC20(TestLib.USDC);
@@ -83,8 +83,8 @@ contract UNICORDALMTest is ALMTestBase {
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, true);
-        assertEq(hook.tickLower(), 2999);
-        assertEq(hook.tickUpper(), -3001);
+        assertEq(hook.tickLower(), 102);
+        assertEq(hook.tickUpper(), -98);
 
         // ** Setting up strategy params
         {
@@ -350,20 +350,22 @@ contract UNICORDALMTest is ALMTestBase {
         {
             console.log("Swap Up In");
             console.log("Price before", getHookPrice());
-            uint256 usdcToSwap = 100000e6; // 100k USDC
+            uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            console.log("deltaUSDT %s", deltaUSDT);
+
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(
+                uint256(hook.liquidity()) / 1e12,
+                uint160(preSqrtPrice),
+                uint160(postSqrtPrice)
+            );
+            assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
+            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
             console.log("Price after ", getHookPrice());
         }
 
