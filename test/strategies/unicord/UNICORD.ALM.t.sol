@@ -62,6 +62,8 @@ contract UNICORDALMTest is ALMTestBase {
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
             assertEqPSThresholdDS = 1e1;
+            minStepSize = 1 ether;
+            slippageTolerance = 1e15;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -74,8 +76,8 @@ contract UNICORDALMTest is ALMTestBase {
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, true, 100, 100);
-        assertEq(hook.tickLower(), 99);
-        assertEq(hook.tickUpper(), -101);
+        assertEq(hook.tickLower(), 102);
+        assertEq(hook.tickUpper(), -98);
 
         // ** Setting up strategy params
         {

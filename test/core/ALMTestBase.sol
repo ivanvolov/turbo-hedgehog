@@ -307,13 +307,14 @@ abstract contract ALMTestBase is Test, Deployers {
             );
     }
 
+    uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
+    uint256 slippageTolerance = 1e18; // 1% acceptable price difference
+
     function setV3PoolPrice(uint160 newSqrtPrice) public {
         uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
 
         // ** Configuration parameters
         uint256 initialStepSize = 1000 ether; // Initial swap amount
-        uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
-        uint256 slippageTolerance = 1e18; // 1% acceptable price difference
         uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
         uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
 
@@ -354,12 +355,12 @@ abstract contract ALMTestBase is Test, Deployers {
             if (stepSize < minStepSize) stepSize = minStepSize;
         }
 
-        if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
-
         console.log("Final price adjustment results:");
         console.log("Target price:", targetPrice);
         console.log("Final price:", currentPrice);
         console.log("Iterations:", iterations);
+
+        if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
     }
 
     function _doV3InputSwap(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
@@ -633,7 +634,10 @@ abstract contract ALMTestBase is Test, Deployers {
 
             console.log("a %s", priceUpper.sqrt() - prePrice.sqrt());
             console.log("b %s", ((priceUpper * prePrice) / 1e18).sqrt());
-            console.log("c %s", liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt()) / (((priceUpper * prePrice) / 1e18).sqrt()));
+            console.log(
+                "c %s",
+                (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) / (((priceUpper * prePrice) / 1e18).sqrt())
+            );
 
             uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
                 (((priceUpper * prePrice) / 1e18).sqrt());
