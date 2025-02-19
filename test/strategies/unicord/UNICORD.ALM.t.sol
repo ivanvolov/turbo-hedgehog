@@ -82,7 +82,7 @@ contract UNICORDALMTest is ALMTestBase {
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(false); //TODO: rename to maybe invert Logic
+            hook.setIsInvertAssets(false);
             // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
             hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
             rebalanceAdapter.setIsInvertAssets(false);
@@ -122,7 +122,7 @@ contract UNICORDALMTest is ALMTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
-    //TODO: this test should revert now it's just not reverting case we changed withdraw logic
+    //-TODO: this test should revert now it's just not reverting case we changed withdraw logic
     // function test_deposit_withdraw_revert() public {
     //     test_deposit();
 

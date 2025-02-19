@@ -126,7 +126,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
-    //TODO: this test should revert now it's just not reverting case we changed withdraw logic
+    //-TODO: this test should revert now it's just not reverting case we changed withdraw logic
     // function test_deposit_withdraw_revert() public {
     //     test_deposit();
 
@@ -146,9 +146,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-
         assertEqBalanceStateZero(address(hook));
-        //TODO: add values assert here
         assertEqHookPositionStateDN(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
     }
 

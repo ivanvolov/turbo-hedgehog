@@ -123,7 +123,7 @@ contract BTCALMTest is ALMTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage * 10);
         assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO: Y, error is here
+        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //-TODO: Y, error is here
     }
 
     function test_lifecycle() public {
@@ -276,8 +276,8 @@ contract BTCALMTest is ALMTestBase {
         //             uint160(preSqrtPrice),
         //             uint160(postSqrtPrice)
         //         );
-        //         // assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + fee)) / 1e18, 4e14); //TODO: Y, error is here
-        //         // assertApproxEqAbs(deltaUSDC, deltaY, 1e7); //TODO: Y, error is here
+        //         // assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + fee)) / 1e18, 4e14); //-TODO: Y, error is here
+        //         // assertApproxEqAbs(deltaUSDC, deltaY, 1e7); //-TODO: Y, error is here
         //     }
 
         //     // ** Make oracle change with swap price

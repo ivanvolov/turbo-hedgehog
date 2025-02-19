@@ -296,28 +296,18 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     // --- Math functions --- //
 
-    //TODO: I would remove balances, cause money can't be withdraws from ALM so no need to account for them
     function TVL() public view returns (uint256) {
         return
-            isInvertAssets
-                ? ALMMathLib.getTVLStable(
-                    quoteBalance(true),
-                    baseBalance(true),
-                    lendingAdapter.getCollateralLong(),
-                    lendingAdapter.getBorrowedShort(),
-                    lendingAdapter.getCollateralShort(),
-                    lendingAdapter.getBorrowedLong(),
-                    oracle.price()
-                )
-                : ALMMathLib.getTVL(
-                    quoteBalance(true),
-                    baseBalance(true),
-                    lendingAdapter.getCollateralLong(),
-                    lendingAdapter.getBorrowedShort(),
-                    lendingAdapter.getCollateralShort(),
-                    lendingAdapter.getBorrowedLong(),
-                    oracle.price()
-                );
+            ALMMathLib.getTVL(
+                quoteBalance(true),
+                baseBalance(true),
+                lendingAdapter.getCollateralLong(),
+                lendingAdapter.getBorrowedShort(),
+                lendingAdapter.getCollateralShort(),
+                lendingAdapter.getBorrowedLong(),
+                oracle.price(),
+                isInvertAssets
+            );
     }
 
     function sharePrice() external view returns (uint256) {

@@ -1,4 +1,4 @@
-# Young hedgehog hook
+# Turbo hedgehog hook
 
 ## Setting up
 
@@ -12,14 +12,35 @@ forge install
 forge build
 ```
 
-### Format
+### Testing
 
-```shell
-forge fmt
+#### Test all cases
+```
+make ta
 ```
 
-### Test all project
+#### Test lending adapter
+```
+make tla
+```
 
+#### Test general functionality and accessability
 ```
-make test_all
+make tg
 ```
+
+#### Test Polaris
+```
+make te
+```
+
+#### Test delta neutral
+```
+make td
+```
+
+#### Test Polaris but in the pool with reversed tokens order
+```
+make ter
+```
+

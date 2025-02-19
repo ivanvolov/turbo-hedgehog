@@ -10,7 +10,6 @@ import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
-//TODO: refactor. Remove unused functions
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
 
@@ -74,21 +73,6 @@ library ALMMathLib {
         return (LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity));
     }
 
-    function calculateSwapFee(int256 RV7, int256 RV30) internal pure returns (uint256) {
-        int256 F0 = 0; // 0.003
-        int256 alpha = 0; // 2.049
-        int256 minFee = 0; //0.05%
-        int256 maxFess = 0; //0.5%
-
-        int256 R = (alpha * (((RV7 * 1e18) / RV30) - 1e18)) / 1e18;
-        return uint256(SignedMath.max(minFee, SignedMath.min(maxFess, (F0 * (1e18 + R)) / 1e18)));
-    }
-
-    function getWithdrawAmount(uint256 shares, uint256 totalSupply, uint256 amount) internal pure returns (uint256) {
-        uint256 ratio = shares.div(totalSupply);
-        return amount.mul(ratio);
-    }
-
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
         if (TVL1 == 0) return TVL2;
         else return (ts.mul(TVL2 - TVL1)).div(TVL1);
@@ -101,37 +85,16 @@ library ALMMathLib {
         uint256 DS,
         uint256 CS,
         uint256 DL,
-        uint256 price
+        uint256 price,
+        bool isStable
     ) internal pure returns (uint256) {
-        //console.log("getTVL");
-        //console.log("EH %s", EH); // WETH
-        //console.log("UH %s", UH); // USDC
-        //console.log("CL %s", CL); // WETH
-        //console.log("DS %s", DS); // WETH
-        //console.log("CS %s", CS); // USDC
-        //console.log("DL %s", DL); // USDC
-        //console.log("price %s", price);
-        // console.log("A", int256(EH) + int256(CL) - int256(DS));
-        // console.log("B", ((int256(CS) + int256(UH) - int256(DL)) * int256(price)) / 1e18);
-        return
-            uint256(
-                int256(EH) + int256(CL) - int256(DS) + (((int256(CS) + int256(UH) - int256(DL)) * 1e18) / int256(price))
-            );
-    }
+        int256 baseValue = int256(EH) + int256(CL) - int256(DS);
+        int256 variableValue = int256(CS) + int256(UH) - int256(DL);
 
-    function getTVLStable(
-        uint256 EH,
-        uint256 UH,
-        uint256 CL,
-        uint256 DS,
-        uint256 CS,
-        uint256 DL,
-        uint256 price
-    ) internal pure returns (uint256) {
         return
-            uint256(
-                ((int256(EH) + int256(CL) - int256(DS)) * int256(price)) / 1e18 + int256(CS) + int256(UH) - int256(DL)
-            );
+            isStable
+                ? uint256((baseValue * int256(price)) / 1e18 + variableValue)
+                : uint256(baseValue + (variableValue * 1e18) / int256(price));
     }
 
     function getVLP(
@@ -182,7 +145,7 @@ library ALMMathLib {
     function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
         uint256 const = 6277101735386680763835789423207666416102355444464034512896; // const = 2^192
         return (uint256(sqrtPriceX96)).pow(uint256(2e18)).mul(1e36).div(const);
-        // TODO: witch is better test: (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
+        //-TODO: witch is better test: (sqrtPriceX96.div(2 ** 96)).mul(sqrtPriceX96.div(2 ** 96));
     }
 
     function getPoolPriceFromOraclePrice(
@@ -207,10 +170,6 @@ library ALMMathLib {
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
         return TickMath.getSqrtPriceAtTick(tick);
-    }
-
-    function getTickFromSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24) {
-        return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
     function absSub(uint256 a, uint256 b) internal pure returns (uint256) {

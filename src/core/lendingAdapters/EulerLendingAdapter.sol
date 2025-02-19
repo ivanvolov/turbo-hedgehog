@@ -18,7 +18,7 @@ import {Base} from "@src/core/base/Base.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapter.sol";
 
-//TODO: all errors to codes or better to libs.
+//-TODO: all errors to codes or better to libs.
 
 contract EulerLendingAdapter is Base, ILendingAdapter {
     using TokenWrapperLib for uint256;

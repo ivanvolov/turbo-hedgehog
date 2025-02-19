@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-//TODO: leverage this to make it stronger https://github.com/dl-solarity/solidity-lib/blob/master/contracts/libs/utils/DecimalsConverter.sol
-
 library TokenWrapperLib {
     uint8 internal constant WAD = 18;
 

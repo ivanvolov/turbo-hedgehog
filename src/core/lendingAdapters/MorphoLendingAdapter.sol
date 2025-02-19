@@ -189,6 +189,3 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         morpho.accrueInterest(morpho.idToMarketParams(shortMId));
     }
 }
-
-// TODO: remove in production
-// LINKS: https://docs.morpho.org/morpho/tutorials/manage-positions

@@ -249,20 +249,10 @@ contract ALMControl is BaseHook, ERC20 {
         return
             _getLiquidityForValue(
                 value,
-                uint256(1e30).div(_getPriceFromTick(currentTick)),
-                uint256(1e30).div(_getPriceFromTick(tickUpper)),
-                uint256(1e30).div(_getPriceFromTick(tickLower)),
+                uint256(1e30).div(ALMMathLib.getPriceFromTick(currentTick)),
+                uint256(1e30).div(ALMMathLib.getPriceFromTick(tickUpper)),
+                uint256(1e30).div(ALMMathLib.getPriceFromTick(tickLower)),
                 1e12
-            );
-    }
-
-    // TODO: optimize, already in MATHLib
-    function _getPriceFromTick(int24 tick) internal pure returns (uint256) {
-        uint160 sqrtRatioAtTick = TickMath.getSqrtPriceAtTick(tick);
-        //const = 2^192
-        return
-            (uint256(sqrtRatioAtTick)).pow(uint256(2e18)).mul(1e36).div(
-                6277101735386680763835789423207666416102355444464034512896
             );
     }
 
