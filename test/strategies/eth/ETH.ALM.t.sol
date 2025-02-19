@@ -272,8 +272,13 @@ contract ETHALMTest is ALMTestBase {
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-        //vm.expectRevert(); //TODO catch revert
-        swapUSDC_WETH_Out(wethToGetFSwap);
+        bool hasReverted = false;
+        try this.swapUSDC_WETH_Out(wethToGetFSwap) {
+            hasReverted = false;
+        } catch {
+            hasReverted = true;
+        }
+        assertTrue(hasReverted, "Expected function to revert but it didn't");
     }
 
     //DONE
