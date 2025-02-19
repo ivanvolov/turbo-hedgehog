@@ -82,9 +82,9 @@ contract UNICORDALMTest is ALMTestBase {
         );
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
-        init_hook(true, true);
-        assertEq(hook.tickLower(), 102);
-        assertEq(hook.tickUpper(), -98);
+        init_hook(true, true, 100, 100);
+        assertEq(hook.tickLower(), 99);
+        assertEq(hook.tickUpper(), -101);
 
         // ** Setting up strategy params
         {

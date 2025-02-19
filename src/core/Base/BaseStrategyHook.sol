@@ -35,7 +35,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     bool public paused = false;
     bool public shutdown = false;
-    int24 public tickDelta = 3000; //TODO tickLowerDelta and tickUpperDelta as params
+    int24 public tickUpperDelta = 3000;
+    int24 public tickLowerDelta = 3000;
     bool public isInvertAssets = false;
     bool public isInvertedPool = true;
     uint256 public swapPriceThreshold;
@@ -43,8 +44,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
 
-    function setTickDelta(int24 _tickDelta) external onlyOwner {
-        tickDelta = _tickDelta;
+    function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
+        tickUpperDelta = _tickUpperDelta;
+    }
+
+    function setTickLowerDelta(int24 _tickLowerDelta) external onlyOwner {
+        tickLowerDelta = _tickLowerDelta;
     }
 
     function setPaused(bool _paused) external onlyOwner {
@@ -123,11 +128,11 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
         if (isInvertedPool) {
             // Here it's inverted due to currencies order
-            tickUpper = tick - tickDelta;
-            tickLower = tick + tickDelta;
+            tickUpper = tick - tickUpperDelta;
+            tickLower = tick + tickLowerDelta;
         } else {
-            tickUpper = tick + tickDelta;
-            tickLower = tick - tickDelta;
+            tickUpper = tick + tickUpperDelta;
+            tickLower = tick - tickLowerDelta;
         }
     }
 

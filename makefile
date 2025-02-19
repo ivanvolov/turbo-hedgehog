@@ -21,9 +21,9 @@ te:
 tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
 tu:
-	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_lifecycle\b"
+	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_"
 tul:
-	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_lifecycle\b"
+	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_"
 ter:
 	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"
 terl:

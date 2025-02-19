@@ -146,7 +146,7 @@ abstract contract ALMTestBase is Test, Deployers {
         oracle = new Oracle(feed0, feed1);
     }
 
-    function init_hook(bool _invertedPool, bool isUnicord) internal {
+    function init_hook(bool _invertedPool, bool isUnicord, int24 _tickLowerDelta, int24 _tickUpperDelta) internal {
         invertedPool = _invertedPool;
         vm.startPrank(deployer.addr);
 
@@ -176,6 +176,8 @@ abstract contract ALMTestBase is Test, Deployers {
 
         _setTokens(address(hook)); // * Notice: tokens should be set first in all contracts
         hook.setIsInvertedPool(invertedPool);
+        hook.setTickUpperDelta(_tickUpperDelta);
+        hook.setTickLowerDelta(_tickLowerDelta);
         _setComponents(address(hook));
 
         _setTokens(address(lendingAdapter));
@@ -558,7 +560,7 @@ abstract contract ALMTestBase is Test, Deployers {
         return (deltaX, deltaY);
     }
 
-function _checkSwapReverse(
+    function _checkSwapReverse(
         uint256 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice

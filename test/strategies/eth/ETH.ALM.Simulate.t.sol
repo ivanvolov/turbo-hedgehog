@@ -66,7 +66,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        init_hook(true, false);
+        init_hook(true, false, 3000, 3000);
 
         // ** Setting up strategy params
         {

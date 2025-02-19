@@ -84,7 +84,7 @@ contract ETHALMTest is MorphoTestBase {
         // create_lending_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
-        init_hook(true, false);
+        init_hook(true, false, 3000, 3000);
         assertEq(hook.tickLower(), 200458);
         assertEq(hook.tickUpper(), 194458);
 
