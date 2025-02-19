@@ -126,16 +126,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
-    //-TODO: this test should revert now it's just not reverting case we changed withdraw logic
-    // function test_deposit_withdraw_revert() public {
-    //     test_deposit();
-
-    //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-    //     vm.expectRevert(IALM.ZeroDebt.selector);
-    //     vm.prank(alice.addr);
-    //     hook.withdraw(alice.addr, sharesToWithdraw, 0);
-    // }
-
     function test_deposit_rebalance() public {
         test_deposit();
 

@@ -56,7 +56,7 @@ abstract contract Base is IBase {
         _postSetTokens();
     }
 
-    function _postSetTokens() internal virtual {} //-TODO: Maybe do "only one approve" here on all tokens in the child contracts like with modules
+    function _postSetTokens() internal virtual {}
 
     function setComponents(
         address _alm,
