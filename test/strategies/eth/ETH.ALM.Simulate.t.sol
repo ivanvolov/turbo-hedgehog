@@ -55,16 +55,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler(
-            TestLib.eulerUSDCVault1,
-            0,
-            TestLib.eulerWETHVault1,
-            0,
-            TestLib.eulerUSDCVault2,
-            0,
-            TestLib.eulerWETHVault2,
-            0
-        );
+        create_lending_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         init_hook(true, false, 3000, 3000);
 

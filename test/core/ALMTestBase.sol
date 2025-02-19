@@ -31,6 +31,7 @@ import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol"
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
@@ -53,7 +54,7 @@ abstract contract ALMTestBase is Test, Deployers {
 
     uint160 initialSQRTPrice;
     ALM hook;
-    uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts. TODO: witch to set in production?
+    uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts.
     SRebalanceAdapter rebalanceAdapter;
 
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
@@ -109,6 +110,19 @@ abstract contract ALMTestBase is Test, Deployers {
         swapper = TestAccountLib.createTestAccount("swapper");
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
+    }
+
+    function create_lending_adapter_euler_WETH_USDC() internal {
+        create_lending_adapter_euler(
+            TestLib.eulerUSDCVault1,
+            0,
+            TestLib.eulerWETHVault1,
+            0,
+            TestLib.eulerUSDCVault2,
+            0,
+            TestLib.eulerWETHVault2,
+            0
+        );
     }
 
     function create_lending_adapter_euler(

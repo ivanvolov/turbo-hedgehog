@@ -70,16 +70,7 @@ contract UNICORDALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
-        create_lending_adapter_euler(
-            TestLib.eulerUSDCVault1,
-            0,
-            TestLib.eulerUSDTVault1,
-            0,
-            TestLib.eulerUSDCVault2,
-            0,
-            TestLib.eulerUSDTVault2,
-            0
-        );
+        create_lending_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, true, 100, 100);

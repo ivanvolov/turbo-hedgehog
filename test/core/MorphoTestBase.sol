@@ -43,6 +43,12 @@ abstract contract MorphoTestBase is ALMTestBase {
         lendingAdapter = new MorphoLendingAdapter(longMId, shortMId);
     }
 
+    function create_lending_adapter_morpho_unicord() internal {
+        create_and_seed_morpho_markets_unicord();
+        vm.prank(deployer.addr);
+        lendingAdapter = new MorphoLendingAdapter(longMId, shortMId);
+    }
+
     function create_accounts_and_tokens(
         address _base,
         uint8 _bDec,
@@ -66,6 +72,24 @@ abstract contract MorphoTestBase is ALMTestBase {
     }
 
     function create_and_seed_morpho_markets() internal {
+        longMId = create_morpho_market(
+            address(BASE),
+            address(QUOTE),
+            915000000000000000,
+            deployMockOracle(address(0), 0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, 18, 6)
+        );
+        provideLiquidityToMorpho(longMId, 4000000e6); // Providing some BASE
+
+        shortMId = create_morpho_market(
+            address(QUOTE),
+            address(BASE),
+            945000000000000000,
+            deployMockOracle(0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, address(0), 6, 18)
+        );
+        provideLiquidityToMorpho(shortMId, 1000 ether); // Providing some QUOTE
+    }
+
+    function create_and_seed_morpho_markets_unicord() internal {
         longMId = create_morpho_market(
             address(BASE),
             address(QUOTE),

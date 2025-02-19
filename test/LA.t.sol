@@ -43,6 +43,7 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     IERC20 WETH = IERC20(TestLib.WETH);
     IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 USDT = IERC20(TestLib.USDT);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -58,22 +59,21 @@ contract LendingAdaptersTest is MorphoTestBase {
             assertEqPSThresholdDS = 1e5;
         }
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        // create_lending_adapter_euler(
-        //     TestLib.eulerUSDCVault1,
-        //     0,
-        //     TestLib.eulerWETHVault1,
-        //     0,
-        //     TestLib.eulerUSDCVault2,
-        //     0,
-        //     TestLib.eulerWETHVault2,
-        //     0
-        // );
-        create_lending_adapter_morpho();
     }
 
     uint256 _extraWethBefore;
 
-    function test_lending_adapter_flash_loan_single() public {
+    function test_lending_adapter_flash_loan_single_morpho() public {
+        create_lending_adapter_morpho();
+        part_lending_adapter_flash_loan_single();
+    }
+
+    function test_lending_adapter_flash_loan_single_euler() public {
+        create_lending_adapter_euler_WETH_USDC();
+        part_lending_adapter_flash_loan_single();
+    }
+
+    function part_lending_adapter_flash_loan_single() public {
         address testAddress = address(this);
         _fakeSetComponents(testAddress); // ** Enable testAddress to call the adapter
 
@@ -94,7 +94,17 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertEqBalanceState(address(this), _extraWethBefore, amount);
     }
 
-    function test_lending_adapter_flash_loan_two_tokens() public {
+    function test_lending_adapter_flash_loan_two_tokens_morpho() public {
+        create_lending_adapter_morpho();
+        part_lending_adapter_flash_loan_two_tokens();
+    }
+
+    function test_lending_adapter_flash_loan_two_tokens_euler() public {
+        create_lending_adapter_euler_WETH_USDC();
+        part_lending_adapter_flash_loan_two_tokens();
+    }
+
+    function part_lending_adapter_flash_loan_two_tokens() public {
         address testAddress = address(this);
         _fakeSetComponents(testAddress); // ** Enable testAddress to call the adapter
 
@@ -123,7 +133,17 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertEqBalanceState(address(this), _extraWethBefore + amount1, amount0);
     }
 
-    function test_lending_adapter_long() public {
+    function test_lending_adapter_long_morpho() public {
+        create_lending_adapter_morpho();
+        part_lending_adapter_long();
+    }
+
+    function test_lending_adapter_long_euler() public {
+        create_lending_adapter_euler_WETH_USDC();
+        part_lending_adapter_long();
+    }
+
+    function part_lending_adapter_long() public {
         uint256 expectedPrice = 2652;
         _fakeSetComponents(alice.addr); // ** Enable Alice to call the adapter
 
@@ -162,7 +182,17 @@ contract LendingAdaptersTest is MorphoTestBase {
         vm.stopPrank();
     }
 
-    function test_lending_adapter_short() public {
+    function test_lending_adapter_short_morpho() public {
+        create_lending_adapter_morpho();
+        part_lending_adapter_short();
+    }
+
+    function test_lending_adapter_short_euler() public {
+        create_lending_adapter_euler_WETH_USDC();
+        part_lending_adapter_short();
+    }
+
+    function part_lending_adapter_short() public {
         uint256 expectedPrice = 2652;
         _fakeSetComponents(alice.addr); // ** Enable Alice to call the adapter
 
@@ -201,7 +231,17 @@ contract LendingAdaptersTest is MorphoTestBase {
         vm.stopPrank();
     }
 
-    function test_lending_adapter_in_parallel() public {
+    function test_lending_adapter_in_parallel_morpho() public {
+        create_lending_adapter_morpho();
+        part_lending_adapter_in_parallel();
+    }
+
+    function test_lending_adapter_in_parallel_euler() public {
+        create_lending_adapter_euler_WETH_USDC();
+        part_lending_adapter_in_parallel();
+    }
+
+    function part_lending_adapter_in_parallel() public {
         uint256 expectedPrice = 2652;
         _fakeSetComponents(alice.addr); // ** Enable Alice to call the adapter
 
@@ -253,6 +293,33 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, c6to18(1e1));
 
         assertEqBalanceState(alice.addr, wethToSupply, usdcToSupply);
+
+        vm.stopPrank();
+    }
+
+    function test_unicord_morpho_supply_in_parallel() public {
+        vm.skip(true);
+        create_lending_adapter_morpho_unicord();
+        _fakeSetComponents(alice.addr); // ** Enable Alice to call the adapter
+
+        // ** Approve to LA
+        vm.startPrank(alice.addr);
+        USDT.forceApprove(address(lendingAdapter), type(uint256).max);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
+
+        // ** Add Collateral for Long (USDT)
+        uint256 usdtToSupply = 1000e6;
+        deal(address(USDT), address(alice.addr), usdtToSupply);
+        lendingAdapter.addCollateralLong(usdtToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), usdtToSupply, 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
+
+        // ** Add Collateral for Short (USDC)
+        uint256 usdcToSupply = 1000e6;
+        deal(address(USDC), address(alice.addr), usdcToSupply);
+        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
 
         vm.stopPrank();
     }
