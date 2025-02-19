@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 // ** v4 imports
@@ -69,6 +68,7 @@ contract UNICORDALMTest is ALMTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
+        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
@@ -110,7 +110,6 @@ contract UNICORDALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        console.log("shares %s", shares);
 
         assertApproxEqAbs(shares, 999999999999000000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -343,16 +342,12 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
-            console.log("Price before", getHookPrice());
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-            console.log("deltaUSDT %s", deltaUSDT);
 
             // (uint256 deltaX, uint256 deltaY) = _checkSwapUnicord(
             //     uint256(hook.liquidity()) / 1e12,
@@ -361,12 +356,10 @@ contract UNICORDALMTest is ALMTestBase {
             // );
             // assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
             // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-            console.log("Price after ", getHookPrice());
         }
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -386,7 +379,6 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            console.log("Swap Down Out");
             uint256 usdcToGetFSwap = 200000e6; //200k USDC
             (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
@@ -416,7 +408,6 @@ contract UNICORDALMTest is ALMTestBase {
         }
 
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 50000e6; // 50k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -447,7 +438,6 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -467,7 +457,6 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Swap Up out
         {
-            console.log("Swap Up Out");
             uint256 usdtToGetFSwap = 10000e6; //10k USDT
             (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -487,7 +476,6 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Swap Down In
         {
-            console.log("Swap Down In");
             uint256 usdtToSwap = 20000e6;
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 

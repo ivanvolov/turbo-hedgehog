@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
@@ -86,11 +83,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         vm.prank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e16);
         numberOfSwaps = 10; // Number of blocks with swaps
-
         resetGenerator();
-        console.log("Simulation started");
-        console.log(block.timestamp);
-        console.log(block.number);
 
         uint256 randomAmount;
 
@@ -130,9 +123,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
     function try_rebalance(bool rebalanceControl) internal {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
-        console.log(">> isRebalance", isRebalance);
         if (isRebalance) {
-            console.log(">> doing rebalance");
             {
                 vm.startPrank(rebalanceAdapter.owner());
                 bool success = _rebalanceOrError(1e15);
@@ -154,7 +145,6 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
     }
 
     function deposit(uint256 amount, address actor) internal {
-        console.log(">> do deposit:", actor, amount);
         vm.startPrank(actor);
 
         uint256 delShares;

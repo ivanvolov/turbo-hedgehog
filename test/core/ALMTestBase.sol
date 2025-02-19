@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 // ** V4 imports
@@ -46,7 +45,7 @@ import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
-abstract contract ALMTestBase is Test, Deployers {
+abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
     using CurrencyLibrary for Currency;
     using PRBMathUD60x18 for uint256;
@@ -327,9 +326,6 @@ abstract contract ALMTestBase is Test, Deployers {
             uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
             if (priceDiff <= slippageTolerance) break;
             iterations++;
-            // console.log("Iteration:", iterations);
-            // console.log("Current Price:", currentPrice);
-            // console.log("Price Diff:", priceDiff);
 
             bool isZeroForOne = currentPrice >= targetPrice;
             if (invertedPool) isZeroForOne = !isZeroForOne;
@@ -485,8 +481,6 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 shortLeverage,
         uint256 slippage
     ) public view {
-        console.log("preRebalance TVL %s", preRebalanceTVL);
-
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());
 
         uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / oracle.price() / 1e18;
@@ -501,11 +495,6 @@ abstract contract ALMTestBase is Test, Deployers {
         uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort()
             ? calcDS - _lendingAdapter.getBorrowedShort()
             : _lendingAdapter.getBorrowedShort() - calcDS;
-
-        console.log("calcCL %s", calcCL);
-        console.log("calcCS %s", calcCS);
-        console.log("calcDL %s", calcDL);
-        console.log("calcDS %s", calcDS);
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
@@ -567,9 +556,6 @@ abstract contract ALMTestBase is Test, Deployers {
 
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
-
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
         }
 
         return (deltaX, deltaY);
@@ -586,13 +572,8 @@ abstract contract ALMTestBase is Test, Deployers {
             uint256 prePrice = 1e12 * ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
             uint256 postPrice = 1e12 * ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            console.log("prePrice %s", prePrice);
-            console.log("postPrice %s", postPrice);
-
             //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
             uint256 priceUpper = 1e12 * ALMMathLib.getPriceFromTick(hook.tickUpper());
-
-            console.log("priceUpper %s", priceUpper);
 
             uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
                 ((priceUpper * prePrice) / 1e18).sqrt();
@@ -606,9 +587,6 @@ abstract contract ALMTestBase is Test, Deployers {
 
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
-
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
         }
 
         return (deltaX, deltaY);
@@ -625,29 +603,13 @@ abstract contract ALMTestBase is Test, Deployers {
             uint256 prePrice = ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
             uint256 postPrice = ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            console.log("prePrice %s", prePrice);
-            console.log("postPrice %s", postPrice);
-
             uint256 priceUpper = 1e36 / ALMMathLib.getPriceFromTick(hook.tickUpper());
-
-            console.log("priceUpper %s", priceUpper);
-
-            console.log("a %s", priceUpper.sqrt() - prePrice.sqrt());
-            console.log("b %s", ((priceUpper * prePrice) / 1e18).sqrt());
-            console.log(
-                "c %s",
-                (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) / (((priceUpper * prePrice) / 1e18).sqrt())
-            );
 
             uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
                 (((priceUpper * prePrice) / 1e18).sqrt());
 
-            console.log("preX %s", preX);
-
             uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
                 ((priceUpper * postPrice).sqrt());
-
-            console.log("postX %s", postX);
 
             uint256 preY = (liquidity *
                 (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
@@ -656,9 +618,6 @@ abstract contract ALMTestBase is Test, Deployers {
 
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
-
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
         }
 
         return (deltaX, deltaY);

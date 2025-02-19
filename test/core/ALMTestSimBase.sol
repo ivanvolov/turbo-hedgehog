@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
@@ -81,7 +78,6 @@ abstract contract ALMTestSimBase is ALMTestBase {
     }
 
     function simulate_swap(uint256 amount, bool zeroForOne, bool _in, bool swapInControl) internal {
-        // console.log(">> do swap", amount, zeroForOne, _in);
         int256 delta0;
         int256 delta1;
         int256 delta0c;
@@ -138,7 +134,6 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
     function _rebalanceOrError(uint256 s) internal returns (bool success) {
         try rebalanceAdapter.rebalance(s) {
-            console.log("rebalanced with slippage %s", s);
             return true;
         } catch {
             return false;

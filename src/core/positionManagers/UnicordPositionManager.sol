@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
@@ -37,17 +35,9 @@ contract UnicordPositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        console.log("positionAdjustmentPriceUp");
         IERC20(base).safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
 
-        // console.log("CL %s", lendingAdapter.getCollateralLong());
-        // console.log("CS %s", lendingAdapter.getCollateralShort());
-
         lendingAdapter.addCollateralShort(deltaBase);
-
-        // console.log("CL %s", lendingAdapter.getCollateralLong());
-        // console.log("CS %s", lendingAdapter.getCollateralShort());
-
         lendingAdapter.removeCollateralLong(deltaQuote);
 
         IERC20(quote).safeTransfer(address(alm), deltaQuote.unwrap(qDec));

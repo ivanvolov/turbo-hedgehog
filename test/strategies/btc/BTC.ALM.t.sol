@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 // ** v4 imports
@@ -52,6 +51,7 @@ contract BTCALMTest is ALMTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
+        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
@@ -102,7 +102,6 @@ contract BTCALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        console.log("shares %s", shares);
 
         assertApproxEqAbs(shares, 9999999990000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -142,7 +141,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 100000e6; // 100k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -162,7 +160,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -182,7 +179,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            console.log("Swap Down Out");
             uint256 usdcToGetFSwap = 100000e6; //100k USDC
             (, uint256 btcToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(BTC), address(swapper.addr), btcToSwapQ);
@@ -224,7 +220,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -244,7 +239,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Up out
         {
-            console.log("Swap Up Out");
             uint256 btcToGetFSwap = 5e18;
             (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(btcToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -264,7 +258,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Down In
         {
-            console.log("Swap Down In");
             uint256 btcToSwap = 10e18;
             deal(address(BTC), address(swapper.addr), btcToSwap);
 

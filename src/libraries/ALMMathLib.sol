@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
@@ -110,12 +108,6 @@ library ALMMathLib {
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        // console.log("a %s", uint256(2e18).mul(price.sqrt()));
-        // console.log("b %s", priceLower.sqrt());
-        // console.log("c %s", price.div(priceUpper.sqrt()));
-        // console.log("d %s", uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()));
-        // console.log("VLP %s", VLP);
-
         return VLP.div(uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
@@ -128,13 +120,12 @@ library ALMMathLib {
         uint256 debtShort
     ) internal pure returns (uint256, uint256, uint256, uint256) {
         uint256 ratio = sharesOut.div(totalSupply);
-        // console.log("ratio %s", ratio);
+
         return (collateralLong.mul(ratio), collateralShort.mul(ratio), debtLong.mul(ratio), debtShort.mul(ratio));
     }
 
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
-        console.log("price Input: %s", price);
         return int24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
     }
 

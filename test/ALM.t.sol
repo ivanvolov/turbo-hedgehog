@@ -2,7 +2,6 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
@@ -101,7 +100,7 @@ contract ALMGeneralTest is ALMTestBase {
         assertApproxEqAbs(sqrtPrice, 4117174797023293996373463, 23e20);
 
         // ** Tick to HRprice
-        console.log(ALMMathLib.getPriceFromTick(-197309));
+
         uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
         assertApproxEqAbs(price, lastRoundPrice, 3e18);
     }
@@ -126,7 +125,7 @@ contract ALMGeneralTest is ALMTestBase {
         uint128 liquidity = uint128(
             ALMMathLib.getL(ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18), price, priceUpper, priceLower)
         );
-        console.log("liquidity %s", liquidity);
+
         assertApproxEqAbs(liquidity, 46634530208923600, 1e8);
     }
 
@@ -166,10 +165,8 @@ contract ALMGeneralTest is ALMTestBase {
         );
 
         uint256 VLP = ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
-        console.log("VLP %s", VLP);
 
         uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
-        console.log("liquidity %s", liquidity);
 
         assertApproxEqAbs(liquidity, 280185113050771000, 1e8);
     }
@@ -210,10 +207,7 @@ contract ALMGeneralTest is ALMTestBase {
         );
 
         uint256 VLP = ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
-        console.log("VLP %s", VLP);
-
         uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
-        console.log("liquidity %s", liquidity);
 
         assertApproxEqAbs(liquidity, 279779159321772000, 1e8);
     }

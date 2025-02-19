@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
@@ -48,20 +46,12 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint160 sqrtPrice,
         int24
     ) external override onlyPoolManager onlyAuthorizedPool(key) notPaused notShutdown returns (bytes4) {
-        console.log("> afterInitialize");
         sqrtPriceCurrent = sqrtPrice;
         _updateBoundaries();
         return ALM.afterInitialize.selector;
     }
 
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
-        console.log("Deposit");
-
-        console.log("CL %s", lendingAdapter.getCollateralLong());
-        console.log("CS %s", lendingAdapter.getCollateralShort());
-        console.log("DL %s", lendingAdapter.getBorrowedLong());
-        console.log("DS %s", lendingAdapter.getBorrowedShort());
-
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
@@ -78,30 +68,13 @@ contract ALM is BaseStrategyHook, ERC20 {
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
 
-        console.log("CL %s", lendingAdapter.getCollateralLong());
-        console.log("CS %s", lendingAdapter.getCollateralShort());
-        console.log("DL %s", lendingAdapter.getBorrowedLong());
-        console.log("DS %s", lendingAdapter.getBorrowedShort());
-
-        console.log("DepositDone\n");
-
         return (amountIn, _shares);
     }
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
-        console.log("Withdraw");
-
-        // console.log("sharesOut %s", sharesOut);
-        // console.log("totalSupply %s", totalSupply());
-
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
-
-        // console.log("preCL %s", lendingAdapter.getCollateralLong());
-        // console.log("preCS %s", lendingAdapter.getCollateralShort());
-        // console.log("preDL %s", lendingAdapter.getBorrowedLong());
-        // console.log("preDS %s", lendingAdapter.getBorrowedShort());
 
         (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = ALMMathLib.getUserAmounts(
             totalSupply(),
@@ -111,13 +84,6 @@ contract ALM is BaseStrategyHook, ERC20 {
             lendingAdapter.getBorrowedLong(),
             lendingAdapter.getBorrowedShort()
         );
-
-        // console.log("uCL %s", uCL);
-        // console.log("uCS %s", uCS);
-        // console.log("uDL %s", uDL);
-        // console.log("uDS %s", uDS);
-
-        // console.log("PRE TVL %s", alm.TVL());
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0) {
@@ -139,9 +105,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();
-        // console.log("liquidity %s", liquidity);
-
-        console.log("WithdrawDone\n");
     }
 
     function onFlashLoanTwoTokens(
@@ -222,7 +185,6 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         if (params.zeroForOne) {
             // If user is selling Token 0 and buying Token 1 (TOKEN0 => TOKEN1)
-            console.log("> TOKEN0 => TOKEN1");
             (
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 token0In,
@@ -244,7 +206,6 @@ contract ALM is BaseStrategyHook, ERC20 {
             return beforeSwapDelta;
         } else {
             // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
-            console.log("> TOKEN1 => TOKEN0");
             (
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 token0Out,
@@ -278,9 +239,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function checkSwapDeviations(uint160 sqrtPriceNext) internal view {
         uint256 ratio = (uint256(sqrtPriceNext) * 1e18) / uint256(rebalanceAdapter.sqrtPriceAtLastRebalance());
-        console.log("sqrtPriceAtLastRebalance %s", rebalanceAdapter.sqrtPriceAtLastRebalance());
         uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
-        console.log("checkSwapDeviations:", priceThreshold);
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 

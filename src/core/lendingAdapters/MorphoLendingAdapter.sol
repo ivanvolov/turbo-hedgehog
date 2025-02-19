@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** Morpho imports
 import {IMorpho, Id, Position} from "@forks/morpho/IMorpho.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
@@ -56,9 +54,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function onMorphoFlashLoan(uint256, bytes calldata _data) external notPaused returns (bytes32) {
-        console.log("onFlashLoan");
         require(msg.sender == address(morpho), "M0");
-
         uint8 loanType = abi.decode(_data, (uint8));
 
         if (loanType == 0) {
@@ -67,12 +63,10 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
                 (uint8, address, address, uint256, bytes)
             );
             IERC20(asset).safeTransfer(sender, amount);
-            console.log(asset);
-            console.log(amount);
+
             IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
             IERC20(asset).safeTransferFrom(sender, address(this), amount);
         } else if (loanType == 2) {
-            console.log("2");
             (
                 ,
                 address sender,
@@ -84,12 +78,10 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
             ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
 
             bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
-            console.log(asset1);
-            console.log(amount1);
+
             morpho.flashLoan(asset1, amount1, __data);
             IERC20(asset0).safeTransferFrom(sender, address(this), amount0);
         } else if (loanType == 1) {
-            console.log("1");
             (
                 ,
                 address sender,
@@ -102,8 +94,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
             IERC20(asset0).safeTransfer(sender, amount0);
             IERC20(asset1).safeTransfer(sender, amount1);
-            console.log(asset0);
-            console.log(amount0);
+
             IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
             IERC20(asset1).safeTransferFrom(sender, address(this), amount1);
         } else revert("M2");
@@ -124,23 +115,19 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function borrowLong(uint256 amount) external onlyModule notPaused notShutdown {
-        console.log("borrowLong %s", amount.unwrap(bDec));
         morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
     }
 
     function repayLong(uint256 amount) external onlyModule notPaused {
-        console.log("repayLong %s", amount.unwrap(bDec));
         IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
     }
 
     function removeCollateralLong(uint256 amount) external onlyModule notPaused {
-        console.log("removeCollateralLong %s", amount.unwrap(qDec));
         morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
     }
 
     function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
-        console.log("addCollateralLong %s", amount.unwrap(qDec));
         IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
     }
@@ -158,23 +145,19 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function borrowShort(uint256 amount) external onlyModule notPaused notShutdown {
-        console.log("borrowShort %s", amount.unwrap(qDec));
         morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
     }
 
     function repayShort(uint256 amount) external onlyModule notPaused {
-        console.log("repayShort %s", amount.unwrap(qDec));
         IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
     }
 
     function removeCollateralShort(uint256 amount) external onlyModule notPaused {
-        console.log("removeCollateralShort %s", amount.unwrap(bDec));
         morpho.withdrawCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), msg.sender);
     }
 
     function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
-        console.log("addCollateralShort %s", amount.unwrap(bDec));
         IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");
     }

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
@@ -92,21 +90,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (bool _isPriceRebalance, uint256 priceThreshold) = isPriceRebalance();
         (bool _isTimeRebalance, uint256 auctionTriggerTime) = isTimeRebalance();
 
-        console.log("auctionTriggerTime %s", auctionTriggerTime);
         return (_isPriceRebalance || _isTimeRebalance, priceThreshold, auctionTriggerTime);
     }
 
     function isPriceRebalance() public view returns (bool, uint256) {
-        console.log("currentPrice %s", oracle.price());
-        console.log("priceAtLastRebalance %s", oraclePriceAtLastRebalance);
-
         uint256 oraclePrice = oracle.price();
         uint256 cachedRatio = oraclePrice.div(oraclePriceAtLastRebalance);
         uint256 priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
-
-        console.log("priceThreshold %s", priceThreshold);
-
-        console.log("rebalancePriceThreshold %s", rebalancePriceThreshold);
 
         return (priceThreshold >= rebalancePriceThreshold, priceThreshold);
     }
@@ -117,21 +107,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function rebalance(uint256 slippage) external onlyOwner notPaused notShutdown {
-        console.log("Rebalance");
-
         (bool isRebalance, , ) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
 
-        // console.log("slippage %s", slippage);
-
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
-        console.log("base Fl %s", baseToFl.unwrap(bDec));
-        console.log("quote Fl %s", quoteToFl.unwrap(qDec));
-        lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
 
-        console.log("Q balance before %s", quoteBalanceUnwr());
-        console.log("B balance before %s", baseBalanceUnwr());
+        lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
 
         if (isUnicord) {
             if (baseBalanceUnwr() != 0) lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
@@ -140,9 +122,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
             if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
         }
-
-        console.log("Q balance after %s", quoteBalanceUnwr());
-        console.log("B balance after %s", baseBalanceUnwr());
 
         // ** Check max deviation
         checkDeviations();
@@ -165,8 +144,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
         alm.updateLiquidity(calcLiquidity());
-
-        console.log("RebalanceDone\n");
     }
 
     function onFlashLoanTwoTokens(
@@ -176,32 +153,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amountQ,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
-        console.log("> onFlashLoanTwoTokens");
         _positionManagement(data);
-        console.log("afterCL %s", lendingAdapter.getCollateralLong());
-        console.log("afterCS %s", lendingAdapter.getCollateralShort());
-        console.log("afterDL %s", lendingAdapter.getBorrowedLong());
-        console.log("afterDS %s", lendingAdapter.getBorrowedShort());
-
-        // BASE = USDC
-
-        // ** Flash loan management
-        console.log("flDEBT Q %s", amountQ);
-        console.log("quoteBalance %s", quoteBalanceUnwr());
-        console.log("flDEBT B %s", amountB);
-        console.log("baseBalance %s", baseBalanceUnwr());
-
-        if (amountB > baseBalanceUnwr()) {
-            console.log("I want to swap %s USDT to %s USDC", quoteBalanceUnwr(), amountB - baseBalanceUnwr());
-            swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr());
-        }
-        console.log("quoteBalance %s", quoteBalanceUnwr());
-        console.log("baseBalance %s", baseBalanceUnwr());
-
+        if (amountB > baseBalanceUnwr()) swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr());
         if (amountQ > quoteBalanceUnwr()) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr());
-
-        console.log("quoteBalance %s", quoteBalanceUnwr());
-        console.log("baseBalance %s", baseBalanceUnwr());
     }
 
     // @Notice: this function is mainly for removing stack too deep error
@@ -210,35 +164,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
-
-        console.log("(1)");
         if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
-        console.log("(2)");
         if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
-        console.log("(3)");
-
         if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
-        console.log("(4)");
         if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
-        console.log("(5)");
-
         if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
-        console.log("(6)");
         if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
-        console.log("(7)");
-
-        console.log("CL %s", (lendingAdapter.getCollateralLong()).unwrap(qDec));
-        console.log("CS %s", (lendingAdapter.getCollateralShort()).unwrap(bDec));
-        console.log("DL %s", (lendingAdapter.getBorrowedLong()).unwrap(qDec));
-        console.log("DS %s", (lendingAdapter.getBorrowedShort()).unwrap(bDec));
-
-        // console.log("deltaDL %s", uint256(deltaDL).unwrap(bDec));
-        // console.log("deltaDS %s", uint256(deltaDS).unwrap(qDec));
-
         if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
-        console.log("(8)");
         if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS));
-        console.log("(9)");
     }
 
     // --- Math functions --- //
@@ -247,23 +180,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     function _rebalanceCalculations(
         uint256 k
     ) internal view returns (uint256 baseToFl, uint256 quoteToFl, bytes memory data) {
-        // console.log("> rebalanceCalculations");
-        // console.log("k %s", k);
         uint256 targetDL;
         uint256 targetDS;
-
         int256 deltaCL;
         int256 deltaCS;
         int256 deltaDL;
         int256 deltaDS;
         {
-            console.log("price %s", oracle.price());
-            console.log("currentCL", lendingAdapter.getCollateralLong());
-            console.log("currentCS", lendingAdapter.getCollateralShort());
-            console.log("currentDL", lendingAdapter.getBorrowedLong());
-            console.log("currentDS", lendingAdapter.getBorrowedShort());
-            console.log("preTVL %s", alm.TVL());
-
             uint256 targetCL;
             uint256 targetCS;
             uint256 price = oracle.price();
@@ -273,9 +196,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
                 targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
                 targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
-                
             } else {
-                
                 targetCL = alm.TVL().mul(weight).mul(longLeverage);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
 
@@ -284,37 +205,23 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             }
 
             if (isUnicord) {
-
-                //discount to cover slippage
+                // @Notice: discount to cover slippage
                 targetCL = targetCL.mul(2e18 - k);
                 targetCS = targetCS.mul(2e18 - k);
 
-                //no debt operations in unicord
+                // @Notice: no debt operations in unicord
                 targetDL = 0;
                 targetDS = 0;
-
             } else {
-
-                //borrow additional funds to cover slippage
+                // @Notice: borrow additional funds to cover slippage
                 targetDL = targetDL.mul(k);
                 targetDS = targetDS.mul(k);
-
             }
-
-            console.log("targetCL", targetCL);
-            console.log("targetCS", targetCS);
-            console.log("targetDL", targetDL);
-            console.log("targetDS", targetDS);
 
             deltaCL = int256(targetCL) - int256(lendingAdapter.getCollateralLong());
             deltaCS = int256(targetCS) - int256(lendingAdapter.getCollateralShort());
             deltaDL = int256(targetDL) - int256(lendingAdapter.getBorrowedLong());
             deltaDS = int256(targetDS) - int256(lendingAdapter.getBorrowedShort());
-
-            console.log("deltaCL", deltaCL);
-            console.log("deltaCS", deltaCS);
-            console.log("deltaDL", deltaDL);
-            console.log("deltaDS", deltaDS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -322,43 +229,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaDL < 0) baseToFl += uint256(-deltaDL);
         if (deltaDS < 0) quoteToFl += uint256(-deltaDS);
 
-        console.log("k %s", k);
-
-        console.log("baseToFl %s", baseToFl);
-        console.log("quoteToFl %s", quoteToFl);
-
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
     function calcLiquidity() public view returns (uint128) {
-        console.log("post TVL %s", alm.TVL());
-
         uint256 VLP;
-        if (isInvertAssets) {
-            VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
-        } else {
-            VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());
-        }
-
-        console.log("VLP %s", VLP);
-        console.log("currentOraclePrice %s", oracle.price());
-        console.log("priceAtLastRebalance      %s", oraclePriceAtLastRebalance);
-        console.log(
-            "priceUpper %s",
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickUpper()),
-                alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(bDec, qDec))
-            )
-        );
-        console.log(
-            "priceLower %s",
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickLower()),
-                alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(bDec, qDec))
-            )
-        );
+        if (isInvertAssets) VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+        else VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());
 
         uint256 liquidity = ALMMathLib.getL(
             VLP,
@@ -374,7 +251,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
-        console.log("liquidity %s", liquidity);
         return uint128(liquidity);
     }
 
@@ -383,17 +259,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 currentCL = lendingAdapter.getCollateralLong();
         uint256 currentCS = lendingAdapter.getCollateralShort();
 
-        console.log("CL after %s", currentCL);
-        console.log("CS after %s", currentCS);
-        console.log("DL after %s", lendingAdapter.getBorrowedLong());
-        console.log("DS after %s", lendingAdapter.getBorrowedShort());
-
         uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
         uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
-
-        console.log("longLeverage %s", _longLeverage);
-        console.log("shortLeverage %s", _shortLeverage);
-        console.log("TVL after %s", alm.TVL());
 
         uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
         uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
@@ -140,8 +138,6 @@ contract ALMControl is BaseHook, ERC20 {
         int24 _tickUpper,
         address sender
     ) external selfOnly returns (bytes memory) {
-        // console.log("> unlockModifyPosition");
-
         (BalanceDelta delta, ) = poolManager.modifyLiquidity(
             key,
             IPoolManager.ModifyLiquidityParams({
@@ -152,12 +148,9 @@ contract ALMControl is BaseHook, ERC20 {
             }),
             ""
         );
-        // console.log("USDC balance", key.currency0.balanceOf(sender));
-        // console.log("ETH balance", key.currency1.balanceOf(sender));
 
         if (delta.amount0() < 0) {
             key.currency0.settle(poolManager, sender, uint256(uint128(-delta.amount0())), false);
-            // console.log("amount0", uint256(uint128(-delta.amount0())));
         }
 
         if (delta.amount0() > 0) {
@@ -166,7 +159,6 @@ contract ALMControl is BaseHook, ERC20 {
 
         if (delta.amount1() < 0) {
             key.currency1.settle(poolManager, sender, uint256(uint128(-delta.amount1())), false);
-            // console.log("amount1", uint256(uint128(-delta.amount1())));
         }
 
         if (delta.amount1() > 0) {

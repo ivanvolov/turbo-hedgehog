@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
@@ -86,10 +83,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function test_simulation() public {
-        console.log("> Simulation started");
-        console.log("Start block ts: %s", block.timestamp);
-        console.log("Start block num: %s", block.number);
-
         depositProbabilityPerBlock = 10; // Probability of deposit per block
         maxDeposits = 5; // The maximum number of deposits. Set to max(uint256) to disable
 
@@ -170,7 +163,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
 
         // ** Withdraw all remaining liquidity
         {
-            console.log("Withdraw all remaining liquidity");
             for (uint id = 1; id <= lastGeneratedAddressId; id++) {
                 withdraw(100, getDepositorById(id));
                 save_pool_state();
@@ -185,9 +177,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();
-        console.log("Simulation started");
-        console.log(block.timestamp);
-        console.log(block.number);
 
         uint256 randomAmount;
 
@@ -238,9 +227,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         numberOfSwaps = 10; // Number of blocks with swaps
 
         resetGenerator();
-        console.log("Simulation started");
-        console.log(block.timestamp);
-        console.log(block.number);
 
         uint256 randomAmount;
 
@@ -280,13 +266,8 @@ contract ETHALMSimulationTest is ALMTestSimBase {
 
     function try_rebalance() internal {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
-        console.log(">> isRebalance", isRebalance);
-        // console.log(">> auctionTriggerTime %s", auctionTriggerTime);
-        // console.log(">> block.timestamp %s", block.timestamp);
-        // console.log(">> priceThreshold %s", priceThreshold);
-        // console.log(">> rebalancePriceThreshold %s", rebalanceAdapter.rebalancePriceThreshold());
+
         if (isRebalance) {
-            console.log(">> doing rebalance");
             {
                 vm.startPrank(rebalanceAdapter.owner());
                 bool success = _rebalanceOrError(1e15);
@@ -306,7 +287,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function deposit(uint256 amount, address actor) internal {
-        console.log(">> do deposit:", actor, amount);
         vm.startPrank(actor);
 
         uint256 balanceWETHcontrol;
@@ -358,7 +338,6 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     function withdraw(uint256 sharesPercent, address actor) internal {
         uint256 shares1 = (hook.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
         uint256 shares2 = (hookControl.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
-        console.log(">> do withdraw:", actor, shares1, shares2);
 
         vm.startPrank(actor);
 

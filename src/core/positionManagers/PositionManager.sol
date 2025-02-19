@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";

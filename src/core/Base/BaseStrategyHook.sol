@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -119,15 +117,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     function _updateBoundaries() internal {
-        console.log("_updateBoundaries price: %s", oracle.price());
         int24 tick = ALMMathLib.getTickFromPrice(
             ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, uint8(ALMMathLib.absSub(bDec, qDec)))
         );
-        console.log("_updateBoundaries tick:");
-        console.log(tick);
 
         if (isInvertedPool) {
-            // Here it's inverted due to currencies order
+            // @Notice: Here it's inverted due to currencies order
             tickUpper = tick - tickUpperDelta;
             tickLower = tick + tickLowerDelta;
         } else {
@@ -146,38 +141,24 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         returns (BeforeSwapDelta beforeSwapDelta, uint256 token0In, uint256 token1Out, uint160 sqrtPriceNext)
     {
         if (amountSpecified > 0) {
-            // console.log("> amount specified positive");
             token1Out = uint256(amountSpecified);
-            // console.log("token1Out %s", token1Out);
-
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
-            // console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
-            // console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             token0In = adjustForFeesUp(token0In, true, amountSpecified);
-            // console.log("token0In %s", token0In);
-
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(token1Out)), // specified token = token1
                 int128(uint128(token0In)) // unspecified token = token0
             );
         } else {
-            // console.log("> amount specified negative");
             token0In = uint256(-amountSpecified);
-            // console.log("token0In %s", token0In);
-
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
                 adjustForFeesDown(token0In, true, amountSpecified)
             );
-            // console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
-            // console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            // console.log("token1Out %s", token1Out);
-
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(token0In)), // specified token = token0
                 -int128(uint128(token1Out)) // unspecified token = token1
@@ -193,38 +174,24 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         returns (BeforeSwapDelta beforeSwapDelta, uint256 token0Out, uint256 token1In, uint160 sqrtPriceNext)
     {
         if (amountSpecified > 0) {
-            console.log("> amount specified positive");
             token0Out = uint256(amountSpecified);
-            console.log("token0Out %s", token0Out);
-
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
-            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
-            console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             token1In = adjustForFeesUp(token1In, false, amountSpecified);
-            console.log("token1In %s", token1In);
-
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(token0Out)), // specified token = token0
                 int128(uint128(token1In)) // unspecified token = token1
             );
         } else {
-            console.log("> amount specified negative");
             token1In = uint256(-amountSpecified);
-            console.log("token1In %s", token1In);
-
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
                 sqrtPriceCurrent,
                 liquidity,
                 adjustForFeesDown(token1In, false, amountSpecified)
             );
-            console.log("sqrtPriceCurrent %s", sqrtPriceCurrent);
-            console.log("sqrtPriceNext %s", sqrtPriceNext);
 
             token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            console.log("token0Out %s", token0Out);
-
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(token1In)), // specified token = token1
                 -int128(uint128(token0Out)) // unspecified token = token0

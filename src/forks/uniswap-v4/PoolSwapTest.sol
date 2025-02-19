@@ -10,8 +10,6 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolTestBase} from "v4-core/test/PoolTestBase.sol";
 import {CurrencySettler} from "@forks/uniswap-v4/CurrencySettler.sol";
 
-import "forge-std/console.sol";
-
 contract PoolSwapTest is PoolTestBase {
     using CurrencySettler for Currency;
     using Hooks for IHooks;

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 // ** v4 imports
@@ -68,6 +67,7 @@ contract ETHALMTest is MorphoTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
+        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
@@ -121,7 +121,6 @@ contract ETHALMTest is MorphoTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        console.log("shares %s", shares);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -438,8 +437,6 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
-            console.log("Price before", getHookPrice());
             uint256 usdcToSwap = 100000e6; // 100k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -455,12 +452,10 @@ contract ETHALMTest is MorphoTestBase {
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
             assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-            console.log("Price after ", getHookPrice());
         }
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -480,7 +475,6 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Down Out
         {
-            console.log("Swap Down Out");
             uint256 usdcToGetFSwap = 200000e6; //200k USDC
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -511,7 +505,6 @@ contract ETHALMTest is MorphoTestBase {
         }
 
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 50000e6; // 50k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -543,7 +536,6 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -563,7 +555,6 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Up out
         {
-            console.log("Swap Up Out");
             uint256 wethToGetFSwap = 5e18;
             (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -583,7 +574,6 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Down In
         {
-            console.log("Swap Down In");
             uint256 wethToSwap = 10e18;
             deal(address(WETH), address(swapper.addr), wethToSwap);
 

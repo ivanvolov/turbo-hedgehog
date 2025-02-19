@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 // ** v4 imports
@@ -103,7 +102,6 @@ contract ETHRALMTest is ALMTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        console.log("shares %s", shares);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -142,9 +140,6 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
-
-            console.log("Price before", getHookPrice());
             uint256 usdtToSwap = 100000e6; // 100k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
@@ -161,17 +156,10 @@ contract ETHRALMTest is ALMTestBase {
 
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
             assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-            console.log("Price after ", getHookPrice());
-
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
         }
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdtToSwap = 5000e6; // 5k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
@@ -191,12 +179,9 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            console.log("Swap Down Out");
-
             uint256 usdtToGetFSwap = 200000e6; //200k USDT
             (uint256 wethToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
 
-            console.log("wethToSwapQ %s", wethToSwapQ);
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -211,11 +196,6 @@ contract ETHRALMTest is ALMTestBase {
             );
             assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 7e14);
             assertApproxEqAbs(deltaUSDT, deltaY, 2e6);
-
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
         }
 
         // ** Make oracle change with swap price
@@ -229,12 +209,6 @@ contract ETHRALMTest is ALMTestBase {
         }
 
         {
-            console.log("CL pre %s", lendingAdapter.getCollateralLong());
-            console.log("CS pre %s", lendingAdapter.getCollateralShort());
-            console.log("DL pre %s", lendingAdapter.getBorrowedLong());
-            console.log("DS pre %s", lendingAdapter.getBorrowedShort());
-
-            console.log("Swap Up In");
             uint256 usdtToSwap = 50000e6; // 50k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
@@ -250,11 +224,6 @@ contract ETHRALMTest is ALMTestBase {
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
             assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
         }
 
         // ** Make oracle change with swap price
@@ -270,7 +239,6 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            console.log("Swap Up In");
             uint256 usdtToSwap = 10000e6; // 10k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
@@ -286,16 +254,10 @@ contract ETHRALMTest is ALMTestBase {
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
             assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
         }
 
         // ** Swap Up out
         {
-            console.log("Swap Up Out");
             uint256 wethToGetFSwap = 5e18;
             (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(wethToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
@@ -310,21 +272,12 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
-
             assertApproxEqAbs(deltaWETH, deltaX, 1e14);
             assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
-
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
         }
 
         // ** Swap Down In
         {
-            console.log("Swap Down In");
             uint256 wethToSwap = 10e18;
             deal(address(WETH), address(swapper.addr), wethToSwap);
 
@@ -339,11 +292,6 @@ contract ETHRALMTest is ALMTestBase {
             );
             assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 42e13);
             assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
-
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
         }
 
         // ** Make oracle change with swap price

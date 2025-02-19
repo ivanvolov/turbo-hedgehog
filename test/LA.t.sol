@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -87,7 +84,6 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public view {
-        console.log("> onFlashLoanSingle");
         assertEq(token, address(USDC), "token should be USDC");
         assertEq(amount, 1000 * 1e6, "amount should be 1000 USDC");
         assertEq(data, "0x2", "data should eq");
@@ -124,7 +120,6 @@ contract LendingAdaptersTest is MorphoTestBase {
         uint256 amount1,
         bytes calldata data
     ) public view {
-        console.log("> onFlashLoanTwoTokens");
         assertEq(token0, address(USDC), "token should be USDC");
         assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
         assertEq(token1, address(WETH), "token should be WETH");

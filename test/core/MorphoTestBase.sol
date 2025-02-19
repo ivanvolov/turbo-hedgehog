@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 // ** Morpho imports
 import {MarketParamsLib} from "@forks/morpho/libraries/MarketParamsLib.sol";
 import {IChainlinkOracle} from "@forks/morpho-oracles/IChainlinkOracle.sol";
@@ -126,7 +123,7 @@ abstract contract MorphoTestBase is ALMTestBase {
             decimal1,
             bytes32(0)
         );
-        console.log("> new oracle", oracle);
+
         return oracle;
     }
 
