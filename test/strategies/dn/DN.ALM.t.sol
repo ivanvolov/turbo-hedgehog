@@ -63,7 +63,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter(
+        create_lending_adapter_euler(
             TestLib.eulerUSDCVault1,
             0,
             TestLib.eulerWETHVault1,

@@ -70,7 +70,7 @@ contract UNICORDALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
-        create_lending_adapter(
+        create_lending_adapter_euler(
             TestLib.eulerUSDCVault1,
             0,
             TestLib.eulerUSDTVault1,

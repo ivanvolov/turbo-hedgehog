@@ -55,7 +55,7 @@ contract BTCALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
-        create_lending_adapter(
+        create_lending_adapter_euler(
             TestLib.eulerUSDCVault1,
             2000000e6,
             TestLib.eulerCbBTCVault1,
