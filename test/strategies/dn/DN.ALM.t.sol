@@ -12,6 +12,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TestERC20} from "v4-core/test/TestERC20.sol";
+import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -28,7 +29,7 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract DeltaNeutralALMTest is ALMTestBase {
+contract DeltaNeutralALMTest is MorphoTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
 
@@ -73,6 +74,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
             TestLib.eulerWETHVault2,
             0
         );
+        // create_lending_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, false);
@@ -121,7 +123,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         vm.prank(alice.addr);
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-        //assertApproxEqAbs(shares, amountToDep * 1e12, 1e1);
+        assertApproxEqAbs(shares, amountToDep * 1e12, c6to18(1e1));
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
         assertEqBalanceStateZero(alice.addr);
@@ -129,7 +131,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         assertEqPositionState(0, amountToDep, 0, 0);
 
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        //assertApproxEqAbs(hook.TVL(), amountToDep * 1e12, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), amountToDep * 1e12, c6to18(1e1), "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 

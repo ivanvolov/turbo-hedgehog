@@ -22,6 +22,7 @@ import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -34,7 +35,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract ETHALMTest is ALMTestBase {
+contract ETHALMTest is MorphoTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
@@ -80,6 +81,7 @@ contract ETHALMTest is ALMTestBase {
             TestLib.eulerWETHVault2,
             0
         );
+        // create_lending_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, false);
