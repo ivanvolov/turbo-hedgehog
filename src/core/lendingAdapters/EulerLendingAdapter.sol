@@ -45,7 +45,6 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         evc.enableCollateral(subAccount1, address(vault0));
     }
 
-    // @Notice: baseToken is name base, and quoteToken is name quote
     function _postSetTokens() internal override {
         IERC20(base).forceApprove(address(vault0), type(uint256).max);
         IERC20(quote).forceApprove(address(vault0), type(uint256).max);
@@ -206,8 +205,6 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         console.log(vault1.asset());
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
 
-        console.log("borrowShort %s", amount.unwrap(qDec));
-
         items[0] = IEVC.BatchItem({
             targetContract: address(vault1),
             onBehalfOfAccount: subAccount1,
@@ -218,8 +215,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayShort(uint256 amount) external onlyModule notPaused {
-        console.log("repayShort");
-        console.log(amount.unwrap(qDec));
+        console.log("repayShort %s", amount.unwrap(qDec));
         console.log(vault1.asset());
         IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.repay(amount.unwrap(qDec), subAccount1);

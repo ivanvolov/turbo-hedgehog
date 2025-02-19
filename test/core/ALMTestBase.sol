@@ -111,7 +111,7 @@ abstract contract ALMTestBase is Test, Deployers {
         zero = TestAccountLib.createTestAccount("zero");
     }
 
-    function create_lending_adapter(
+    function create_lending_adapter_euler(
         address _vault0,
         uint256 deposit0,
         address _vault1,
@@ -414,9 +414,17 @@ abstract contract ALMTestBase is Test, Deployers {
         assertEqBalanceState(owner, 0, 0);
     }
 
-    function assertEqBalanceState(address owner, uint256 _balanceT1, uint256 _balanceT0) public view {
-        assertApproxEqAbs(QUOTE.balanceOf(owner), _balanceT1, 1e5, string.concat("Balance ", baseName, " not equal"));
-        assertApproxEqAbs(BASE.balanceOf(owner), _balanceT0, 1e1, string.concat("Balance ", quoteName, " not equal"));
+    function assertEqBalanceState(address owner, uint256 _balanceQ, uint256 _balanceB) public view {
+        try this._assertEqBalanceState(owner, _balanceQ, _balanceB) {} catch {
+            console.log("QUOTE Balance", QUOTE.balanceOf(owner));
+            console.log("BASE Balance", BASE.balanceOf(owner));
+            _assertEqBalanceState(owner, _balanceQ, _balanceB); // @Notice: this is to throw the error
+        }
+    }
+
+    function _assertEqBalanceState(address owner, uint256 _balanceQ, uint256 _balanceB) public view {
+        assertApproxEqAbs(QUOTE.balanceOf(owner), _balanceQ, 1e5, string.concat("Balance ", quoteName, " not equal"));
+        assertApproxEqAbs(BASE.balanceOf(owner), _balanceB, 1e1, string.concat("Balance ", baseName, " not equal"));
     }
 
     function assertEqHookPositionState(

@@ -9,16 +9,24 @@ import {MarketParamsLib} from "@forks/morpho/libraries/MarketParamsLib.sol";
 import {IChainlinkOracle} from "@forks/morpho-oracles/IChainlinkOracle.sol";
 import {IMorpho, MarketParams, Position as MorphoPosition, Id} from "@forks/morpho/IMorpho.sol";
 import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
+import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
+import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IFactory.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
 
 // ** libraries
-import {TestERC20} from "v4-core/test/TestERC20.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
+import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
+
+// ** interfaces
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 abstract contract MorphoTestBase is ALMTestBase {
     using TestAccountLib for TestAccount;
+    using SafeERC20 for IERC20;
 
     TestAccount marketCreator;
     TestAccount morphoLpProvider;
@@ -26,6 +34,14 @@ abstract contract MorphoTestBase is ALMTestBase {
     Id shortMId;
     Id longMId;
     IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
+    IMorphoChainlinkOracleV2Factory oracleFactory =
+        IMorphoChainlinkOracleV2Factory(0x3A7bB36Ee3f3eE32A60e9f2b33c1e5f2E83ad766);
+
+    function create_lending_adapter_morpho() internal {
+        create_and_seed_morpho_markets();
+        vm.prank(deployer.addr);
+        lendingAdapter = new MorphoLendingAdapter(longMId, shortMId);
+    }
 
     function create_accounts_and_tokens(
         address _base,
@@ -44,23 +60,50 @@ abstract contract MorphoTestBase is ALMTestBase {
     function approve_accounts() public override {
         super.approve_accounts();
         vm.startPrank(alice.addr);
-        BASE.approve(address(morpho), type(uint256).max);
-        QUOTE.approve(address(morpho), type(uint256).max);
+        BASE.forceApprove(address(morpho), type(uint256).max);
+        QUOTE.forceApprove(address(morpho), type(uint256).max);
         vm.stopPrank();
     }
 
     function create_and_seed_morpho_markets() internal {
-        address _oracle = 0x48F7E36EB6B826B2dF4B2E630B62Cd25e89E40e2;
+        longMId = create_morpho_market(
+            address(BASE),
+            address(QUOTE),
+            915000000000000000,
+            deployMockOracle(address(0), 0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, 18, 6)
+        );
+        provideLiquidityToMorpho(longMId, 4000000e6); // Providing some BASE
 
-        // @Notice: The price rate of 1 asset of collateral token quoted in 1 asset of loan token. With `36 + loan token decimals - collateral token decimals` decimals.
-        // modifyMockOracle(_oracle, 4487851340816804029821232973); //4487 usdc for eth
-        modifyMockOracle(_oracle, 222866057499442861561321795465945421627523072); //4487 usdc for eth, reversed _oracle
+        shortMId = create_morpho_market(
+            address(QUOTE),
+            address(BASE),
+            945000000000000000,
+            deployMockOracle(0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, address(0), 6, 18)
+        );
+        provideLiquidityToMorpho(shortMId, 1000 ether); // Providing some QUOTE
+    }
 
-        longMId = create_morpho_market(address(BASE), address(QUOTE), 915000000000000000, _oracle);
-        provideLiquidityToMorpho(longMId, 1000 ether); // Providing some ETH
-
-        shortMId = create_morpho_market(address(QUOTE), address(BASE), 945000000000000000, _oracle);
-        provideLiquidityToMorpho(shortMId, 4000000 * 1e6); // Providing some BASE
+    function deployMockOracle(
+        address feed0,
+        address feed1,
+        uint256 decimal0,
+        uint256 decimal1
+    ) internal returns (address) {
+        address oracle = oracleFactory.createMorphoChainlinkOracleV2(
+            address(0),
+            1,
+            AggregatorV3Interface(feed0),
+            AggregatorV3Interface(address(0)),
+            decimal0,
+            address(0),
+            1,
+            AggregatorV3Interface(feed1),
+            AggregatorV3Interface(address(0)),
+            decimal1,
+            bytes32(0)
+        );
+        console.log("> new oracle", oracle);
+        return oracle;
     }
 
     function create_morpho_market(
@@ -82,21 +125,13 @@ abstract contract MorphoTestBase is ALMTestBase {
         return MarketParamsLib.id(marketParams);
     }
 
-    function modifyMockOracle(address _oracle, uint256 newPrice) internal returns (IChainlinkOracle iface) {
-        //NOTICE: https://github.com/morpho-org/morpho-blue-oracles
-        iface = IChainlinkOracle(_oracle);
-
-        vm.mockCall(address(_oracle), abi.encodeWithSelector(iface.price.selector), abi.encode(newPrice));
-        return iface;
-    }
-
     function provideLiquidityToMorpho(Id marketId, uint256 amount) internal {
         MarketParams memory marketParams = morpho.idToMarketParams(marketId);
 
         vm.startPrank(morphoLpProvider.addr);
         deal(marketParams.loanToken, morphoLpProvider.addr, amount);
 
-        TestERC20(marketParams.loanToken).approve(address(morpho), type(uint256).max);
+        IERC20(marketParams.loanToken).forceApprove(address(morpho), type(uint256).max);
         morpho.supply(marketParams, amount, 0, morphoLpProvider.addr, "");
 
         assertEqBalanceStateZero(morphoLpProvider.addr);

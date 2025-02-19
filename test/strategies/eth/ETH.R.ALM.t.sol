@@ -56,7 +56,7 @@ contract ETHRALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDT, 6, "USDT", TestLib.WETH, 18, "WETH");
-        create_lending_adapter(
+        create_lending_adapter_euler(
             TestLib.eulerUSDTVault1,
             3000000 * 1e6,
             TestLib.eulerWETHVault1,

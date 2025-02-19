@@ -41,6 +41,11 @@ tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
 tgl:
 	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_"
+tla:
+	clear && forge test -vv --match-contract LendingAdaptersTest --match-test "test_"
+tlal:
+	clear && forge test -vvvv --match-contract LendingAdaptersTest --match-test "test_"
+
 
 spell:
 	clear && cspell "**/*.*"
