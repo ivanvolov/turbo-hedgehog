@@ -312,8 +312,8 @@ abstract contract ALMTestBase is Test, Deployers {
 
         // ** Configuration parameters
         uint256 initialStepSize = 1000 ether; // Initial swap amount
-        uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
-        uint256 slippageTolerance = 1e18; // 1% acceptable price difference
+        uint256 minStepSize = 1 ether; // Minimum swap amount to prevent tiny swaps
+        uint256 slippageTolerance = 1e15; // 1% acceptable price difference
         uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
         uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
 
@@ -602,6 +602,53 @@ abstract contract ALMTestBase is Test, Deployers {
                 (prePrice.sqrt() - (1e12 * ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
             uint256 postY = (liquidity *
                 (postPrice.sqrt() - (1e12 * ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+
+            deltaX = postX > preX ? postX - preX : preX - postX;
+            deltaY = postY > preY ? postY - preY : preY - postY;
+
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
+        }
+
+        return (deltaX, deltaY);
+    }
+
+    function _checkSwapUnicord(
+        uint256 liquidity,
+        uint160 preSqrtPrice,
+        uint160 postSqrtPrice
+    ) public view returns (uint256, uint256) {
+        uint256 deltaX;
+        uint256 deltaY;
+        {
+            uint256 prePrice = ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+            uint256 postPrice = ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+
+            console.log("prePrice %s", prePrice);
+            console.log("postPrice %s", postPrice);
+
+            uint256 priceUpper = 1e36 / ALMMathLib.getPriceFromTick(hook.tickUpper());
+
+            console.log("priceUpper %s", priceUpper);
+
+            console.log("a %s", priceUpper.sqrt() - prePrice.sqrt());
+            console.log("b %s", ((priceUpper * prePrice) / 1e18).sqrt());
+            console.log("c %s", liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt()) / (((priceUpper * prePrice) / 1e18).sqrt()));
+
+            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
+                (((priceUpper * prePrice) / 1e18).sqrt());
+
+            console.log("preX %s", preX);
+
+            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
+                ((priceUpper * postPrice).sqrt());
+
+            console.log("postX %s", postX);
+
+            uint256 preY = (liquidity *
+                (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+            uint256 postY = (liquidity *
+                (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
 
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
