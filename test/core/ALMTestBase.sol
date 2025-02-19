@@ -312,8 +312,8 @@ abstract contract ALMTestBase is Test, Deployers {
 
         // ** Configuration parameters
         uint256 initialStepSize = 1000 ether; // Initial swap amount
-        uint256 minStepSize = 1 ether; // Minimum swap amount to prevent tiny swaps
-        uint256 slippageTolerance = 1e15; // 1% acceptable price difference
+        uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
+        uint256 slippageTolerance = 1e18; // 1% acceptable price difference
         uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
         uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
 
