@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
 import {IMorpho, Id, MarketParams} from "@morpho-blue/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 import {MarketParamsLib} from "@morpho-blue/libraries/MarketParamsLib.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IFactory.sol";
 
 // ** contracts

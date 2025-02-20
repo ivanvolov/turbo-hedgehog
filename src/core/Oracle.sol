@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 contract Oracle is IOracle {
     AggregatorV3Interface internal feedBase;
