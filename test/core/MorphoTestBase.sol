@@ -6,7 +6,7 @@ import {IMorpho, Id, MarketParams} from "@morpho-blue/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 import {MarketParamsLib} from "@morpho-blue/libraries/MarketParamsLib.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IFactory.sol";
+import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IMorphoChainlinkOracleV2Factory.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";

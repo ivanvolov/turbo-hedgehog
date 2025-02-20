@@ -1,4 +1,4 @@
-@forks/=src/forks/
+@forks/=test/forks/
 @src/=src/
 @test/=test/
 forge-std/=lib/forge-std/src/
