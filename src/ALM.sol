@@ -2,27 +2,23 @@
 pragma solidity ^0.8.25;
 
 // ** v4 imports
-import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
+import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {CurrencySettler} from "@forks/uniswap-v4/CurrencySettler.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 
 // ** interfaces
-import {Position as MorphoPosition, Id, Market} from "@forks/morpho/IMorpho.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 /// @title ALM

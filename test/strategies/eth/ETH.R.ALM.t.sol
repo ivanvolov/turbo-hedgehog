@@ -3,26 +3,18 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-// ** v4 imports
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {TestERC20} from "v4-core/test/TestERC20.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // This test illustrates the pool with the reversed order of currencies. The main asset first and the stable next.
 contract ETHRALMTest is ALMTestBase {
-    using PoolIdLibrary for PoolId;
-    using CurrencyLibrary for Currency;
-
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     uint256 longLeverage = 3e18;
@@ -31,8 +23,8 @@ contract ETHRALMTest is ALMTestBase {
     uint256 slippage = 15e14; //0.15%
     uint256 fee = 5e14; //0.05%
 
-    TestERC20 WETH = TestERC20(TestLib.WETH);
-    TestERC20 USDT = TestERC20(TestLib.USDT);
+    IERC20 WETH = IERC20(TestLib.WETH);
+    IERC20 USDT = IERC20(TestLib.USDT);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);

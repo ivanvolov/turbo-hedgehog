@@ -3,24 +3,12 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-// ** v4 imports
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {TestERC20} from "v4-core/test/TestERC20.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** libraries
@@ -29,14 +17,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract ETHALMTest is MorphoTestBase {
-    using PoolIdLibrary for PoolId;
-    using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");

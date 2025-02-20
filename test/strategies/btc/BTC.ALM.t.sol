@@ -3,26 +3,17 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-// ** v4 imports
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {TestERC20} from "v4-core/test/TestERC20.sol";
-
 // ** libraries
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BTCALMTest is ALMTestBase {
-    using PoolIdLibrary for PoolId;
-    using CurrencyLibrary for Currency;
-
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     uint256 longLeverage = 3e18;
@@ -31,8 +22,8 @@ contract BTCALMTest is ALMTestBase {
     uint256 slippage = 50e14;
     uint256 fee = 5e14;
 
-    TestERC20 BTC = TestERC20(TestLib.cbBTC);
-    TestERC20 USDC = TestERC20(TestLib.USDC);
+    IERC20 BTC = IERC20(TestLib.cbBTC);
+    IERC20 USDC = IERC20(TestLib.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);

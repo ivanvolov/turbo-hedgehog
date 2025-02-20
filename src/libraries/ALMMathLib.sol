@@ -3,10 +3,8 @@ pragma solidity ^0.8.25;
 
 // ** libraries
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
-import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
@@ -167,6 +165,9 @@ library ALMMathLib {
     }
 
     function abs(int256 n) internal pure returns (uint256) {
-        return SignedMath.abs(n);
+        unchecked {
+            // must be unchecked in order to support `n = type(int256).min`
+            return uint256(n >= 0 ? n : -n);
+        }
     }
 }

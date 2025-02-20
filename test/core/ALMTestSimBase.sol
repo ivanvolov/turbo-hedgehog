@@ -57,7 +57,6 @@ abstract contract ALMTestSimBase is ALMTestBase {
     function init_control_hook() internal {
         vm.startPrank(deployer.addr);
 
-        // MARK: Usual UniV4 hook deployment process
         address hookAddress = address(uint160(Hooks.AFTER_INITIALIZE_FLAG));
         deployCodeTo("ALMControl.sol", abi.encode(manager, address(hook)), hookAddress);
         hookControl = ALMControl(hookAddress);
@@ -72,7 +71,6 @@ abstract contract ALMTestSimBase is ALMTestBase {
             poolFee,
             initialSQRTPrice
         );
-        // MARK END
 
         vm.stopPrank();
     }

@@ -6,7 +6,6 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
-import {IERC20Minimal as IERC20} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 
@@ -18,10 +17,6 @@ import {Base} from "@src/core/Base/Base.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;

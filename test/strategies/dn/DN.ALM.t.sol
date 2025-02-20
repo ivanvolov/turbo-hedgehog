@@ -3,35 +3,19 @@ pragma solidity ^0.8.25;
 
 import "forge-std/console.sol";
 
-// ** v4 imports
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {TestERC20} from "v4-core/test/TestERC20.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract DeltaNeutralALMTest is MorphoTestBase {
-    using PoolIdLibrary for PoolId;
-    using CurrencyLibrary for Currency;
-
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     uint256 longLeverage = 3e18;
@@ -40,8 +24,8 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     uint256 slippage = 2e15;
     uint256 fee = 5e14;
 
-    TestERC20 WETH = TestERC20(TestLib.WETH);
-    TestERC20 USDC = TestERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(TestLib.WETH);
+    IERC20 USDC = IERC20(TestLib.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);

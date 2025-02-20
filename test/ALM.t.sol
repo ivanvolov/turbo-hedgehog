@@ -4,39 +4,28 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 
 // ** v4 imports
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
+import {Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
-import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
-    using CurrencyLibrary for Currency;
-    using SafeERC20 for IERC20;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
@@ -288,10 +277,10 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 amount = 1 ether;
         uint8 token_wad = 18;
 
-        uint256 wrapped = TokenWrapperLib.wrap(amount, token_wad);
+        uint256 wrapped = TW.wrap(amount, token_wad);
         assertEq(wrapped, amount, "wrap with same wad should return same amount");
 
-        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
         assertEq(unwrapped, amount, "unwrap with same wad should return original amount");
     }
 
@@ -299,10 +288,10 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 amount = 1 ether;
         uint8 token_wad = 24;
 
-        uint256 wrapped = TokenWrapperLib.wrap(amount, token_wad);
+        uint256 wrapped = TW.wrap(amount, token_wad);
         assertEq(wrapped, amount / (10 ** (token_wad - 18)), "wrap with higher wad should divide correctly");
 
-        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
         assertEq(unwrapped, amount, "unwrap should return original amount");
     }
 
@@ -310,10 +299,10 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 amount = 1 ether;
         uint8 token_wad = 6;
 
-        uint256 wrapped = TokenWrapperLib.wrap(amount, token_wad);
+        uint256 wrapped = TW.wrap(amount, token_wad);
         assertEq(wrapped, amount * (10 ** (18 - token_wad)), "wrap with lower wad should multiply correctly");
 
-        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
         assertEq(unwrapped, amount, "unwrap should return original amount");
     }
 
@@ -321,24 +310,24 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 amount = 0;
 
         uint8 token_wad_12 = 12;
-        uint256 wrapped_12 = TokenWrapperLib.wrap(amount, token_wad_12);
+        uint256 wrapped_12 = TW.wrap(amount, token_wad_12);
         assertEq(wrapped_12, 0, "wrap of zero with wad 12 should return zero");
 
-        uint256 unwrapped_12 = TokenWrapperLib.unwrap(wrapped_12, token_wad_12);
+        uint256 unwrapped_12 = TW.unwrap(wrapped_12, token_wad_12);
         assertEq(unwrapped_12, 0, "unwrap of zero with wad 12 should return zero");
 
         uint8 token_wad_18 = 18;
-        uint256 wrapped_18 = TokenWrapperLib.wrap(amount, token_wad_18);
+        uint256 wrapped_18 = TW.wrap(amount, token_wad_18);
         assertEq(wrapped_18, 0, "wrap of zero with wad 18 should return zero");
 
-        uint256 unwrapped_18 = TokenWrapperLib.unwrap(wrapped_18, token_wad_18);
+        uint256 unwrapped_18 = TW.unwrap(wrapped_18, token_wad_18);
         assertEq(unwrapped_18, 0, "unwrap of zero with wad 18 should return zero");
 
         uint8 token_wad_24 = 24;
-        uint256 wrapped_24 = TokenWrapperLib.wrap(amount, token_wad_24);
+        uint256 wrapped_24 = TW.wrap(amount, token_wad_24);
         assertEq(wrapped_24, 0, "wrap of zero with wad 24 should return zero");
 
-        uint256 unwrapped_24 = TokenWrapperLib.unwrap(wrapped_24, token_wad_24);
+        uint256 unwrapped_24 = TW.unwrap(wrapped_24, token_wad_24);
         assertEq(unwrapped_24, 0, "unwrap of zero with wad 24 should return zero");
     }
 
@@ -346,13 +335,13 @@ contract ALMGeneralTest is ALMTestBase {
         uint256 max_amount = type(uint256).max;
 
         vm.expectRevert(stdError.arithmeticError);
-        TokenWrapperLib.wrap(max_amount, 17);
+        TW.wrap(max_amount, 17);
 
         uint8 token_wad = 18;
-        uint256 wrapped = TokenWrapperLib.wrap(max_amount, token_wad);
+        uint256 wrapped = TW.wrap(max_amount, token_wad);
         assertEq(wrapped, max_amount, "wrap of max value with same wad should not overflow");
 
-        uint256 unwrapped = TokenWrapperLib.unwrap(wrapped, token_wad);
+        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
         assertEq(unwrapped, max_amount, "unwrap should return original max amount");
     }
 }

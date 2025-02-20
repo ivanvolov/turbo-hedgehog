@@ -10,7 +10,6 @@ import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-import {TestERC20} from "v4-core/test/TestERC20.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
