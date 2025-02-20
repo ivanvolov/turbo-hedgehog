@@ -6,7 +6,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
-import {CurrencySettler} from "@forks/uniswap-v4/CurrencySettler.sol";
+import {CurrencySettlerSafe} from "@src/libraries/CurrencySettlerSafe.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 
 // ** libraries
@@ -26,7 +26,7 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 /// @custom:contact vivan.volovik@gmail.com
 contract ALM is BaseStrategyHook, ERC20 {
     using PoolIdLibrary for PoolKey;
-    using CurrencySettler for Currency;
+    using CurrencySettlerSafe for Currency;
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 

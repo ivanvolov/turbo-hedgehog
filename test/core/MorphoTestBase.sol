@@ -2,10 +2,11 @@
 pragma solidity ^0.8.25;
 
 // ** Morpho imports
-import {MarketParamsLib} from "@forks/morpho/libraries/MarketParamsLib.sol";
-import {IMorpho, MarketParams, Id} from "@forks/morpho/IMorpho.sol";
-import {AggregatorV3Interface} from "@forks/morpho-oracles/AggregatorV3Interface.sol";
-import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IFactory.sol";
+import {IMorpho, Id, MarketParams} from "@morpho-blue/interfaces/IMorpho.sol";
+import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
+import {MarketParamsLib} from "@morpho-blue/libraries/MarketParamsLib.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IMorphoChainlinkOracleV2Factory.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";

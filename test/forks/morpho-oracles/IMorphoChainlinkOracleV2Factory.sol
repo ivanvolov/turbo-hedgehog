@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity >=0.5.0;
 
-import {AggregatorV3Interface} from "./AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 /// @title IMorphoChainlinkOracleV2Factory
 /// @author Morpho Labs

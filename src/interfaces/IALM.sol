@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-// ** libraries
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId} from "v4-core/types/PoolId.sol";
-
-// ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
-
 interface IALM {
     error ZeroLiquidity();
     error ZeroDebt();

@@ -10,7 +10,7 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 /// To settle a positive delta (a credit to the user), a user may take or mint.
 /// To settle a negative delta (a debt on the user), a user make transfer or burn to pay off a debt.
 /// @dev Note that sync() is called before any erc-20 transfer in `settle`.
-library CurrencySettler {
+library CurrencySettlerSafe {
     using SafeERC20 for IERC20;
 
     /// @notice Settle (pay) a currency to the PoolManager

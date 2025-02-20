@@ -28,10 +28,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     bool public paused = false;
     bool public shutdown = false;
-    int24 public tickUpperDelta = 3000;
-    int24 public tickLowerDelta = 3000;
-    bool public isInvertAssets = false;
-    bool public isInvertedPool = true;
+    int24 public tickUpperDelta;
+    int24 public tickLowerDelta;
+    bool public isInvertAssets;
+    bool public isInvertedPool;
     uint256 public swapPriceThreshold;
     bytes32 public authorizedPool;
 

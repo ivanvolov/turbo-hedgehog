@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 // ** libraries
-import {FixedPointMathLib} from "@src/libraries/math/FixedPointMathLib.sol";
+import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
@@ -19,12 +19,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
 contract PositionManager is Base, IPositionManager {
-    using FixedPointMathLib for uint256;
+    using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public k1 = 1e18 / 2;
-    uint256 public k2 = 1e18 / 2;
+    uint256 public k1;
+    uint256 public k2;
 
     uint256 public fees;
 

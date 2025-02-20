@@ -31,8 +31,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public shortLeverage;
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
-    bool public isInvertAssets = false;
-    bool public isUnicord = false;
+    bool public isInvertAssets;
+    bool public isUnicord;
 
     constructor() Base(msg.sender) {}
 
