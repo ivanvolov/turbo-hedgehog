@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-// ** interfaces
-import {Id} from "@forks/morpho/IMorpho.sol";
-
 interface ILendingAdapter {
     // ** Flashloan
     function flashLoanSingle(address token, uint256 amount, bytes calldata data) external;

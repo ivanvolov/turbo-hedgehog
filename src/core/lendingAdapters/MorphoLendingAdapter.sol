@@ -2,8 +2,8 @@
 pragma solidity ^0.8.25;
 
 // ** Morpho imports
-import {IMorpho, Id, Position} from "@forks/morpho/IMorpho.sol";
-import {MorphoBalancesLib} from "@forks/morpho/libraries/MorphoBalancesLib.sol";
+import {IMorpho, Id, Position} from "@morpho-blue/interfaces/IMorpho.sol";
+import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
