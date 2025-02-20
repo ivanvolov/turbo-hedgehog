@@ -23,8 +23,8 @@ contract PositionManager is Base, IPositionManager {
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public k1 = 1e18 / 2;
-    uint256 public k2 = 1e18 / 2;
+    uint256 public k1;
+    uint256 public k2;
 
     uint256 public fees;
 
