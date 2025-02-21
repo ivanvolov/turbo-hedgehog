@@ -9,12 +9,15 @@ import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
 
+    uint256 constant Q96 = 2 ** 96;
+    uint256 constant Q192 = 2 ** 192;
+
     function sqrtPriceNextX96OneForZeroIn(
         uint160 sqrtPriceCurrentX96,
         uint128 liquidity,
         uint256 amount1
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = uint160((amount1 * 2 ** 96) / liquidity);
+        uint160 sqrtPriceDeltaX96 = uint160((amount1 * Q96) / liquidity);
         return sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
     }
 
@@ -23,7 +26,7 @@ library ALMMathLib {
         uint128 liquidity,
         uint256 amount1
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = uint160((amount1 * 2 ** 96) / liquidity);
+        uint160 sqrtPriceDeltaX96 = uint160((amount1 * Q96) / liquidity);
         return sqrtPriceCurrentX96 - sqrtPriceDeltaX96;
     }
 
@@ -35,7 +38,7 @@ library ALMMathLib {
         return
             uint160(
                 uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
-                    uint256(liquidity) - amount0.mul(uint256(sqrtPriceCurrentX96)).div(2 ** 96)
+                    uint256(liquidity) - amount0.mul(uint256(sqrtPriceCurrentX96)).div(Q96)
                 )
             );
     }
@@ -48,7 +51,7 @@ library ALMMathLib {
         return
             uint160(
                 uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
-                    uint256(liquidity) + amount0.mul(uint256(sqrtPriceCurrentX96)).div(2 ** 96)
+                    uint256(liquidity) + amount0.mul(uint256(sqrtPriceCurrentX96)).div(Q96)
                 )
             );
     }
@@ -132,8 +135,7 @@ library ALMMathLib {
     }
 
     function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
-        uint256 const = 6277101735386680763835789423207666416102355444464034512896; // const = 2^192
-        return (uint256(sqrtPriceX96)).pow(uint256(2e18)).mul(1e36).div(const);
+        return (uint256(sqrtPriceX96)).pow(uint256(2e18)).mul(1e36).div(Q192);
     }
 
     function getPoolPriceFromOraclePrice(

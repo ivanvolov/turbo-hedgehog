@@ -368,7 +368,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 usdcToGetFSwap = 12207177586;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 4614004875259986647);
+        assertEq(wethToSwapQ, 4614004875259986648);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);

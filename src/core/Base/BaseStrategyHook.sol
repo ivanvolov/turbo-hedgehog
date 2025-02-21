@@ -11,7 +11,7 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-
+import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 // ** contracts
 import {Base} from "@src/core/Base/Base.sol";
 
@@ -20,6 +20,7 @@ import {IALM} from "@src/interfaces/IALM.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
+    using PRBMathUD60x18 for uint256;
 
     uint128 public liquidity;
     uint160 public sqrtPriceCurrent;
@@ -200,7 +201,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int256 amountSpecified
     ) public view returns (uint256 amountAdjusted) {
         uint256 fee = positionManager.getSwapFees(zeroForOne, amountSpecified);
-        amountAdjusted = amount - (amount * fee) / 1e18;
+        amountAdjusted = amount - amount.mul(fee);
     }
 
     function adjustForFeesUp(
@@ -209,7 +210,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int256 amountSpecified
     ) public view returns (uint256 amountAdjusted) {
         uint256 fee = positionManager.getSwapFees(zeroForOne, amountSpecified);
-        amountAdjusted = amount + (amount * fee) / 1e18;
+        amountAdjusted = amount + amount.mul(fee);
     }
 
     // --- Modifiers --- //

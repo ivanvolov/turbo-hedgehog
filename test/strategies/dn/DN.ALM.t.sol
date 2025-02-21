@@ -255,15 +255,15 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5298120405140236340, 1e4);
+        assertApproxEqAbs(deltaWETH, 5298120404768043809, 1e4);
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(127033975965851893358, 437579999997, 223916116085, 107628492644177912176);
+        assertEqPositionState(127033975966382267714, 437579999997, 223916116085, 107628492644336094001);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528490395669432546754797169308626);
-        assertApproxEqAbs(hook.TVL(), 265286376854143580791738, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528490395669965061503372749034567);
+        assertApproxEqAbs(hook.TVL(), 265286376855133687865402, 1e1, "tvl");
     }
 
     //DONE
@@ -274,7 +274,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         uint256 wethToGetFSwap = 5300757704472520000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 14178861833);
+        assertEq(usdcToSwapQ, 14178861834);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 
@@ -287,7 +287,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(127030217814303389142, 437579999997, 223909030198, 107627371791961691620);
 
         assertEq(hook.sqrtPriceCurrent(), 1528486622351402081668869869126668);
-        assertApproxEqAbs(hook.TVL(), 265286446993897797222780, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265286446994897797222780, 1e1, "tvl");
     }
 
     //DONE
@@ -320,7 +320,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         uint256 usdcToGetFSwap = 14389544471;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 5439023108124300749);
+        assertEq(wethToSwapQ, 5439023108124300750);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -334,7 +334,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(142334405472253858708, 437579999997, 252477436502, 112191778637315340438);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458334);
-        assertApproxEqAbs(hook.TVL(), 265288020113147886211689, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265288020113147886214349, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
