@@ -8,6 +8,7 @@ import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalances
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "forge-std/console.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
@@ -54,6 +55,9 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     // ** Flashloan
 
     function flashLoanSingle(address asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
+        console.log("flashLoanSingle called");
+        console.log("asset:", asset);
+        console.log("amount:", amount);
         bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
         morpho.flashLoan(asset, amount, _data);
     }
@@ -65,11 +69,17 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         uint256 amount1,
         bytes calldata data
     ) public onlyModule notPaused {
+        console.log("flashLoanTwoTokens called");
+        console.log("asset0:", asset0);
+        console.log("amount0:", amount0);
+        console.log("asset1:", asset1);
+        console.log("amount1:", amount1);
         bytes memory _data = abi.encode(uint8(2), msg.sender, asset0, amount0, asset1, amount1, data);
         morpho.flashLoan(asset0, amount0, _data);
     }
 
     function onMorphoFlashLoan(uint256, bytes calldata _data) external notPaused returns (bytes32) {
+        console.log("onMorphoFlashLoan called");
         require(msg.sender == address(morpho), "M0");
         uint8 loanType = abi.decode(_data, (uint8));
 
@@ -133,21 +143,29 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function borrowLong(uint256 amount) external onlyModule notPaused notShutdown isBorrowMode {
+        console.log("borrowLong called");
+        console.log("amount:", amount);
         morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
     }
 
     function repayLong(uint256 amount) external onlyModule notPaused isBorrowMode {
+        console.log("repayLong called");
+        console.log("amount:", amount);
         IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
     }
 
     function removeCollateralLong(uint256 amount) external onlyModule notPaused {
+        console.log("removeCollateralLong called");
+        console.log("amount:", amount);
         if (isEarn) earnQuote.withdraw(amount.unwrap(qDec), msg.sender, address(this));
         else
             morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
     }
 
     function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
+        console.log("addCollateralLong called");
+        console.log("amount:", amount);
         IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
@@ -168,15 +186,21 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function borrowShort(uint256 amount) external onlyModule notPaused notShutdown isBorrowMode {
+        console.log("borrowShort called");
+        console.log("amount:", amount);
         morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
     }
 
     function repayShort(uint256 amount) external onlyModule notPaused isBorrowMode {
+        console.log("repayShort called");
+        console.log("amount:", amount);
         IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
     }
 
     function removeCollateralShort(uint256 amount) external onlyModule notPaused {
+        console.log("removeCollateralShort called");
+        console.log("amount:", amount);
         if (isEarn) earnBase.withdraw(amount.unwrap(bDec), msg.sender, address(this));
         else
             morpho.withdrawCollateral(
@@ -188,6 +212,8 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
+        console.log("addCollateralShort called");
+        console.log("amount:", amount);
         IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");

@@ -14,6 +14,7 @@ import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import "forge-std/console.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
@@ -44,25 +45,31 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint160 sqrtPrice,
         int24
     ) external override onlyPoolManager onlyAuthorizedPool(key) notPaused notShutdown returns (bytes4) {
+        console.log("afterInitialize: sqrtPrice = %s", sqrtPrice);
         sqrtPriceCurrent = sqrtPrice;
         _updateBoundaries();
         return ALM.afterInitialize.selector;
     }
 
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
+        console.log("deposit: amountIn = %s", amountIn);
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
+        console.log("deposit: TVL1 = %s", TVL1);
 
         if (isInvertAssets) {
+            console.log("deposit: isInvertAssets = true");
             IERC20(base).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(baseBalance(true));
         } else {
+            console.log("deposit: isInvertAssets = false");
             IERC20(quote).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }
 
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
+        console.log("deposit: _shares = %s", _shares);
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
 
@@ -70,6 +77,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
+        console.log("withdraw: sharesOut = %s", sharesOut);
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
@@ -82,6 +90,10 @@ contract ALM is BaseStrategyHook, ERC20 {
             lendingAdapter.getBorrowedLong(),
             lendingAdapter.getBorrowedShort()
         );
+        console.log("withdraw: uCL = %s", uCL);
+        console.log("withdraw: uCS = %s", uCS);
+        console.log("withdraw: uDL = %s", uDL);
+        console.log("withdraw: uDS = %s", uDS);
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0) {
@@ -103,6 +115,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();
+        console.log("withdraw: liquidity = %s", liquidity);
     }
 
     function onFlashLoanTwoTokens(
@@ -112,6 +125,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 amount1,
         bytes calldata data
     ) external notPaused onlyLendingAdapter {
+        console.log("onFlashLoanTwoTokens: amount0 = %s, amount1 = %s", amount0, amount1);
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         lendingAdapter.repayLong(amount0.wrap(bDec));
@@ -125,6 +139,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public notPaused onlyLendingAdapter {
+        console.log("onFlashLoanSingle: token = %s, amount = %s", token, amount);
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         if (token == base) lendingAdapter.repayLong(amount.wrap(bDec));
@@ -182,6 +197,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         refreshReserves();
 
         if (params.zeroForOne) {
+            console.log("_beforeSwap: zeroForOne = true");
             // If user is selling Token 0 and buying Token 1 (TOKEN0 => TOKEN1)
             (
                 BeforeSwapDelta beforeSwapDelta,
@@ -189,6 +205,12 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token1Out,
                 uint160 sqrtPriceNext
             ) = getZeroForOneDeltas(params.amountSpecified);
+            console.log(
+                "_beforeSwap: token0In = %s, token1Out = %s, sqrtPriceNext = %s",
+                token0In,
+                token1Out,
+                sqrtPriceNext
+            );
 
             checkSwapDeviations(sqrtPriceNext);
 
@@ -203,6 +225,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             sqrtPriceCurrent = sqrtPriceNext;
             return beforeSwapDelta;
         } else {
+            console.log("_beforeSwap: zeroForOne = false");
             // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
             (
                 BeforeSwapDelta beforeSwapDelta,
@@ -210,6 +233,12 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token1In,
                 uint160 sqrtPriceNext
             ) = getOneForZeroDeltas(params.amountSpecified);
+            console.log(
+                "_beforeSwap: token0Out = %s, token1In = %s, sqrtPriceNext = %s",
+                token0Out,
+                token1In,
+                sqrtPriceNext
+            );
             key.currency1.take(poolManager, address(this), token1In, false);
 
             checkSwapDeviations(sqrtPriceNext);
@@ -223,6 +252,8 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
+        console.log("quoteSwap: zeroForOne = %s", zeroForOne);
+        console.log("quoteSwap: amountSpecified = %s", amountSpecified);
         if (zeroForOne) {
             (, token0, token1, ) = getZeroForOneDeltas(amountSpecified);
         } else {
@@ -231,13 +262,16 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function refreshReserves() public notPaused {
+        console.log("refreshReserves: syncing reserves");
         lendingAdapter.syncLong();
         lendingAdapter.syncShort();
     }
 
     function checkSwapDeviations(uint160 sqrtPriceNext) internal view {
+        console.log("checkSwapDeviations: sqrtPriceNext = %s", sqrtPriceNext);
         uint256 ratio = uint256(sqrtPriceNext).div(rebalanceAdapter.sqrtPriceAtLastRebalance());
         uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
+        console.log("checkSwapDeviations: priceThreshold = %s", priceThreshold);
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
@@ -254,21 +288,23 @@ contract ALM is BaseStrategyHook, ERC20 {
     // --- Math functions --- //
 
     function TVL() public view returns (uint256) {
-        return
-            ALMMathLib.getTVL(
-                quoteBalance(true),
-                baseBalance(true),
-                lendingAdapter.getCollateralLong(),
-                lendingAdapter.getBorrowedShort(),
-                lendingAdapter.getCollateralShort(),
-                lendingAdapter.getBorrowedLong(),
-                oracle.price(),
-                isInvertAssets
-            );
+        uint256 tvl = ALMMathLib.getTVL(
+            quoteBalance(true),
+            baseBalance(true),
+            lendingAdapter.getCollateralLong(),
+            lendingAdapter.getBorrowedShort(),
+            lendingAdapter.getCollateralShort(),
+            lendingAdapter.getBorrowedLong(),
+            oracle.price(),
+            isInvertAssets
+        );
+        console.log("TVL: tvl = %s", tvl);
+        return tvl;
     }
 
     function sharePrice() external view returns (uint256) {
-        if (totalSupply() == 0) return 0;
-        return TVL().div(totalSupply());
+        uint256 price = totalSupply() == 0 ? 0 : TVL().div(totalSupply());
+        console.log("sharePrice: price = %s", price);
+        return price;
     }
 }
