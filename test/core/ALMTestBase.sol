@@ -158,6 +158,10 @@ abstract contract ALMTestBase is Deployers {
 
     function init_hook(bool _invertedPool, bool isUnicord, int24 _tickLowerDelta, int24 _tickUpperDelta) internal {
         invertedPool = _invertedPool;
+        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
+        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
+        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
+        console.log("oracle: initialPrice %s", oracle.price());
         vm.startPrank(deployer.addr);
 
         // MARK: UniV4 hook deployment process

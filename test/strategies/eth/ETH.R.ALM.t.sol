@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
@@ -41,9 +39,6 @@ contract ETHRALMTest is ALMTestBase {
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
-        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDT, 6, "USDT", TestLib.WETH, 18, "WETH");
@@ -58,7 +53,6 @@ contract ETHRALMTest is ALMTestBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
-        console.log("oracle: initialPrice %s", oracle.price());
         init_hook(false, false, 3000, 3000);
         assertEq(hook.tickLower(), -200460);
         assertEq(hook.tickUpper(), -194460);

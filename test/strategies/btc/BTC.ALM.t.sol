@@ -40,9 +40,6 @@ contract BTCALMTest is ALMTestBase {
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
-        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
@@ -57,7 +54,6 @@ contract BTCALMTest is ALMTestBase {
             100e8
         );
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC);
-        console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, false, 3000, 3000);
         assertEq(hook.tickLower(), -65897);
         assertEq(hook.tickUpper(), -71897);

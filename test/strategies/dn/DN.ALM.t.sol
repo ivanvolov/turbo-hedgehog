@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
@@ -42,16 +40,12 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
-        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         // create_lending_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
-        console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, false, 3000, 3000);
         assertEq(hook.tickLower(), 200458);
         assertEq(hook.tickUpper(), 194458);
