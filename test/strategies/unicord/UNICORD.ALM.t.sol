@@ -17,7 +17,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
@@ -32,7 +32,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract UNICORDALMTest is ALMTestBase {
+contract UNICORDALMTest is MorphoTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
@@ -71,7 +71,8 @@ contract UNICORDALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
-        create_lending_adapter_euler_WETH_USDC();
+        // create_lending_adapter_euler_WETH_USDC();
+        create_lending_adapter_morpho_earn();
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
         console.log("oracle: initialPrice %s", oracle.price());
         init_hook(true, true, 100, 100);
@@ -101,7 +102,6 @@ contract UNICORDALMTest is ALMTestBase {
     uint256 amountToDep = 1000000e6;
 
     function test_deposit() public {
-        vm.skip(true);
         assertEq(hook.TVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
