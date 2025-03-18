@@ -25,7 +25,7 @@ abstract contract Base is IBase {
     error NotLendingAdapter();
     error ContractPaused();
     error ContractShutdown();
-
+    error TokensAlreadyInitialized();
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     address public owner;
@@ -48,6 +48,8 @@ abstract contract Base is IBase {
     }
 
     function setTokens(address _base, address _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
+        if (base != address(0)) revert TokensAlreadyInitialized();
+
         base = _base;
         quote = _quote;
         bDec = _bDec;

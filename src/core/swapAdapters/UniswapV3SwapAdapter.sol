@@ -15,8 +15,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;
-    address public targetPool;
 
+    address public targetPool;
     address constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     constructor() Base(msg.sender) {}

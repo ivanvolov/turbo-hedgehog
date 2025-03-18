@@ -21,7 +21,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
     // ** EulerV2
-    IEVC evc = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
+    IEVC constant evc = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
     IEulerVault public immutable vault0;
     IEulerVault public immutable vault1;
     IEulerVault public immutable flVault0;
