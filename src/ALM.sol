@@ -50,6 +50,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
+        if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
@@ -70,6 +71,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
+        if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
@@ -158,7 +160,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     // --- Swapping logic --- //
 
     function beforeSwap(
-        address,
+        address swapper,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata
@@ -171,6 +173,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         onlyPoolManager
         returns (bytes4, BeforeSwapDelta, uint24)
     {
+        if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         return (this.beforeSwap.selector, _beforeSwap(params, key), 0);
     }
 

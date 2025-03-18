@@ -35,6 +35,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bool public isInvertedPool;
     uint256 public swapPriceThreshold;
     bytes32 public authorizedPool;
+    address public liquidityOperator;
+    address public swapOperator;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
 
@@ -68,6 +70,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {
         swapPriceThreshold = _swapPriceThreshold;
+    }
+
+    function setLiquidityOperator(address _liquidityOperator) external onlyOwner {
+        liquidityOperator = _liquidityOperator;
+    }
+
+    function setSwapOperator(address _swapOperator) external onlyOwner {
+        swapOperator = _swapOperator;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
