@@ -217,7 +217,6 @@ contract ETHALMTest is MorphoTestBase {
         part_swap_price_up_in();
     }
 
-    //DONE
     // @Notice: this is needed for composability testing
     function part_swap_price_up_in() public {
         uint256 usdcToSwap = 12146292769;
@@ -237,7 +236,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026254935764449350, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out() public {
         test_deposit_rebalance();
 
@@ -279,7 +277,6 @@ contract ETHALMTest is MorphoTestBase {
         swapUSDC_WETH_Out(wethToGetFSwap);
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out_revert_deviations() public {
         test_deposit_rebalance();
 
@@ -301,7 +298,6 @@ contract ETHALMTest is MorphoTestBase {
         assertTrue(hasReverted, "Expected function to revert but it didn't");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_in() public {
         uint256 wethToSwap = 4611698430797450000;
         test_deposit_rebalance();
@@ -321,7 +317,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026243568357104732, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_out() public {
         test_deposit_rebalance();
 
@@ -344,7 +339,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026243574253612272, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
@@ -367,7 +361,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100028515186139664542, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
@@ -391,7 +384,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100028537906575752918, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_in_fees() public {
         uint256 wethToSwap = 4611698430797450000;
         test_deposit_rebalance();
@@ -413,7 +405,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100028526481264632732, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
