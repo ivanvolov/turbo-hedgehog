@@ -181,8 +181,13 @@ contract UNICORDALMTest is MorphoTestBase {
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-        vm.expectRevert();
-        swapUSDC_USDT_Out(usdtToGetFSwap);
+        bool hasReverted = false;
+        try this.swapUSDC_USDT_Out(usdtToGetFSwap) {
+            hasReverted = false;
+        } catch {
+            hasReverted = true;
+        }
+        assertTrue(hasReverted, "Expected function to revert but it didn't");
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
