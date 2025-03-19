@@ -59,7 +59,7 @@ contract ALMGeneralTest is ALMTestBase {
 
     function test_token_set_up_second_time_revert() public {
         vm.prank(deployer.addr);
-        vm.expectRevert(Base.TokensAlreadyInitialized.selector);
+        vm.expectRevert(IBase.TokensAlreadyInitialized.selector);
         hook.setTokens(address(1), address(1), 0, 0);
     }
 
@@ -256,14 +256,14 @@ contract ALMGeneralTest is ALMTestBase {
         vm.prank(deployer.addr);
         hook.setPaused(true);
 
-        vm.expectRevert(Base.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractPaused.selector);
         hook.deposit(address(0), 0);
 
-        vm.expectRevert(Base.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractPaused.selector);
         hook.withdraw(deployer.addr, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(Base.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractPaused.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
@@ -271,11 +271,11 @@ contract ALMGeneralTest is ALMTestBase {
         vm.prank(deployer.addr);
         hook.setShutdown(true);
 
-        vm.expectRevert(Base.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractShutdown.selector);
         hook.deposit(deployer.addr, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(Base.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractShutdown.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 

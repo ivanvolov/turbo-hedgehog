@@ -14,10 +14,10 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
+    error NoRebalanceNeeded();
+
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
-
-    error NoRebalanceNeeded();
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;

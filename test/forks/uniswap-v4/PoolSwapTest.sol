@@ -16,8 +16,6 @@ contract PoolSwapTest is PoolTestBase {
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
-    error NoSwapOccurred();
-
     struct CallbackData {
         address sender;
         TestSettings testSettings;

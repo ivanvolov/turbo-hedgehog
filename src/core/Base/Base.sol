@@ -17,17 +17,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 
-    error OwnableUnauthorizedAccount(address account);
-    error OwnableInvalidOwner(address owner);
-    error NotALM();
-    error NotRebalanceAdapter();
-    error NotModule();
-    error NotLendingAdapter();
-    error ContractPaused();
-    error ContractShutdown();
-    error TokensAlreadyInitialized();
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
     address public owner;
 
     address public base;
