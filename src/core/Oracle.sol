@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 // ** libraries
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";

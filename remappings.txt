@@ -8,3 +8,4 @@ v4-periphery/=lib/v4-periphery/
 @openzeppelin/=lib/v4-periphery/lib/v4-core/lib/openzeppelin-contracts/contracts/
 @morpho-blue/=lib/morpho-blue/src/
 @chainlink/=lib/chainlink-brownie-contracts/contracts/src/v0.8/
+@prb-math/=src/libraries/prb-math-v2.5.0/

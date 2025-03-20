@@ -159,18 +159,6 @@ library PRBMathUD60x18 {
         }
     }
 
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = x - y;
-    }
-
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = x + y;
-    }
-
-    function suba(uint256 x, uint256 y) internal pure returns (uint256) {
-        return x > y ? sub(x, y) : sub(y, x);
-    }
-
     /// @notice Converts a number from basic integer form to unsigned 60.18-decimal fixed-point representation.
     ///
     /// @dev Requirements:

@@ -13,7 +13,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";

@@ -2,13 +2,14 @@
 pragma solidity ^0.8.25;
 
 // ** libraries
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
 
+    uint256 constant WAD = 1e18;
     uint256 constant Q96 = 2 ** 96;
     uint256 constant Q192 = 2 ** 192;
 
@@ -92,8 +93,8 @@ library ALMMathLib {
 
         return
             isStable
-                ? uint256((baseValue * int256(price)) / 1e18 + variableValue)
-                : uint256(baseValue + (variableValue * 1e18) / int256(price));
+                ? uint256((baseValue * int256(price)) / int256(WAD) + variableValue)
+                : uint256(baseValue + (variableValue * int256(WAD)) / int256(price));
     }
 
     function getVLP(
@@ -103,13 +104,13 @@ library ALMMathLib {
         uint256 shortLeverage
     ) internal pure returns (uint256) {
         uint256 ratio = uint256(
-            (int256(weight) * (int256(longLeverage) - int256(shortLeverage))) / 1e18 + int256(shortLeverage)
+            (int256(weight) * (int256(longLeverage) - int256(shortLeverage))) / int256(WAD) + int256(shortLeverage)
         );
         return ratio.mul(TVL);
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        return VLP.div(uint256(2e18).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+        return VLP.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
     function getUserAmounts(
@@ -127,7 +128,7 @@ library ALMMathLib {
 
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
-        return int24(((int256(PRBMathUD60x18.ln(price * 1e18)) - int256(41446531673892820000))) / 99995000333297);
+        return int24(((int256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297);
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
@@ -135,7 +136,7 @@ library ALMMathLib {
     }
 
     function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
-        return (uint256(sqrtPriceX96)).pow(uint256(2e18)).mul(1e36).div(Q192);
+        return (uint256(sqrtPriceX96)).pow(2 * WAD).mul(WAD * WAD).div(Q192);
     }
 
     function getPoolPriceFromOraclePrice(
@@ -143,7 +144,7 @@ library ALMMathLib {
         bool reversedOrder,
         uint8 decimalsDelta
     ) internal pure returns (uint256) {
-        uint256 ratio = 1e18 * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
         if (reversedOrder) return ratio.div(price);
         return price.div(ratio);
     }
@@ -153,7 +154,7 @@ library ALMMathLib {
         bool reversedOrder,
         uint8 decimalsDelta
     ) internal pure returns (uint256) {
-        uint256 ratio = 1e18 * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
         if (reversedOrder) return ratio.div(price);
         return ratio.mul(price);
     }
