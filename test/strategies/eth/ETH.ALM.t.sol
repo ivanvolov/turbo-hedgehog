@@ -112,6 +112,16 @@ contract ETHALMTest is MorphoTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
+    function test_deposit_cap() public {
+        vm.prank(deployer.addr);
+        hook.setTVLCap(10 ether);
+
+        deal(address(WETH), address(alice.addr), amountToDep);
+        vm.prank(alice.addr);
+        vm.expectRevert(IALM.TVLCapExceeded.selector);
+        hook.deposit(alice.addr, amountToDep);
+    }
+
     function test_deposit_not_operator() public {
         vm.prank(deployer.addr);
         hook.setLiquidityOperator(deployer.addr);
