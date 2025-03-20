@@ -213,19 +213,7 @@ abstract contract ALMTestBase is Deployers {
         // MARK END
 
         (address _token0, address _token1) = getTokensInOrder();
-
-        // MARK: Pool deployment
-        PoolKey memory _key = PoolKey(
-            Currency.wrap(_token0),
-            Currency.wrap(_token1),
-            poolFee,
-            TestLib.getTickSpacingFromFee(poolFee),
-            hook
-        ); // pre-compute key in order to restrict hook to this pool
-
-        hook.setAuthorizedPool(_key);
         (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
-        // MARK END
 
         // This is needed in order to simulate proper accounting
         deal(address(BASE), address(manager), 1000 ether);

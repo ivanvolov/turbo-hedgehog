@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {CurrencySettlerSafe} from "@src/libraries/CurrencySettlerSafe.sol";
@@ -39,11 +39,14 @@ contract ALM is BaseStrategyHook, ERC20 {
     ) BaseStrategyHook(manager) ERC20(name, symbol) {}
 
     function afterInitialize(
-        address,
+        address creator,
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager onlyAuthorizedPool(key) notPaused notShutdown returns (bytes4) {
+    ) external override onlyPoolManager notPaused notShutdown returns (bytes4) {
+        if (creator != owner) revert OwnableUnauthorizedAccount(creator);
+        if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
+        authorizedPool = PoolId.unwrap(key.toId());
         sqrtPriceCurrent = sqrtPrice;
         _updateBoundaries();
         return ALM.afterInitialize.selector;

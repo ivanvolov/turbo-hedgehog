@@ -56,10 +56,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         shutdown = _shutdown;
     }
 
-    function setAuthorizedPool(PoolKey memory authorizedPoolKey) external onlyOwner {
-        authorizedPool = PoolId.unwrap(authorizedPoolKey.toId());
-    }
-
     function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
         isInvertAssets = _isInvertAssets;
     }

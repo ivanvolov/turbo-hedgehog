@@ -19,6 +19,7 @@ import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapt
 
 contract MorphoLendingAdapter is Base, ILendingAdapter {
     error NotInBorrowMode();
+
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 

@@ -207,10 +207,14 @@ contract ALMGeneralTest is ALMTestBase {
         assertApproxEqAbs(liquidity, 279779159321772000, 1e8);
     }
 
-    function test_hook_deployment_exploit_revert() public {
-        vm.expectRevert();
+    function test_pool_deploy_twice_revert() public {
         (address _token0, address _token1) = getTokensInOrder();
-        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+        vm.expectRevert();
+        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+
+        vm.prank(deployer.addr);
+        vm.expectRevert();
+        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
     }
 
     function test_oracle() public view {

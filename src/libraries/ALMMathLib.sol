@@ -136,7 +136,7 @@ library ALMMathLib {
     }
 
     function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
-        return (uint256(sqrtPriceX96)).pow(2 * WAD).mul(WAD * WAD).div(Q192);
+        return uint256(sqrtPriceX96).pow(2 * WAD).mul(WAD * WAD).div(Q192);
     }
 
     function getPoolPriceFromOraclePrice(
