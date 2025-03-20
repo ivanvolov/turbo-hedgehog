@@ -15,6 +15,7 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error NoRebalanceNeeded();
+    error NotRebalanceOperator();
 
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
@@ -33,6 +34,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public isInvertAssets;
     bool public isUnicord;
+    address public rebalanceOperator;
 
     constructor() Base(msg.sender) {}
 
@@ -84,6 +86,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         isUnicord = _isUnicord;
     }
 
+    function setRebalanceOperator(address _rebalanceOperator) external onlyOwner {
+        rebalanceOperator = _rebalanceOperator;
+    }
+
     // ** Logic
 
     function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
@@ -106,7 +112,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
     }
 
-    function rebalance(uint256 slippage) external onlyOwner notPaused notShutdown {
+    function rebalance(uint256 slippage) external notPaused notShutdown {
+        if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
         (bool isRebalance, , ) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();

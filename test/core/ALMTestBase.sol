@@ -210,6 +210,7 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setOraclePriceAtLastRebalance(oracle.price());
         rebalanceAdapter.setTimeAtLastRebalance(0);
         rebalanceAdapter.setIsUnicord(isUnicord);
+        rebalanceAdapter.setRebalanceOperator(deployer.addr);
         // MARK END
 
         (address _token0, address _token1) = getTokensInOrder();

@@ -110,6 +110,7 @@ contract BTCALMTest is ALMTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage * 10);
         assertEqBalanceStateZero(address(hook));
+        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //-TODO: uncomment and fix it
     }
 
     function test_lifecycle() public {
