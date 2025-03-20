@@ -12,6 +12,7 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+
 // ** contracts
 import {Base} from "@src/core/Base/Base.sol";
 
@@ -127,15 +128,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 tick = ALMMathLib.getTickFromPrice(
             ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, uint8(ALMMathLib.absSub(bDec, qDec)))
         );
-
-        if (isInvertedPool) {
-            // @Notice: Here it's inverted due to currencies order
-            tickUpper = tick - tickUpperDelta;
-            tickLower = tick + tickLowerDelta;
-        } else {
-            tickUpper = tick + tickUpperDelta;
-            tickLower = tick - tickLowerDelta;
-        }
+        tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
+        tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
     }
 
     // --- Deltas calculation --- //
@@ -151,8 +145,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             token1Out = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
 
-            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            token0In = adjustForFeesUp(token0In, true, amountSpecified);
+            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity).mul(
+                1e18 + positionManager.getSwapFees(true, amountSpecified)
+            );
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(token1Out)), // specified token = token1
                 int128(uint128(token0In)) // unspecified token = token0
@@ -162,7 +157,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
-                adjustForFeesDown(token0In, true, amountSpecified)
+                token0In.mul(1e18 - positionManager.getSwapFees(true, amountSpecified))
             );
 
             token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
@@ -183,9 +178,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         if (amountSpecified > 0) {
             token0Out = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
-
-            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            token1In = adjustForFeesUp(token1In, false, amountSpecified);
+            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity).mul(
+                1e18 + positionManager.getSwapFees(false, amountSpecified)
+            );
             beforeSwapDelta = toBeforeSwapDelta(
                 -int128(uint128(token0Out)), // specified token = token0
                 int128(uint128(token1In)) // unspecified token = token1
@@ -195,7 +190,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
                 sqrtPriceCurrent,
                 liquidity,
-                adjustForFeesDown(token1In, false, amountSpecified)
+                token1In.mul(1e18 - positionManager.getSwapFees(false, amountSpecified))
             );
 
             token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
@@ -204,24 +199,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 -int128(uint128(token0Out)) // unspecified token = token0
             );
         }
-    }
-
-    function adjustForFeesDown(
-        uint256 amount,
-        bool zeroForOne,
-        int256 amountSpecified
-    ) public view returns (uint256 amountAdjusted) {
-        uint256 fee = positionManager.getSwapFees(zeroForOne, amountSpecified);
-        amountAdjusted = amount - amount.mul(fee);
-    }
-
-    function adjustForFeesUp(
-        uint256 amount,
-        bool zeroForOne,
-        int256 amountSpecified
-    ) public view returns (uint256 amountAdjusted) {
-        uint256 fee = positionManager.getSwapFees(zeroForOne, amountSpecified);
-        amountAdjusted = amount + amount.mul(fee);
     }
 
     // --- Modifiers --- //
