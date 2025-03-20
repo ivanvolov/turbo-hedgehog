@@ -79,8 +79,8 @@ contract UNICORDALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
-            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
-            hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
+            hook.setTVLCap(1000 ether);
+            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             rebalanceAdapter.setIsInvertAssets(false);
             rebalanceAdapter.setRebalancePriceThreshold(2);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);

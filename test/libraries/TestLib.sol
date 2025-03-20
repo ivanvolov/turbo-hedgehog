@@ -37,6 +37,8 @@ library TestLib {
     address constant chainlink_feed_USDT = 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D;
     address constant chainlink_feed_cbBTC = 0x2665701293fCbEB223D11A08D826563EDcCE423A;
 
+    uint256 constant sqrt_price_10per_price_change = 48808848170151600; //(sqrt(1.1)-1) or max 10% price change
+
     function nearestUsableTick(int24 tick_, uint24 tickSpacing) public pure returns (int24 result) {
         result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);
 

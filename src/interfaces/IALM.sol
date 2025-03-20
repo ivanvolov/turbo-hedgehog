@@ -14,6 +14,7 @@ interface IALM {
     error NotALiquidityOperator();
     error NotASwapOperator();
     error OnlyOnePoolPerHook();
+    error TVLCapExceeded();
 
     event Deposit(address indexed to, uint256 amount, uint256 shares);
     event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);

@@ -37,6 +37,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bytes32 public authorizedPool;
     address public liquidityOperator;
     address public swapOperator;
+    uint256 public tvlCap;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
 
@@ -74,6 +75,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setSwapOperator(address _swapOperator) external onlyOwner {
         swapOperator = _swapOperator;
+    }
+
+    function setTVLCap(uint256 _tvlCap) external onlyOwner {
+        tvlCap = _tvlCap;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
