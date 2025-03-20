@@ -23,11 +23,13 @@
     "https://github.com/aave-dao/aave-v3-origin",
     "https://github.com/smartcontractkit/chainlink-brownie-contracts",
     "https://github.com/morpho-org/morpho-blue",
+    "https://github.com/PaulRBerg/prb-math.git",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/forge-std",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/v4-periphery",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/aave-v3-origin",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/chainlink-brownie-contracts",
-    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/morpho-blue"
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/morpho-blue",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/prb-math"
   ],
   "cSpell.enabled": true
 }
