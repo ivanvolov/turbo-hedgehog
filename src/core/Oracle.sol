@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 // ** libraries
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
@@ -10,8 +10,8 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 
 contract Oracle is IOracle {
     using PRBMathUD60x18 for uint256;
-    AggregatorV3Interface internal feedBase;
-    AggregatorV3Interface internal feedQuote;
+    AggregatorV3Interface internal immutable feedBase;
+    AggregatorV3Interface internal immutable feedQuote;
 
     constructor(address _feedQuote, address _feedBase) {
         feedQuote = AggregatorV3Interface(_feedQuote);

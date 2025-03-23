@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import "forge-std/console.sol";
 
@@ -15,10 +15,11 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
+    error NoRebalanceNeeded();
+    error NotRebalanceOperator();
+
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
-
-    error NoRebalanceNeeded();
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;
@@ -34,6 +35,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public isInvertAssets;
     bool public isUnicord;
+    address public rebalanceOperator;
 
     constructor() Base(msg.sender) {}
 
@@ -85,6 +87,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         isUnicord = _isUnicord;
     }
 
+    function setRebalanceOperator(address _rebalanceOperator) external onlyOwner {
+        rebalanceOperator = _rebalanceOperator;
+    }
+
     // ** Logic
 
     function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
@@ -119,7 +125,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
     }
 
-    function rebalance(uint256 slippage) external onlyOwner notPaused notShutdown {
+    function rebalance(uint256 slippage) external notPaused notShutdown {
+        if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
         (bool isRebalance, , ) = isRebalanceNeeded();
         console.log("Is Rebalance Needed:", isRebalance);
 

@@ -46,8 +46,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
-            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
-            hook.setSwapPriceThreshold(1e18);
+            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
+            hook.setTVLCap(1000 ether);
             rebalanceAdapter.setIsInvertAssets(true);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425

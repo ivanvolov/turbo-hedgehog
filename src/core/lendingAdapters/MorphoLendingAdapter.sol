@@ -20,11 +20,12 @@ import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapt
 
 contract MorphoLendingAdapter is Base, ILendingAdapter {
     error NotInBorrowMode();
+
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
     // ** Morpho
-    IMorpho public constant morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
+    IMorpho constant morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
     Id public immutable longMId;
     Id public immutable shortMId;
     IERC4626 public immutable earnQuote;

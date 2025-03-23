@@ -54,8 +54,8 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
-            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
-            hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
+            hook.setTVLCap(1000000 ether);
+            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             rebalanceAdapter.setIsInvertAssets(true);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
@@ -153,7 +153,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, type(uint256).max);
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_in() public {
         test_deposit_rebalance();
         uint256 usdcToSwap = 14171775946;
@@ -173,7 +172,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265279361107121166328307, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out() public {
         test_deposit_rebalance();
 
@@ -195,7 +193,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265279361106897797222780, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_in() public {
         uint256 wethToSwap = 5436304955762950000;
         test_deposit_rebalance();
@@ -215,7 +212,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265280789280564975018801, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_out() public {
         test_deposit_rebalance();
 
@@ -238,7 +234,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265280789280255134746250, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
@@ -260,7 +255,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265286376855133687865402, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
@@ -284,7 +278,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265286446994897797222780, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_in_fees() public {
         uint256 wethToSwap = 5436304955762950000;
         test_deposit_rebalance();
@@ -306,7 +299,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 265287947823564975018801, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);

@@ -62,8 +62,8 @@ contract ETHALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
-            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
-            hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
+            hook.setTVLCap(1000 ether);
+            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             rebalanceAdapter.setIsInvertAssets(false);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
@@ -112,6 +112,32 @@ contract ETHALMTest is MorphoTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
+    function test_deposit_cap() public {
+        vm.prank(deployer.addr);
+        hook.setTVLCap(10 ether);
+
+        deal(address(WETH), address(alice.addr), amountToDep);
+        vm.prank(alice.addr);
+        vm.expectRevert(IALM.TVLCapExceeded.selector);
+        hook.deposit(alice.addr, amountToDep);
+    }
+
+    function test_deposit_not_operator() public {
+        vm.prank(deployer.addr);
+        hook.setLiquidityOperator(deployer.addr);
+        deal(address(WETH), address(alice.addr), amountToDep);
+
+        vm.prank(alice.addr);
+        vm.expectRevert(IALM.NotALiquidityOperator.selector);
+        hook.deposit(alice.addr, amountToDep);
+
+        vm.prank(deployer.addr);
+        hook.setLiquidityOperator(alice.addr);
+
+        vm.prank(alice.addr);
+        hook.deposit(alice.addr, amountToDep);
+    }
+
     function test_deposit_rebalance() public {
         test_deposit();
 
@@ -138,6 +164,25 @@ contract ETHALMTest is MorphoTestBase {
         test_deposit_rebalance();
         alignOraclesAndPools(hook.sqrtPriceCurrent());
         part_withdraw();
+    }
+
+    function test_deposit_rebalance_withdraw_not_operator() public {
+        test_deposit_rebalance();
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
+        vm.prank(deployer.addr);
+        hook.setLiquidityOperator(deployer.addr);
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.prank(alice.addr);
+        vm.expectRevert(IALM.NotALiquidityOperator.selector);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+
+        vm.prank(deployer.addr);
+        hook.setLiquidityOperator(alice.addr);
+
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0);
     }
 
     // @Notice: this is needed for composability testing
@@ -182,7 +227,6 @@ contract ETHALMTest is MorphoTestBase {
         part_swap_price_up_in();
     }
 
-    //DONE
     // @Notice: this is needed for composability testing
     function part_swap_price_up_in() public {
         uint256 usdcToSwap = 12146292769;
@@ -202,7 +246,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026254935764449350, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out() public {
         test_deposit_rebalance();
 
@@ -225,7 +268,25 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026254941416541049, 1e1, "tvl");
     }
 
-    //DONE
+    function test_deposit_rebalance_swap_price_up_out_not_operator() public {
+        test_deposit_rebalance();
+
+        uint256 wethToGetFSwap = 4543037198334830000;
+        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+        assertApproxEqAbs(usdcToSwapQ, 12146292769, 1e4, "deltaUSDCQuote");
+        deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+
+        vm.prank(deployer.addr);
+        hook.setSwapOperator(deployer.addr);
+
+        part_swap_USDC_WETH_OUT_revert(wethToGetFSwap);
+
+        vm.prank(deployer.addr);
+        hook.setSwapOperator(address(swapRouter));
+
+        swapUSDC_WETH_Out(wethToGetFSwap);
+    }
+
     function test_deposit_rebalance_swap_price_up_out_revert_deviations() public {
         test_deposit_rebalance();
 
@@ -233,16 +294,20 @@ contract ETHALMTest is MorphoTestBase {
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
+        part_swap_USDC_WETH_OUT_revert(wethToGetFSwap);
+    }
+
+    function part_swap_USDC_WETH_OUT_revert(uint256 amount) internal {
         bool hasReverted = false;
-        try this.swapUSDC_WETH_Out(wethToGetFSwap) {
+        try this.swapUSDC_WETH_Out(amount) {
             hasReverted = false;
         } catch {
             hasReverted = true;
+            vm.stopPrank();
         }
         assertTrue(hasReverted, "Expected function to revert but it didn't");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_in() public {
         uint256 wethToSwap = 4611698430797450000;
         test_deposit_rebalance();
@@ -262,7 +327,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026243568357104732, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_out() public {
         test_deposit_rebalance();
 
@@ -285,7 +349,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100026243574253612272, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
@@ -308,7 +371,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100028515186139664542, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
@@ -332,7 +394,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100028537906575752918, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_in_fees() public {
         uint256 wethToSwap = 4611698430797450000;
         test_deposit_rebalance();
@@ -354,7 +415,6 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 100028526481264632732, 1e1, "tvl");
     }
 
-    //DONE
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);

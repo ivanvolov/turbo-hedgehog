@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {CurrencySettlerSafe} from "@src/libraries/CurrencySettlerSafe.sol";
@@ -13,8 +13,8 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
 import "forge-std/console.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
@@ -40,12 +40,14 @@ contract ALM is BaseStrategyHook, ERC20 {
     ) BaseStrategyHook(manager) ERC20(name, symbol) {}
 
     function afterInitialize(
-        address,
+        address creator,
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager onlyAuthorizedPool(key) notPaused notShutdown returns (bytes4) {
-        console.log("afterInitialize: sqrtPrice = %s", sqrtPrice);
+    ) external override onlyPoolManager notPaused notShutdown returns (bytes4) {
+        if (creator != owner) revert OwnableUnauthorizedAccount(creator);
+        if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
+        authorizedPool = PoolId.unwrap(key.toId());
         sqrtPriceCurrent = sqrtPrice;
         _updateBoundaries();
         return ALM.afterInitialize.selector;
@@ -53,6 +55,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256, uint256) {
         console.log("deposit: amountIn = %s", amountIn);
+        if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
         uint256 TVL1 = TVL();
@@ -67,8 +70,10 @@ contract ALM is BaseStrategyHook, ERC20 {
             IERC20(quote).safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }
+        uint256 TVL2 = TVL();
+        if (TVL2 > tvlCap) revert TVLCapExceeded();
 
-        uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL(), totalSupply());
+        uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
         console.log("deposit: _shares = %s", _shares);
         _mint(to, _shares);
         emit Deposit(msg.sender, amountIn, _shares);
@@ -77,6 +82,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
+        if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         console.log("withdraw: sharesOut = %s", sharesOut);
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
@@ -173,7 +179,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     // --- Swapping logic --- //
 
     function beforeSwap(
-        address,
+        address swapper,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata
@@ -186,6 +192,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         onlyPoolManager
         returns (bytes4, BeforeSwapDelta, uint24)
     {
+        if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         return (this.beforeSwap.selector, _beforeSwap(params, key), 0);
     }
 

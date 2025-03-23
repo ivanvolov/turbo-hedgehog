@@ -24,7 +24,7 @@ import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
@@ -210,22 +210,11 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setOraclePriceAtLastRebalance(oracle.price());
         rebalanceAdapter.setTimeAtLastRebalance(0);
         rebalanceAdapter.setIsUnicord(isUnicord);
+        rebalanceAdapter.setRebalanceOperator(deployer.addr);
         // MARK END
 
         (address _token0, address _token1) = getTokensInOrder();
-
-        // MARK: Pool deployment
-        PoolKey memory _key = PoolKey(
-            Currency.wrap(_token0),
-            Currency.wrap(_token1),
-            poolFee,
-            TestLib.getTickSpacingFromFee(poolFee),
-            hook
-        ); // pre-compute key in order to restrict hook to this pool
-
-        hook.setAuthorizedPool(_key);
         (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
-        // MARK END
 
         // This is needed in order to simulate proper accounting
         deal(address(BASE), address(manager), 1000 ether);
