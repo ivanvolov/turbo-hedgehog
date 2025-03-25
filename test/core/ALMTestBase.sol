@@ -412,6 +412,8 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
+    uint256 public assertEqBalanceQuoteThreshold = 1e5;
+    uint256 public assertEqBalanceBaseThreshold = 1e1;
 
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
@@ -426,8 +428,18 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function _assertEqBalanceState(address owner, uint256 _balanceQ, uint256 _balanceB) public view {
-        assertApproxEqAbs(QUOTE.balanceOf(owner), _balanceQ, 1e5, string.concat("Balance ", quoteName, " not equal"));
-        assertApproxEqAbs(BASE.balanceOf(owner), _balanceB, 1e1, string.concat("Balance ", baseName, " not equal"));
+        assertApproxEqAbs(
+            QUOTE.balanceOf(owner),
+            _balanceQ,
+            assertEqBalanceQuoteThreshold,
+            string.concat("Balance ", quoteName, " not equal")
+        );
+        assertApproxEqAbs(
+            BASE.balanceOf(owner),
+            _balanceB,
+            assertEqBalanceBaseThreshold,
+            string.concat("Balance ", baseName, " not equal")
+        );
     }
 
     function assertEqHookPositionState(

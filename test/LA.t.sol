@@ -29,7 +29,7 @@ contract LendingAdaptersTest is MorphoTestBase {
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
-        vm.rollFork(21817163);
+        vm.rollFork(22119929);
 
         // ** Setting up test environments params
         {
@@ -43,6 +43,7 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     uint256 _extraQuoteBefore;
 
+    // ----- Flash loan single tests ----- //
     function test_lending_adapter_flash_loan_single_morpho() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_morpho();
@@ -50,6 +51,12 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function test_lending_adapter_flash_loan_single_morpho_earn() public {
+        assertEqPSThresholdCL = 1e1;
+        assertEqPSThresholdCS = 1e1;
+        assertEqPSThresholdDL = 1e1;
+        assertEqPSThresholdDS = 1e1;
+        assertEqBalanceQuoteThreshold = 1e1;
+        assertEqBalanceBaseThreshold = 1e1;
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         part_lending_adapter_flash_loan_single();
@@ -82,6 +89,7 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertEqBalanceState(address(this), _extraQuoteBefore, amount);
     }
 
+    // ----- Flash loan two tokens tests ----- //
     function test_lending_adapter_flash_loan_two_tokens_morpho() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_morpho();
@@ -89,6 +97,12 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function test_lending_adapter_flash_loan_two_tokens_morpho_earn() public {
+        assertEqPSThresholdCL = 1e1;
+        assertEqPSThresholdCS = 1e1;
+        assertEqPSThresholdDL = 1e1;
+        assertEqPSThresholdDS = 1e1;
+        assertEqBalanceQuoteThreshold = 1e1;
+        assertEqBalanceBaseThreshold = 1e1;
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         part_lending_adapter_flash_loan_two_tokens();
@@ -135,6 +149,7 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertEqBalanceState(address(this), _extraQuoteBefore + amount1, amount0);
     }
 
+    // ----- Long tests ----- //
     function test_lending_adapter_long_morpho() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_morpho();
@@ -189,6 +204,7 @@ contract LendingAdaptersTest is MorphoTestBase {
         vm.stopPrank();
     }
 
+    // ----- Short tests ----- //
     function test_lending_adapter_short_morpho() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_morpho();
@@ -243,6 +259,7 @@ contract LendingAdaptersTest is MorphoTestBase {
         vm.stopPrank();
     }
 
+    // ----- In parallel tests ----- //
     function test_lending_adapter_in_parallel_morpho() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_morpho();
@@ -315,7 +332,14 @@ contract LendingAdaptersTest is MorphoTestBase {
         vm.stopPrank();
     }
 
+    // ----- Morpho earn tests ----- //
     function test_unicord_morpho_earn_in_borrow_reverts() public {
+        assertEqPSThresholdCL = 1e1;
+        assertEqPSThresholdCS = 1e1;
+        assertEqPSThresholdDL = 1e1;
+        assertEqPSThresholdDS = 1e1;
+        assertEqBalanceQuoteThreshold = 1e1;
+        assertEqBalanceBaseThreshold = 1e1;
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         _fakeSetComponents(alice.addr);
@@ -337,6 +361,12 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function test_unicord_morpho_earn_in_parallel() public {
+        assertEqPSThresholdCL = 1e1;
+        assertEqPSThresholdCS = 1e1;
+        assertEqPSThresholdDL = 1e1;
+        assertEqPSThresholdDS = 1e1;
+        assertEqBalanceQuoteThreshold = 1e1;
+        assertEqBalanceBaseThreshold = 1e1;
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         _fakeSetComponents(alice.addr); // ** Enable Alice to call the adapter
@@ -362,18 +392,63 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(lendingAdapter));
 
-        //TODO: get fee accumulation check
+        vm.warp(block.timestamp + 1 days);
 
         // ** Remove USDT Collateral
         lendingAdapter.removeCollateralLong(lendingAdapter.getCollateralLong());
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, c6to18(1e1));
-        assertEqBalanceState(alice.addr, usdtToSupply, 0);
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, 0);
+        assertEqBalanceState(alice.addr, usdtToSupply + 95954, 0);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         // ** Remove USDC Collateral
         lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, c6to18(1e1));
-        assertEqBalanceState(alice.addr, usdtToSupply, usdcToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 0);
+        assertEqBalanceState(alice.addr, usdtToSupply+95954, usdcToSupply+179157);
+        assertEqBalanceStateZero(address(lendingAdapter));
+
+        vm.stopPrank();
+    }
+
+    function test_unicord_euler_earn_in_parallel() public {
+        assertEqBalanceQuoteThreshold = 1e1;
+        assertEqBalanceBaseThreshold = 1e1;
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_lending_adapter_euler_WETH_USDC();
+        _fakeSetComponents(alice.addr); // ** Enable Alice to call the adapter
+
+        // ** Approve to LA
+        vm.startPrank(alice.addr);
+        USDC.forceApprove(address(lendingAdapter), type(uint256).max);
+        WETH.forceApprove(address(lendingAdapter), type(uint256).max);
+
+        // ** Add Collateral for Long (WETH)
+        uint256 wethToSupply = 1 ether;
+        deal(address(WETH), address(alice.addr), wethToSupply);
+        lendingAdapter.addCollateralLong(wethToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
+        assertEqBalanceStateZero(alice.addr);
+        assertEqBalanceStateZero(address(lendingAdapter));
+
+        // ** Add Collateral for Short (USDC)
+        uint256 usdcToSupply = 1000e6;
+        deal(address(USDC), address(alice.addr), usdcToSupply);
+        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        assertEqBalanceStateZero(alice.addr);
+        assertEqBalanceStateZero(address(lendingAdapter));
+
+        vm.warp(block.timestamp + 1 days);
+
+        // ** Remove WETH Collateral
+        lendingAdapter.removeCollateralLong(lendingAdapter.getCollateralLong());
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, 0);
+        assertEqBalanceState(alice.addr, wethToSupply+33893131418418, 0);
+        assertEqBalanceStateZero(address(lendingAdapter));
+
+        // ** Remove USDC Collateral
+        lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 0);
+        assertEqBalanceState(alice.addr, wethToSupply+33893131418418, usdcToSupply+111287);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         vm.stopPrank();
