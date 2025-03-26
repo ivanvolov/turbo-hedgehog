@@ -12,6 +12,7 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** contracts
 import {Base} from "@src/core/Base/Base.sol";
@@ -149,8 +150,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 1e18 + positionManager.getSwapFees(true, amountSpecified)
             );
             beforeSwapDelta = toBeforeSwapDelta(
-                -int128(uint128(token1Out)), // specified token = token1
-                int128(uint128(token0In)) // unspecified token = token0
+                -SafeCast.toInt128(token1Out), // specified token = token1
+                SafeCast.toInt128(token0In) // unspecified token = token0
             );
         } else {
             token0In = uint256(-amountSpecified);
@@ -162,8 +163,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
             token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             beforeSwapDelta = toBeforeSwapDelta(
-                int128(uint128(token0In)), // specified token = token0
-                -int128(uint128(token1Out)) // unspecified token = token1
+                SafeCast.toInt128(token0In), // specified token = token0
+                -SafeCast.toInt128(token1Out) // unspecified token = token1
             );
         }
     }
@@ -182,8 +183,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 1e18 + positionManager.getSwapFees(false, amountSpecified)
             );
             beforeSwapDelta = toBeforeSwapDelta(
-                -int128(uint128(token0Out)), // specified token = token0
-                int128(uint128(token1In)) // unspecified token = token1
+                -SafeCast.toInt128(token0Out), // specified token = token0
+                SafeCast.toInt128(token1In) // unspecified token = token1
             );
         } else {
             token1In = uint256(-amountSpecified);
@@ -195,8 +196,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
             token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             beforeSwapDelta = toBeforeSwapDelta(
-                int128(uint128(token1In)), // specified token = token1
-                -int128(uint128(token0Out)) // unspecified token = token0
+                SafeCast.toInt128(token1In), // specified token = token1
+                -SafeCast.toInt128(token0Out) // unspecified token = token0
             );
         }
     }

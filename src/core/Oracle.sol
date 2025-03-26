@@ -26,6 +26,7 @@ contract Oracle is IOracle {
 
         if (_priceBase < 0 || _priceQuote < 0) revert("O1");
 
+        // TODO: proper oracle calculation, check for zero price or divide by zero
         uint256 priceBase = uint256(_priceBase).div(10 ** decimalsBase);
         uint256 priceQuote = uint256(_priceQuote).div(10 ** decimalsQuote);
         return priceQuote.div(priceBase);

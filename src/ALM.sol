@@ -150,11 +150,11 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function _ensureEnoughBalance(uint256 balance, address token) internal {
-        int256 delBalance = int256(balance) - int256(token == base ? baseBalance(false) : quoteBalance(false));
-        if (delBalance > 0) {
-            swapAdapter.swapExactOutput(otherToken(token), token, uint256(delBalance));
-        } else if (delBalance < 0) {
-            swapAdapter.swapExactInput(token, otherToken(token), ALMMathLib.abs(delBalance));
+        uint256 _balance = token == base ? baseBalance(false) : quoteBalance(false);
+        if (balance >= _balance) {
+            swapAdapter.swapExactOutput(otherToken(token), token, balance - _balance);
+        } else {
+            swapAdapter.swapExactInput(token, otherToken(token), _balance - balance);
         }
     }
 

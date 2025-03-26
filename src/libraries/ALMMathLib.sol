@@ -5,6 +5,7 @@ pragma solidity ^0.8.25;
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
@@ -18,7 +19,7 @@ library ALMMathLib {
         uint128 liquidity,
         uint256 amount1
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = uint160((amount1 * Q96) / liquidity);
+        uint160 sqrtPriceDeltaX96 = SafeCast.toUint160((amount1 * Q96) / liquidity);
         return sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
     }
 
@@ -27,7 +28,7 @@ library ALMMathLib {
         uint128 liquidity,
         uint256 amount1
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = uint160((amount1 * Q96) / liquidity);
+        uint160 sqrtPriceDeltaX96 = SafeCast.toUint160((amount1 * Q96) / liquidity);
         return sqrtPriceCurrentX96 - sqrtPriceDeltaX96;
     }
 
@@ -37,7 +38,7 @@ library ALMMathLib {
         uint256 amount0
     ) internal pure returns (uint160) {
         return
-            uint160(
+            SafeCast.toUint160(
                 uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
                     uint256(liquidity) - amount0.mul(uint256(sqrtPriceCurrentX96)).div(Q96)
                 )
@@ -50,7 +51,7 @@ library ALMMathLib {
         uint256 amount0
     ) internal pure returns (uint160) {
         return
-            uint160(
+            SafeCast.toUint160(
                 uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
                     uint256(liquidity) + amount0.mul(uint256(sqrtPriceCurrentX96)).div(Q96)
                 )
@@ -88,13 +89,13 @@ library ALMMathLib {
         uint256 price,
         bool isStable
     ) internal pure returns (uint256) {
-        int256 baseValue = int256(EH) + int256(CL) - int256(DS);
-        int256 variableValue = int256(CS) + int256(UH) - int256(DL);
+        int256 baseValue = SafeCast.toInt256(EH + CL) - SafeCast.toInt256(DS);
+        int256 variableValue = SafeCast.toInt256(CS + UH) - SafeCast.toInt256(DL);
 
         return
             isStable
-                ? uint256((baseValue * int256(price)) / int256(WAD) + variableValue)
-                : uint256(baseValue + (variableValue * int256(WAD)) / int256(price));
+                ? SafeCast.toUint256((baseValue * SafeCast.toInt256(price)) / int256(WAD) + variableValue)
+                : SafeCast.toUint256(baseValue + (variableValue * int256(WAD)) / SafeCast.toInt256(price));
     }
 
     function getVLP(
@@ -103,8 +104,8 @@ library ALMMathLib {
         uint256 longLeverage,
         uint256 shortLeverage
     ) internal pure returns (uint256) {
-        uint256 ratio = uint256(
-            (int256(weight) * (int256(longLeverage) - int256(shortLeverage))) / int256(WAD) + int256(shortLeverage)
+        uint256 ratio = SafeCast.toUint256(
+            (SafeCast.toInt256(weight) * (SafeCast.toInt256(longLeverage) - SafeCast.toInt256(shortLeverage))) / int256(WAD) + SafeCast.toInt256(shortLeverage)
         );
         return ratio.mul(TVL);
     }
@@ -122,13 +123,12 @@ library ALMMathLib {
         uint256 debtShort
     ) internal pure returns (uint256, uint256, uint256, uint256) {
         uint256 ratio = sharesOut.div(totalSupply);
-
         return (collateralLong.mul(ratio), collateralShort.mul(ratio), debtLong.mul(ratio), debtShort.mul(ratio));
     }
 
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
-        return int24(((int256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297);
+        return SafeCast.toInt24(((SafeCast.toInt256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297);
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {
@@ -165,12 +165,5 @@ library ALMMathLib {
 
     function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? a - b : b - a;
-    }
-
-    function abs(int256 n) internal pure returns (uint256) {
-        unchecked {
-            // must be unchecked in order to support `n = type(int256).min`
-            return uint256(n >= 0 ? n : -n);
-        }
     }
 }

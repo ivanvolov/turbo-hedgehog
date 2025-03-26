@@ -376,7 +376,7 @@ abstract contract ALMTestBase is Deployers {
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
         (int256 delta0, int256 delta1) = __swap(zeroForOne, amount, _key);
-        return (ALMMathLib.abs(delta0), ALMMathLib.abs(delta1));
+        return (abs(delta0), abs(delta1));
     }
 
     function __swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (int256, int256) {
@@ -397,11 +397,11 @@ abstract contract ALMTestBase is Deployers {
         );
         vm.stopPrank();
         if (zeroForOne) {
-            assertEq(token0Before - IERC20(_token0).balanceOf(swapper.addr), ALMMathLib.abs(delta.amount0()));
-            assertEq(IERC20(_token1).balanceOf(swapper.addr) - token1Before, ALMMathLib.abs(delta.amount1()));
+            assertEq(token0Before - IERC20(_token0).balanceOf(swapper.addr), abs(delta.amount0()));
+            assertEq(IERC20(_token1).balanceOf(swapper.addr) - token1Before, abs(delta.amount1()));
         } else {
-            assertEq(IERC20(_token0).balanceOf(swapper.addr) - token0Before, ALMMathLib.abs(delta.amount0()));
-            assertEq(token1Before - IERC20(_token1).balanceOf(swapper.addr), ALMMathLib.abs(delta.amount1()));
+            assertEq(IERC20(_token0).balanceOf(swapper.addr) - token0Before, abs(delta.amount0()));
+            assertEq(token1Before - IERC20(_token1).balanceOf(swapper.addr), abs(delta.amount1()));
         }
         return (int256(delta.amount0()), int256(delta.amount1()));
     }
@@ -635,5 +635,12 @@ abstract contract ALMTestBase is Deployers {
     // ** Convert function: Converts a value with 18 decimals to a representation with 6 decimals
     function c18to6(uint256 amountIn18Decimals) internal pure returns (uint256) {
         return amountIn18Decimals / (10 ** 12);
+    }
+
+    function abs(int256 n) internal pure returns (uint256) {
+        unchecked {
+            // must be unchecked in order to support `n = type(int256).min`
+            return uint256(n >= 0 ? n : -n);
+        }
     }
 }

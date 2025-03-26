@@ -5,6 +5,7 @@ pragma solidity ^0.8.25;
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
@@ -225,10 +226,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetDS.mul(k);
             }
 
-            deltaCL = int256(targetCL) - int256(lendingAdapter.getCollateralLong());
-            deltaCS = int256(targetCS) - int256(lendingAdapter.getCollateralShort());
-            deltaDL = int256(targetDL) - int256(lendingAdapter.getBorrowedLong());
-            deltaDS = int256(targetDS) - int256(lendingAdapter.getBorrowedShort());
+            deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(lendingAdapter.getCollateralLong());
+            deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(lendingAdapter.getCollateralShort());
+            deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(lendingAdapter.getBorrowedLong());
+            deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(lendingAdapter.getBorrowedShort());
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -258,7 +259,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
-        return uint128(liquidity);
+        return SafeCast.toUint128(liquidity);
     }
 
     function checkDeviations() internal view {
