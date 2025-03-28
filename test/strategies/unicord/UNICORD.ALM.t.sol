@@ -79,7 +79,7 @@ contract UNICORDALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
-            hook.setTVLCap(1000 ether);
+            hook.setTVLCap(100000 ether);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             rebalanceAdapter.setIsInvertAssets(false);
             rebalanceAdapter.setRebalancePriceThreshold(2);
@@ -95,7 +95,7 @@ contract UNICORDALMTest is MorphoTestBase {
         approve_accounts();
     }
 
-    uint256 amountToDep = 1000e6;
+    uint256 amountToDep = 100000e6;
 
     function test_deposit() public {
         assertEq(hook.TVL(), 0, "TVL");
@@ -106,35 +106,19 @@ contract UNICORDALMTest is MorphoTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
 
-        assertApproxEqAbs(shares, 999999999000000000000, 1e1);
+        assertApproxEqAbs(shares, 99999999999000000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 999999999000000000000, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 99999999999000000000000, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
     function test_deposit_withdraw() public {
-        assertEq(hook.TVL(), 0, "TVL");
-        assertEq(hook.liquidity(), 0, "liquidity");
-
-        deal(address(USDT), address(alice.addr), amountToDep);
-        vm.prank(alice.addr);
-
-        (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
-
-        assertApproxEqAbs(shares, 999999999000000000000, 1e1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
-        assertEqBalanceStateZero(alice.addr);
-        assertEqBalanceStateZero(address(hook));
-
-        assertEqPositionState(amountToDep, 0, 0, 0);
-        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 999999999000000000000, 1e1, "tvl");
-        assertEq(hook.liquidity(), 0, "liquidity");
+       test_deposit();
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
@@ -143,7 +127,7 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function test_deposit_rebalance() public {
-        vm.skip(true);
+        //vm.skip(true);
         test_deposit();
         uint256 preRebalanceTVL = hook.TVL();
 
@@ -366,7 +350,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 10000e6; // 10k USDC
+            uint256 usdcToSwap = 1000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -403,7 +387,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 200000e6; //200k USDC
+            uint256 usdcToGetFSwap = 10000e6; //10k USDC
             (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
@@ -432,7 +416,7 @@ contract UNICORDALMTest is MorphoTestBase {
         }
 
         {
-            uint256 usdcToSwap = 50000e6; // 50k USDC
+            uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -454,7 +438,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Deposit
         {
-            uint256 _amountToDep = 200000e6; //200k USDC
+            uint256 _amountToDep = 10000e6; //10k USDC
             deal(address(USDT), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep);

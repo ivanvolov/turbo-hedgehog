@@ -84,6 +84,8 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         require(msg.sender == address(morpho), "M0");
         uint8 loanType = abi.decode(_data, (uint8));
 
+        console.log("loanType %s", loanType);
+
         if (loanType == 0) {
             (, address sender, address asset, uint256 amount, bytes memory data) = abi.decode(
                 _data,
@@ -122,7 +124,8 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
             bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
 
-            morpho.flashLoan(asset1, amount1, __data);
+            if (amount0 != 0) morpho.flashLoan(asset0, amount0, __data);
+            if (amount1 != 0) morpho.flashLoan(asset1, amount1, __data);
             IERC20(asset0).safeTransferFrom(sender, address(this), amount0);
         } else revert("M2");
 
