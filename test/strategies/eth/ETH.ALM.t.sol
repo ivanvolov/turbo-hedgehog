@@ -24,8 +24,8 @@ contract ETHALMTest is MorphoTestBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    uint256 longLeverage = 3e18;
-    uint256 shortLeverage = 2e18;
+    uint256 longLeverage = 2e18;
+    uint256 shortLeverage = 1e18;
     uint256 weight = 55e16; //50%
     uint256 slippage = 15e14; //0.15%
     uint256 fee = 5e14; //0.05%
@@ -66,7 +66,7 @@ contract ETHALMTest is MorphoTestBase {
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             rebalanceAdapter.setIsInvertAssets(false);
             IPositionManagerStandard(address(positionManager)).setFees(0);
-            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            IPositionManagerStandard(address(positionManager)).setKParams(1e18, 1e18); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(weight);
@@ -476,7 +476,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 100000e6; // 100k USDC
+            uint256 usdcToSwap = 50000e6; // 50k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -514,7 +514,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 200000e6; //200k USDC
+            uint256 usdcToGetFSwap = 50000e6; //200k USDC
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -544,7 +544,7 @@ contract ETHALMTest is MorphoTestBase {
         }
 
         {
-            uint256 usdcToSwap = 50000e6; // 50k USDC
+            uint256 usdcToSwap = 10000e6; // 50k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -103,14 +105,29 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0) {
+            console.log("case 1");
             lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
         } else if (uDS == 0 && uDL == 0) {
-            lendingAdapter.removeCollateralLong(uCL);
-            lendingAdapter.removeCollateralShort(uCS);
-            if (isInvertAssets) swapAdapter.swapExactOutput(quote, base, quoteBalance(false));
-            else swapAdapter.swapExactInput(base, quote, baseBalance(false));
-        } else if (uDL > 0) lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
-        else lendingAdapter.flashLoanSingle(quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+            console.log("case 2");
+
+            if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
+            if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
+            if (isInvertAssets) {
+                console.log("case 2.1");
+                swapAdapter.swapExactOutput(quote, base, quoteBalance(false));
+                }
+            else {
+                console.log("case 2.2");
+                if (baseBalance(false) != 0) swapAdapter.swapExactInput(base, quote, baseBalance(false));
+                }
+        } else if (uDL > 0) {
+            console.log("case 3");
+            lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
+        }
+        else {
+            console.log("case 4");
+            lendingAdapter.flashLoanSingle(quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+            }
 
         if (isInvertAssets) {
             if (baseBalance(false) < minAmountOut) revert NotMinOutWithdraw();

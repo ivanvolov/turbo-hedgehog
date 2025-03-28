@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import "forge-std/console.sol";
+
 // ** libraries
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -103,10 +105,10 @@ library ALMMathLib {
         uint256 longLeverage,
         uint256 shortLeverage
     ) internal pure returns (uint256) {
-        uint256 ratio = uint256(
-            (int256(weight) * (int256(longLeverage) - int256(shortLeverage))) / int256(WAD) + int256(shortLeverage)
-        );
-        return ratio.mul(TVL);
+        console.log("here");
+        console.log("a %s", weight * (longLeverage - shortLeverage) / WAD + shortLeverage);
+        console.log("b %s", (weight * (longLeverage - shortLeverage) / WAD + shortLeverage) * TVL / WAD);
+        return (weight * (longLeverage - shortLeverage) / WAD + shortLeverage) * TVL / WAD;
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {

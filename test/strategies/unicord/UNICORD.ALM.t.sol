@@ -42,7 +42,7 @@ contract UNICORDALMTest is MorphoTestBase {
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
     uint256 weight = 55e16; //50%
-    uint256 slippage = 10e14; //0.15%
+    uint256 slippage = 10e14; //0.1%
     uint256 fee = 1e14; //0.05%
 
     IERC20 USDT = IERC20(TestLib.USDT);
@@ -95,7 +95,7 @@ contract UNICORDALMTest is MorphoTestBase {
         approve_accounts();
     }
 
-    uint256 amountToDep = 1000000e6;
+    uint256 amountToDep = 1000e6;
 
     function test_deposit() public {
         assertEq(hook.TVL(), 0, "TVL");
@@ -106,15 +106,40 @@ contract UNICORDALMTest is MorphoTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
 
-        assertApproxEqAbs(shares, 999999999999000000000000, 1e1);
+        assertApproxEqAbs(shares, 999999999000000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 999999999999000000000000, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 999999999000000000000, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
+    }
+
+    function test_deposit_withdraw() public {
+        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(hook.liquidity(), 0, "liquidity");
+
+        deal(address(USDT), address(alice.addr), amountToDep);
+        vm.prank(alice.addr);
+
+        (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
+
+        assertApproxEqAbs(shares, 999999999000000000000, 1e1);
+        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
+        assertEqBalanceStateZero(alice.addr);
+        assertEqBalanceStateZero(address(hook));
+
+        assertEqPositionState(amountToDep, 0, 0, 0);
+        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
+        assertApproxEqAbs(hook.TVL(), 999999999000000000000, 1e1, "tvl");
+        assertEq(hook.liquidity(), 0, "liquidity");
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
+        
     }
 
     function test_deposit_rebalance() public {
@@ -328,14 +353,13 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function test_lifecycle() public {
-        vm.skip(true);
+        test_deposit_rebalance();
+
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(fee);
         //rebalanceAdapter.setRebalancePriceThreshold(1e15);
         //rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
         vm.stopPrank();
-
-        test_deposit_rebalance();
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());

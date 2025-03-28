@@ -183,6 +183,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("Time at Last Rebalance:", timeAtLastRebalance);
 
         alm.updateLiquidity(calcLiquidity());
+
+        console.log("here");
     }
 
     function onFlashLoanTwoTokens(
@@ -298,6 +300,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (isInvertAssets) VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
         else VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());
 
+        console.log("here");
+
         uint256 liquidity = ALMMathLib.getL(
             VLP,
             oraclePriceAtLastRebalance,
@@ -312,6 +316,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
+
+        console.log("liquidity %s", liquidity);
+
         return uint128(liquidity);
     }
 
