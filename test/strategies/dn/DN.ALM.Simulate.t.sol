@@ -48,6 +48,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
             hook.setIsInvertAssets(true);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             hook.setTVLCap(1000 ether);
+            hook.setProtocolFee(0);
+            hook.setTreasury(treasury.addr);
             rebalanceAdapter.setIsInvertAssets(true);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425

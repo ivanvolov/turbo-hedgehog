@@ -78,6 +78,7 @@ abstract contract ALMTestBase is Deployers {
     TestAccount swapper;
     TestAccount marketMaker;
     TestAccount zero;
+    TestAccount treasury;
 
     uint256 almId;
 
@@ -106,6 +107,7 @@ abstract contract ALMTestBase is Deployers {
         swapper = TestAccountLib.createTestAccount("swapper");
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
+        treasury = TestAccountLib.createTestAccount("treasury");
     }
 
     function create_lending_adapter_euler_WETH_USDC() internal {

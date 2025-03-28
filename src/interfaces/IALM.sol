@@ -25,6 +25,8 @@ interface IALM {
 
     function refreshReserves() external;
 
+    function transferFees( ) external;
+
     function tickLower() external view returns (int24);
 
     function tickUpper() external view returns (int24);

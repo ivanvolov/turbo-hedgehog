@@ -195,7 +195,8 @@ contract ALM is BaseStrategyHook, ERC20 {
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 token0In,
                 uint256 token1Out,
-                uint160 sqrtPriceNext
+                uint160 sqrtPriceNext,
+                uint256 fee
             ) = getZeroForOneDeltas(params.amountSpecified);
 
             checkSwapDeviations(sqrtPriceNext);
@@ -203,8 +204,14 @@ contract ALM is BaseStrategyHook, ERC20 {
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
-            if (isInvertedPool) positionManager.positionAdjustmentPriceUp(token0In.wrap(bDec), token1Out.wrap(qDec));
-            else positionManager.positionAdjustmentPriceDown(token1Out.wrap(bDec), token0In.wrap(qDec));
+    
+            if (isInvertedPool) {
+                accumulatedFeeB += fee.mul(protocolFee);
+                positionManager.positionAdjustmentPriceUp((token0In - fee.mul(protocolFee)).wrap(bDec), token1Out.wrap(qDec));
+            } else {
+                accumulatedFeeQ += fee.mul(protocolFee);
+                positionManager.positionAdjustmentPriceDown(token1Out.wrap(bDec), (token0In - fee.mul(protocolFee)).wrap(qDec));
+            }
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), token1Out, false);
@@ -216,13 +223,19 @@ contract ALM is BaseStrategyHook, ERC20 {
                 BeforeSwapDelta beforeSwapDelta,
                 uint256 token0Out,
                 uint256 token1In,
-                uint160 sqrtPriceNext
+                uint160 sqrtPriceNext,
+                uint256 fee
             ) = getOneForZeroDeltas(params.amountSpecified);
             key.currency1.take(poolManager, address(this), token1In, false);
 
             checkSwapDeviations(sqrtPriceNext);
-            if (isInvertedPool) positionManager.positionAdjustmentPriceDown(token0Out.wrap(bDec), token1In.wrap(qDec));
-            else positionManager.positionAdjustmentPriceUp(token1In.wrap(bDec), token0Out.wrap(qDec));
+            if (isInvertedPool) {
+                accumulatedFeeQ += fee.mul(protocolFee);
+                positionManager.positionAdjustmentPriceDown(token0Out.wrap(bDec), (token1In - fee.mul(protocolFee)).wrap(qDec));
+            } else {
+                accumulatedFeeB += fee.mul(protocolFee);
+                positionManager.positionAdjustmentPriceUp((token1In - fee.mul(protocolFee)).wrap(bDec), token0Out.wrap(qDec));
+            }
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
@@ -232,10 +245,17 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
         if (zeroForOne) {
-            (, token0, token1, ) = getZeroForOneDeltas(amountSpecified);
+            (, token0, token1, , ) = getZeroForOneDeltas(amountSpecified);
         } else {
-            (, token0, token1, ) = getOneForZeroDeltas(amountSpecified);
+            (, token0, token1, , ) = getOneForZeroDeltas(amountSpecified);
         }
+    }
+
+    function transferFees() external onlyRebalanceAdapter {
+        IERC20(base).safeTransfer(treasury, accumulatedFeeB);
+        IERC20(quote).safeTransfer(treasury, accumulatedFeeQ);
+        accumulatedFeeB = 0;
+        accumulatedFeeQ = 0;
     }
 
     function refreshReserves() public notPaused {
@@ -252,11 +272,17 @@ contract ALM is BaseStrategyHook, ERC20 {
     // --- Helpers --- //
 
     function baseBalance(bool wrap) public view returns (uint256) {
-        return wrap ? IERC20(base).balanceOf(address(this)).wrap(bDec) : IERC20(base).balanceOf(address(this));
+        return
+            wrap
+                ? (IERC20(base).balanceOf(address(this)) - accumulatedFeeB).wrap(bDec)
+                : IERC20(base).balanceOf(address(this)) - accumulatedFeeB;
     }
 
     function quoteBalance(bool wrap) public view returns (uint256) {
-        return wrap ? IERC20(quote).balanceOf(address(this)).wrap(qDec) : IERC20(quote).balanceOf(address(this));
+        return
+            wrap
+                ? (IERC20(quote).balanceOf(address(this)) - accumulatedFeeQ).wrap(qDec)
+                : IERC20(quote).balanceOf(address(this)) - accumulatedFeeQ;
     }
 
     // --- Math functions --- //

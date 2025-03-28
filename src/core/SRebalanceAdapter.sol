@@ -118,6 +118,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (bool isRebalance, , ) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
+        alm.transferFees();
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 

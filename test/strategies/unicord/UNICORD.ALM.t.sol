@@ -81,6 +81,8 @@ contract UNICORDALMTest is MorphoTestBase {
             hook.setIsInvertAssets(false);
             hook.setTVLCap(1000 ether);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
+            hook.setProtocolFee(0);
+            hook.setTreasury(treasury.addr);
             rebalanceAdapter.setIsInvertAssets(false);
             rebalanceAdapter.setRebalancePriceThreshold(2);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);

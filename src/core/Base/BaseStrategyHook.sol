@@ -41,6 +41,11 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     address public swapOperator;
     uint256 public tvlCap;
 
+    address public treasury;
+    uint256 public protocolFee;
+    uint256 public accumulatedFeeB;
+    uint256 public accumulatedFeeQ;
+
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
 
     function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
@@ -81,6 +86,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setTVLCap(uint256 _tvlCap) external onlyOwner {
         tvlCap = _tvlCap;
+    }
+
+    function setTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+    }
+
+    function setProtocolFee(uint256 _protocolFee) external onlyOwner {
+        protocolFee = _protocolFee;
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -140,25 +153,27 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     )
         internal
         view
-        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0In, uint256 token1Out, uint160 sqrtPriceNext)
+        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0In, uint256 token1Out, uint160 sqrtPriceNext, uint256 fee)
     {
         if (amountSpecified > 0) {
             token1Out = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
+            
+            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
+            token0In += fee;
 
-            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity).mul(
-                1e18 + positionManager.getSwapFees(true, amountSpecified)
-            );
             beforeSwapDelta = toBeforeSwapDelta(
                 -SafeCast.toInt128(token1Out), // specified token = token1
                 SafeCast.toInt128(token0In) // unspecified token = token0
             );
         } else {
             token0In = uint256(-amountSpecified);
+            fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
-                token0In.mul(1e18 - positionManager.getSwapFees(true, amountSpecified))
+                token0In - fee
             );
 
             token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
@@ -174,24 +189,27 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     )
         internal
         view
-        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0Out, uint256 token1In, uint160 sqrtPriceNext)
+        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0Out, uint256 token1In, uint160 sqrtPriceNext, uint256 fee)
     {
         if (amountSpecified > 0) {
             token0Out = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
-            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity).mul(
-                1e18 + positionManager.getSwapFees(false, amountSpecified)
-            );
+            
+            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
+            token1In += fee;
+            
             beforeSwapDelta = toBeforeSwapDelta(
                 -SafeCast.toInt128(token0Out), // specified token = token0
                 SafeCast.toInt128(token1In) // unspecified token = token1
             );
         } else {
             token1In = uint256(-amountSpecified);
+            fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
                 sqrtPriceCurrent,
                 liquidity,
-                token1In.mul(1e18 - positionManager.getSwapFees(false, amountSpecified))
+                token1In - fee
             );
 
             token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
