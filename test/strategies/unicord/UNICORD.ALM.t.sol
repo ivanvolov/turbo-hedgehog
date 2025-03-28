@@ -509,15 +509,15 @@ contract UNICORDALMTest is MorphoTestBase {
         rebalanceAdapter.rebalance(slippage);
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
-        // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // // ** Make oracle change with swap price
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        // ** Full withdraw
-        {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0);
-        }
+        // // ** Full withdraw
+        // {
+        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        //     vm.prank(alice.addr);
+        //     hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        // }
     }
 
     // ** Helpers

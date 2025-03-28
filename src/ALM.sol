@@ -161,7 +161,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         else _ensureEnoughBalance(amount0, base);
     }
 
-    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public notPaused onlyLendingAdapter {
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external notPaused onlyLendingAdapter {
         console.log("onFlashLoanSingle: token = %s, amount = %s", token, amount);
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
@@ -187,10 +187,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         } else if (delBalance < 0) {
             swapAdapter.swapExactInput(token, otherToken(token), ALMMathLib.abs(delBalance));
         }
-    }
-
-    function otherToken(address token) internal view returns (address) {
-        return token == base ? quote : base;
     }
 
     // --- Swapping logic --- //

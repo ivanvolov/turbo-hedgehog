@@ -137,9 +137,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("Base to Flash Loan:", baseToFl);
         console.log("Quote to Flash Loan:", quoteToFl);
 
-        lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
-
-        if (isUnicord) {
+        if (isUnicord) {        
+            if(quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
+            else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
             if (baseBalanceUnwr() != 0) {
                 console.log("Base Balance Unwrapped:", baseBalanceUnwr());
                 lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
@@ -149,6 +149,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 lendingAdapter.addCollateralLong((quoteBalanceUnwr()).wrap(qDec));
             }
         } else {
+            lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
             if (baseBalanceUnwr() != 0) {
                 console.log("Base Balance Unwrapped:", baseBalanceUnwr());
                 lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
@@ -185,6 +186,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         alm.updateLiquidity(calcLiquidity());
 
         console.log("here");
+    }
+
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external notPaused notShutdown onlyLendingAdapter {
+        _positionManagement(data);
+        if (amount > IERC20(token).balanceOf(address(this))) {
+            console.log("?  Balance Unwrapped:", IERC20(token).balanceOf(address(this)));
+            swapAdapter.swapExactOutput(otherToken(token), token, amount - IERC20(token).balanceOf(address(this)));
+        }
     }
 
     function onFlashLoanTwoTokens(

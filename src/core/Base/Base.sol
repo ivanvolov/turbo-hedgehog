@@ -86,6 +86,10 @@ abstract contract Base is IBase {
         emit OwnershipTransferred(oldOwner, owner);
     }
 
+    function otherToken(address token) internal view returns (address) {
+        return token == base ? quote : base;
+    }
+
     // --- Modifiers --- //
 
     modifier onlyOwner() {
