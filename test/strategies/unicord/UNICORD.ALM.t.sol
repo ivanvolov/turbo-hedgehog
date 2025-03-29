@@ -41,7 +41,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
-    uint256 weight = 55e16; //50%
+    uint256 weight = 50e16; //50%
     uint256 slippage = 10e14; //0.1%
     uint256 fee = 1e14; //0.05%
 
@@ -346,7 +346,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.stopPrank();
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        //alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
         {
