@@ -68,7 +68,6 @@ contract UNICORDALMTest is MorphoTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
-        // create_lending_adapter_euler_WETH_USDC();
         create_lending_adapter_morpho_earn();
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
         init_hook(true, true, 100, 100);
@@ -118,12 +117,11 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function test_deposit_withdraw() public {
-       test_deposit();
+        test_deposit();
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
-        
     }
 
     function test_deposit_rebalance() public {
