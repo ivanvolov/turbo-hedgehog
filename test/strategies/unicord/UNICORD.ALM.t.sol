@@ -70,7 +70,7 @@ contract UNICORDALMTest is MorphoTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         // create_lending_adapter_euler_WETH_USDC();
         create_lending_adapter_morpho_earn();
-        create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
+        create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(true, true, 100, 100);
         assertEq(hook.tickLower(), 102);
         assertEq(hook.tickUpper(), -98);

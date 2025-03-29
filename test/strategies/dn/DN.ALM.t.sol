@@ -45,7 +45,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         // create_lending_adapter_morpho();
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
+        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, 3000, 3000);
         assertEq(hook.tickLower(), 200458);
         assertEq(hook.tickUpper(), 194458);

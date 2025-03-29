@@ -52,7 +52,7 @@ contract ETHRALMTest is ALMTestBase {
             TestLib.eulerWETHVault2,
             0
         );
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT);
+        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
         init_hook(false, false, 3000, 3000);
         assertEq(hook.tickLower(), -200460);
         assertEq(hook.tickUpper(), -194460);

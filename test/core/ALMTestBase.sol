@@ -153,9 +153,14 @@ abstract contract ALMTestBase is Deployers {
         vm.stopPrank();
     }
 
-    function create_oracle(address feed0, address feed1) internal {
+    function create_oracle(
+        address feed0,
+        address feed1,
+        uint256 stalenessThreshold0,
+        uint256 stalenessThreshold1
+    ) internal {
         vm.prank(deployer.addr);
-        oracle = new Oracle(feed0, feed1);
+        oracle = new Oracle(feed0, feed1, stalenessThreshold0, stalenessThreshold1);
     }
 
     function init_hook(bool _invertedPool, bool isUnicord, int24 _tickLowerDelta, int24 _tickUpperDelta) internal {

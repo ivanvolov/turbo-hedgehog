@@ -53,7 +53,7 @@ contract BTCALMTest is ALMTestBase {
             TestLib.eulerCbBTCVault2,
             100e8
         );
-        create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC);
+        create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, 3000, 3000);
         assertEq(hook.tickLower(), -65897);
         assertEq(hook.tickUpper(), -71897);
