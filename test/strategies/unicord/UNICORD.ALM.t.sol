@@ -406,7 +406,7 @@ contract UNICORDALMTest is MorphoTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         {
@@ -510,7 +510,7 @@ contract UNICORDALMTest is MorphoTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

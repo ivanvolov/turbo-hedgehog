@@ -351,7 +351,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         uint256 balanceUSDC;
         {
             uint256 sharesBefore = hook.balanceOf(actor);
-            hook.withdraw(actor, shares1, 0);
+            hook.withdraw(actor, shares1, 0, 0);
             assertEq(sharesBefore - hook.balanceOf(actor), shares1);
 
             balanceWETH = WETH.balanceOf(actor);

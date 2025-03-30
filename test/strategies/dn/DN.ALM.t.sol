@@ -77,11 +77,11 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_withdraw() public {
         vm.expectRevert(IALM.NotZeroShares.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 0, 0);
+        hook.withdraw(alice.addr, 0, 0, 0);
 
         vm.expectRevert(IALM.NotEnoughSharesToWithdraw.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 10, 0);
+        hook.withdraw(alice.addr, 10, 0, 0);
     }
 
     uint256 amountToDep = 100 * 2652 * 1e6;
@@ -135,7 +135,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
         assertEqBalanceState(alice.addr, 0, 265144057969);
@@ -150,9 +150,9 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        vm.expectRevert(IALM.NotMinOutWithdraw.selector);
+        vm.expectRevert(IALM.NotMinOutWithdrawBase.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, type(uint256).max);
+        hook.withdraw(alice.addr, sharesToWithdraw, type(uint256).max, 0);
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -424,7 +424,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         // ** Deposit
@@ -507,7 +507,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 
