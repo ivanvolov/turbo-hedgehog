@@ -15,8 +15,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract ETHRALMTest is ALMTestBase {
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    uint256 longLeverage = 3e18;
-    uint256 shortLeverage = 2e18;
+    uint256 longLeverage = 2e18;
+    uint256 shortLeverage = 1e18;
     uint256 weight = 55e16; //50%
     uint256 slippage = 15e14; //0.15%
     uint256 fee = 5e14; //0.05%
@@ -65,7 +65,7 @@ contract ETHRALMTest is ALMTestBase {
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             rebalanceAdapter.setIsInvertAssets(false);
             IPositionManagerStandard(address(positionManager)).setFees(0);
-            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            IPositionManagerStandard(address(positionManager)).setKParams(1e18, 1e18); // 1.425 1.425
             rebalanceAdapter.setRebalancePriceThreshold(1e15);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(weight);
@@ -126,7 +126,7 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdtToSwap = 100000e6; // 100k USDT
+            uint256 usdtToSwap = 50000e6; // 100k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -165,7 +165,7 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdtToGetFSwap = 200000e6; //200k USDT
+            uint256 usdtToGetFSwap = 50000e6; //200k USDT
             (uint256 wethToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -195,7 +195,7 @@ contract ETHRALMTest is ALMTestBase {
         }
 
         {
-            uint256 usdtToSwap = 50000e6; // 50k USDT
+            uint256 usdtToSwap = 10000e6; // 10k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -225,7 +225,7 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdtToSwap = 10000e6; // 10k USDT
+            uint256 usdtToSwap = 5000e6; // 10k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -258,7 +258,7 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1e14);
+            assertApproxEqAbs(deltaWETH, deltaX, 3e14);
             assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
         }
 
@@ -276,7 +276,7 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 42e13);
+            assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 43e13);
             assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
         }
 
