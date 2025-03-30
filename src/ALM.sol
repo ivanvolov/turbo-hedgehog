@@ -204,9 +204,9 @@ contract ALM is BaseStrategyHook, ERC20 {
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
-    
+
             if (isInvertedPool) {
-                accumulatedFeeB += fee.mul(protocolFee);
+                accumulatedFeeB += fee.mul(protocolFee); //cut protocol fee from the calculated swap fee
                 positionManager.positionAdjustmentPriceUp((token0In - fee.mul(protocolFee)).wrap(bDec), token1Out.wrap(qDec));
             } else {
                 accumulatedFeeQ += fee.mul(protocolFee);
