@@ -85,11 +85,11 @@ contract ETHALMTest is MorphoTestBase {
     function test_withdraw() public {
         vm.expectRevert(IALM.NotZeroShares.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 0, 0);
+        hook.withdraw(alice.addr, 0, 0, 0);
 
         vm.expectRevert(IALM.NotEnoughSharesToWithdraw.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 10, 0);
+        hook.withdraw(alice.addr, 10, 0, 0);
     }
 
     uint256 amountToDep = 100 ether;
@@ -178,13 +178,13 @@ contract ETHALMTest is MorphoTestBase {
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
         vm.expectRevert(IALM.NotALiquidityOperator.selector);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
 
         vm.prank(deployer.addr);
         hook.setLiquidityOperator(alice.addr);
 
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
     }
 
     // @Notice: this is needed for composability testing
@@ -193,7 +193,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
         assertEqBalanceState(alice.addr, 99997558771099201211, 0);
@@ -219,9 +219,9 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        vm.expectRevert(IALM.NotMinOutWithdraw.selector);
+        vm.expectRevert(IALM.NotMinOutWithdrawQuote.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, type(uint256).max);
+        hook.withdraw(alice.addr, sharesToWithdraw, 0, type(uint256).max);
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -647,7 +647,7 @@ contract ETHALMTest is MorphoTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         {
@@ -752,7 +752,7 @@ contract ETHALMTest is MorphoTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

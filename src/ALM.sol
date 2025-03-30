@@ -14,6 +14,7 @@ import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
@@ -70,12 +71,12 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         uint256 _shares = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
         _mint(to, _shares);
-        emit Deposit(msg.sender, amountIn, _shares);
+        emit Deposit(to, amountIn, _shares, TVL2, totalSupply());
 
         return (amountIn, _shares);
     }
 
-    function withdraw(address to, uint256 sharesOut, uint256 minAmountOut) external notPaused {
+    function withdraw(address to, uint256 sharesOut, uint256 minAmountOutB, uint256 minAmountOutQ) external notPaused {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
@@ -101,15 +102,20 @@ contract ALM is BaseStrategyHook, ERC20 {
         } else if (uDL > 0) lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else lendingAdapter.flashLoanSingle(quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
 
+        uint256 baseOut;
+        uint256 quoteOut;
         if (isInvertAssets) {
-            if (baseBalance(false) < minAmountOut) revert NotMinOutWithdraw();
-            IERC20(base).safeTransfer(to, baseBalance(false));
+            baseOut = baseBalance(false);
+            if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
+            IERC20(base).safeTransfer(to, baseOut);
         } else {
-            if (quoteBalance(false) < minAmountOut) revert NotMinOutWithdraw();
-            IERC20(quote).safeTransfer(to, quoteBalance(false));
+            quoteOut = quoteBalance(false);
+            if (quoteOut < minAmountOutQ) revert NotMinOutWithdrawQuote();
+            IERC20(quote).safeTransfer(to, quoteOut);
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();
+        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), liquidity);
     }
 
     function onFlashLoanTwoTokens(
@@ -179,13 +185,14 @@ contract ALM is BaseStrategyHook, ERC20 {
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
-        return (this.beforeSwap.selector, _beforeSwap(params, key), 0);
+        return (this.beforeSwap.selector, _beforeSwap(params, key, swapper), 0);
     }
 
     // @Notice: this function is mainly for removing stack too deep error
     function _beforeSwap(
         IPoolManager.SwapParams calldata params,
-        PoolKey calldata key
+        PoolKey calldata key,
+        address swapper
     ) internal returns (BeforeSwapDelta) {
         refreshReserves();
 
@@ -216,6 +223,9 @@ contract ALM is BaseStrategyHook, ERC20 {
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), token1Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
+
+            emit HookFee(authorizedPool, swapper, SafeCast.toUint128(fee), 0);
+            emit HookSwap(authorizedPool, swapper, SafeCast.toInt128(token0In), SafeCast.toInt128(token1Out), SafeCast.toUint128(fee), 0);
             return beforeSwapDelta;
         } else {
             // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
@@ -239,6 +249,8 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
+            emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(fee));
+            emit HookSwap(authorizedPool, swapper, SafeCast.toInt128(token0Out), SafeCast.toInt128(token1In), 0, SafeCast.toUint128(fee));
             return beforeSwapDelta;
         }
     }

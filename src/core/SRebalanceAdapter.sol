@@ -18,6 +18,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error NoRebalanceNeeded();
     error NotRebalanceOperator();
 
+    event Rebalance(
+        uint256 indexed priceThreshold, 
+        uint256 indexed auctionTriggerTime,
+        uint256 slippage,
+        uint128 liquidity, 
+        uint256 oraclePriceAtRebalance, 
+        uint160 sqrtPriceAtRebalance 
+    );
+
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
 
@@ -115,7 +124,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     function rebalance(uint256 slippage) external notPaused notShutdown {
         if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
-        (bool isRebalance, , ) = isRebalanceNeeded();
+        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
         alm.transferFees();
@@ -152,7 +161,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
-        alm.updateLiquidity(calcLiquidity());
+        uint128 liquidity = calcLiquidity();
+        alm.updateLiquidity(liquidity);
+
+        emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, oraclePriceAtLastRebalance, sqrtPriceAtLastRebalance);
     }
 
     function onFlashLoanTwoTokens(
