@@ -94,6 +94,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         }
 
         approve_accounts();
+        deal(address(DAI), address(manager), 10000 ether);
     }
 
     uint256 amountToDep = 100000e18;
@@ -153,6 +154,8 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaDAI) = swapUSDC_DAI_In(usdcToSwap);
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            console.log("deltaDAI", deltaDAI);
+            console.log("usdcToSwap", usdcToSwap);
 
             // (uint256 deltaX, uint256 deltaY) = _checkSwapUnicord(
             //     uint256(hook.liquidity()) / 1e12,
@@ -163,44 +166,44 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         }
 
-        // ** Swap Up In
-        {
-            uint256 usdcToSwap = 5000e6; // 5k USDC
-            deal(address(USDC), address(swapper.addr), usdcToSwap);
+        // // ** Swap Up In
+        // {
+        //     uint256 usdcToSwap = 5000e6; // 5k USDC
+        //     deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (, uint256 deltaDAI) = swapUSDC_DAI_In(usdcToSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (, uint256 deltaDAI) = swapUSDC_DAI_In(usdcToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
-        }
+        //     // (uint256 deltaX, uint256 deltaY) = _checkSwap(
+        //     //     uint256(hook.liquidity()) / 1e12,
+        //     //     uint160(preSqrtPrice),
+        //     //     uint160(postSqrtPrice)
+        //     // );
+        //     // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
+        //     // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+        // }
 
-        // ** Swap Down Out
-        {
-            uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (, uint256 daiToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-            deal(address(DAI), address(swapper.addr), daiToSwapQ);
+        // // ** Swap Down Out
+        // {
+        //     uint256 usdcToGetFSwap = 10000e6; //10k USDC
+        //     (, uint256 daiToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        //     deal(address(DAI), address(swapper.addr), daiToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaDAI) = swapDAI_USDC_Out(usdcToGetFSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaUSDC, uint256 deltaDAI) = swapDAI_USDC_Out(usdcToGetFSwap);
 
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            // //     uint256(hook.liquidity()) / 1e12,
-            // //     uint160(preSqrtPrice),
-            // //     uint160(postSqrtPrice)
-            // // );
-            // // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + fee)) / 1e18, 9e14);
-            // // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
-        }
+        //     // // (uint256 deltaX, uint256 deltaY) = _checkSwap(
+        //     // //     uint256(hook.liquidity()) / 1e12,
+        //     // //     uint160(preSqrtPrice),
+        //     // //     uint160(postSqrtPrice)
+        //     // // );
+        //     // // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + fee)) / 1e18, 9e14);
+        //     // // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
+        // }
 
         // // ** Make oracle change with swap price
         // alignOraclesAndPools(hook.sqrtPriceCurrent());

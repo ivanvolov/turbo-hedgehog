@@ -100,7 +100,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             if (isInvertAssets) swapAdapter.swapExactOutput(quote, base, quoteBalance(false));
             else swapAdapter.swapExactInput(base, quote, baseBalance(false));
         } else if (uDL > 0) lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
-        else lendingAdapter.flashLoanSingle(quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+        else revert NotAValidPositionState();
 
         uint256 baseOut;
         uint256 quoteOut;
