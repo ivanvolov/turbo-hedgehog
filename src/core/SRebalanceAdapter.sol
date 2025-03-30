@@ -131,12 +131,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
-        lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
-
         if (isUnicord) {
+            if(quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
+            else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
             if (baseBalanceUnwr() != 0) lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
             if (quoteBalanceUnwr() != 0) lendingAdapter.addCollateralLong((quoteBalanceUnwr()).wrap(qDec));
         } else {
+            lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
             if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
             if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
         }
@@ -165,6 +166,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         alm.updateLiquidity(liquidity);
 
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, oraclePriceAtLastRebalance, sqrtPriceAtLastRebalance);
+    }
+
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external notPaused notShutdown onlyLendingAdapter {
+        _positionManagement(data);
+        if (amount > IERC20(token).balanceOf(address(this))) {
+            swapAdapter.swapExactOutput(otherToken(token), token, amount - IERC20(token).balanceOf(address(this)));
+        }
     }
 
     function onFlashLoanTwoTokens(

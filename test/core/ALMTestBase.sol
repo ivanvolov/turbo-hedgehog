@@ -458,15 +458,17 @@ abstract contract ALMTestBase is Deployers {
     ) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());
 
+        uint256 calcDS;
+
         uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / 1e36;
         uint256 calcCS = (((preRebalanceTVL * oracle.price()) / 1e18) * (((1e18 - weight) * shortLeverage) / 1e18)) /
             1e30;
         uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
             1e30;
-        uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
+        if (shortLeverage != 1e18) calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
             1e24;
 
-        uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort()
+        uint256 diffDS = calcDS >= _lendingAdapter.getBorrowedShort()
             ? calcDS - _lendingAdapter.getBorrowedShort()
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
@@ -474,7 +476,7 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
-        assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
+        if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
         uint256 tvlRatio = hook.TVL() > preRebalanceTVL
             ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18

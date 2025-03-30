@@ -95,8 +95,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (uDS != 0 && uDL != 0) {
             lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
         } else if (uDS == 0 && uDL == 0) {
-            lendingAdapter.removeCollateralLong(uCL);
-            lendingAdapter.removeCollateralShort(uCS);
+            if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
+            if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
             if (isInvertAssets) swapAdapter.swapExactOutput(quote, base, quoteBalance(false));
             else swapAdapter.swapExactInput(base, quote, baseBalance(false));
         } else if (uDL > 0) lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
@@ -137,7 +137,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         else _ensureEnoughBalance(amount0, base);
     }
 
-    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public notPaused onlyLendingAdapter {
+    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external notPaused onlyLendingAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         if (token == base) lendingAdapter.repayLong(amount.wrap(bDec));
@@ -162,10 +162,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         } else {
             swapAdapter.swapExactInput(token, otherToken(token), _balance - balance);
         }
-    }
-
-    function otherToken(address token) internal view returns (address) {
-        return token == base ? quote : base;
     }
 
     // --- Swapping logic --- //
