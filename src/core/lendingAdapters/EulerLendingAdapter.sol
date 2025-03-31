@@ -21,13 +21,13 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
     // ** EulerV2
-    IEVC evc = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
-    IEulerVault vault0;
-    IEulerVault vault1;
-    IEulerVault flVault0;
-    IEulerVault flVault1;
-    address public subAccount0 = getSubAccountAddress(1);
-    address public subAccount1 = getSubAccountAddress(2);
+    IEVC constant evc = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
+    IEulerVault public immutable vault0;
+    IEulerVault public immutable vault1;
+    IEulerVault public immutable flVault0;
+    IEulerVault public immutable flVault1;
+    address public immutable subAccount0 = getSubAccountAddress(1);
+    address public immutable subAccount1 = getSubAccountAddress(2);
 
     constructor(address _vault0, address _vault1, address _flVault0, address _flVault1) Base(msg.sender) {
         vault0 = IEulerVault(_vault0);
@@ -48,9 +48,8 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         IERC20(quote).forceApprove(address(vault1), type(uint256).max);
     }
 
-    function getSubAccountAddress(uint8 accountId) public view returns (address) {
+    function getSubAccountAddress(uint8 accountId) internal view returns (address) {
         require(accountId < 256, "Invalid account ID");
-        // XOR the last byte of the address with the account ID
         return address(uint160(address(this)) ^ uint160(accountId));
     }
 

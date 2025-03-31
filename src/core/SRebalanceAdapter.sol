@@ -3,8 +3,9 @@ pragma solidity ^0.8.25;
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@src/libraries/math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
@@ -14,10 +15,20 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
+    error NoRebalanceNeeded();
+    error NotRebalanceOperator();
+
+    event Rebalance(
+        uint256 indexed priceThreshold,
+        uint256 indexed auctionTriggerTime,
+        uint256 slippage,
+        uint128 liquidity,
+        uint256 oraclePriceAtRebalance,
+        uint160 sqrtPriceAtRebalance
+    );
+
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
-
-    error NoRebalanceNeeded();
 
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;
@@ -33,6 +44,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public isInvertAssets;
     bool public isUnicord;
+    address public rebalanceOperator;
 
     constructor() Base(msg.sender) {}
 
@@ -84,6 +96,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         isUnicord = _isUnicord;
     }
 
+    function setRebalanceOperator(address _rebalanceOperator) external onlyOwner {
+        rebalanceOperator = _rebalanceOperator;
+    }
+
     // ** Logic
 
     function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
@@ -106,19 +122,22 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
     }
 
-    function rebalance(uint256 slippage) external onlyOwner notPaused notShutdown {
-        (bool isRebalance, , ) = isRebalanceNeeded();
+    function rebalance(uint256 slippage) external notPaused notShutdown {
+        if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
+        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
         if (!isRebalance) revert NoRebalanceNeeded();
         alm.refreshReserves();
+        alm.transferFees();
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
-        lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
-
         if (isUnicord) {
+            if (quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
+            else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
             if (baseBalanceUnwr() != 0) lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
             if (quoteBalanceUnwr() != 0) lendingAdapter.addCollateralLong((quoteBalanceUnwr()).wrap(qDec));
         } else {
+            lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
             if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
             if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
         }
@@ -143,7 +162,28 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
-        alm.updateLiquidity(calcLiquidity());
+        uint128 liquidity = calcLiquidity();
+        alm.updateLiquidity(liquidity);
+
+        emit Rebalance(
+            priceThreshold,
+            auctionTriggerTime,
+            slippage,
+            liquidity,
+            oraclePriceAtLastRebalance,
+            sqrtPriceAtLastRebalance
+        );
+    }
+
+    function onFlashLoanSingle(
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external notPaused notShutdown onlyLendingAdapter {
+        _positionManagement(data);
+        if (amount > IERC20(token).balanceOf(address(this))) {
+            swapAdapter.swapExactOutput(otherToken(token), token, amount - IERC20(token).balanceOf(address(this)));
+        }
     }
 
     function onFlashLoanTwoTokens(
@@ -218,10 +258,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetDS.mul(k);
             }
 
-            deltaCL = int256(targetCL) - int256(lendingAdapter.getCollateralLong());
-            deltaCS = int256(targetCS) - int256(lendingAdapter.getCollateralShort());
-            deltaDL = int256(targetDL) - int256(lendingAdapter.getBorrowedLong());
-            deltaDS = int256(targetDS) - int256(lendingAdapter.getBorrowedShort());
+            deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(lendingAdapter.getCollateralLong());
+            deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(lendingAdapter.getCollateralShort());
+            deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(lendingAdapter.getBorrowedLong());
+            deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(lendingAdapter.getBorrowedShort());
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -251,7 +291,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 uint8(ALMMathLib.absSub(bDec, qDec))
             )
         );
-        return uint128(liquidity);
+        return SafeCast.toUint128(liquidity);
     }
 
     function checkDeviations() internal view {

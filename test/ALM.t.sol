@@ -52,9 +52,15 @@ contract ALMGeneralTest is ALMTestBase {
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
+        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, 3000, 3000);
         approve_accounts();
+    }
+
+    function test_token_set_up_second_time_revert() public {
+        vm.prank(deployer.addr);
+        vm.expectRevert(IBase.TokensAlreadyInitialized.selector);
+        hook.setTokens(address(1), address(1), 0, 0);
     }
 
     function test_price_conversion_WETH_USDC() public pure {
@@ -201,10 +207,14 @@ contract ALMGeneralTest is ALMTestBase {
         assertApproxEqAbs(liquidity, 279779159321772000, 1e8);
     }
 
-    function test_hook_deployment_exploit_revert() public {
-        vm.expectRevert();
+    function test_pool_deploy_twice_revert() public {
         (address _token0, address _token1) = getTokensInOrder();
-        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+        vm.expectRevert();
+        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+
+        vm.prank(deployer.addr);
+        vm.expectRevert();
+        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
     }
 
     function test_oracle() public view {
@@ -250,14 +260,14 @@ contract ALMGeneralTest is ALMTestBase {
         vm.prank(deployer.addr);
         hook.setPaused(true);
 
-        vm.expectRevert(Base.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractPaused.selector);
         hook.deposit(address(0), 0);
 
-        vm.expectRevert(Base.ContractPaused.selector);
-        hook.withdraw(deployer.addr, 0, 0);
+        vm.expectRevert(IBase.ContractPaused.selector);
+        hook.withdraw(deployer.addr, 0, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(Base.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractPaused.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
@@ -265,11 +275,11 @@ contract ALMGeneralTest is ALMTestBase {
         vm.prank(deployer.addr);
         hook.setShutdown(true);
 
-        vm.expectRevert(Base.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractShutdown.selector);
         hook.deposit(deployer.addr, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(Base.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractShutdown.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 

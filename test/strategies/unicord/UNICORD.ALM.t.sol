@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
@@ -17,7 +15,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
@@ -32,7 +30,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract UNICORDALMTest is ALMTestBase {
+contract UNICORDALMTest is MorphoTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
@@ -41,8 +39,8 @@ contract UNICORDALMTest is ALMTestBase {
 
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
-    uint256 weight = 55e16; //50%
-    uint256 slippage = 10e14; //0.15%
+    uint256 weight = 50e16; //50%
+    uint256 slippage = 10e14; //0.1%
     uint256 fee = 1e14; //0.05%
 
     IERC20 USDT = IERC20(TestLib.USDT);
@@ -65,15 +63,11 @@ contract UNICORDALMTest is ALMTestBase {
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
-        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
-        create_lending_adapter_euler_WETH_USDC();
-        create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC);
-        console.log("oracle: initialPrice %s", oracle.price());
+        create_lending_adapter_morpho_earn();
+        create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(true, true, 100, 100);
         assertEq(hook.tickLower(), 102);
         assertEq(hook.tickUpper(), -98);
@@ -82,8 +76,10 @@ contract UNICORDALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(false);
-            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
-            hook.setSwapPriceThreshold(48808848170151600); //(sqrt(1.1)-1) or max 10% price change
+            hook.setTVLCap(100000 ether);
+            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
+            hook.setProtocolFee(0);
+            hook.setTreasury(treasury.addr);
             rebalanceAdapter.setIsInvertAssets(false);
             rebalanceAdapter.setRebalancePriceThreshold(2);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
@@ -98,10 +94,9 @@ contract UNICORDALMTest is ALMTestBase {
         approve_accounts();
     }
 
-    uint256 amountToDep = 1000000e6;
+    uint256 amountToDep = 100000e6;
 
     function test_deposit() public {
-        vm.skip(true);
         assertEq(hook.TVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
@@ -110,19 +105,26 @@ contract UNICORDALMTest is ALMTestBase {
 
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
 
-        assertApproxEqAbs(shares, 999999999999000000000000, 1e1);
+        assertApproxEqAbs(shares, 99999999999000000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 999999999999000000000000, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 99999999999000000000000, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
+    function test_deposit_withdraw() public {
+        test_deposit();
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+    }
+
     function test_deposit_rebalance() public {
-        vm.skip(true);
         test_deposit();
         uint256 preRebalanceTVL = hook.TVL();
 
@@ -185,8 +187,13 @@ contract UNICORDALMTest is ALMTestBase {
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-        vm.expectRevert();
-        swapUSDC_USDT_Out(usdtToGetFSwap);
+        bool hasReverted = false;
+        try this.swapUSDC_USDT_Out(usdtToGetFSwap) {
+            hasReverted = false;
+        } catch {
+            hasReverted = true;
+        }
+        assertTrue(hasReverted, "Expected function to revert but it didn't");
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
@@ -327,21 +334,20 @@ contract UNICORDALMTest is ALMTestBase {
     }
 
     function test_lifecycle() public {
-        vm.skip(true);
+        test_deposit_rebalance();
+
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(fee);
         //rebalanceAdapter.setRebalancePriceThreshold(1e15);
         //rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
         vm.stopPrank();
 
-        test_deposit_rebalance();
-
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 10000e6; // 10k USDC
+            uint256 usdcToSwap = 1000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -378,7 +384,7 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 200000e6; //200k USDC
+            uint256 usdcToGetFSwap = 10000e6; //10k USDC
             (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
@@ -403,11 +409,11 @@ contract UNICORDALMTest is ALMTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         {
-            uint256 usdcToSwap = 50000e6; // 50k USDC
+            uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -429,7 +435,7 @@ contract UNICORDALMTest is ALMTestBase {
 
         // ** Deposit
         {
-            uint256 _amountToDep = 200000e6; //200k USDC
+            uint256 _amountToDep = 10000e6; //10k USDC
             deal(address(USDT), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep);
@@ -507,7 +513,7 @@ contract UNICORDALMTest is ALMTestBase {
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

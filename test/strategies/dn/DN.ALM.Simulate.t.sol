@@ -39,15 +39,17 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         deployFreshManagerAndRouters();
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC);
+        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, 3000, 3000);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setIsInvertAssets(true);
-            // hook.setIsInvertedPool(?); // @Notice: this is already set in the init_hook, cause it's needed on initialize
-            hook.setSwapPriceThreshold(1e18);
+            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
+            hook.setTVLCap(1000 ether);
+            hook.setProtocolFee(0);
+            hook.setTreasury(treasury.addr);
             rebalanceAdapter.setIsInvertAssets(true);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425

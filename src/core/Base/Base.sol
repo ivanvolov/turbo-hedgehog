@@ -17,17 +17,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 
-    error OwnableUnauthorizedAccount(address account);
-    error OwnableInvalidOwner(address owner);
-    error NotALM();
-    error NotRebalanceAdapter();
-    error NotModule();
-    error NotLendingAdapter();
-    error ContractPaused();
-    error ContractShutdown();
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
     address public owner;
 
     address public base;
@@ -48,6 +37,8 @@ abstract contract Base is IBase {
     }
 
     function setTokens(address _base, address _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
+        if (base != address(0)) revert TokensAlreadyInitialized();
+
         base = _base;
         quote = _quote;
         bDec = _bDec;
@@ -93,6 +84,10 @@ abstract contract Base is IBase {
         address oldOwner = owner;
         owner = newOwner;
         emit OwnershipTransferred(oldOwner, owner);
+    }
+
+    function otherToken(address token) internal view returns (address) {
+        return token == base ? quote : base;
     }
 
     // --- Modifiers --- //

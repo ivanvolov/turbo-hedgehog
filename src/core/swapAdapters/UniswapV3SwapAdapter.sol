@@ -15,8 +15,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;
-    address public targetPool;
 
+    address public targetPool;
     address constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     constructor() Base(msg.sender) {}
@@ -31,6 +31,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     }
 
     function swapExactInput(address tokenIn, address tokenOut, uint256 amountIn) external onlyModule returns (uint256) {
+        if (amountIn == 0) return 0;
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         return
             ISwapRouter(SWAP_ROUTER).exactInputSingle(
@@ -52,6 +53,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
         address tokenOut,
         uint256 amountOut
     ) external onlyModule returns (uint256 amountIn) {
+        if (amountOut == 0) return 0;
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), IERC20(tokenIn).balanceOf(msg.sender));
         amountIn = ISwapRouter(SWAP_ROUTER).exactOutputSingle(
             ISwapRouter.ExactOutputSingleParams({

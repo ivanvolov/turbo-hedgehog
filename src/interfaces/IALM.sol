@@ -7,19 +7,44 @@ interface IALM {
     error AddLiquidityThroughHook();
     error NotEnoughSharesToWithdraw();
     error NotZeroShares();
-    error NotMinOutWithdraw();
+    error NotMinOutWithdrawBase();
+    error NotMinOutWithdrawQuote();
     error BalanceInconsistency();
     error UnauthorizedPool();
     error SwapPriceChangeTooHigh();
+    error NotALiquidityOperator();
+    error NotASwapOperator();
+    error OnlyOnePoolPerHook();
+    error TVLCapExceeded();
+    error NotAValidPositionState();
 
-    event Deposit(address indexed to, uint256 amount, uint256 shares);
-    event Withdraw(address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
+    event Deposit(address indexed to, uint256 amount, uint256 delShares, uint256 TVL, uint256 totalSupply);
+    event Withdraw(
+        address indexed to,
+        uint256 delShares,
+        uint256 baseOut,
+        uint256 quoteOut,
+        uint256 TVL,
+        uint256 totalSupply,
+        uint256 liquidity
+    );
+    event HookSwap(
+        bytes32 indexed id,
+        address indexed sender,
+        int128 amount0,
+        int128 amount1,
+        uint128 hookLPfeeAmount0,
+        uint128 hookLPfeeAmount1
+    );
+    event HookFee(bytes32 indexed id, address indexed sender, uint128 feeAmount0, uint128 feeAmount1);
 
     function paused() external view returns (bool);
 
     function shutdown() external view returns (bool);
 
     function refreshReserves() external;
+
+    function transferFees() external;
 
     function tickLower() external view returns (int24);
 
