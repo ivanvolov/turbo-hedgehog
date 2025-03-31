@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
@@ -112,7 +110,7 @@ contract BTCALMTest is ALMTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage * 10);
         assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //-TODO: uncomment and fix it
+        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
     }
 
     function test_lifecycle() public {

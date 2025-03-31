@@ -44,8 +44,8 @@ abstract contract MorphoTestBase is ALMTestBase {
         lendingAdapter = new MorphoLendingAdapter(
             Id.wrap(""),
             Id.wrap(""),
-            TestLib.morphoUSDTVault,
-            TestLib.morphoUSDCVault
+            TestLib.morphoUSDCVault,
+            TestLib.morphoUSDTVault
         );
     }
 
@@ -54,8 +54,8 @@ abstract contract MorphoTestBase is ALMTestBase {
         lendingAdapter = new MorphoLendingAdapter(
             Id.wrap(""),
             Id.wrap(""),
-            TestLib.morphoDAIVault,
-            TestLib.morphoUSDCVault
+            TestLib.morphoUSDCVault,
+            TestLib.morphoDAIVault
         );
     }
 

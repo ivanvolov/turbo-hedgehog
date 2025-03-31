@@ -31,7 +31,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     IERC4626 public immutable earnBase;
     bool public immutable isEarn;
 
-    constructor(Id _longMId, Id _shortMId, address _earnQuote, address _earnBase) Base(msg.sender) {
+    constructor(Id _longMId, Id _shortMId, address _earnBase, address _earnQuote) Base(msg.sender) {
         if (_earnQuote != address(0)) {
             isEarn = true;
             earnQuote = IERC4626(_earnQuote);
