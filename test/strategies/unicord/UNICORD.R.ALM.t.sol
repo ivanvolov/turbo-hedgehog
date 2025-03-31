@@ -77,12 +77,12 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(false);
+            hook.setIsInvertAssets(true);
             hook.setTVLCap(100000 ether);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
-            rebalanceAdapter.setIsInvertAssets(false);
+            rebalanceAdapter.setIsInvertAssets(true);
             rebalanceAdapter.setRebalancePriceThreshold(2);
             rebalanceAdapter.setRebalanceTimeThreshold(2000);
             rebalanceAdapter.setWeight(weight);
@@ -97,24 +97,24 @@ contract UNICORDRALMTest is MorphoTestBase {
         deal(address(DAI), address(manager), 10000 ether);
     }
 
-    uint256 amountToDep = 100000e18;
+    uint256 amountToDep = 100000e6;
 
     function test_deposit() public {
         assertEq(hook.TVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
-        deal(address(DAI), address(alice.addr), amountToDep);
+        deal(address(USDC), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
         (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
 
-        assertApproxEqAbs(shares, 99999999999999999999998, 1e1);
+        assertApproxEqAbs(shares, 99999999999000000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(amountToDep, 0, 0, 0);
+        assertEqPositionState(0, amountToDep - 1, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 99999999999999999999998, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 99999999999000000000000, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -224,8 +224,8 @@ contract UNICORDRALMTest is MorphoTestBase {
             // // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
         }
 
-        // // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+    //     // // ** Make oracle change with swap price
+    //     // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -264,18 +264,18 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         }
 
-        // // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+    //     // // ** Make oracle change with swap price
+    //     // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
-            uint256 _amountToDep = 10000e18; //10k DAI
+            uint256 _amountToDep = 10000e6; //10k USDC
             deal(address(DAI), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep);
         }
 
-        // ** Swap Up In
+        //Swap Up In
         {
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -296,8 +296,10 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         //Swap Up out
         {
-            uint256 daiToGetFSwap = 10000e18; //10k DAI
+            uint256 daiToGetFSwap = 1000e18; //1k DAI
             (, uint256 usdcToSwapQ) = hook.quoteSwap(false, int256(daiToGetFSwap));
+            
+            console.log("usdcToSwapQ", usdcToSwapQ);
 
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
@@ -317,7 +319,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
         }
 
-        // ** Swap Down In
+        //Swap Down In
         {
             uint256 daiToSwap = 2000e18;
             deal(address(DAI), address(swapper.addr), daiToSwap);
