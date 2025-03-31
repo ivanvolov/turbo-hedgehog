@@ -139,7 +139,6 @@ contract UNICORDRALMTest is MorphoTestBase {
         console.log("liquidity %s", hook.liquidity());
         console.log("tickLower %s", hook.tickLower());
         console.log("tickUpper %s", hook.tickUpper());
-
     }
 
     function test_lifecycle() public {
@@ -155,7 +154,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Swap Up In
         {
             console.log("SWAP UP IN");
-            
+
             uint256 usdcToSwap = 1000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -200,7 +199,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Swap Down Out
         {
             console.log("SWAP DOWN OUT");
-            
+
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
             (uint256 daiToSwapQ, ) = hook.quoteSwap(true, int256(usdcToGetFSwap));
             console.log("daiToSwapQ %s", daiToSwapQ);
@@ -296,7 +295,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         {
             uint256 daiToGetFSwap = 1000e18; //1k DAI
             (, uint256 usdcToSwapQ) = hook.quoteSwap(false, int256(daiToGetFSwap));
-            
+
             console.log("usdcToSwapQ", usdcToSwapQ);
 
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);

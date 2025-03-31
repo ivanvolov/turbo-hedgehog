@@ -19,12 +19,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error NotRebalanceOperator();
 
     event Rebalance(
-        uint256 indexed priceThreshold, 
+        uint256 indexed priceThreshold,
         uint256 indexed auctionTriggerTime,
         uint256 slippage,
-        uint128 liquidity, 
-        uint256 oraclePriceAtRebalance, 
-        uint160 sqrtPriceAtRebalance 
+        uint128 liquidity,
+        uint256 oraclePriceAtRebalance,
+        uint160 sqrtPriceAtRebalance
     );
 
     using PRBMathUD60x18 for uint256;
@@ -132,7 +132,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isUnicord) {
-            if(quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
+            if (quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
             else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
             if (baseBalanceUnwr() != 0) lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
             if (quoteBalanceUnwr() != 0) lendingAdapter.addCollateralLong((quoteBalanceUnwr()).wrap(qDec));
@@ -165,10 +165,21 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint128 liquidity = calcLiquidity();
         alm.updateLiquidity(liquidity);
 
-        emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, oraclePriceAtLastRebalance, sqrtPriceAtLastRebalance);
+        emit Rebalance(
+            priceThreshold,
+            auctionTriggerTime,
+            slippage,
+            liquidity,
+            oraclePriceAtLastRebalance,
+            sqrtPriceAtLastRebalance
+        );
     }
 
-    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external notPaused notShutdown onlyLendingAdapter {
+    function onFlashLoanSingle(
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external notPaused notShutdown onlyLendingAdapter {
         _positionManagement(data);
         if (amount > IERC20(token).balanceOf(address(this))) {
             swapAdapter.swapExactOutput(otherToken(token), token, amount - IERC20(token).balanceOf(address(this)));

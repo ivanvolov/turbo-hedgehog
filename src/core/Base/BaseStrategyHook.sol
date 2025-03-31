@@ -153,12 +153,18 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     )
         internal
         view
-        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0In, uint256 token1Out, uint160 sqrtPriceNext, uint256 fee)
+        returns (
+            BeforeSwapDelta beforeSwapDelta,
+            uint256 token0In,
+            uint256 token1Out,
+            uint160 sqrtPriceNext,
+            uint256 fee
+        )
     {
         if (amountSpecified > 0) {
             token1Out = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
-            
+
             token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
             token0In += fee;
@@ -170,11 +176,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         } else {
             token0In = uint256(-amountSpecified);
             fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
-                sqrtPriceCurrent,
-                liquidity,
-                token0In - fee
-            );
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, token0In - fee);
 
             token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             beforeSwapDelta = toBeforeSwapDelta(
@@ -189,16 +191,22 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     )
         internal
         view
-        returns (BeforeSwapDelta beforeSwapDelta, uint256 token0Out, uint256 token1In, uint160 sqrtPriceNext, uint256 fee)
+        returns (
+            BeforeSwapDelta beforeSwapDelta,
+            uint256 token0Out,
+            uint256 token1In,
+            uint160 sqrtPriceNext,
+            uint256 fee
+        )
     {
         if (amountSpecified > 0) {
             token0Out = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
-            
+
             token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
             token1In += fee;
-            
+
             beforeSwapDelta = toBeforeSwapDelta(
                 -SafeCast.toInt128(token0Out), // specified token = token0
                 SafeCast.toInt128(token1In) // unspecified token = token1
@@ -206,11 +214,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         } else {
             token1In = uint256(-amountSpecified);
             fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
-                sqrtPriceCurrent,
-                liquidity,
-                token1In - fee
-            );
+            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, token1In - fee);
 
             token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             beforeSwapDelta = toBeforeSwapDelta(

@@ -116,7 +116,6 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
-
     function test_deposit_withdraw() public {
         test_deposit();
 
@@ -334,7 +333,7 @@ contract UNICORDALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.TVL(), 99916452541328707625, 1e1, "tvl");
     }
 
-function test_lifecycle() public {
+    function test_lifecycle() public {
         test_deposit_rebalance();
 
         vm.startPrank(deployer.addr);

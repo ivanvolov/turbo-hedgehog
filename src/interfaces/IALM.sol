@@ -19,7 +19,15 @@ interface IALM {
     error NotAValidPositionState();
 
     event Deposit(address indexed to, uint256 amount, uint256 delShares, uint256 TVL, uint256 totalSupply);
-    event Withdraw(address indexed to, uint256 delShares, uint256 baseOut, uint256 quoteOut, uint256 TVL, uint256 totalSupply, uint256 liquidity);
+    event Withdraw(
+        address indexed to,
+        uint256 delShares,
+        uint256 baseOut,
+        uint256 quoteOut,
+        uint256 TVL,
+        uint256 totalSupply,
+        uint256 liquidity
+    );
     event HookSwap(
         bytes32 indexed id,
         address indexed sender,
@@ -28,12 +36,7 @@ interface IALM {
         uint128 hookLPfeeAmount0,
         uint128 hookLPfeeAmount1
     );
-    event HookFee(
-        bytes32 indexed id,
-        address indexed sender,
-        uint128 feeAmount0,
-        uint128 feeAmount1
-    );
+    event HookFee(bytes32 indexed id, address indexed sender, uint128 feeAmount0, uint128 feeAmount1);
 
     function paused() external view returns (bool);
 
@@ -41,7 +44,7 @@ interface IALM {
 
     function refreshReserves() external;
 
-    function transferFees( ) external;
+    function transferFees() external;
 
     function tickLower() external view returns (int24);
 

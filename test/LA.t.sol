@@ -403,7 +403,7 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Remove USDC Collateral
         lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
         assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 0);
-        assertEqBalanceState(alice.addr, usdtToSupply+95954, usdcToSupply+179157);
+        assertEqBalanceState(alice.addr, usdtToSupply + 95954, usdcToSupply + 179157);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         vm.stopPrank();
@@ -442,13 +442,13 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Remove WETH Collateral
         lendingAdapter.removeCollateralLong(lendingAdapter.getCollateralLong());
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), 0, 0);
-        assertEqBalanceState(alice.addr, wethToSupply+33893131418418, 0);
+        assertEqBalanceState(alice.addr, wethToSupply + 33893131418418, 0);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         // ** Remove USDC Collateral
         lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
         assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 0);
-        assertEqBalanceState(alice.addr, wethToSupply+33893131418418, usdcToSupply+111287);
+        assertEqBalanceState(alice.addr, wethToSupply + 33893131418418, usdcToSupply + 111287);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         vm.stopPrank();

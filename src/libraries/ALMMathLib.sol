@@ -105,7 +105,9 @@ library ALMMathLib {
         uint256 shortLeverage
     ) internal pure returns (uint256) {
         uint256 ratio = SafeCast.toUint256(
-            (SafeCast.toInt256(weight) * (SafeCast.toInt256(longLeverage) - SafeCast.toInt256(shortLeverage))) / int256(WAD) + SafeCast.toInt256(shortLeverage)
+            (SafeCast.toInt256(weight) * (SafeCast.toInt256(longLeverage) - SafeCast.toInt256(shortLeverage))) /
+                int256(WAD) +
+                SafeCast.toInt256(shortLeverage)
         );
         return ratio.mul(TVL);
     }
@@ -128,7 +130,10 @@ library ALMMathLib {
 
     // --- Helpers --- //
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
-        return SafeCast.toInt24(((SafeCast.toInt256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297);
+        return
+            SafeCast.toInt24(
+                ((SafeCast.toInt256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297
+            );
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {

@@ -92,7 +92,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         );
 
         _burn(msg.sender, sharesOut);
-        if (uDS != 0 && uDL != 0) lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+        if (uDS != 0 && uDL != 0)
+            lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
@@ -136,7 +137,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         else _ensureEnoughBalance(amount0, base);
     }
 
-    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external notPaused onlyLendingAdapter {
+    function onFlashLoanSingle(
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external notPaused onlyLendingAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         if (token == base) lendingAdapter.repayLong(amount.wrap(bDec));
@@ -209,10 +214,16 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             if (isInvertedPool) {
                 accumulatedFeeB += fee.mul(protocolFee); //cut protocol fee from the calculated swap fee
-                positionManager.positionAdjustmentPriceUp((token0In - fee.mul(protocolFee)).wrap(bDec), token1Out.wrap(qDec));
+                positionManager.positionAdjustmentPriceUp(
+                    (token0In - fee.mul(protocolFee)).wrap(bDec),
+                    token1Out.wrap(qDec)
+                );
             } else {
                 accumulatedFeeQ += fee.mul(protocolFee);
-                positionManager.positionAdjustmentPriceDown(token1Out.wrap(bDec), (token0In - fee.mul(protocolFee)).wrap(qDec));
+                positionManager.positionAdjustmentPriceDown(
+                    token1Out.wrap(bDec),
+                    (token0In - fee.mul(protocolFee)).wrap(qDec)
+                );
             }
 
             // We also need to create a debit so user could take it back from the PM.
@@ -220,7 +231,14 @@ contract ALM is BaseStrategyHook, ERC20 {
             sqrtPriceCurrent = sqrtPriceNext;
 
             emit HookFee(authorizedPool, swapper, SafeCast.toUint128(fee), 0);
-            emit HookSwap(authorizedPool, swapper, SafeCast.toInt128(token0In), SafeCast.toInt128(token1Out), SafeCast.toUint128(fee), 0);
+            emit HookSwap(
+                authorizedPool,
+                swapper,
+                SafeCast.toInt128(token0In),
+                SafeCast.toInt128(token1Out),
+                SafeCast.toUint128(fee),
+                0
+            );
             return beforeSwapDelta;
         } else {
             // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
@@ -236,16 +254,29 @@ contract ALM is BaseStrategyHook, ERC20 {
             checkSwapDeviations(sqrtPriceNext);
             if (isInvertedPool) {
                 accumulatedFeeQ += fee.mul(protocolFee);
-                positionManager.positionAdjustmentPriceDown(token0Out.wrap(bDec), (token1In - fee.mul(protocolFee)).wrap(qDec));
+                positionManager.positionAdjustmentPriceDown(
+                    token0Out.wrap(bDec),
+                    (token1In - fee.mul(protocolFee)).wrap(qDec)
+                );
             } else {
                 accumulatedFeeB += fee.mul(protocolFee);
-                positionManager.positionAdjustmentPriceUp((token1In - fee.mul(protocolFee)).wrap(bDec), token0Out.wrap(qDec));
+                positionManager.positionAdjustmentPriceUp(
+                    (token1In - fee.mul(protocolFee)).wrap(bDec),
+                    token0Out.wrap(qDec)
+                );
             }
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
             emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(fee));
-            emit HookSwap(authorizedPool, swapper, SafeCast.toInt128(token0Out), SafeCast.toInt128(token1In), 0, SafeCast.toUint128(fee));
+            emit HookSwap(
+                authorizedPool,
+                swapper,
+                SafeCast.toInt128(token0Out),
+                SafeCast.toInt128(token1In),
+                0,
+                SafeCast.toUint128(fee)
+            );
             return beforeSwapDelta;
         }
     }

@@ -465,8 +465,8 @@ abstract contract ALMTestBase is Deployers {
             1e30;
         uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
             1e30;
-        if (shortLeverage != 1e18) calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
-            1e24;
+        if (shortLeverage != 1e18)
+            calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) / 1e24;
 
         uint256 diffDS = calcDS >= _lendingAdapter.getBorrowedShort()
             ? calcDS - _lendingAdapter.getBorrowedShort()
