@@ -197,7 +197,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         }
 
-        //Swap Down Out
+        // ** Swap Down Out
         {
             console.log("SWAP DOWN OUT");
             
@@ -214,33 +214,31 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("deltaUSDC", deltaUSDC);
 
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-            // // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            // //     uint256(hook.liquidity()) / 1e12,
-            // //     uint160(preSqrtPrice),
-            // //     uint160(postSqrtPrice)
-            // // );
-            // // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + fee)) / 1e18, 9e14);
-            // // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
+            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
+            //     uint256(hook.liquidity()) / 1e12,
+            //     uint160(preSqrtPrice),
+            //     uint160(postSqrtPrice)
+            // );
+            // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + fee)) / 1e18, 9e14);
+            // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
         }
 
-    //     // // ** Make oracle change with swap price
-    //     // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // ** Make oracle change with swap price
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
-            console.log("preTVL %s", hook.TVL());
-            console.log("preBalance %s", DAI.balanceOf(alice.addr));
-            console.log("preBalance %s", USDC.balanceOf(alice.addr));
+            // console.log("preTVL %s", hook.TVL());
+            // console.log("preBalance %s", DAI.balanceOf(alice.addr));
+            // console.log("preBalance %s", USDC.balanceOf(alice.addr));
 
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
-            console.log("postTVL %s", hook.TVL());
-            console.log("postBalance %s", DAI.balanceOf(alice.addr));
-            console.log("postBalance %s", USDC.balanceOf(alice.addr));
-
+            // console.log("postTVL %s", hook.TVL());
+            // console.log("postBalance %s", DAI.balanceOf(alice.addr));
+            // console.log("postBalance %s", USDC.balanceOf(alice.addr));
         }
 
         {
@@ -264,8 +262,8 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         }
 
-    //     // // ** Make oracle change with swap price
-    //     // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // ** Make oracle change with swap price
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -275,7 +273,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             hook.deposit(alice.addr, _amountToDep);
         }
 
-        //Swap Up In
+        // ** Swap Up In
         {
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -294,7 +292,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
         }
 
-        //Swap Up out
+        // ** Swap Up out
         {
             uint256 daiToGetFSwap = 1000e18; //1k DAI
             (, uint256 usdcToSwapQ) = hook.quoteSwap(false, int256(daiToGetFSwap));
@@ -319,7 +317,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             // assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
         }
 
-        //Swap Down In
+        // ** Swap Down In
         {
             uint256 daiToSwap = 2000e18;
             deal(address(DAI), address(swapper.addr), daiToSwap);
@@ -343,7 +341,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Make oracle change with swap price
         // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        //Rebalance
+        // ** Rebalance
         uint256 preRebalanceTVL = hook.TVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -352,7 +350,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        //Full withdraw
+        // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);

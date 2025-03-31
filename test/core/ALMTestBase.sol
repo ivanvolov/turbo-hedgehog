@@ -348,10 +348,10 @@ abstract contract ALMTestBase is Deployers {
             if (stepSize < minStepSize) stepSize = minStepSize;
         }
 
-        console.log("Final price adjustment results:");
-        console.log("Target price:", targetPrice);
-        console.log("Final price:", currentPrice);
-        console.log("Iterations:", iterations);
+        // console.log("Final price adjustment results:");
+        // console.log("Target price:", targetPrice);
+        // console.log("Final price:", currentPrice);
+        // console.log("Iterations:", iterations);
 
         if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
     }

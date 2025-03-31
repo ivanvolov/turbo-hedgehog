@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -91,9 +92,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         );
 
         _burn(msg.sender, sharesOut);
-        if (uDS != 0 && uDL != 0) {
-            lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
-        } else if (uDS == 0 && uDL == 0) {
+        if (uDS != 0 && uDL != 0) lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+        else if (uDS == 0 && uDL == 0) {
             if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
             if (isInvertAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
