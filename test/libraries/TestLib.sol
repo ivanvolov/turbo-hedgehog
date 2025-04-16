@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
