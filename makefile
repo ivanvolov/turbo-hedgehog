@@ -54,6 +54,7 @@ tla:
 tlal:
 	clear && forge test -vvvv --match-contract LendingAdaptersTest --match-test "test_"
 
-
-spell:
-	clear && cspell "**/*.*"
+format:
+	npx prettier --check "src/**/*.sol" "test/**/*.sol"
+format_write:
+	npx prettier --write "src/**/*.sol" "test/**/*.sol"

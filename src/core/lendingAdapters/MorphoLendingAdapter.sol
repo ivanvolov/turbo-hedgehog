@@ -79,10 +79,25 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
                 _data,
                 (uint8, address, address, uint256, bytes)
             );
-            IERC20(asset).safeTransfer(sender, amount);
 
+            IERC20(asset).safeTransfer(sender, amount);
             IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
             IERC20(asset).safeTransferFrom(sender, address(this), amount);
+        } else if (loanType == 2) {
+            (
+                ,
+                address sender,
+                address asset0,
+                uint256 amount0,
+                address asset1,
+                uint256 amount1,
+                bytes memory data
+            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+            bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
+
+            IERC20(asset0).safeTransfer(sender, amount0);
+            morpho.flashLoan(asset1, amount1, __data);
+            IERC20(asset0).safeTransferFrom(sender, address(this), amount0);
         } else if (loanType == 1) {
             (
                 ,
@@ -94,26 +109,9 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
                 bytes memory data
             ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
 
-            IERC20(asset0).safeTransfer(sender, amount0);
             IERC20(asset1).safeTransfer(sender, amount1);
-
             IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
             IERC20(asset1).safeTransferFrom(sender, address(this), amount1);
-        } else if (loanType == 2) {
-            (
-                ,
-                address sender,
-                address asset0,
-                uint256 amount0,
-                address asset1,
-                uint256 amount1,
-                bytes memory data
-            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
-
-            bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
-
-            morpho.flashLoan(asset1, amount1, __data);
-            IERC20(asset0).safeTransferFrom(sender, address(this), amount0);
         } else revert("M2");
 
         return "";
