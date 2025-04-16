@@ -101,19 +101,19 @@ abstract contract Base is IBase {
 
     // @dev Only the ALM may call this function
     modifier onlyALM() {
-        if (msg.sender != address(alm)) revert NotALM();
+        if (msg.sender != address(alm)) revert NotALM(msg.sender);
         _;
     }
 
     /// @dev Only the rebalance adapter may call this function
     modifier onlyRebalanceAdapter() {
-        if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter();
+        if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter(msg.sender);
         _;
     }
 
     /// @dev Only the lending adapter may call this function
     modifier onlyLendingAdapter() {
-        if (msg.sender != address(lendingAdapter)) revert NotLendingAdapter();
+        if (msg.sender != address(lendingAdapter)) revert NotLendingAdapter(msg.sender);
         _;
     }
 
@@ -125,7 +125,7 @@ abstract contract Base is IBase {
             msg.sender != address(positionManager) &&
             msg.sender != address(rebalanceAdapter) &&
             msg.sender != address(swapAdapter)
-        ) revert NotModule();
+        ) revert NotModule(msg.sender);
 
         _;
     }

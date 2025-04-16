@@ -7,10 +7,10 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
     error OwnableInvalidOwner(address owner);
-    error NotALM();
-    error NotRebalanceAdapter();
-    error NotModule();
-    error NotLendingAdapter();
+    error NotALM(address account);
+    error NotRebalanceAdapter(address account);
+    error NotModule(address account);
+    error NotLendingAdapter(address account);
     error ContractPaused();
     error ContractShutdown();
     error TokensAlreadyInitialized();
