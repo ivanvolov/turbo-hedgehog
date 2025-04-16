@@ -32,8 +32,8 @@ contract Oracle is IOracle {
         require(updatedAtQuote >= block.timestamp - stalenessThresholdQ, "O2");
         require(updatedAtBase >= block.timestamp - stalenessThresholdB, "O3");
 
-        uint256 SCALE_FACTOR = 18 + decimalsBase - decimalsQuote;
-        _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** SCALE_FACTOR, uint256(_priceBase));
+        uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
+        _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
         require(_price > 0, "O4");
     }
 }

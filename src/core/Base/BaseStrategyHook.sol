@@ -8,11 +8,11 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** contracts
 import {Base} from "@src/core/Base/Base.sol";

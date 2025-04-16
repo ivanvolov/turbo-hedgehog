@@ -101,7 +101,7 @@ contract ETHALMTest is MorphoTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
+        uint256 shares = hook.deposit(alice.addr, amountToDep);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -157,7 +157,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
         test_deposit_rebalance();
 
-        vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
+        vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
     }
@@ -551,7 +551,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Fail swap without oracle update
         vm.prank(deployer.addr);
-        vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
+        vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price

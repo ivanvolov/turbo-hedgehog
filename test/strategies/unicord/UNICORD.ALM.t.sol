@@ -103,7 +103,7 @@ contract UNICORDALMTest is MorphoTestBase {
         deal(address(USDT), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
+        uint256 shares = hook.deposit(alice.addr, amountToDep);
 
         assertApproxEqAbs(shares, 99999999999000000000000, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");

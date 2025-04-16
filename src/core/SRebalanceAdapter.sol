@@ -15,7 +15,7 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
-    error NoRebalanceNeeded();
+    error RebalanceConditionNotMet();
     error NotRebalanceOperator();
 
     event Rebalance(
@@ -125,7 +125,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     function rebalance(uint256 slippage) external notPaused notShutdown {
         if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
-        if (!isRebalance) revert NoRebalanceNeeded();
+        if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReserves();
         alm.transferFees();
 
@@ -233,16 +233,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             if (isInvertAssets) {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
-
-                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
-                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             } else {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
-
-                targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
-                targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
             }
+
+            targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
+            targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
 
             if (isUnicord) {
                 // @Notice: discount to cover slippage

@@ -93,7 +93,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         deal(address(USDC), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        (, uint256 shares) = hook.deposit(alice.addr, amountToDep);
+        uint256 shares = hook.deposit(alice.addr, amountToDep);
         assertApproxEqAbs(shares, amountToDep * 1e12, c6to18(1e1));
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
@@ -123,7 +123,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
         test_deposit_rebalance();
 
-        vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
+        vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
     }
@@ -329,7 +329,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         test_deposit_rebalance_swap_price_up_in();
 
         vm.prank(deployer.addr);
-        vm.expectRevert(SRebalanceAdapter.NoRebalanceNeeded.selector);
+        vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
