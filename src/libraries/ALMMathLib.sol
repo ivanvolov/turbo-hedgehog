@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
 // ** libraries
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";

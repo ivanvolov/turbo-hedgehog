@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.0;
 
 /// @title IEVC
 /// @custom:security-contact security@euler.xyz
@@ -376,6 +376,16 @@ interface IEVC {
             StatusCheckResult[] memory accountsStatusCheckResult,
             StatusCheckResult[] memory vaultsStatusCheckResult
         );
+
+    /// @notice Retrieves the timestamp of the last successful account status check performed for a specific account.
+    /// @dev This function reverts if the checks are in progress.
+    /// @dev The account status check is considered to be successful if it calls into the selected controller vault and
+    /// obtains expected magic value. This timestamp does not change if the account status is considered valid when no
+    /// controller enabled. When consuming, one might need to ensure that the account status check is not deferred at
+    /// the moment.
+    /// @param account The address of the account for which the last status check timestamp is being queried.
+    /// @return The timestamp of the last status check as a uint256.
+    function getLastAccountStatusCheckTimestamp(address account) external view returns (uint256);
 
     /// @notice Checks whether the status check is deferred for a given account.
     /// @dev This function reverts if the checks are in progress.

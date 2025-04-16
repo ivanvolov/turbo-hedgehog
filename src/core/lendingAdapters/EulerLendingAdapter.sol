@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
 // ** Euler imports
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
