@@ -238,14 +238,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function _setComponents(address module) internal {
-        IBase(module).setComponents(
-            address(hook),
-            address(lendingAdapter),
-            address(positionManager),
-            address(oracle),
-            address(rebalanceAdapter),
-            address(swapAdapter)
-        );
+        IBase(module).setComponents(hook, lendingAdapter, positionManager, oracle, rebalanceAdapter, swapAdapter);
     }
 
     function approve_accounts() public virtual {

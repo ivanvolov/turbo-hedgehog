@@ -18,6 +18,10 @@ import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
+import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {IOracle} from "@src/interfaces/IOracle.sol";
 
 contract ETHALMTest is MorphoTestBase {
     using SafeERC20 for IERC20;
@@ -776,24 +780,24 @@ contract ETHALMTest is MorphoTestBase {
             );
             IBase(address(newAdapter)).setTokens(address(USDC), address(WETH), 6, 18);
             IBase(address(newAdapter)).setComponents(
-                address(hook),
-                address(newAdapter),
-                address(positionManager),
-                address(oracle),
-                migrationContract.addr,
-                address(swapAdapter)
+                hook,
+                newAdapter,
+                positionManager,
+                oracle,
+                IRebalanceAdapter(migrationContract.addr),
+                swapAdapter
             );
         }
 
         // ** Withdraw collateral
         {
             IBase(address(lendingAdapter)).setComponents(
-                address(hook),
-                migrationContract.addr,
-                migrationContract.addr,
-                migrationContract.addr,
-                migrationContract.addr,
-                migrationContract.addr
+                hook,
+                ILendingAdapter(migrationContract.addr),
+                IPositionManager(migrationContract.addr),
+                IOracle(migrationContract.addr),
+                IRebalanceAdapter(migrationContract.addr),
+                ISwapAdapter(migrationContract.addr)
             );
             vm.stopPrank();
 
@@ -832,40 +836,33 @@ contract ETHALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
 
-            hook.setComponents(
-                address(hook),
-                address(newAdapter),
-                address(positionManager),
-                address(oracle),
-                address(rebalanceAdapter),
-                address(swapAdapter)
-            );
+            hook.setComponents(hook, newAdapter, positionManager, oracle, rebalanceAdapter, swapAdapter);
 
             IBase(address(newAdapter)).setComponents(
-                address(hook),
-                address(newAdapter),
-                address(positionManager),
-                address(oracle),
-                address(rebalanceAdapter),
-                address(swapAdapter)
+                hook,
+                newAdapter,
+                positionManager,
+                oracle,
+                rebalanceAdapter,
+                swapAdapter
             );
 
             IBase(address(positionManager)).setComponents(
-                address(hook),
-                address(newAdapter),
-                address(positionManager),
-                address(oracle),
-                address(rebalanceAdapter),
-                address(swapAdapter)
+                hook,
+                newAdapter,
+                positionManager,
+                oracle,
+                rebalanceAdapter,
+                swapAdapter
             );
 
             IBase(address(rebalanceAdapter)).setComponents(
-                address(hook),
-                address(newAdapter),
-                address(positionManager),
-                address(oracle),
-                address(rebalanceAdapter),
-                address(swapAdapter)
+                hook,
+                newAdapter,
+                positionManager,
+                oracle,
+                rebalanceAdapter,
+                swapAdapter
             );
             vm.stopPrank();
         }

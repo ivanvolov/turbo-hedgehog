@@ -50,28 +50,28 @@ abstract contract Base is IBase {
     function _postSetTokens() internal virtual {}
 
     function setComponents(
-        address _alm,
-        address _lendingAdapter,
-        address _positionManager,
-        address _oracle,
-        address _rebalanceAdapter,
-        address _swapAdapter
+        IALM _alm,
+        ILendingAdapter _lendingAdapter,
+        IPositionManager _positionManager,
+        IOracle _oracle,
+        IRebalanceAdapter _rebalanceAdapter,
+        ISwapAdapter _swapAdapter
     ) external onlyOwner {
         alm = IALM(_alm);
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        _approveSingle(base, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        _approveSingle(quote, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        lendingAdapter = ILendingAdapter(_lendingAdapter);
+        _approveSingle(base, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+        _approveSingle(quote, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+        lendingAdapter = _lendingAdapter;
 
-        _approveSingle(base, address(positionManager), _positionManager, type(uint256).max);
-        _approveSingle(quote, address(positionManager), _positionManager, type(uint256).max);
-        positionManager = IPositionManager(_positionManager);
+        _approveSingle(base, address(positionManager), address(_positionManager), type(uint256).max);
+        _approveSingle(quote, address(positionManager), address(_positionManager), type(uint256).max);
+        positionManager = _positionManager;
 
-        _approveSingle(base, address(swapAdapter), _swapAdapter, type(uint256).max);
-        _approveSingle(quote, address(swapAdapter), _swapAdapter, type(uint256).max);
-        swapAdapter = ISwapAdapter(_swapAdapter);
+        _approveSingle(base, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+        _approveSingle(quote, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+        swapAdapter = _swapAdapter;
     }
 
     function _approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {

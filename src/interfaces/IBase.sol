@@ -2,7 +2,12 @@
 pragma solidity ^0.8.0;
 
 // ** interfaces
+import {IALM} from "@src/interfaces/IALM.sol";
+import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
@@ -22,12 +27,12 @@ interface IBase {
     function setTokens(address _base, address _quote, uint8 _t0Dec, uint8 _t1Dec) external;
 
     function setComponents(
-        address _alm,
-        address _lendingAdapter,
-        address _positionManager,
-        address _oracle,
-        address _rebalanceAdapter,
-        address _swapAdapter
+        IALM _alm,
+        ILendingAdapter _lendingAdapter,
+        IPositionManager _positionManager,
+        IOracle _oracle,
+        IRebalanceAdapter _rebalanceAdapter,
+        ISwapAdapter _swapAdapter
     ) external;
 
     function transferOwnership(address newOwner) external;

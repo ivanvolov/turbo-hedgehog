@@ -11,10 +11,14 @@ import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IALM} from "@src/interfaces/IALM.sol";
+import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 
 contract LendingAdaptersTest is MorphoTestBase {
     using SafeERC20 for IERC20;
@@ -463,12 +467,12 @@ contract LendingAdaptersTest is MorphoTestBase {
         _setTokens(address(lendingAdapter));
         vm.prank(deployer.addr);
         IBase(address(lendingAdapter)).setComponents(
-            fakeHook,
-            alice.addr,
-            alice.addr,
-            alice.addr,
-            alice.addr,
-            alice.addr
+            IALM(fakeHook),
+            ILendingAdapter(alice.addr),
+            IPositionManager(alice.addr),
+            IOracle(alice.addr),
+            IRebalanceAdapter(alice.addr),
+            ISwapAdapter(alice.addr)
         );
     }
 }
