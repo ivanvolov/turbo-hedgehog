@@ -60,7 +60,7 @@ contract ALMGeneralTest is ALMTestBase {
     function test_token_set_up_second_time_revert() public {
         vm.prank(deployer.addr);
         vm.expectRevert(IBase.TokensAlreadyInitialized.selector);
-        hook.setTokens(address(1), address(1), 0, 0);
+        hook.setTokens(IERC20(address(1)), IERC20(address(1)), 0, 0);
     }
 
     function test_price_conversion_WETH_USDC() public pure {

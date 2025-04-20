@@ -16,7 +16,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;
 
-    address public targetPool;
+    IUniswapV3Pool public targetPool;
     address constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     constructor() Base(msg.sender) {}
@@ -26,19 +26,19 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
         IERC20(quote).forceApprove(SWAP_ROUTER, type(uint256).max);
     }
 
-    function setTargetPool(address _targetPool) external onlyOwner {
+    function setTargetPool(IUniswapV3Pool _targetPool) external onlyOwner {
         targetPool = _targetPool;
     }
 
-    function swapExactInput(address tokenIn, address tokenOut, uint256 amountIn) external onlyModule returns (uint256) {
+    function swapExactInput(IERC20 tokenIn, IERC20 tokenOut, uint256 amountIn) external onlyModule returns (uint256) {
         if (amountIn == 0) return 0;
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         return
             ISwapRouter(SWAP_ROUTER).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
-                    tokenIn: tokenIn,
-                    tokenOut: tokenOut,
-                    fee: IUniswapV3Pool(targetPool).fee(),
+                    tokenIn: address(tokenIn),
+                    tokenOut: address(tokenOut),
+                    fee: targetPool.fee(),
                     recipient: msg.sender,
                     deadline: block.timestamp,
                     amountIn: amountIn,
@@ -49,17 +49,17 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     }
 
     function swapExactOutput(
-        address tokenIn,
-        address tokenOut,
+        IERC20 tokenIn,
+        IERC20 tokenOut,
         uint256 amountOut
     ) external onlyModule returns (uint256 amountIn) {
         if (amountOut == 0) return 0;
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), IERC20(tokenIn).balanceOf(msg.sender));
+        tokenIn.safeTransferFrom(msg.sender, address(this), tokenIn.balanceOf(msg.sender));
         amountIn = ISwapRouter(SWAP_ROUTER).exactOutputSingle(
             ISwapRouter.ExactOutputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
-                fee: IUniswapV3Pool(targetPool).fee(),
+                tokenIn: address(tokenIn),
+                tokenOut: address(tokenOut),
+                fee: targetPool.fee(),
                 recipient: msg.sender,
                 deadline: block.timestamp,
                 amountInMaximum: type(uint256).max,
@@ -68,7 +68,6 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
             })
         );
 
-        if (IERC20(tokenIn).balanceOf(address(this)) > 0)
-            IERC20(tokenIn).safeTransfer(msg.sender, IERC20(tokenIn).balanceOf(address(this)));
+        if (tokenIn.balanceOf(address(this)) > 0) tokenIn.safeTransfer(msg.sender, tokenIn.balanceOf(address(this)));
     }
 }

@@ -41,6 +41,7 @@ import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
@@ -124,13 +125,13 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function create_lending_adapter_euler(
-        address _vault0,
+        IEulerVault _vault0,
         uint256 deposit0,
-        address _vault1,
+        IEulerVault _vault1,
         uint256 deposit1,
-        address _flVault0,
+        IEulerVault _flVault0,
         uint256 deposit2,
-        address _flVault1,
+        IEulerVault _flVault1,
         uint256 deposit3
     ) internal {
         vm.prank(deployer.addr);
@@ -141,21 +142,20 @@ abstract contract ALMTestBase is Deployers {
         _deposit_to_euler(_flVault1, deposit3);
     }
 
-    function _deposit_to_euler(address _vault, uint256 toSupply) internal {
+    function _deposit_to_euler(IEulerVault vault, uint256 toSupply) internal {
         if (toSupply == 0) return;
-        IEulerVault vault = IEulerVault(_vault);
         address asset = vault.asset();
         deal(asset, address(marketMaker.addr), toSupply);
 
         vm.startPrank(marketMaker.addr);
-        IERC20(asset).forceApprove(_vault, type(uint256).max);
+        IERC20(asset).forceApprove(address(vault), type(uint256).max);
         vault.mint(vault.convertToShares(toSupply), marketMaker.addr);
         vm.stopPrank();
     }
 
     function create_oracle(
-        address feed0,
-        address feed1,
+        AggregatorV3Interface feed0,
+        AggregatorV3Interface feed1,
         uint256 stalenessThreshold0,
         uint256 stalenessThreshold1
     ) internal {
@@ -209,7 +209,7 @@ abstract contract ALMTestBase is Deployers {
 
         _setTokens(address(swapAdapter));
         _setComponents(address(swapAdapter));
-        IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(TARGET_SWAP_POOL);
+        IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(IUniswapV3Pool(TARGET_SWAP_POOL));
 
         _setTokens(address(rebalanceAdapter));
         _setComponents(address(rebalanceAdapter));
@@ -234,7 +234,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function _setTokens(address module) internal {
-        IBase(module).setTokens(address(BASE), address(QUOTE), bDec, qDec);
+        IBase(module).setTokens(BASE, QUOTE, bDec, qDec);
     }
 
     function _setComponents(address module) internal {

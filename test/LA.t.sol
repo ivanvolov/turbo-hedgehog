@@ -82,12 +82,12 @@ contract LendingAdaptersTest is MorphoTestBase {
 
         _extraQuoteBefore = QUOTE.balanceOf(testAddress);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
-        lendingAdapter.flashLoanSingle(address(BASE), uint256(1000e18).unwrap(bDec), "0x2");
+        lendingAdapter.flashLoanSingle(BASE, uint256(1000e18).unwrap(bDec), "0x2");
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
     }
 
-    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) public view {
-        assertEq(token, address(BASE), string.concat("token should be ", baseName));
+    function onFlashLoanSingle(IERC20 token, uint256 amount, bytes calldata data) public view {
+        assertEq(address(token), address(BASE), string.concat("token should be ", baseName));
         assertEq(amount, uint256(1000e18).unwrap(bDec), string.concat("amount should be 1000 ", baseName));
         assertEq(data, "0x2", "data should eq");
         assertEqBalanceState(address(this), _extraQuoteBefore, amount);
@@ -129,9 +129,9 @@ contract LendingAdaptersTest is MorphoTestBase {
         _extraQuoteBefore = QUOTE.balanceOf(testAddress);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
         lendingAdapter.flashLoanTwoTokens(
-            address(BASE),
+            BASE,
             uint256(1000e18).unwrap(bDec),
-            address(QUOTE),
+            QUOTE,
             uint256(100e18).unwrap(qDec),
             "0x3"
         );
@@ -139,15 +139,15 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function onFlashLoanTwoTokens(
-        address token0,
+        IERC20 token0,
         uint256 amount0,
-        address token1,
+        IERC20 token1,
         uint256 amount1,
         bytes calldata data
     ) public view {
-        assertEq(token0, address(BASE), string.concat("token should be ", baseName));
+        assertEq(address(token0), address(BASE), string.concat("token should be ", baseName));
         assertEq(amount0, uint256(1000e18).unwrap(bDec), string.concat("amount should be 1000 ", baseName));
-        assertEq(token1, address(QUOTE), string.concat("token should be ", quoteName));
+        assertEq(address(token1), address(QUOTE), string.concat("token should be ", quoteName));
         assertEq(amount1, uint256(100e18).unwrap(qDec), string.concat("amount should be 100 ", quoteName));
         assertEq(data, "0x3", "data should eq");
         assertEqBalanceState(address(this), _extraQuoteBefore + amount1, amount0);

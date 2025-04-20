@@ -19,8 +19,8 @@ abstract contract Base is IBase {
 
     address public owner;
 
-    address public base;
-    address public quote;
+    IERC20 public base;
+    IERC20 public quote;
     uint8 public bDec;
     uint8 public qDec;
 
@@ -36,8 +36,8 @@ abstract contract Base is IBase {
         emit OwnershipTransferred(address(0), initialOwner);
     }
 
-    function setTokens(address _base, address _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
-        if (base != address(0)) revert TokensAlreadyInitialized();
+    function setTokens(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
+        if (address(base) != address(0)) revert TokensAlreadyInitialized();
 
         base = _base;
         quote = _quote;
@@ -74,9 +74,9 @@ abstract contract Base is IBase {
         swapAdapter = _swapAdapter;
     }
 
-    function _approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).forceApprove(moduleOld, 0);
-        if (moduleNew != address(this)) IERC20(token).forceApprove(moduleNew, amount);
+    function _approveSingle(IERC20 token, address moduleOld, address moduleNew, uint256 amount) internal {
+        if (moduleOld != address(0) && moduleOld != address(this)) token.forceApprove(moduleOld, 0);
+        if (moduleNew != address(this)) token.forceApprove(moduleNew, amount);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
@@ -86,7 +86,7 @@ abstract contract Base is IBase {
         emit OwnershipTransferred(oldOwner, owner);
     }
 
-    function otherToken(address token) internal view returns (address) {
+    function otherToken(IERC20 token) internal view returns (IERC20) {
         return token == base ? quote : base;
     }
 

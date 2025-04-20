@@ -19,6 +19,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 abstract contract MorphoTestBase is ALMTestBase {
     using TestAccountLib for TestAccount;
@@ -36,7 +37,8 @@ abstract contract MorphoTestBase is ALMTestBase {
     function create_lending_adapter_morpho() internal {
         create_and_seed_morpho_markets();
         vm.prank(deployer.addr);
-        lendingAdapter = new MorphoLendingAdapter(longMId, shortMId, address(0), address(0));
+        IERC4626 mockAdapter = IERC4626(address(0));
+        lendingAdapter = new MorphoLendingAdapter(longMId, shortMId, mockAdapter, mockAdapter);
     }
 
     function create_lending_adapter_morpho_earn() internal {

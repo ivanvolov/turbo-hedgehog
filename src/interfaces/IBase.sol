@@ -8,6 +8,7 @@ import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
@@ -24,7 +25,7 @@ interface IBase {
 
     function oracle() external view returns (IOracle);
 
-    function setTokens(address _base, address _quote, uint8 _t0Dec, uint8 _t1Dec) external;
+    function setTokens(IERC20 _base, IERC20 _quote, uint8 _t0Dec, uint8 _t1Dec) external;
 
     function setComponents(
         IALM _alm,

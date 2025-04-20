@@ -14,9 +14,14 @@ contract Oracle is IOracle {
     uint256 public immutable stalenessThresholdQ;
     uint256 public immutable stalenessThresholdB;
 
-    constructor(address _feedQuote, address _feedBase, uint256 _stalenessThresholdQ, uint256 _stalenessThresholdB) {
-        feedQuote = AggregatorV3Interface(_feedQuote);
-        feedBase = AggregatorV3Interface(_feedBase);
+    constructor(
+        AggregatorV3Interface _feedQuote,
+        AggregatorV3Interface _feedBase,
+        uint256 _stalenessThresholdQ,
+        uint256 _stalenessThresholdB
+    ) {
+        feedQuote = _feedQuote;
+        feedBase = _feedBase;
         stalenessThresholdQ = _stalenessThresholdQ;
         stalenessThresholdB = _stalenessThresholdB;
     }

@@ -117,9 +117,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function onFlashLoanTwoTokens(
-        address base,
+        IERC20 base,
         uint256 amount0,
-        address quote,
+        IERC20 quote,
         uint256 amount1,
         bytes calldata data
     ) external notPaused onlyLendingAdapter {
@@ -136,7 +136,7 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function onFlashLoanSingle(
-        address token,
+        IERC20 token,
         uint256 amount,
         bytes calldata data
     ) external notPaused onlyLendingAdapter {
@@ -157,7 +157,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
-    function _ensureEnoughBalance(uint256 balance, address token) internal {
+    function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
         uint256 _balance = token == base ? baseBalance(false) : quoteBalance(false);
         if (balance >= _balance) {
             swapAdapter.swapExactOutput(otherToken(token), token, balance - _balance);

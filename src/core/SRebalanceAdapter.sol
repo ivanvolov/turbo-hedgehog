@@ -176,20 +176,20 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function onFlashLoanSingle(
-        address token,
+        IERC20 token,
         uint256 amount,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
         _positionManagement(data);
-        if (amount > IERC20(token).balanceOf(address(this))) {
-            swapAdapter.swapExactOutput(otherToken(token), token, amount - IERC20(token).balanceOf(address(this)));
+        if (amount > token.balanceOf(address(this))) {
+            swapAdapter.swapExactOutput(otherToken(token), token, amount - token.balanceOf(address(this)));
         }
     }
 
     function onFlashLoanTwoTokens(
-        address base,
+        IERC20 base,
         uint256 amountB,
-        address quote,
+        IERC20 quote,
         uint256 amountQ,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {

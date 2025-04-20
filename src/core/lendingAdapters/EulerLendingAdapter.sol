@@ -29,11 +29,16 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     address public immutable subAccount0 = getSubAccountAddress(1);
     address public immutable subAccount1 = getSubAccountAddress(2);
 
-    constructor(address _vault0, address _vault1, address _flVault0, address _flVault1) Base(msg.sender) {
-        vault0 = IEulerVault(_vault0);
-        vault1 = IEulerVault(_vault1);
-        flVault0 = IEulerVault(_flVault0);
-        flVault1 = IEulerVault(_flVault1);
+    constructor(
+        IEulerVault _vault0,
+        IEulerVault _vault1,
+        IEulerVault _flVault0,
+        IEulerVault _flVault1
+    ) Base(msg.sender) {
+        vault0 = _vault0;
+        vault1 = _vault1;
+        flVault0 = _flVault0;
+        flVault1 = _flVault1;
 
         evc.enableController(subAccount0, address(vault0));
         evc.enableCollateral(subAccount0, address(vault1));
@@ -55,15 +60,15 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
 
     // ---- Flashloan ----
 
-    function flashLoanSingle(address asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
+    function flashLoanSingle(IERC20 asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
         bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
         getVaultByToken(asset).flashLoan(amount, _data);
     }
 
     function flashLoanTwoTokens(
-        address asset0,
+        IERC20 asset0,
         uint256 amount0,
-        address asset1,
+        IERC20 asset1,
         uint256 amount1,
         bytes calldata data
     ) public onlyModule notPaused {
@@ -76,51 +81,37 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         uint8 loanType = abi.decode(_data, (uint8));
 
         if (loanType == 0) {
-            (, address sender, address asset, uint256 amount, bytes memory data) = abi.decode(
+            (, address sender, IERC20 asset, uint256 amount, bytes memory data) = abi.decode(
                 _data,
-                (uint8, address, address, uint256, bytes)
+                (uint8, address, IERC20, uint256, bytes)
             );
 
-            IERC20(asset).safeTransfer(sender, amount);
+            asset.safeTransfer(sender, amount);
             IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
-            IERC20(asset).safeTransferFrom(sender, msg.sender, amount);
+            asset.safeTransferFrom(sender, msg.sender, amount);
         } else if (loanType == 2) {
-            (
-                ,
-                address sender,
-                address asset0,
-                uint256 amount0,
-                address asset1,
-                uint256 amount1,
-                bytes memory data
-            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+            (, address sender, IERC20 asset0, uint256 amount0, IERC20 asset1, uint256 amount1, bytes memory data) = abi
+                .decode(_data, (uint8, address, IERC20, uint256, IERC20, uint256, bytes));
             bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
 
-            IERC20(asset0).safeTransfer(sender, amount0);
+            asset0.safeTransfer(sender, amount0);
             getVaultByToken(asset1).flashLoan(amount1, __data);
-            IERC20(asset0).safeTransferFrom(sender, msg.sender, amount0);
+            asset0.safeTransferFrom(sender, msg.sender, amount0);
         } else if (loanType == 1) {
-            (
-                ,
-                address sender,
-                address asset0,
-                uint256 amount0,
-                address asset1,
-                uint256 amount1,
-                bytes memory data
-            ) = abi.decode(_data, (uint8, address, address, uint256, address, uint256, bytes));
+            (, address sender, IERC20 asset0, uint256 amount0, IERC20 asset1, uint256 amount1, bytes memory data) = abi
+                .decode(_data, (uint8, address, IERC20, uint256, IERC20, uint256, bytes));
 
-            IERC20(asset1).safeTransfer(sender, amount1);
+            asset1.safeTransfer(sender, amount1);
             IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
-            IERC20(asset1).safeTransferFrom(sender, msg.sender, amount1);
+            asset1.safeTransferFrom(sender, msg.sender, amount1);
         } else revert("M2");
 
         return "";
     }
 
-    function getVaultByToken(address token) public view returns (IEulerVault) {
-        if (flVault0.asset() == token) return flVault0;
-        else if (flVault1.asset() == token) return flVault1;
+    function getVaultByToken(IERC20 token) public view returns (IEulerVault) {
+        if (flVault0.asset() == address(token)) return flVault0;
+        else if (flVault1.asset() == address(token)) return flVault1;
         else revert("M1");
     }
 
