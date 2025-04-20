@@ -17,13 +17,15 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;
 
     IUniswapV3Pool public targetPool;
-    address constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    ISwapRouter immutable SWAP_ROUTER;
 
-    constructor() Base(msg.sender) {}
+    constructor(ISwapRouter swapRouter) Base(msg.sender) {
+        SWAP_ROUTER = swapRouter;
+    }
 
     function _postSetTokens() internal override {
-        IERC20(base).forceApprove(SWAP_ROUTER, type(uint256).max);
-        IERC20(quote).forceApprove(SWAP_ROUTER, type(uint256).max);
+        base.forceApprove(address(SWAP_ROUTER), type(uint256).max);
+        quote.forceApprove(address(SWAP_ROUTER), type(uint256).max);
     }
 
     function setTargetPool(IUniswapV3Pool _targetPool) external onlyOwner {
@@ -34,7 +36,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
         if (amountIn == 0) return 0;
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         return
-            ISwapRouter(SWAP_ROUTER).exactInputSingle(
+            SWAP_ROUTER.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: address(tokenIn),
                     tokenOut: address(tokenOut),
@@ -55,7 +57,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     ) external onlyModule returns (uint256 amountIn) {
         if (amountOut == 0) return 0;
         tokenIn.safeTransferFrom(msg.sender, address(this), tokenIn.balanceOf(msg.sender));
-        amountIn = ISwapRouter(SWAP_ROUTER).exactOutputSingle(
+        amountIn = SWAP_ROUTER.exactOutputSingle(
             ISwapRouter.ExactOutputSingleParams({
                 tokenIn: address(tokenIn),
                 tokenOut: address(tokenOut),

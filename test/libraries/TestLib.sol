@@ -9,6 +9,9 @@ import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
+import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
+import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
 
 library TestLib {
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -18,11 +21,13 @@ library TestLib {
     address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
 
     // ** https://app.morpho.org/ethereum/earn
+    IMorpho constant MORPHO = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
     IERC4626 constant morphoUSDTVault = IERC4626(0xbEef047a543E45807105E51A8BBEFCc5950fcfBa);
     IERC4626 constant morphoUSDCVault = IERC4626(0xd63070114470f685b75B74D60EEc7c1113d33a3D);
     IERC4626 constant morphoDAIVault = IERC4626(0x500331c9fF24D9d11aee6B07734Aa72343EA74a5);
 
     // ** https://app.euler.finance/?asset=USDT&network=ethereum
+    IEVC constant EULER_VAULT_CONNECT = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
     IEulerVault constant eulerUSDCVault1 = IEulerVault(0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9);
     IEulerVault constant eulerUSDCVault2 = IEulerVault(0xcBC9B61177444A793B85442D3a953B90f6170b7D);
     IEulerVault constant eulerUSDTVault1 = IEulerVault(0x313603FA690301b0CaeEf8069c065862f9162162);
@@ -33,6 +38,7 @@ library TestLib {
     IEulerVault constant eulerCbBTCVault2 = IEulerVault(0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1);
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
+    ISwapRouter constant V3_SWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;

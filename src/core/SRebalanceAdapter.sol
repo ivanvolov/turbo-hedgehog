@@ -308,10 +308,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     // --- Helpers --- //
 
     function baseBalanceUnwr() internal view returns (uint256) {
-        return IERC20(base).balanceOf(address(this));
+        return base.balanceOf(address(this));
     }
 
     function quoteBalanceUnwr() internal view returns (uint256) {
-        return IERC20(quote).balanceOf(address(this));
+        return quote.balanceOf(address(this));
     }
 }

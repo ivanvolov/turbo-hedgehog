@@ -774,6 +774,7 @@ contract ETHALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             newAdapter = new EulerLendingAdapter(
+                TestLib.EULER_VAULT_CONNECT,
                 IEulerVault(0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9),
                 IEulerVault(0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2),
                 IEulerVault(0xcBC9B61177444A793B85442D3a953B90f6170b7D),

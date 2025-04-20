@@ -60,10 +60,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 TVL1 = TVL();
 
         if (isInvertAssets) {
-            IERC20(base).safeTransferFrom(msg.sender, address(this), amountIn);
+            base.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(baseBalance(true));
         } else {
-            IERC20(quote).safeTransferFrom(msg.sender, address(this), amountIn);
+            quote.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }
         uint256 TVL2 = TVL();
@@ -105,11 +105,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (isInvertAssets) {
             baseOut = baseBalance(false);
             if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
-            IERC20(base).safeTransfer(to, baseOut);
+            base.safeTransfer(to, baseOut);
         } else {
             quoteOut = quoteBalance(false);
             if (quoteOut < minAmountOutQ) revert NotMinOutWithdrawQuote();
-            IERC20(quote).safeTransfer(to, quoteOut);
+            quote.safeTransfer(to, quoteOut);
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();
@@ -288,8 +288,8 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function transferFees() external onlyRebalanceAdapter {
-        IERC20(base).safeTransfer(treasury, accumulatedFeeB);
-        IERC20(quote).safeTransfer(treasury, accumulatedFeeQ);
+        base.safeTransfer(treasury, accumulatedFeeB);
+        quote.safeTransfer(treasury, accumulatedFeeQ);
         accumulatedFeeB = 0;
         accumulatedFeeQ = 0;
     }
@@ -310,15 +310,15 @@ contract ALM is BaseStrategyHook, ERC20 {
     function baseBalance(bool wrap) public view returns (uint256) {
         return
             wrap
-                ? (IERC20(base).balanceOf(address(this)) - accumulatedFeeB).wrap(bDec)
-                : IERC20(base).balanceOf(address(this)) - accumulatedFeeB;
+                ? (base.balanceOf(address(this)) - accumulatedFeeB).wrap(bDec)
+                : base.balanceOf(address(this)) - accumulatedFeeB;
     }
 
     function quoteBalance(bool wrap) public view returns (uint256) {
         return
             wrap
-                ? (IERC20(quote).balanceOf(address(this)) - accumulatedFeeQ).wrap(qDec)
-                : IERC20(quote).balanceOf(address(this)) - accumulatedFeeQ;
+                ? (quote.balanceOf(address(this)) - accumulatedFeeQ).wrap(qDec)
+                : quote.balanceOf(address(this)) - accumulatedFeeQ;
     }
 
     // --- Math functions --- //

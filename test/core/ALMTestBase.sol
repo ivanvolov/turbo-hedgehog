@@ -135,7 +135,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 deposit3
     ) internal {
         vm.prank(deployer.addr);
-        lendingAdapter = new EulerLendingAdapter(_vault0, _vault1, _flVault0, _flVault1);
+        lendingAdapter = new EulerLendingAdapter(TestLib.EULER_VAULT_CONNECT, _vault0, _vault1, _flVault0, _flVault1);
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
         _deposit_to_euler(_flVault0, deposit2);
@@ -191,7 +191,7 @@ abstract contract ALMTestBase is Deployers {
         if (isUnicord) positionManager = new UnicordPositionManager();
         else positionManager = new PositionManager();
 
-        swapAdapter = new UniswapV3SwapAdapter();
+        swapAdapter = new UniswapV3SwapAdapter(TestLib.V3_SWAP_ROUTER);
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter();
 

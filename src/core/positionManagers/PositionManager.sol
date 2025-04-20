@@ -40,7 +40,7 @@ contract PositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        IERC20(base).safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
+        base.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;
@@ -52,11 +52,11 @@ contract PositionManager is Base, IPositionManager {
 
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaQuote));
 
-        IERC20(quote).safeTransfer(address(alm), deltaQuote.unwrap(qDec));
+        quote.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
     }
 
     function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        IERC20(quote).safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
+        quote.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Add k1 * dETH to long as collateral;
@@ -70,7 +70,7 @@ contract PositionManager is Base, IPositionManager {
         }
         lendingAdapter.borrowLong(deltaBase);
 
-        IERC20(base).safeTransfer(address(alm), deltaBase.unwrap(bDec));
+        base.safeTransfer(address(alm), deltaBase.unwrap(bDec));
     }
 
     function getSwapFees(bool, int256) external view returns (uint256) {

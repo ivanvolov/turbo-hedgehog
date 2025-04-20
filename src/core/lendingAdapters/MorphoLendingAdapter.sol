@@ -24,14 +24,15 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
     // ** Morpho
-    IMorpho constant morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
+    IMorpho immutable morpho;
     Id public immutable longMId;
     Id public immutable shortMId;
     IERC4626 public immutable earnQuote;
     IERC4626 public immutable earnBase;
     bool public immutable isEarn;
 
-    constructor(Id _longMId, Id _shortMId, IERC4626 _earnBase, IERC4626 _earnQuote) Base(msg.sender) {
+    constructor(IMorpho _morpho, Id _longMId, Id _shortMId, IERC4626 _earnBase, IERC4626 _earnQuote) Base(msg.sender) {
+        morpho = _morpho;
         if (address(_earnQuote) != address(0)) {
             isEarn = true;
             earnQuote = _earnQuote;
@@ -44,11 +45,11 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function _postSetTokens() internal override {
-        IERC20(base).forceApprove(address(morpho), type(uint256).max);
-        IERC20(quote).forceApprove(address(morpho), type(uint256).max);
+        base.forceApprove(address(morpho), type(uint256).max);
+        quote.forceApprove(address(morpho), type(uint256).max);
         if (isEarn) {
-            IERC20(base).forceApprove(address(earnBase), type(uint256).max);
-            IERC20(quote).forceApprove(address(earnQuote), type(uint256).max);
+            base.forceApprove(address(earnBase), type(uint256).max);
+            quote.forceApprove(address(earnQuote), type(uint256).max);
         }
     }
 
@@ -122,7 +123,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayLong(uint256 amount) external onlyModule notPaused isBorrowMode {
-        IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
     }
 
@@ -133,7 +134,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
-        IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
     }
@@ -157,7 +158,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayShort(uint256 amount) external onlyModule notPaused isBorrowMode {
-        IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
     }
 
@@ -173,7 +174,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
-        IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");
     }

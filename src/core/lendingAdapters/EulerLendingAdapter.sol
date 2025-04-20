@@ -21,7 +21,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
     // ** EulerV2
-    IEVC constant evc = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
+    IEVC immutable evc;
     IEulerVault public immutable vault0;
     IEulerVault public immutable vault1;
     IEulerVault public immutable flVault0;
@@ -30,11 +30,13 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     address public immutable subAccount1 = getSubAccountAddress(2);
 
     constructor(
+        IEVC _evc,
         IEulerVault _vault0,
         IEulerVault _vault1,
         IEulerVault _flVault0,
         IEulerVault _flVault1
     ) Base(msg.sender) {
+        evc = _evc;
         vault0 = _vault0;
         vault1 = _vault1;
         flVault0 = _flVault0;
@@ -47,10 +49,10 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function _postSetTokens() internal override {
-        IERC20(base).forceApprove(address(vault0), type(uint256).max);
-        IERC20(quote).forceApprove(address(vault0), type(uint256).max);
-        IERC20(base).forceApprove(address(vault1), type(uint256).max);
-        IERC20(quote).forceApprove(address(vault1), type(uint256).max);
+        base.forceApprove(address(vault0), type(uint256).max);
+        quote.forceApprove(address(vault0), type(uint256).max);
+        base.forceApprove(address(vault1), type(uint256).max);
+        quote.forceApprove(address(vault1), type(uint256).max);
     }
 
     function getSubAccountAddress(uint8 accountId) internal view returns (address) {
@@ -138,7 +140,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayLong(uint256 amount) external onlyModule notPaused {
-        IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.repay(amount.unwrap(bDec), subAccount0);
     }
 
@@ -154,7 +156,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
-        IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.mint(vault1.convertToShares(amount.unwrap(qDec)), subAccount0);
     }
 
@@ -181,7 +183,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function repayShort(uint256 amount) external onlyModule notPaused {
-        IERC20(quote).safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.repay(amount.unwrap(qDec), subAccount1);
     }
 
@@ -197,7 +199,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
-        IERC20(base).safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.mint(vault0.convertToShares(amount.unwrap(bDec)), subAccount1);
     }
 
