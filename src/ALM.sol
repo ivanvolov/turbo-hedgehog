@@ -34,10 +34,14 @@ contract ALM is BaseStrategyHook, ERC20 {
     using SafeERC20 for IERC20;
 
     constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec,
         IPoolManager manager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(manager) ERC20(name, symbol) {}
+    ) BaseStrategyHook(_base, _quote, _bDec, _qDec, manager) ERC20(name, symbol) {}
 
     function afterInitialize(
         address creator,

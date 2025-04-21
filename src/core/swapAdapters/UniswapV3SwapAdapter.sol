@@ -19,11 +19,15 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     IUniswapV3Pool public targetPool;
     ISwapRouter immutable SWAP_ROUTER;
 
-    constructor(ISwapRouter swapRouter) Base(msg.sender) {
+    constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec,
+        ISwapRouter swapRouter
+    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
         SWAP_ROUTER = swapRouter;
-    }
 
-    function _postSetTokens() internal override {
         base.forceApprove(address(SWAP_ROUTER), type(uint256).max);
         quote.forceApprove(address(SWAP_ROUTER), type(uint256).max);
     }

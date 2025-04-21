@@ -46,7 +46,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     bool public isUnicord;
     address public rebalanceOperator;
 
-    constructor() Base(msg.sender) {}
+    constructor(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) Base(msg.sender, _base, _quote, _bDec, _qDec) {}
 
     function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
         rebalancePriceThreshold = _rebalancePriceThreshold;

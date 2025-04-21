@@ -31,25 +31,31 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
     IERC4626 public immutable earnBase;
     bool public immutable isEarn;
 
-    constructor(IMorpho _morpho, Id _longMId, Id _shortMId, IERC4626 _earnBase, IERC4626 _earnQuote) Base(msg.sender) {
+    constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec,
+        IMorpho _morpho,
+        Id _longMId,
+        Id _shortMId,
+        IERC4626 _earnBase,
+        IERC4626 _earnQuote
+    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
         morpho = _morpho;
+
+        base.forceApprove(address(morpho), type(uint256).max);
+        quote.forceApprove(address(morpho), type(uint256).max);
         if (address(_earnQuote) != address(0)) {
             isEarn = true;
             earnQuote = _earnQuote;
             earnBase = _earnBase;
+            base.forceApprove(address(earnBase), type(uint256).max);
+            quote.forceApprove(address(earnQuote), type(uint256).max);
         } else {
             isEarn = false;
             longMId = _longMId;
             shortMId = _shortMId;
-        }
-    }
-
-    function _postSetTokens() internal override {
-        base.forceApprove(address(morpho), type(uint256).max);
-        quote.forceApprove(address(morpho), type(uint256).max);
-        if (isEarn) {
-            base.forceApprove(address(earnBase), type(uint256).max);
-            quote.forceApprove(address(earnQuote), type(uint256).max);
         }
     }
 

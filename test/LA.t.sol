@@ -464,8 +464,6 @@ contract LendingAdaptersTest is MorphoTestBase {
         vm.mockCall(fakeHook, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
         vm.mockCall(fakeHook, abi.encodeWithSelector(IALM.shutdown.selector), abi.encode(false));
         vm.prank(deployer.addr);
-        _setTokens(address(lendingAdapter));
-        vm.prank(deployer.addr);
         IBase(address(lendingAdapter)).setComponents(
             IALM(fakeHook),
             ILendingAdapter(alice.addr),

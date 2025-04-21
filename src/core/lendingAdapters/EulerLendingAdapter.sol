@@ -30,12 +30,16 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     address public immutable subAccount1 = getSubAccountAddress(2);
 
     constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec,
         IEVC _evc,
         IEulerVault _vault0,
         IEulerVault _vault1,
         IEulerVault _flVault0,
         IEulerVault _flVault1
-    ) Base(msg.sender) {
+    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
         evc = _evc;
         vault0 = _vault0;
         vault1 = _vault1;
@@ -46,9 +50,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         evc.enableCollateral(subAccount0, address(vault1));
         evc.enableController(subAccount1, address(vault1));
         evc.enableCollateral(subAccount1, address(vault0));
-    }
 
-    function _postSetTokens() internal override {
         base.forceApprove(address(vault0), type(uint256).max);
         quote.forceApprove(address(vault0), type(uint256).max);
         base.forceApprove(address(vault1), type(uint256).max);

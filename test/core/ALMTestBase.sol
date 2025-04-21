@@ -135,7 +135,17 @@ abstract contract ALMTestBase is Deployers {
         uint256 deposit3
     ) internal {
         vm.prank(deployer.addr);
-        lendingAdapter = new EulerLendingAdapter(TestLib.EULER_VAULT_CONNECT, _vault0, _vault1, _flVault0, _flVault1);
+        lendingAdapter = new EulerLendingAdapter(
+            BASE,
+            QUOTE,
+            bDec,
+            qDec,
+            TestLib.EULER_VAULT_CONNECT,
+            _vault0,
+            _vault1,
+            _flVault0,
+            _flVault1
+        );
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
         _deposit_to_euler(_flVault0, deposit2);
@@ -180,7 +190,7 @@ abstract contract ALMTestBase is Deployers {
                     Hooks.AFTER_INITIALIZE_FLAG
             )
         );
-        deployCodeTo("ALM.sol", abi.encode(manager, "NAME", "SYMBOL"), hookAddress);
+        deployCodeTo("ALM.sol", abi.encode(BASE, QUOTE, bDec, qDec, manager, "NAME", "SYMBOL"), hookAddress);
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
         assertEq(hook.owner(), deployer.addr);
@@ -188,30 +198,24 @@ abstract contract ALMTestBase is Deployers {
 
         // MARK: Deploying modules and setting up parameters
         // @Notice: lendingAdapter should already be created
-        if (isUnicord) positionManager = new UnicordPositionManager();
-        else positionManager = new PositionManager();
+        if (isUnicord) positionManager = new UnicordPositionManager(BASE, QUOTE, bDec, qDec);
+        else positionManager = new PositionManager(BASE, QUOTE, bDec, qDec);
 
-        swapAdapter = new UniswapV3SwapAdapter(TestLib.V3_SWAP_ROUTER);
+        swapAdapter = new UniswapV3SwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.V3_SWAP_ROUTER);
         // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter();
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec);
 
-        _setTokens(address(hook)); // * Notice: tokens should be set first in all contracts
         hook.setIsInvertedPool(invertedPool);
         hook.setTickUpperDelta(_tickUpperDelta);
         hook.setTickLowerDelta(_tickLowerDelta);
         _setComponents(address(hook));
 
-        _setTokens(address(lendingAdapter));
         _setComponents(address(lendingAdapter));
-
-        _setTokens(address(positionManager));
         _setComponents(address(positionManager));
 
-        _setTokens(address(swapAdapter));
         _setComponents(address(swapAdapter));
         IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(IUniswapV3Pool(TARGET_SWAP_POOL));
 
-        _setTokens(address(rebalanceAdapter));
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
         rebalanceAdapter.setOraclePriceAtLastRebalance(oracle.price());
@@ -231,10 +235,6 @@ abstract contract ALMTestBase is Deployers {
 
     function getTokensInOrder() internal view returns (address, address) {
         return !invertedPool ? (address(QUOTE), address(BASE)) : (address(BASE), address(QUOTE));
-    }
-
-    function _setTokens(address module) internal {
-        IBase(module).setTokens(BASE, QUOTE, bDec, qDec);
     }
 
     function _setComponents(address module) internal {

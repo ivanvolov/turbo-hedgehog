@@ -19,6 +19,7 @@ import {Base} from "@src/core/Base/Base.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
@@ -46,7 +47,13 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     uint256 public accumulatedFeeB;
     uint256 public accumulatedFeeQ;
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
+    constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec,
+        IPoolManager _poolManager
+    ) BaseHook(_poolManager) Base(msg.sender, _base, _quote, _bDec, _qDec) {}
 
     function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
         tickUpperDelta = _tickUpperDelta;

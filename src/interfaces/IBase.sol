@@ -19,13 +19,10 @@ interface IBase {
     error NotLendingAdapter(address account);
     error ContractPaused();
     error ContractShutdown();
-    error TokensAlreadyInitialized();
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     function oracle() external view returns (IOracle);
-
-    function setTokens(IERC20 _base, IERC20 _quote, uint8 _t0Dec, uint8 _t1Dec) external;
 
     function setComponents(
         IALM _alm,

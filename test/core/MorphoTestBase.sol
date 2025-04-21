@@ -38,12 +38,26 @@ abstract contract MorphoTestBase is ALMTestBase {
         create_and_seed_morpho_markets();
         vm.prank(deployer.addr);
         IERC4626 mockAdapter = IERC4626(address(0));
-        lendingAdapter = new MorphoLendingAdapter(TestLib.MORPHO, longMId, shortMId, mockAdapter, mockAdapter);
+        lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            bDec,
+            qDec,
+            TestLib.MORPHO,
+            longMId,
+            shortMId,
+            mockAdapter,
+            mockAdapter
+        );
     }
 
     function create_lending_adapter_morpho_earn() internal {
         vm.prank(deployer.addr);
         lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            bDec,
+            qDec,
             TestLib.MORPHO,
             Id.wrap(""),
             Id.wrap(""),
@@ -55,6 +69,10 @@ abstract contract MorphoTestBase is ALMTestBase {
     function create_lending_adapter_morpho_earn_dai_usdc() internal {
         vm.prank(deployer.addr);
         lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            bDec,
+            qDec,
             TestLib.MORPHO,
             Id.wrap(""),
             Id.wrap(""),

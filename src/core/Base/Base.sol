@@ -31,23 +31,15 @@ abstract contract Base is IBase {
     IRebalanceAdapter public rebalanceAdapter;
     ISwapAdapter public swapAdapter;
 
-    constructor(address initialOwner) {
-        owner = initialOwner;
-        emit OwnershipTransferred(address(0), initialOwner);
-    }
-
-    function setTokens(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
-        if (address(base) != address(0)) revert TokensAlreadyInitialized();
-
+    constructor(address initialOwner, IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) {
         base = _base;
         quote = _quote;
         bDec = _bDec;
         qDec = _qDec;
 
-        _postSetTokens();
+        owner = initialOwner;
+        emit OwnershipTransferred(address(0), initialOwner);
     }
-
-    function _postSetTokens() internal virtual {}
 
     function setComponents(
         IALM _alm,
