@@ -92,7 +92,7 @@ contract ETHALMTest is MorphoTestBase {
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, 0, 0, 0);
 
-        vm.expectRevert(IALM.NotEnoughSharesToWithdraw.selector);
+        vm.expectRevert();
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, 10, 0, 0);
     }

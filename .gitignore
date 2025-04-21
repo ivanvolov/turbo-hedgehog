@@ -19,3 +19,4 @@ docs/
 PLAN.md
 *.csv
 test/**/*.html
+.gas-snapshot

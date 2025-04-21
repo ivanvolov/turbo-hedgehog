@@ -76,7 +76,6 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function withdraw(address to, uint256 sharesOut, uint256 minAmountOutB, uint256 minAmountOutQ) external notPaused {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
-        if (balanceOf(msg.sender) < sharesOut) revert NotEnoughSharesToWithdraw();
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
 
@@ -210,17 +209,18 @@ contract ALM is BaseStrategyHook, ERC20 {
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
 
+            uint256 protocolFeeAmount = fee.mul(protocolFee);
             if (isInvertedPool) {
-                accumulatedFeeB += fee.mul(protocolFee); //cut protocol fee from the calculated swap fee
+                accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
                 positionManager.positionAdjustmentPriceUp(
-                    (token0In - fee.mul(protocolFee)).wrap(bDec),
+                    (token0In - protocolFeeAmount).wrap(bDec),
                     token1Out.wrap(qDec)
                 );
             } else {
-                accumulatedFeeQ += fee.mul(protocolFee);
+                accumulatedFeeQ += protocolFeeAmount;
                 positionManager.positionAdjustmentPriceDown(
                     token1Out.wrap(bDec),
-                    (token0In - fee.mul(protocolFee)).wrap(qDec)
+                    (token0In - protocolFeeAmount).wrap(qDec)
                 );
             }
 
@@ -249,17 +249,18 @@ contract ALM is BaseStrategyHook, ERC20 {
             ) = getOneForZeroDeltas(params.amountSpecified);
             key.currency1.take(poolManager, address(this), token1In, false);
 
+            uint256 protocolFeeAmount = fee.mul(protocolFee);
             checkSwapDeviations(sqrtPriceNext);
             if (isInvertedPool) {
-                accumulatedFeeQ += fee.mul(protocolFee);
+                accumulatedFeeQ += protocolFeeAmount;
                 positionManager.positionAdjustmentPriceDown(
                     token0Out.wrap(bDec),
-                    (token1In - fee.mul(protocolFee)).wrap(qDec)
+                    (token1In - protocolFeeAmount).wrap(qDec)
                 );
             } else {
-                accumulatedFeeB += fee.mul(protocolFee);
+                accumulatedFeeB += protocolFeeAmount;
                 positionManager.positionAdjustmentPriceUp(
-                    (token1In - fee.mul(protocolFee)).wrap(bDec),
+                    (token1In - protocolFeeAmount).wrap(bDec),
                     token0Out.wrap(qDec)
                 );
             }
@@ -308,17 +309,13 @@ contract ALM is BaseStrategyHook, ERC20 {
     // --- Helpers --- //
 
     function baseBalance(bool wrap) public view returns (uint256) {
-        return
-            wrap
-                ? (base.balanceOf(address(this)) - accumulatedFeeB).wrap(bDec)
-                : base.balanceOf(address(this)) - accumulatedFeeB;
+        uint256 balance = base.balanceOf(address(this)) - accumulatedFeeB;
+        return wrap ? balance.wrap(bDec) : balance;
     }
 
     function quoteBalance(bool wrap) public view returns (uint256) {
-        return
-            wrap
-                ? (quote.balanceOf(address(this)) - accumulatedFeeQ).wrap(qDec)
-                : quote.balanceOf(address(this)) - accumulatedFeeQ;
+        uint256 balance = quote.balanceOf(address(this)) - accumulatedFeeQ;
+        return wrap ? balance.wrap(qDec) : balance;
     }
 
     // --- Math functions --- //

@@ -5,7 +5,6 @@ interface IALM {
     error ZeroLiquidity();
     error ZeroDebt();
     error AddLiquidityThroughHook();
-    error NotEnoughSharesToWithdraw();
     error NotZeroShares();
     error NotMinOutWithdrawBase();
     error NotMinOutWithdrawQuote();
