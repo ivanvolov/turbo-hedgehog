@@ -19,10 +19,10 @@ abstract contract Base is IBase {
 
     address public owner;
 
-    IERC20 public base;
-    IERC20 public quote;
-    uint8 public bDec;
-    uint8 public qDec;
+    IERC20 public immutable base;
+    IERC20 public immutable quote;
+    uint8 public immutable bDec;
+    uint8 public immutable qDec;
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
