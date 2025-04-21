@@ -13,6 +13,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
@@ -23,6 +24,7 @@ abstract contract Base is IBase {
     IERC20 public immutable quote;
     uint8 public immutable bDec;
     uint8 public immutable qDec;
+    uint8 public immutable decimalsDelta;
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
@@ -36,6 +38,7 @@ abstract contract Base is IBase {
         quote = _quote;
         bDec = _bDec;
         qDec = _qDec;
+        decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
 
         owner = initialOwner;
         emit OwnershipTransferred(address(0), initialOwner);

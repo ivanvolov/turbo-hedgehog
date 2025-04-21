@@ -147,7 +147,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function _updateBoundaries() internal {
         int24 tick = ALMMathLib.getTickFromPrice(
-            ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, uint8(ALMMathLib.absSub(bDec, qDec)))
+            ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, decimalsDelta)
         );
         tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
         tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;

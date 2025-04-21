@@ -150,11 +150,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
             ALMMathLib.getTickFromPrice(
-                ALMMathLib.getPoolPriceFromOraclePrice(
-                    oraclePriceAtLastRebalance,
-                    alm.isInvertedPool(),
-                    uint8(ALMMathLib.absSub(bDec, qDec))
-                )
+                ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, alm.isInvertedPool(), decimalsDelta)
             )
         );
 
@@ -280,12 +276,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickUpper()),
                 alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(bDec, qDec))
+                decimalsDelta
             ),
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickLower()),
                 alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(bDec, qDec))
+                decimalsDelta
             )
         );
         return SafeCast.toUint128(liquidity);
