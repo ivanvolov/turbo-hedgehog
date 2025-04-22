@@ -106,28 +106,36 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     // ** Logic
 
+    /// @notice Computes when the next rebalance can be triggered
+    /// @return needRebalance   True if rebalance is allowed, false otherwise
+    /// @return priceThreshold  The current price threshold for the price based rebalance
+    /// @return triggerTime     The exact timestamp when a time-based rebalance is allowed
     function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
-        (bool _isPriceRebalance, uint256 priceThreshold) = isPriceRebalance();
-        (bool _isTimeRebalance, uint256 auctionTriggerTime) = isTimeRebalance();
-
-        return (_isPriceRebalance || _isTimeRebalance, priceThreshold, auctionTriggerTime);
+        (bool _isPriceRebalance, uint256 _priceThreshold) = isPriceRebalance();
+        (bool _isTimeRebalance, uint256 _triggerTime) = isTimeRebalance();
+        return (_isPriceRebalance || _isTimeRebalance, _priceThreshold, _triggerTime);
     }
 
-    function isPriceRebalance() public view returns (bool, uint256) {
+    /// @notice Computes when the next price‐based rebalance can be triggered
+    /// @return needRebalance   True if rebalance is allowed, false otherwise
+    /// @return priceThreshold  The current price threshold for the price based rebalance
+    function isPriceRebalance() public view returns (bool needRebalance, uint256 priceThreshold) {
         uint256 oraclePrice = oracle.price();
         uint256 cachedRatio = oraclePrice.div(oraclePriceAtLastRebalance);
-        uint256 priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
+        priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
 
-        return (priceThreshold >= rebalancePriceThreshold, priceThreshold);
+        needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 
-    function isTimeRebalance() public view returns (bool, uint256) {
-        uint256 auctionTriggerTime = timeAtLastRebalance + rebalanceTimeThreshold;
-        return (block.timestamp >= auctionTriggerTime, auctionTriggerTime);
+    /// @notice Computes when the next time‐based rebalance can be triggered
+    /// @return needRebalance  True if rebalance is allowed, false otherwise
+    /// @return triggerTime    The exact timestamp when a time-based rebalance is allowed
+    function isTimeRebalance() public view returns (bool needRebalance, uint256 triggerTime) {
+        triggerTime = timeAtLastRebalance + rebalanceTimeThreshold;
+        needRebalance = block.timestamp >= triggerTime;
     }
 
-    function rebalance(uint256 slippage) external notPaused notShutdown {
-        if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
+    function rebalance(uint256 slippage) external notPaused notShutdown onlyRebalanceOperator {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReserves();
@@ -138,12 +146,16 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (isUnicord) {
             if (quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
             else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
-            if (baseBalanceUnwr() != 0) lendingAdapter.addCollateralShort((baseBalanceUnwr()).wrap(bDec));
-            if (quoteBalanceUnwr() != 0) lendingAdapter.addCollateralLong((quoteBalanceUnwr()).wrap(qDec));
+            uint256 baseBalance = baseBalanceUnwr();
+            if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
+            uint256 quoteBalance = quoteBalanceUnwr();
+            if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
         } else {
             lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
-            if (baseBalanceUnwr() != 0) lendingAdapter.repayLong((baseBalanceUnwr()).wrap(bDec));
-            if (quoteBalanceUnwr() != 0) lendingAdapter.repayShort((quoteBalanceUnwr()).wrap(qDec));
+            uint256 baseBalance = baseBalanceUnwr();
+            if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
+            uint256 quoteBalance = quoteBalanceUnwr();
+            if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance.wrap(qDec));
         }
 
         // ** Check max deviation
@@ -180,7 +192,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amount,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
-        _positionManagement(data);
+        _managePositionDeltas(data);
         if (amount > token.balanceOf(address(this))) {
             swapAdapter.swapExactOutput(otherToken(token), token, amount - token.balanceOf(address(this)));
         }
@@ -193,13 +205,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amountQ,
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
-        _positionManagement(data);
+        _managePositionDeltas(data);
         if (amountB > baseBalanceUnwr()) swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr());
         if (amountQ > quoteBalanceUnwr()) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr());
     }
 
     // @Notice: this function is mainly for removing stack too deep error
-    function _positionManagement(bytes calldata data) internal {
+    function _managePositionDeltas(bytes calldata data) internal {
         (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi.decode(
             data,
             (int256, int256, int256, int256)
@@ -270,9 +282,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-        uint256 VLP;
-        if (isInvertAssets) VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
-        else VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());
+        uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
+        if (!isInvertAssets) VLP = VLP.mul(oracle.price());
 
         uint256 liquidity = ALMMathLib.getL(
             VLP,
@@ -303,6 +314,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);
         require(deviationLong <= maxDeviationLong, "D1");
         require(deviationShort <= maxDeviationShort, "D2");
+    }
+
+    // --- Modifiers --- //
+
+    modifier onlyRebalanceOperator() {
+        if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
+        _;
     }
 
     // --- Helpers --- //

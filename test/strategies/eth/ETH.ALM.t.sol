@@ -167,6 +167,14 @@ contract ETHALMTest is MorphoTestBase {
         rebalanceAdapter.rebalance(slippage);
     }
 
+    function test_deposit_rebalance_revert_not_rebalance_operator() public {
+        test_deposit_rebalance();
+
+        vm.expectRevert(SRebalanceAdapter.NotRebalanceOperator.selector);
+        vm.prank(alice.addr);
+        rebalanceAdapter.rebalance(slippage);
+    }
+
     function test_deposit_rebalance_withdraw() public {
         test_deposit_rebalance();
         alignOraclesAndPools(hook.sqrtPriceCurrent());
