@@ -207,7 +207,11 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
 
     // ---- Helpers ----
 
-    function syncLong() external {}
+    function syncLong() external {
+        // Intentionally empty as no synchronization is needed for long positions
+    }
 
-    function syncShort() external {}
+    function syncShort() external {
+        // Intentionally empty as no synchronization is needed for short positions
+    }
 }

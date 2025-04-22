@@ -25,7 +25,9 @@ contract UnicordPositionManager is Base, IPositionManager {
 
     uint256 public fees;
 
-    constructor(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) Base(msg.sender, _base, _quote, _bDec, _qDec) {}
+    constructor(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+        // Intentionally empty as all initialization is handled by the parent Base contract
+    }
 
     function setFees(uint256 _fees) external onlyOwner {
         fees = _fees;

@@ -14,7 +14,9 @@ contract PoolSwapTest is PoolTestBase {
     using CurrencySettlerSafe for Currency;
     using Hooks for IHooks;
 
-    constructor(IPoolManager _manager) PoolTestBase(_manager) {}
+    constructor(IPoolManager _manager) PoolTestBase(_manager) {
+        // Intentionally empty as all initialization is handled by the parent PoolTestBase contract
+    }
 
     struct CallbackData {
         address sender;

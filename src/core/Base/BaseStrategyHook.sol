@@ -53,7 +53,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         uint8 _bDec,
         uint8 _qDec,
         IPoolManager _poolManager
-    ) BaseHook(_poolManager) Base(msg.sender, _base, _quote, _bDec, _qDec) {}
+    ) BaseHook(_poolManager) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+        // Intentionally empty as all initialization is handled by the parent Base contract
+    }
 
     function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
         tickUpperDelta = _tickUpperDelta;

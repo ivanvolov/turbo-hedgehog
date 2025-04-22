@@ -41,7 +41,9 @@ contract ALM is BaseStrategyHook, ERC20 {
         IPoolManager manager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(_base, _quote, _bDec, _qDec, manager) ERC20(name, symbol) {}
+    ) BaseStrategyHook(_base, _quote, _bDec, _qDec, manager) ERC20(name, symbol) {
+        // Intentionally empty as all initialization is handled by the parent BaseStrategyHook contract
+    }
 
     function afterInitialize(
         address creator,

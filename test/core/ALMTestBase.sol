@@ -420,7 +420,9 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function assertEqBalanceState(address owner, uint256 _balanceQ, uint256 _balanceB) public view {
-        try this._assertEqBalanceState(owner, _balanceQ, _balanceB) {} catch {
+        try this._assertEqBalanceState(owner, _balanceQ, _balanceB) {
+            // Intentionally empty
+        } catch {
             console.log("QUOTE Balance", QUOTE.balanceOf(owner));
             console.log("BASE Balance", BASE.balanceOf(owner));
             _assertEqBalanceState(owner, _balanceQ, _balanceB); // @Notice: this is to throw the error
@@ -515,7 +517,9 @@ abstract contract ALMTestBase is Deployers {
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
-        try this._assertEqPositionState(CL, CS, DL, DS) {} catch {
+        try this._assertEqPositionState(CL, CS, DL, DS) {
+            // Intentionally empty
+        } catch {
             console.log("CL", TW.unwrap(_leA.getCollateralLong(), qDec));
             console.log("CS", TW.unwrap(_leA.getCollateralShort(), bDec));
             console.log("DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
