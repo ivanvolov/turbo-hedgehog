@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// ** External imports
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
 
@@ -8,10 +12,6 @@ import {Base} from "@src/core/base/Base.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-// ** libraries
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;

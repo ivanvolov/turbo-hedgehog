@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** libraries
+// ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
 
-// ** libraries
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 // ** interfaces
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title UnicordPositionManager
 /// @author IVikkk

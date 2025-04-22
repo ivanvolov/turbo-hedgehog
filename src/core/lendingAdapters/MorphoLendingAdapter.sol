@@ -5,16 +5,18 @@ pragma solidity ^0.8.0;
 import {IMorpho, Id, Position} from "@morpho-blue/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 
+// ** External imports
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapter.sol";
 
 contract MorphoLendingAdapter is Base, ILendingAdapter {

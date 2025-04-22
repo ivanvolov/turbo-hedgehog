@@ -5,15 +5,17 @@ pragma solidity ^0.8.0;
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
 
+// ** External imports
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // ** libraries
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapter.sol";
 
 contract EulerLendingAdapter is Base, ILendingAdapter {

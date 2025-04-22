@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** libraries
+// ** External imports
 import {PRBMath} from "@prb-math/PRBMath.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
-import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 contract Oracle is IOracle {
     AggregatorV3Interface internal immutable feedBase;

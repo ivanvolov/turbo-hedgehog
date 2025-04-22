@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// ** External imports
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// ** libraries
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
@@ -9,11 +16,6 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-// ** libraries
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;

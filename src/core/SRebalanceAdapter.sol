@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// ** External imports
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
 // ** contracts
 import {Base} from "@src/core/base/Base.sol";
 
 // ** interfaces
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();

@@ -10,16 +10,18 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
+// ** External imports
+import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 
 // ** contracts
 import {Base} from "@src/core/Base/Base.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
