@@ -6,12 +6,12 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** contracts
-import {Base} from "@src/core/base/Base.sol";
+import {Base} from "../base/Base.sol";
 
 // ** interfaces
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
+import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
+import {ISwapRouter} from "../../interfaces/swapAdapters/ISwapRouter.sol";
+import {IUniswapV3Pool} from "../../interfaces/swapAdapters/IUniswapV3Pool.sol";
 
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;

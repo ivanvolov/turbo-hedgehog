@@ -7,14 +7,14 @@ import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {ALMMathLib} from "../libraries/ALMMathLib.sol";
+import {TokenWrapperLib} from "../libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {Base} from "@src/core/base/Base.sol";
+import {Base} from "./base/Base.sol";
 
 // ** interfaces
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
+import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
 
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();

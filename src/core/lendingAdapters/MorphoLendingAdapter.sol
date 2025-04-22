@@ -11,13 +11,13 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 // ** libraries
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
 
 // ** contracts
-import {Base} from "@src/core/base/Base.sol";
+import {Base} from "../base/Base.sol";
 
 // ** interfaces
-import {ILendingAdapter, IFlashLoanReceiver} from "@src/interfaces/ILendingAdapter.sol";
+import {ILendingAdapter, IFlashLoanReceiver} from "../../interfaces/ILendingAdapter.sol";
 
 contract MorphoLendingAdapter is Base, ILendingAdapter {
     error NotInBorrowMode();

@@ -6,16 +6,16 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
+import {IALM} from "../../interfaces/IALM.sol";
+import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
+import {IPositionManager} from "../../interfaces/IPositionManager.sol";
+import {IOracle} from "../../interfaces/IOracle.sol";
+import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
+import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
+import {IBase} from "../../interfaces/IBase.sol";
 
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;

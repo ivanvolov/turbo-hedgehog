@@ -6,7 +6,7 @@ import {PRBMath} from "@prb-math/PRBMath.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 // ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IOracle} from "../interfaces/IOracle.sol";
 
 contract Oracle is IOracle {
     AggregatorV3Interface internal immutable feedBase;

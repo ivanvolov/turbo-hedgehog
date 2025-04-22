@@ -6,7 +6,6 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
-import {CurrencySettlerSafe} from "@src/libraries/CurrencySettlerSafe.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 
@@ -17,11 +16,12 @@ import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {ALMMathLib} from "./libraries/ALMMathLib.sol";
+import {TokenWrapperLib} from "./libraries/TokenWrapperLib.sol";
+import {CurrencySettlerSafe} from "./libraries/CurrencySettlerSafe.sol";
 
 // ** contracts
-import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
+import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 
 /// @title ALM
 /// @author IVikkk

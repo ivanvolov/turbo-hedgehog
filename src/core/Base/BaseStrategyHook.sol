@@ -15,13 +15,13 @@ import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
 
 // ** contracts
-import {Base} from "@src/core/Base/Base.sol";
+import {Base} from "./Base.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
+import {IALM} from "../../interfaces/IALM.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;

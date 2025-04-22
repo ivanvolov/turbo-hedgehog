@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+// ** External imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// ** interfaces
+import {IALM} from "./IALM.sol";
+import {ILendingAdapter} from "./ILendingAdapter.sol";
+import {IPositionManager} from "./IPositionManager.sol";
+import {IOracle} from "./IOracle.sol";
+import {IRebalanceAdapter} from "./IRebalanceAdapter.sol";
+import {ISwapAdapter} from "./ISwapAdapter.sol";
 
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
