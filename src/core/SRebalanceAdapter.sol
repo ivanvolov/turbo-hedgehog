@@ -28,6 +28,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 oraclePriceAtRebalance,
         uint160 sqrtPriceAtRebalance
     );
+    event LastRebalanceSnapshotSet(uint256 indexed oraclePrice, uint160 indexed sqrtPrice, uint256 indexed timestamp);
+    event RebalanceConstraintsSet(
+        uint256 priceThreshold,
+        uint256 timeThreshold,
+        uint256 maxDevLong,
+        uint256 maxDevShort
+    );
+    event RebalanceParamsSet(uint256 weight, uint256 longLeverage, uint256 shortLeverage);
+    event RebalanceOperatorSet(address indexed operator);
 
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
@@ -68,6 +77,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         oraclePriceAtLastRebalance = _oraclePriceAtLastRebalance;
         sqrtPriceAtLastRebalance = _sqrtPriceAtLastRebalance;
         timeAtLastRebalance = _timeAtLastRebalance;
+
+        emit LastRebalanceSnapshotSet(_oraclePriceAtLastRebalance, _sqrtPriceAtLastRebalance, _timeAtLastRebalance);
     }
 
     function setRebalanceConstraints(
@@ -80,16 +91,27 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         rebalanceTimeThreshold = _rebalanceTimeThreshold;
         maxDeviationLong = _maxDeviationLong;
         maxDeviationShort = _maxDeviationShort;
+
+        emit RebalanceConstraintsSet(
+            _rebalancePriceThreshold,
+            _rebalanceTimeThreshold,
+            _maxDeviationLong,
+            _maxDeviationShort
+        );
     }
 
     function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
         weight = _weight;
         longLeverage = _longLeverage;
         shortLeverage = _shortLeverage;
+
+        emit RebalanceParamsSet(_weight, _longLeverage, _shortLeverage);
     }
 
     function setRebalanceOperator(address _rebalanceOperator) external onlyOwner {
         rebalanceOperator = _rebalanceOperator;
+
+        emit RebalanceOperatorSet(_rebalanceOperator);
     }
 
     // ** Logic
