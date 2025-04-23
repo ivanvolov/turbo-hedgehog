@@ -29,14 +29,15 @@ contract Oracle is IOracle {
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
     function price() external view returns (uint256 _price) {
         (, int256 _priceQuote, , uint256 updatedAtQuote, ) = feedQuote.latestRoundData();
-        uint8 decimalsQuote = feedQuote.decimals();
+        require(block.timestamp - updatedAtQuote <= stalenessThresholdQ, "O1");
+
         (, int256 _priceBase, , uint256 updatedAtBase, ) = feedBase.latestRoundData();
+        require(block.timestamp - updatedAtBase <= stalenessThresholdB, "O2");
+
+        require(_priceBase > 0 && _priceQuote > 0, "O3");
+
+        uint8 decimalsQuote = feedQuote.decimals();
         uint8 decimalsBase = feedBase.decimals();
-
-        require(_priceBase > 0 && _priceQuote > 0, "O1");
-        require(updatedAtQuote >= block.timestamp - stalenessThresholdQ, "O2");
-        require(updatedAtBase >= block.timestamp - stalenessThresholdB, "O3");
-
         uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
         _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
         require(_price > 0, "O4");
