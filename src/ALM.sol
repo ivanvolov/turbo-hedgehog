@@ -38,10 +38,12 @@ contract ALM is BaseStrategyHook, ERC20 {
         IERC20 _quote,
         uint8 _bDec,
         uint8 _qDec,
+        bool _isInvertedPool,
+        bool _isInvertedAssets,
         IPoolManager manager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(_base, _quote, _bDec, _qDec, manager) ERC20(name, symbol) {
+    ) BaseStrategyHook(_base, _quote, _bDec, _qDec, _isInvertedPool, _isInvertedAssets, manager) ERC20(name, symbol) {
         // Intentionally empty as all initialization is handled by the parent BaseStrategyHook contract
     }
 
@@ -65,7 +67,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         refreshReserves();
         uint256 TVL1 = TVL();
 
-        if (isInvertAssets) {
+        if (isInvertedAssets) {
             base.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(baseBalance(true));
         } else {
@@ -100,14 +102,14 @@ contract ALM is BaseStrategyHook, ERC20 {
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
-            if (isInvertAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
+            if (isInvertedAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
             else swapAdapter.swapExactInput(base, quote, baseBalance(false));
         } else if (uDL > 0) lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
         uint256 quoteOut;
-        if (isInvertAssets) {
+        if (isInvertedAssets) {
             baseOut = baseBalance(false);
             if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
             base.safeTransfer(to, baseOut);
@@ -136,7 +138,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         lendingAdapter.removeCollateralLong(uCL);
         lendingAdapter.removeCollateralShort(uCS);
 
-        if (isInvertAssets) _ensureEnoughBalance(amount1, quote);
+        if (isInvertedAssets) _ensureEnoughBalance(amount1, quote);
         else _ensureEnoughBalance(amount0, base);
     }
 
@@ -154,10 +156,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         lendingAdapter.removeCollateralShort(uCS);
 
         if (token == base) {
-            if (isInvertAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
+            if (isInvertedAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
             else _ensureEnoughBalance(amount, base);
         } else {
-            if (isInvertAssets) _ensureEnoughBalance(amount, quote);
+            if (isInvertedAssets) _ensureEnoughBalance(amount, quote);
             else swapAdapter.swapExactInput(base, quote, baseBalance(false));
         }
     }
@@ -336,7 +338,7 @@ contract ALM is BaseStrategyHook, ERC20 {
                 lendingAdapter.getCollateralShort(),
                 lendingAdapter.getBorrowedLong(),
                 oracle.price(),
-                isInvertAssets
+                isInvertedAssets
             );
     }
 

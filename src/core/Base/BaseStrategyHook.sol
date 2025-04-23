@@ -36,8 +36,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bool public shutdown = false;
     int24 public tickUpperDelta;
     int24 public tickLowerDelta;
-    bool public isInvertAssets;
-    bool public isInvertedPool;
+    bool public immutable isInvertedAssets;
+    bool public immutable isInvertedPool;
     uint256 public swapPriceThreshold;
     bytes32 public authorizedPool;
     address public liquidityOperator;
@@ -54,9 +54,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         IERC20 _quote,
         uint8 _bDec,
         uint8 _qDec,
+        bool _isInvertedPool,
+        bool _isInvertedAssets,
         IPoolManager _poolManager
     ) BaseHook(_poolManager) Base(msg.sender, _base, _quote, _bDec, _qDec) {
-        // Intentionally empty as all initialization is handled by the parent Base contract
+        isInvertedPool = _isInvertedPool;
+        isInvertedAssets = _isInvertedAssets;
     }
 
     function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
@@ -73,14 +76,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function setShutdown(bool _shutdown) external onlyOwner {
         shutdown = _shutdown;
-    }
-
-    function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
-        isInvertAssets = _isInvertAssets;
-    }
-
-    function setIsInvertedPool(bool _isInvertedPool) external onlyOwner {
-        isInvertedPool = _isInvertedPool;
     }
 
     function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {

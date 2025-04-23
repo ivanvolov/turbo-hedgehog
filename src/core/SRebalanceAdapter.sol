@@ -44,60 +44,48 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public shortLeverage;
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
-    bool public isInvertAssets;
-    bool public isUnicord;
+    bool public immutable isInvertedAssets;
+    bool public immutable isNova;
     address public rebalanceOperator;
 
-    constructor(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) Base(msg.sender, _base, _quote, _bDec, _qDec) {
-        // Intentionally empty as all initialization is handled by the parent Base contract
+    constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec,
+        bool _isInvertedAssets,
+        bool _isNova
+    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+        isInvertedAssets = _isInvertedAssets;
+        isNova = _isNova;
     }
 
-    function setRebalancePriceThreshold(uint256 _rebalancePriceThreshold) external onlyOwner {
-        rebalancePriceThreshold = _rebalancePriceThreshold;
-    }
-
-    function setSqrtPriceAtLastRebalance(uint160 _sqrtPriceAtLastRebalance) external onlyOwner {
-        sqrtPriceAtLastRebalance = _sqrtPriceAtLastRebalance;
-    }
-
-    function setOraclePriceAtLastRebalance(uint256 _oraclePriceAtLastRebalance) external onlyOwner {
+    function setLastRebalanceSnapshot(
+        uint256 _oraclePriceAtLastRebalance,
+        uint160 _sqrtPriceAtLastRebalance,
+        uint256 _timeAtLastRebalance
+    ) external onlyOwner {
         oraclePriceAtLastRebalance = _oraclePriceAtLastRebalance;
-    }
-
-    function setTimeAtLastRebalance(uint256 _timeAtLastRebalance) external onlyOwner {
+        sqrtPriceAtLastRebalance = _sqrtPriceAtLastRebalance;
         timeAtLastRebalance = _timeAtLastRebalance;
     }
 
-    function setRebalanceTimeThreshold(uint256 _rebalanceTimeThreshold) external onlyOwner {
+    function setRebalanceConstraints(
+        uint256 _rebalancePriceThreshold,
+        uint256 _rebalanceTimeThreshold,
+        uint256 _maxDeviationLong,
+        uint256 _maxDeviationShort
+    ) external onlyOwner {
+        rebalancePriceThreshold = _rebalancePriceThreshold;
         rebalanceTimeThreshold = _rebalanceTimeThreshold;
-    }
-
-    function setWeight(uint256 _weight) external onlyOwner {
-        weight = _weight;
-    }
-
-    function setLongLeverage(uint256 _longLeverage) external onlyOwner {
-        longLeverage = _longLeverage;
-    }
-
-    function setShortLeverage(uint256 _shortLeverage) external onlyOwner {
-        shortLeverage = _shortLeverage;
-    }
-
-    function setMaxDeviationLong(uint256 _maxDeviationLong) external onlyOwner {
         maxDeviationLong = _maxDeviationLong;
-    }
-
-    function setMaxDeviationShort(uint256 _maxDeviationShort) external onlyOwner {
         maxDeviationShort = _maxDeviationShort;
     }
 
-    function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
-        isInvertAssets = _isInvertAssets;
-    }
-
-    function setIsUnicord(bool _isUnicord) external onlyOwner {
-        isUnicord = _isUnicord;
+    function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
+        weight = _weight;
+        longLeverage = _longLeverage;
+        shortLeverage = _shortLeverage;
     }
 
     function setRebalanceOperator(address _rebalanceOperator) external onlyOwner {
@@ -143,7 +131,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
-        if (isUnicord) {
+        if (isNova) {
             if (quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
             else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
             uint256 baseBalance = baseBalanceUnwr();
@@ -242,7 +230,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             uint256 targetCL;
             uint256 targetCS;
             uint256 price = oracle.price();
-            if (isInvertAssets) {
+            if (isInvertedAssets) {
                 targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
                 targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
             } else {
@@ -253,7 +241,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
             targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
 
-            if (isUnicord) {
+            if (isNova) {
                 // @Notice: discount to cover slippage
                 targetCL = targetCL.mul(2e18 - k);
                 targetCS = targetCS.mul(2e18 - k);
@@ -283,7 +271,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     function calcLiquidity() public view returns (uint128) {
         uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
-        if (!isInvertAssets) VLP = VLP.mul(oracle.price());
+        if (!isInvertedAssets) VLP = VLP.mul(oracle.price());
 
         uint256 liquidity = ALMMathLib.getL(
             VLP,

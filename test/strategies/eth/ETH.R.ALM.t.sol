@@ -53,28 +53,21 @@ contract ETHRALMTest is ALMTestBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
-        init_hook(false, false, 3000, 3000);
+        init_hook(false, false, false, 3000, 3000);
         assertEq(hook.tickLower(), -200460);
         assertEq(hook.tickUpper(), -194460);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(false);
             hook.setTVLCap(1000 ether);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
-            rebalanceAdapter.setIsInvertAssets(false);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalancePriceThreshold(1e15);
-            rebalanceAdapter.setRebalanceTimeThreshold(2000);
-            rebalanceAdapter.setWeight(weight);
-            rebalanceAdapter.setLongLeverage(longLeverage);
-            rebalanceAdapter.setShortLeverage(shortLeverage);
-            rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
-            rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
 
@@ -117,8 +110,7 @@ contract ETHRALMTest is ALMTestBase {
         vm.startPrank(deployer.addr);
 
         IPositionManagerStandard(address(positionManager)).setFees(fee);
-        rebalanceAdapter.setRebalancePriceThreshold(1e15);
-        rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
+        rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
 
         vm.stopPrank();
         test_deposit_rebalance();

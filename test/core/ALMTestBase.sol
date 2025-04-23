@@ -66,7 +66,7 @@ abstract contract ALMTestBase is Deployers {
     uint8 bDec;
     uint8 qDec;
 
-    bool invertedPool = true;
+    bool isInvertedPool = true;
 
     ILendingAdapter lendingAdapter;
     IPositionManager positionManager;
@@ -173,8 +173,14 @@ abstract contract ALMTestBase is Deployers {
         oracle = new Oracle(feed0, feed1, stalenessThreshold0, stalenessThreshold1);
     }
 
-    function init_hook(bool _invertedPool, bool isUnicord, int24 _tickLowerDelta, int24 _tickUpperDelta) internal {
-        invertedPool = _invertedPool;
+    function init_hook(
+        bool _isInvertedPool,
+        bool _isInvertedAssets,
+        bool _isNova,
+        int24 _tickLowerDelta,
+        int24 _tickUpperDelta
+    ) internal {
+        isInvertedPool = _isInvertedPool;
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
@@ -190,7 +196,11 @@ abstract contract ALMTestBase is Deployers {
                     Hooks.AFTER_INITIALIZE_FLAG
             )
         );
-        deployCodeTo("ALM.sol", abi.encode(BASE, QUOTE, bDec, qDec, manager, "NAME", "SYMBOL"), hookAddress);
+        deployCodeTo(
+            "ALM.sol",
+            abi.encode(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            hookAddress
+        );
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
         assertEq(hook.owner(), deployer.addr);
@@ -198,14 +208,13 @@ abstract contract ALMTestBase is Deployers {
 
         // MARK: Deploying modules and setting up parameters
         // @Notice: lendingAdapter should already be created
-        if (isUnicord) positionManager = new UnicordPositionManager(BASE, QUOTE, bDec, qDec);
+        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE, bDec, qDec);
         else positionManager = new PositionManager(BASE, QUOTE, bDec, qDec);
 
         swapAdapter = new UniswapV3SwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.V3_SWAP_ROUTER);
         // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec);
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedAssets, _isNova);
 
-        hook.setIsInvertedPool(invertedPool);
         hook.setTickUpperDelta(_tickUpperDelta);
         hook.setTickLowerDelta(_tickLowerDelta);
         _setComponents(address(hook));
@@ -217,11 +226,8 @@ abstract contract ALMTestBase is Deployers {
         IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(IUniswapV3Pool(TARGET_SWAP_POOL));
 
         _setComponents(address(rebalanceAdapter));
-        rebalanceAdapter.setSqrtPriceAtLastRebalance(initialSQRTPrice);
-        rebalanceAdapter.setOraclePriceAtLastRebalance(oracle.price());
-        rebalanceAdapter.setTimeAtLastRebalance(0);
-        rebalanceAdapter.setIsUnicord(isUnicord);
         rebalanceAdapter.setRebalanceOperator(deployer.addr);
+        rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
         // MARK END
 
         (address _token0, address _token1) = getTokensInOrder();
@@ -234,7 +240,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function getTokensInOrder() internal view returns (address, address) {
-        return !invertedPool ? (address(QUOTE), address(BASE)) : (address(BASE), address(QUOTE));
+        return !isInvertedPool ? (address(QUOTE), address(BASE)) : (address(BASE), address(QUOTE));
     }
 
     function _setComponents(address module) internal {
@@ -291,7 +297,7 @@ abstract contract ALMTestBase is Deployers {
         return
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
-                invertedPool,
+                isInvertedPool,
                 uint8(ALMMathLib.absSub(bDec, qDec))
             );
     }
@@ -318,9 +324,9 @@ abstract contract ALMTestBase is Deployers {
             iterations++;
 
             bool isZeroForOne = currentPrice >= targetPrice;
-            if (invertedPool) isZeroForOne = !isZeroForOne;
+            if (isInvertedPool) isZeroForOne = !isZeroForOne;
             uint256 swapAmount = stepSize;
-            if ((isZeroForOne && invertedPool) || (!isZeroForOne && !invertedPool))
+            if ((isZeroForOne && isInvertedPool) || (!isZeroForOne && !isInvertedPool))
                 swapAmount = (stepSize * currentPrice) / 1e30;
 
             _doV3InputSwap(isZeroForOne, swapAmount);

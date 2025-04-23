@@ -40,26 +40,19 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, 3000, 3000);
+        init_hook(true, true, false, 3000, 3000);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(true);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             hook.setTVLCap(1000 ether);
             hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
-            rebalanceAdapter.setIsInvertAssets(true);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalancePriceThreshold(1e15); //10% price change
-            rebalanceAdapter.setRebalanceTimeThreshold(2000);
-            rebalanceAdapter.setWeight(45 * 1e16); // 0.45 (45%)
-            rebalanceAdapter.setLongLeverage(3 * 1e18); // 3
-            rebalanceAdapter.setShortLeverage(3 * 1e18); // 3
-            rebalanceAdapter.setMaxDeviationLong(1e17); // 0.01 (1%)
-            rebalanceAdapter.setMaxDeviationShort(1e17); // 0.01 (1%)
+            rebalanceAdapter.setRebalanceParams(45 * 1e16, 3 * 1e18, 3 * 1e18); // 0.45 (45%)
+            rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
 

@@ -70,26 +70,19 @@ contract UNICORDRALMTest is MorphoTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.DAI, 18, "DAI");
         create_lending_adapter_morpho_earn_dai_usdc();
         create_oracle(TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(false, true, 100, 100);
+        init_hook(false, true, true, 100, 100);
         assertEq(hook.tickLower(), -276420);
         assertEq(hook.tickUpper(), -276220);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setIsInvertAssets(true);
             hook.setTVLCap(100000 ether);
             hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
             hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
-            rebalanceAdapter.setIsInvertAssets(true);
-            rebalanceAdapter.setRebalancePriceThreshold(2);
-            rebalanceAdapter.setRebalanceTimeThreshold(2000);
-            rebalanceAdapter.setWeight(weight);
-            rebalanceAdapter.setLongLeverage(longLeverage);
-            rebalanceAdapter.setShortLeverage(shortLeverage);
-            rebalanceAdapter.setMaxDeviationLong(1e17); // 0.1 (1%)
-            rebalanceAdapter.setMaxDeviationShort(1e17); // 0.1 (1%)
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceConstraints(2, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
 
