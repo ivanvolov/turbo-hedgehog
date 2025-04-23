@@ -20,6 +20,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
 
+    /// @notice Emitted when the rebalance is triggered.
+    /// @param slippage                The execution slippage, as a UD60x18 value.
+    /// @param oraclePriceAtRebalance  The oracle’s price at last rebalance, as a UD60x18 value.
     event Rebalance(
         uint256 indexed priceThreshold,
         uint256 indexed auctionTriggerTime,
@@ -41,16 +44,26 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
 
+    // ** Last rebalance snapshot
     uint160 public sqrtPriceAtLastRebalance;
     uint256 public oraclePriceAtLastRebalance;
     uint256 public timeAtLastRebalance;
 
     // ** Parameters
+    /// @notice The target portfolio weight for long vs short, encoded as a UD60x18 value.
+    ///         (i.e. real_weight × 1e18, where 1 = 100%).
+    uint256 public weight;
+
+    /// @notice The leverage multiplier applied to long positions, encoded as a UD60x18 value.
+    ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage)
+    uint256 public longLeverage;
+
+    /// @notice The leverage multiplier applied to short positions, encoded as a UD60x18 value.
+    ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage).
+    uint256 public shortLeverage;
+
     uint256 public rebalancePriceThreshold;
     uint256 public rebalanceTimeThreshold;
-    uint256 public weight;
-    uint256 public longLeverage;
-    uint256 public shortLeverage;
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
     bool public immutable isInvertedAssets;
