@@ -267,12 +267,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             uint256 targetCL;
             uint256 targetCS;
             uint256 price = oracle.price();
+            uint256 TVL = alm.TVL();
             if (isInvertedAssets) {
-                targetCL = alm.TVL().mul(weight).mul(longLeverage).div(price);
-                targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage);
+                targetCL = TVL.mul(weight).mul(longLeverage).div(price);
+                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage);
             } else {
-                targetCL = alm.TVL().mul(weight).mul(longLeverage);
-                targetCS = alm.TVL().mul(1e18 - weight).mul(shortLeverage).mul(price);
+                targetCL = TVL.mul(weight).mul(longLeverage);
+                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage).mul(price);
             }
 
             targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
