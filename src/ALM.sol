@@ -61,7 +61,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         return ALM.afterInitialize.selector;
     }
 
-    function deposit(address to, uint256 amountIn) external notPaused notShutdown returns (uint256 sharesMinted) {
+    function deposit(
+        address to,
+        uint256 amountIn,
+        uint256 minShares
+    ) external notPaused notShutdown returns (uint256 sharesMinted) {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         refreshReserves();
@@ -78,6 +82,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (TVL2 > tvlCap) revert TVLCapExceeded();
 
         sharesMinted = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
+        if (sharesMinted < minShares) revert NotMinShares();
         _mint(to, sharesMinted);
         emit Deposit(to, amountIn, sharesMinted, TVL2, totalSupply());
     }

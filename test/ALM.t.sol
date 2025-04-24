@@ -255,7 +255,7 @@ contract ALMGeneralTest is ALMTestBase {
         hook.setPaused(true);
 
         vm.expectRevert(IBase.ContractPaused.selector);
-        hook.deposit(address(0), 0);
+        hook.deposit(address(0), 0, 0);
 
         vm.expectRevert(IBase.ContractPaused.selector);
         hook.withdraw(deployer.addr, 0, 0, 0);
@@ -270,7 +270,7 @@ contract ALMGeneralTest is ALMTestBase {
         hook.setShutdown(true);
 
         vm.expectRevert(IBase.ContractShutdown.selector);
-        hook.deposit(deployer.addr, 0);
+        hook.deposit(deployer.addr, 0, 0);
 
         vm.prank(address(manager));
         vm.expectRevert(IBase.ContractShutdown.selector);

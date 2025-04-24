@@ -293,7 +293,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         {
             deal(address(WETH), actor, amount);
             delShares = hook.balanceOf(actor);
-            hook.deposit(actor, amount);
+            hook.deposit(actor, amount, 0);
             balanceWETH = amount - WETH.balanceOf(actor);
 
             // ** Clear up account

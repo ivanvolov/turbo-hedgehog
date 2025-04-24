@@ -16,6 +16,7 @@ interface IALM {
     error OnlyOnePoolPerHook();
     error TVLCapExceeded();
     error NotAValidPositionState();
+    error NotMinShares();
 
     event Deposit(address indexed to, uint256 amount, uint256 delShares, uint256 TVL, uint256 totalSupply);
     event Withdraw(

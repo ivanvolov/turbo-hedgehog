@@ -96,7 +96,7 @@ contract ETHALMTest is MorphoTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        uint256 shares = hook.deposit(alice.addr, amountToDep);
+        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -123,7 +123,17 @@ contract ETHALMTest is MorphoTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
         vm.expectRevert(IALM.TVLCapExceeded.selector);
-        hook.deposit(alice.addr, amountToDep);
+        hook.deposit(alice.addr, amountToDep, 0);
+    }
+
+    function test_deposit_min_shares() public {
+        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(hook.liquidity(), 0, "liquidity");
+
+        deal(address(WETH), address(alice.addr), amountToDep);
+        vm.prank(alice.addr);
+        vm.expectRevert(IALM.NotMinShares.selector);
+        hook.deposit(alice.addr, amountToDep, type(uint256).max / 2);
     }
 
     function test_deposit_not_operator() public {
@@ -133,13 +143,13 @@ contract ETHALMTest is MorphoTestBase {
 
         vm.prank(alice.addr);
         vm.expectRevert(IALM.NotALiquidityOperator.selector);
-        hook.deposit(alice.addr, amountToDep);
+        hook.deposit(alice.addr, amountToDep, 0);
 
         vm.prank(deployer.addr);
         hook.setOperators(alice.addr, deployer.addr);
 
         vm.prank(alice.addr);
-        hook.deposit(alice.addr, amountToDep);
+        hook.deposit(alice.addr, amountToDep, 0);
     }
 
     function test_deposit_rebalance() public {
@@ -710,7 +720,7 @@ contract ETHALMTest is MorphoTestBase {
             uint256 _amountToDep = 200 ether;
             deal(address(WETH), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep);
+            hook.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Up In

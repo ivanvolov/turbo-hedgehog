@@ -79,7 +79,7 @@ contract ETHR2ALMTest is ALMTestBase {
 
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
-        uint256 shares = hook.deposit(alice.addr, amountToDep);
+        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -211,7 +211,7 @@ contract ETHR2ALMTest is ALMTestBase {
             uint256 _amountToDep = 200 ether;
             deal(address(WETH), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep);
+            hook.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Up In
