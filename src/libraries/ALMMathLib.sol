@@ -39,9 +39,7 @@ library ALMMathLib {
     ) internal pure returns (uint160) {
         return
             SafeCast.toUint160(
-                uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
-                    uint256(liquidity) - amount0.mul(uint256(sqrtPriceCurrentX96)).div(Q96)
-                )
+                uint256(liquidity).mul(sqrtPriceCurrentX96).div(liquidity - amount0.mul(sqrtPriceCurrentX96).div(Q96))
             );
     }
 
@@ -52,9 +50,7 @@ library ALMMathLib {
     ) internal pure returns (uint160) {
         return
             SafeCast.toUint160(
-                uint256(liquidity).mul(uint256(sqrtPriceCurrentX96)).div(
-                    uint256(liquidity) + amount0.mul(uint256(sqrtPriceCurrentX96)).div(Q96)
-                )
+                uint256(liquidity).mul(sqrtPriceCurrentX96).div(liquidity + amount0.mul(sqrtPriceCurrentX96).div(Q96))
             );
     }
 
@@ -63,7 +59,7 @@ library ALMMathLib {
         uint160 sqrtPriceNextX96,
         uint128 liquidity
     ) internal pure returns (uint256) {
-        return (LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity));
+        return LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
     }
 
     function getSwapAmount1(
@@ -71,7 +67,7 @@ library ALMMathLib {
         uint160 sqrtPriceNextX96,
         uint128 liquidity
     ) internal pure returns (uint256) {
-        return (LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity));
+        return LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
     }
 
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
@@ -79,18 +75,27 @@ library ALMMathLib {
         else return (ts.mul(TVL2 - TVL1)).div(TVL1);
     }
 
+    /**
+     * @notice Calculates the Total Value Locked in a protocol.
+     * @param quoteBalance The total amount of quote tokens held by the protocol.
+     * @param baseBalance The total amount of base tokens held by the protocol.
+     * @param collateralLong The total value of collateral supporting long positions.
+     * @param debtShort The total amount of debt held in short positions.
+     * @param collateralShort The total value of collateral supporting short positions.
+     * @param debtLong The total amount of debt held in long positions.
+     */
     function getTVL(
-        uint256 EH,
-        uint256 UH,
-        uint256 CL,
-        uint256 DS,
-        uint256 CS,
-        uint256 DL,
+        uint256 quoteBalance,
+        uint256 baseBalance,
+        uint256 collateralLong,
+        uint256 debtShort,
+        uint256 collateralShort,
+        uint256 debtLong,
         uint256 price,
         bool isStable
     ) internal pure returns (uint256) {
-        int256 baseValue = SafeCast.toInt256(EH + CL) - SafeCast.toInt256(DS);
-        int256 variableValue = SafeCast.toInt256(CS + UH) - SafeCast.toInt256(DL);
+        int256 baseValue = SafeCast.toInt256(quoteBalance + collateralLong) - SafeCast.toInt256(debtShort);
+        int256 variableValue = SafeCast.toInt256(collateralShort + baseBalance) - SafeCast.toInt256(debtLong);
 
         return
             isStable

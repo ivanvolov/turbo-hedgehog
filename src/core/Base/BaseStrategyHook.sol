@@ -42,21 +42,23 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;
 
+    bool public immutable isInvertedAssets;
+    bool public immutable isInvertedPool;
+    bytes32 public authorizedPool;
+
+    bool public paused = false;
+    bool public shutdown = false;
+    address public liquidityOperator;
+    address public swapOperator;
+
     uint128 public liquidity;
     uint160 public sqrtPriceCurrent;
     int24 public tickLower;
     int24 public tickUpper;
 
-    bool public paused = false;
-    bool public shutdown = false;
     int24 public tickUpperDelta;
     int24 public tickLowerDelta;
-    bool public immutable isInvertedAssets;
-    bool public immutable isInvertedPool;
     uint256 public swapPriceThreshold;
-    bytes32 public authorizedPool;
-    address public liquidityOperator;
-    address public swapOperator;
     uint256 public tvlCap;
 
     address public treasury;
