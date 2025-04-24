@@ -14,6 +14,8 @@ import {ISwapRouter} from "../../interfaces/swapAdapters/ISwapRouter.sol";
 import {IUniswapV3Pool} from "../../interfaces/swapAdapters/IUniswapV3Pool.sol";
 
 contract UniswapV3SwapAdapter is Base, ISwapAdapter {
+    event TargetPoolSet(IUniswapV3Pool newTargetPool);
+
     using SafeERC20 for IERC20;
 
     IUniswapV3Pool public targetPool;
@@ -34,6 +36,7 @@ contract UniswapV3SwapAdapter is Base, ISwapAdapter {
 
     function setTargetPool(IUniswapV3Pool _targetPool) external onlyOwner {
         targetPool = _targetPool;
+        emit TargetPoolSet(_targetPool);
     }
 
     function swapExactInput(IERC20 tokenIn, IERC20 tokenOut, uint256 amountIn) external onlyModule returns (uint256) {
