@@ -19,11 +19,13 @@ import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
 contract UnicordPositionManager is Base, IPositionManager {
+    event FeesSet(uint256 newFees);
+
     using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public fees;
+    uint256 fees;
 
     constructor(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) Base(msg.sender, _base, _quote, _bDec, _qDec) {
         // Intentionally empty as all initialization is handled by the parent Base contract
@@ -31,6 +33,7 @@ contract UnicordPositionManager is Base, IPositionManager {
 
     function setFees(uint256 _fees) external onlyOwner {
         fees = _fees;
+        emit FeesSet(_fees);
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
