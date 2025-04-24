@@ -216,7 +216,7 @@ abstract contract ALMTestBase is Deployers {
 
         swapAdapter = new UniswapV3SwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.V3_SWAP_ROUTER);
         // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedAssets, _isNova);
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(_protocolFee, _tvlCap, _tickUpperDelta, _tickLowerDelta, _swapPriceThreshold);
         _setComponents(address(hook));

@@ -66,6 +66,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     uint256 public rebalanceTimeThreshold;
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
+    bool public immutable isInvertedPool;
     bool public immutable isInvertedAssets;
     bool public immutable isNova;
     address public rebalanceOperator;
@@ -75,9 +76,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         IERC20 _quote,
         uint8 _bDec,
         uint8 _qDec,
+        bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova
     ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+        isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;
     }
@@ -188,7 +191,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
             ALMMathLib.getTickFromPrice(
-                ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, alm.isInvertedPool(), decimalsDelta)
+                ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
             )
         );
 
@@ -313,12 +316,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             oraclePriceAtLastRebalance,
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickUpper()),
-                alm.isInvertedPool(),
+                isInvertedPool,
                 decimalsDelta
             ),
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickLower()),
-                alm.isInvertedPool(),
+                isInvertedPool,
                 decimalsDelta
             )
         );
