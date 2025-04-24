@@ -30,6 +30,8 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     IEulerVault public immutable flVault1;
     address public immutable subAccount0 = getSubAccountAddress(1);
     address public immutable subAccount1 = getSubAccountAddress(2);
+    address public immutable flVault0Asset;
+    address public immutable flVault1Asset;
 
     constructor(
         IERC20 _base,
@@ -48,6 +50,9 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         flVault0 = _flVault0;
         flVault1 = _flVault1;
 
+        flVault0Asset = flVault0.asset();
+        flVault1Asset = flVault1.asset();
+
         evc.enableController(subAccount0, address(vault0));
         evc.enableCollateral(subAccount0, address(vault1));
         evc.enableController(subAccount1, address(vault1));
@@ -60,14 +65,13 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function getSubAccountAddress(uint8 accountId) internal view returns (address) {
-        require(accountId < 256, "Invalid account ID");
         return address(uint160(address(this)) ^ uint160(accountId));
     }
 
     // ---- Flashloan ----
 
     function flashLoanSingle(IERC20 asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
+        bytes memory _data = abi.encode(0, msg.sender, asset, amount, data);
         getVaultByToken(asset).flashLoan(amount, _data);
     }
 
@@ -78,7 +82,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         uint256 amount1,
         bytes calldata data
     ) public onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(2), msg.sender, asset0, amount0, asset1, amount1, data);
+        bytes memory _data = abi.encode(2, msg.sender, asset0, amount0, asset1, amount1, data);
         getVaultByToken(asset0).flashLoan(amount0, _data);
     }
 
@@ -116,8 +120,8 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
     }
 
     function getVaultByToken(IERC20 token) public view returns (IEulerVault) {
-        if (flVault0.asset() == address(token)) return flVault0;
-        else if (flVault1.asset() == address(token)) return flVault1;
+        if (flVault0Asset == address(token)) return flVault0;
+        else if (flVault1Asset == address(token)) return flVault1;
         else revert("M1");
     }
 
