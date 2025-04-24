@@ -177,8 +177,11 @@ abstract contract ALMTestBase is Deployers {
         bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova,
+        uint256 _protocolFee,
+        uint256 _tvlCap,
+        int24 _tickUpperDelta,
         int24 _tickLowerDelta,
-        int24 _tickUpperDelta
+        uint256 _swapPriceThreshold
     ) internal {
         isInvertedPool = _isInvertedPool;
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
@@ -215,8 +218,7 @@ abstract contract ALMTestBase is Deployers {
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedAssets, _isNova);
 
-        hook.setTickUpperDelta(_tickUpperDelta);
-        hook.setTickLowerDelta(_tickLowerDelta);
+        hook.setProtocolParams(_protocolFee, _tvlCap, _tickUpperDelta, _tickLowerDelta, _swapPriceThreshold);
         _setComponents(address(hook));
 
         _setComponents(address(lendingAdapter));

@@ -52,16 +52,13 @@ contract BTCALMTest is ALMTestBase {
             100e8
         );
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, false, 3000, 3000);
+        init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
         assertEq(hook.tickLower(), -65897);
         assertEq(hook.tickUpper(), -71897);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
-            hook.setTVLCap(1000 ether);
-            hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425

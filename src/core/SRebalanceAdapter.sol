@@ -123,7 +123,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     function setRebalanceOperator(address _rebalanceOperator) external onlyOwner {
         rebalanceOperator = _rebalanceOperator;
-
         emit RebalanceOperatorSet(_rebalanceOperator);
     }
 

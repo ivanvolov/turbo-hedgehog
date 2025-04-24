@@ -24,6 +24,21 @@ import {Base} from "./Base.sol";
 import {IALM} from "../../interfaces/IALM.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
+    event PausedSet(bool paused);
+    event ShutdownSet(bool shutdown);
+    event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
+    event TreasurySet(address indexed treasury);
+    event ProtocolParamsSet(
+        uint256 protocolFee,
+        uint256 tvlCap,
+        int24 tickUpperDelta,
+        int24 tickLowerDelta,
+        uint256 swapPriceThreshold
+    );
+    event LiquidityUpdated(uint128 newLiquidity);
+    event SqrtPriceUpdated(uint160 newSqrtPrice);
+    event BoundariesUpdated(int24 newTickLower, int24 newTickUpper);
+
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;
 
@@ -62,44 +77,40 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         isInvertedAssets = _isInvertedAssets;
     }
 
-    function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
-        tickUpperDelta = _tickUpperDelta;
-    }
-
-    function setTickLowerDelta(int24 _tickLowerDelta) external onlyOwner {
-        tickLowerDelta = _tickLowerDelta;
-    }
-
     function setPaused(bool _paused) external onlyOwner {
         paused = _paused;
+        emit PausedSet(_paused);
     }
 
     function setShutdown(bool _shutdown) external onlyOwner {
         shutdown = _shutdown;
+        emit ShutdownSet(_shutdown);
     }
 
-    function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {
-        swapPriceThreshold = _swapPriceThreshold;
-    }
-
-    function setLiquidityOperator(address _liquidityOperator) external onlyOwner {
+    function setOperators(address _liquidityOperator, address _swapOperator) external onlyOwner {
         liquidityOperator = _liquidityOperator;
-    }
-
-    function setSwapOperator(address _swapOperator) external onlyOwner {
         swapOperator = _swapOperator;
-    }
-
-    function setTVLCap(uint256 _tvlCap) external onlyOwner {
-        tvlCap = _tvlCap;
+        emit OperatorsSet(_liquidityOperator, _swapOperator);
     }
 
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
+        emit TreasurySet(_treasury);
     }
 
-    function setProtocolFee(uint256 _protocolFee) external onlyOwner {
+    function setProtocolParams(
+        uint256 _protocolFee,
+        uint256 _tvlCap,
+        int24 _tickUpperDelta,
+        int24 _tickLowerDelta,
+        uint256 _swapPriceThreshold
+    ) external onlyOwner {
         protocolFee = _protocolFee;
+        tvlCap = _tvlCap;
+        tickUpperDelta = _tickUpperDelta;
+        tickLowerDelta = _tickLowerDelta;
+        swapPriceThreshold = _swapPriceThreshold;
+        emit ProtocolParamsSet(_protocolFee, _tvlCap, _tickUpperDelta, _tickLowerDelta, _swapPriceThreshold);
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -132,16 +143,18 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    function updateBoundaries() public onlyRebalanceAdapter {
+    function updateBoundaries() external onlyRebalanceAdapter {
         _updateBoundaries();
     }
 
-    function updateLiquidity(uint128 _liquidity) public onlyRebalanceAdapter {
+    function updateLiquidity(uint128 _liquidity) external onlyRebalanceAdapter {
         liquidity = _liquidity;
+        emit LiquidityUpdated(_liquidity);
     }
 
-    function updateSqrtPrice(uint160 _sqrtPrice) public onlyRebalanceAdapter {
+    function updateSqrtPrice(uint160 _sqrtPrice) external onlyRebalanceAdapter {
         sqrtPriceCurrent = _sqrtPrice;
+        emit SqrtPriceUpdated(_sqrtPrice);
     }
 
     function _updateBoundaries() internal {
@@ -150,6 +163,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         );
         tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
         tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
+
+        emit BoundariesUpdated(tickLower, tickUpper);
     }
 
     // --- Deltas calculation --- //

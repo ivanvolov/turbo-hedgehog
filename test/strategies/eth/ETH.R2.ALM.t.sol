@@ -53,16 +53,13 @@ contract ETHR2ALMTest is ALMTestBase {
             0
         );
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
-        init_hook(false, false, false, 3000, 3000);
+        init_hook(false, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
         assertEq(hook.tickLower(), -200460);
         assertEq(hook.tickUpper(), -194460);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setTVLCap(1000 ether);
-            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
-            hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1e18, 1e18);

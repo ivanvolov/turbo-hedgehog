@@ -59,16 +59,13 @@ contract ETHALMTest is MorphoTestBase {
         create_lending_adapter_euler_WETH_USDC();
         // create_lending_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, false, 3000, 3000);
+        init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
         assertEq(hook.tickLower(), 200458);
         assertEq(hook.tickUpper(), 194458);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
-            hook.setTVLCap(1000 ether);
-            hook.setSwapPriceThreshold(TestLib.sqrt_price_10per_price_change);
-            hook.setProtocolFee(0);
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
@@ -113,8 +110,15 @@ contract ETHALMTest is MorphoTestBase {
     }
 
     function test_deposit_cap() public {
-        vm.prank(deployer.addr);
-        hook.setTVLCap(10 ether);
+        vm.startPrank(deployer.addr);
+        hook.setProtocolParams(
+            hook.protocolFee(),
+            10 ether,
+            hook.tickUpperDelta(),
+            hook.tickLowerDelta(),
+            hook.swapPriceThreshold()
+        );
+        vm.stopPrank();
 
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
@@ -124,7 +128,7 @@ contract ETHALMTest is MorphoTestBase {
 
     function test_deposit_not_operator() public {
         vm.prank(deployer.addr);
-        hook.setLiquidityOperator(deployer.addr);
+        hook.setOperators(deployer.addr, deployer.addr);
         deal(address(WETH), address(alice.addr), amountToDep);
 
         vm.prank(alice.addr);
@@ -132,7 +136,7 @@ contract ETHALMTest is MorphoTestBase {
         hook.deposit(alice.addr, amountToDep);
 
         vm.prank(deployer.addr);
-        hook.setLiquidityOperator(alice.addr);
+        hook.setOperators(alice.addr, deployer.addr);
 
         vm.prank(alice.addr);
         hook.deposit(alice.addr, amountToDep);
@@ -179,7 +183,7 @@ contract ETHALMTest is MorphoTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
-        hook.setLiquidityOperator(deployer.addr);
+        hook.setOperators(deployer.addr, deployer.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
@@ -187,7 +191,7 @@ contract ETHALMTest is MorphoTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
 
         vm.prank(deployer.addr);
-        hook.setLiquidityOperator(alice.addr);
+        hook.setOperators(alice.addr, deployer.addr);
 
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
@@ -285,12 +289,12 @@ contract ETHALMTest is MorphoTestBase {
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
         vm.prank(deployer.addr);
-        hook.setSwapOperator(deployer.addr);
+        hook.setOperators(deployer.addr, deployer.addr);
 
         part_swap_USDC_WETH_OUT_revert(wethToGetFSwap);
 
         vm.prank(deployer.addr);
-        hook.setSwapOperator(address(swapRouter));
+        hook.setOperators(deployer.addr, address(swapRouter));
 
         swapUSDC_WETH_Out(wethToGetFSwap);
     }
@@ -449,10 +453,16 @@ contract ETHALMTest is MorphoTestBase {
 
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
         test_deposit_rebalance();
-        vm.prank(deployer.addr);
+        vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        vm.prank(deployer.addr);
-        hook.setProtocolFee(20 * 1e16); // 20% from fees
+        hook.setProtocolParams(
+            20 * 1e16, // 20% from fees
+            hook.tvlCap(),
+            hook.tickUpperDelta(),
+            hook.tickLowerDelta(),
+            hook.swapPriceThreshold()
+        );
+        vm.stopPrank();
 
         assertEqBalanceState(address(hook), 0, 0);
         assertEq(hook.accumulatedFeeB(), 0);
@@ -477,10 +487,16 @@ contract ETHALMTest is MorphoTestBase {
 
     function test_deposit_rebalance_swap_price_up_out_protocol_fees() public {
         test_deposit_rebalance();
-        vm.prank(deployer.addr);
+        vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        vm.prank(deployer.addr);
-        hook.setProtocolFee(20 * 1e16); // 20% from fees
+        hook.setProtocolParams(
+            20 * 1e16, // 20% from fees
+            hook.tvlCap(),
+            hook.tickUpperDelta(),
+            hook.tickLowerDelta(),
+            hook.swapPriceThreshold()
+        );
+        vm.stopPrank();
 
         uint256 wethToGetFSwap = 4543037198334830000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -504,10 +520,16 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
         uint256 wethToSwap = 4611698430797450000;
         test_deposit_rebalance();
-        vm.prank(deployer.addr);
+        vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        vm.prank(deployer.addr);
-        hook.setProtocolFee(20 * 1e16); // 20% from fees
+        hook.setProtocolParams(
+            20 * 1e16, // 20% from fees
+            hook.tvlCap(),
+            hook.tickUpperDelta(),
+            hook.tickLowerDelta(),
+            hook.swapPriceThreshold()
+        );
+        vm.stopPrank();
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -527,10 +549,16 @@ contract ETHALMTest is MorphoTestBase {
 
     function test_deposit_rebalance_swap_price_down_out_protocol_fees() public {
         test_deposit_rebalance();
-        vm.prank(deployer.addr);
+        vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        vm.prank(deployer.addr);
-        hook.setProtocolFee(20 * 1e16); // 20% from fees
+        hook.setProtocolParams(
+            20 * 1e16, // 20% from fees
+            hook.tvlCap(),
+            hook.tickUpperDelta(),
+            hook.tickLowerDelta(),
+            hook.swapPriceThreshold()
+        );
+        vm.stopPrank();
 
         uint256 usdcToGetFSwap = 12207177586;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
