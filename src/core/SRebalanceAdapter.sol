@@ -289,10 +289,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetDS.mul(k);
             }
 
-            deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(lendingAdapter.getCollateralLong());
-            deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(lendingAdapter.getCollateralShort());
-            deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(lendingAdapter.getBorrowedLong());
-            deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(lendingAdapter.getBorrowedShort());
+            (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
+            deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(CL);
+            deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
+            deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(DL);
+            deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(DS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -326,11 +327,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     function checkDeviations() internal view {
         uint256 price = oracle.price();
-        uint256 currentCL = lendingAdapter.getCollateralLong();
-        uint256 currentCS = lendingAdapter.getCollateralShort();
+        (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
 
-        uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - lendingAdapter.getBorrowedLong());
-        uint256 _shortLeverage = currentCS.div(currentCS - lendingAdapter.getBorrowedShort().mul(price));
+        uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - DL);
+        uint256 _shortLeverage = currentCS.div(currentCS - DS.mul(price));
 
         uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
         uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);

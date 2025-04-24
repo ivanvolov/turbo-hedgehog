@@ -80,17 +80,17 @@ library ALMMathLib {
      * @param quoteBalance The total amount of quote tokens held by the protocol.
      * @param baseBalance The total amount of base tokens held by the protocol.
      * @param collateralLong The total value of collateral supporting long positions.
-     * @param debtShort The total amount of debt held in short positions.
      * @param collateralShort The total value of collateral supporting short positions.
      * @param debtLong The total amount of debt held in long positions.
+     * @param debtShort The total amount of debt held in short positions.
      */
     function getTVL(
         uint256 quoteBalance,
         uint256 baseBalance,
         uint256 collateralLong,
-        uint256 debtShort,
         uint256 collateralShort,
         uint256 debtLong,
+        uint256 debtShort,
         uint256 price,
         bool isStable
     ) internal pure returns (uint256) {

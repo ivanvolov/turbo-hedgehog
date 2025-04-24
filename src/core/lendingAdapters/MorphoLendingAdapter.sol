@@ -61,6 +61,10 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         }
     }
 
+    function getPosition() external view returns (uint256, uint256, uint256, uint256) {
+        return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
+    }
+
     // ** Flashloan
 
     function flashLoanSingle(IERC20 asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
@@ -114,13 +118,13 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
     // ** Long market
 
-    function getBorrowedLong() external view returns (uint256) {
+    function getBorrowedLong() public view returns (uint256) {
         if (isEarn) return 0;
         return
             MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(longMId), address(this)).wrap(bDec);
     }
 
-    function getCollateralLong() external view returns (uint256) {
+    function getCollateralLong() public view returns (uint256) {
         if (isEarn) return earnQuote.convertToAssets(earnQuote.balanceOf(address(this))).wrap(qDec);
         Position memory p = morpho.position(longMId, address(this));
         return uint256(p.collateral).wrap(qDec);
@@ -149,13 +153,13 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
     // ** Short market
 
-    function getBorrowedShort() external view returns (uint256) {
+    function getBorrowedShort() public view returns (uint256) {
         if (isEarn) return 0;
         return
             MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(shortMId), address(this)).wrap(qDec);
     }
 
-    function getCollateralShort() external view returns (uint256) {
+    function getCollateralShort() public view returns (uint256) {
         if (isEarn) return earnBase.convertToAssets(earnBase.balanceOf(address(this))).wrap(bDec);
         Position memory p = morpho.position(shortMId, address(this));
         return uint256(p.collateral).wrap(bDec);

@@ -87,13 +87,14 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (sharesOut == 0) revert NotZeroShares();
         refreshReserves();
 
+        (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = ALMMathLib.getUserAmounts(
             totalSupply(),
             sharesOut,
-            lendingAdapter.getCollateralLong(),
-            lendingAdapter.getCollateralShort(),
-            lendingAdapter.getBorrowedLong(),
-            lendingAdapter.getBorrowedShort()
+            CL,
+            CS,
+            DL,
+            DS
         );
 
         _burn(msg.sender, sharesOut);
@@ -326,17 +327,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     // --- Math functions --- //
 
     function TVL() public view returns (uint256) {
+        (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         return
-            ALMMathLib.getTVL(
-                quoteBalance(true),
-                baseBalance(true),
-                lendingAdapter.getCollateralLong(),
-                lendingAdapter.getBorrowedShort(),
-                lendingAdapter.getCollateralShort(),
-                lendingAdapter.getBorrowedLong(),
-                oracle.price(),
-                isInvertedAssets
-            );
+            ALMMathLib.getTVL(quoteBalance(true), baseBalance(true), CL, CS, DL, DS, oracle.price(), isInvertedAssets);
     }
 
     function sharePrice() external view returns (uint256) {

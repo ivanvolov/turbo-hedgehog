@@ -68,6 +68,10 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         return address(uint160(address(this)) ^ uint160(accountId));
     }
 
+    function getPosition() external view returns (uint256, uint256, uint256, uint256) {
+        return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
+    }
+
     // ---- Flashloan ----
 
     function flashLoanSingle(IERC20 asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
@@ -127,11 +131,11 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
 
     // ---- Long market ----
 
-    function getBorrowedLong() external view returns (uint256) {
+    function getBorrowedLong() public view returns (uint256) {
         return vault0.debtOf(subAccount0).wrap(bDec);
     }
 
-    function getCollateralLong() external view returns (uint256) {
+    function getCollateralLong() public view returns (uint256) {
         return vault1.convertToAssets(vault1.balanceOf(subAccount0)).wrap(qDec);
     }
 
@@ -170,11 +174,11 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
 
     // ---- Short market ----
 
-    function getBorrowedShort() external view returns (uint256) {
+    function getBorrowedShort() public view returns (uint256) {
         return vault1.debtOf(subAccount1).wrap(qDec);
     }
 
-    function getCollateralShort() external view returns (uint256) {
+    function getCollateralShort() public view returns (uint256) {
         return vault0.convertToAssets(vault0.balanceOf(subAccount1)).wrap(bDec);
     }
 
