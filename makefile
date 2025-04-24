@@ -62,4 +62,4 @@ format_write:
 gas_r:
 	clear && forge test --match-contract ETHALMTest -vv --gas-report
 gas_s:
-	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_deposit"
+	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_deposit_rebalance_swap"

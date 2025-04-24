@@ -209,7 +209,7 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token1Out,
                 uint160 sqrtPriceNext,
                 uint256 fee
-            ) = getZeroForOneDeltas(params.amountSpecified);
+            ) = getDeltas(params.amountSpecified, params.zeroForOne);
 
             checkSwapDeviations(sqrtPriceNext);
 
@@ -250,11 +250,11 @@ contract ALM is BaseStrategyHook, ERC20 {
             // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
             (
                 BeforeSwapDelta beforeSwapDelta,
-                uint256 token0Out,
                 uint256 token1In,
+                uint256 token0Out,
                 uint160 sqrtPriceNext,
                 uint256 fee
-            ) = getOneForZeroDeltas(params.amountSpecified);
+            ) = getDeltas(params.amountSpecified, params.zeroForOne);
             key.currency1.take(poolManager, address(this), token1In, false);
 
             uint256 protocolFeeAmount = fee.mul(protocolFee);
@@ -289,11 +289,8 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
-        if (zeroForOne) {
-            (, token0, token1, , ) = getZeroForOneDeltas(amountSpecified);
-        } else {
-            (, token0, token1, , ) = getOneForZeroDeltas(amountSpecified);
-        }
+        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(amountSpecified, zeroForOne);
+        (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
 
     function transferFees() external onlyRebalanceAdapter {

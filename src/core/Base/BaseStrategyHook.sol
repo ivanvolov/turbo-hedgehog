@@ -169,82 +169,45 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     // --- Deltas calculation --- //
 
-    function getZeroForOneDeltas(
-        int256 amountSpecified
+    function getDeltas(
+        int256 amountSpecified,
+        bool zeroForOne
     )
         internal
         view
-        returns (
-            BeforeSwapDelta beforeSwapDelta,
-            uint256 token0In,
-            uint256 token1Out,
-            uint160 sqrtPriceNext,
-            uint256 fee
-        )
+        returns (BeforeSwapDelta beforeSwapDelta, uint256 tokenIn, uint256 tokenOut, uint160 sqrtPriceNext, uint256 fee)
     {
         if (amountSpecified > 0) {
-            token1Out = uint256(amountSpecified);
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
+            tokenOut = uint256(amountSpecified);
+            sqrtPriceNext = zeroForOne
+                ? ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, tokenOut)
+                : ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, tokenOut);
 
-            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
-            token0In += fee;
+            tokenIn = zeroForOne
+                ? ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity)
+                : ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            fee = tokenIn.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
+            tokenIn += fee;
 
             beforeSwapDelta = toBeforeSwapDelta(
-                -SafeCast.toInt128(token1Out), // specified token = token1
-                SafeCast.toInt128(token0In) // unspecified token = token0
+                -SafeCast.toInt128(tokenOut), // specified token = zeroForOne ? token1 : token0
+                SafeCast.toInt128(tokenIn) // unspecified token = zeroForOne ? token0 : token1
             );
         } else {
             unchecked {
-                token0In = uint256(-amountSpecified);
+                tokenIn = uint256(-amountSpecified);
             }
-            fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, token0In - fee);
+            fee = tokenIn.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
+            sqrtPriceNext = zeroForOne
+                ? ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, tokenIn - fee)
+                : ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, tokenIn - fee);
 
-            token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            tokenOut = zeroForOne
+                ? ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity)
+                : ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
             beforeSwapDelta = toBeforeSwapDelta(
-                SafeCast.toInt128(token0In), // specified token = token0
-                -SafeCast.toInt128(token1Out) // unspecified token = token1
-            );
-        }
-    }
-
-    function getOneForZeroDeltas(
-        int256 amountSpecified
-    )
-        internal
-        view
-        returns (
-            BeforeSwapDelta beforeSwapDelta,
-            uint256 token0Out,
-            uint256 token1In,
-            uint160 sqrtPriceNext,
-            uint256 fee
-        )
-    {
-        if (amountSpecified > 0) {
-            token0Out = uint256(amountSpecified);
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
-
-            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
-            token1In += fee;
-
-            beforeSwapDelta = toBeforeSwapDelta(
-                -SafeCast.toInt128(token0Out), // specified token = token0
-                SafeCast.toInt128(token1In) // unspecified token = token1
-            );
-        } else {
-            unchecked {
-                token1In = uint256(-amountSpecified);
-            }
-            fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, token1In - fee);
-
-            token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            beforeSwapDelta = toBeforeSwapDelta(
-                SafeCast.toInt128(token1In), // specified token = token1
-                -SafeCast.toInt128(token0Out) // unspecified token = token0
+                SafeCast.toInt128(tokenIn), // specified token = zeroForOne ? token0 : token1
+                -SafeCast.toInt128(tokenOut) // unspecified token = zeroForOne ? token1 : token0
             );
         }
     }
