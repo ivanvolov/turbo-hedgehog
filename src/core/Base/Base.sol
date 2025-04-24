@@ -72,15 +72,15 @@ abstract contract Base is IBase {
     }
 
     function _approveSingle(IERC20 token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0) && moduleOld != address(this)) token.forceApprove(moduleOld, 0);
+        if (moduleOld != address(0) && moduleOld != address(this) && moduleOld != moduleNew)
+            token.forceApprove(moduleOld, 0);
         if (moduleNew != address(this)) token.forceApprove(moduleNew, amount);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
         if (newOwner == address(0)) revert OwnableInvalidOwner(address(0));
-        address oldOwner = owner;
+        emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-        emit OwnershipTransferred(oldOwner, owner);
     }
 
     function otherToken(IERC20 token) internal view returns (IERC20) {
