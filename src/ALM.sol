@@ -300,10 +300,10 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function transferFees() external onlyRebalanceAdapter {
-        base.safeTransfer(treasury, accumulatedFeeB);
-        quote.safeTransfer(treasury, accumulatedFeeQ);
         accumulatedFeeB = 0;
+        base.safeTransfer(treasury, accumulatedFeeB);
         accumulatedFeeQ = 0;
+        quote.safeTransfer(treasury, accumulatedFeeQ);
     }
 
     function refreshReserves() public notPaused {

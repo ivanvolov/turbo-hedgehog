@@ -141,7 +141,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata
-    ) external view override onlyAuthorizedPool(key) returns (bytes4) {
+    ) external view override onlyPoolManager onlyAuthorizedPool(key) returns (bytes4) {
         revert AddLiquidityThroughHook();
     }
 
