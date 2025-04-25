@@ -48,7 +48,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
         base.forceApprove(address(morpho), type(uint256).max);
         quote.forceApprove(address(morpho), type(uint256).max);
-        if (address(_earnQuote) != address(0)) {
+        if (address(_earnQuote) != address(0) && address(_earnBase) != address(0)) {
             isEarn = true;
             earnQuote = _earnQuote;
             earnBase = _earnBase;

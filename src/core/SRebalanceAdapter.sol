@@ -218,9 +218,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
         _managePositionDeltas(data);
-        if (amount > token.balanceOf(address(this))) {
-            swapAdapter.swapExactOutput(otherToken(token), token, amount - token.balanceOf(address(this)));
-        }
+        uint256 balance = token.balanceOf(address(this));
+        if (amount > balance) swapAdapter.swapExactOutput(otherToken(token), token, amount - balance);
     }
 
     function onFlashLoanTwoTokens(

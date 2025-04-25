@@ -160,7 +160,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         assertEqPositionState(127030217814423042106, 437579999997, 223916116085, 107627371791997377592);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486622351522217505529817740431);
+        assertEq(hook.sqrtPriceCurrent(), 1528486622351522217505529817740422);
         assertApproxEqAbs(hook.TVL(), 265279361107121166328307, 1e1, "tvl");
     }
 
@@ -222,7 +222,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         assertEqPositionState(142330532104972960594, 437579999997, 252477436502, 112190623422512265562);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458334);
+        assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458325);
         assertApproxEqAbs(hook.TVL(), 265280789280255134746250, 1e1, "tvl");
     }
 
@@ -243,7 +243,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         assertEqPositionState(127033975966382267714, 437579999997, 223916116085, 107628492644336094001);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528490395669965061503372749034567);
+        assertEq(hook.sqrtPriceCurrent(), 1528490395669965061503372749034558);
         assertApproxEqAbs(hook.TVL(), 265286376855133687865402, 1e1, "tvl");
     }
 
@@ -311,7 +311,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         assertEqPositionState(142334405472253858708, 437579999997, 252477436502, 112191778637315340438);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458334);
+        assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458325);
         assertApproxEqAbs(hook.TVL(), 265288020113147886214349, 1e1, "tvl");
     }
 
@@ -332,7 +332,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
             assertEqBalanceStateZero(address(hook));
             assertEqPositionState(133550505118844832205, 438562601200, 238643166571, 109036567957030203059);
-            assertApproxEqAbs(hook.TVL(), 265783563463832047358523, 1e1, "tvl");
+            assertApproxEqAbs(hook.TVL(), 265783563463832047111029, 1e1, "tvl");
         }
     }
 

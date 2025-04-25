@@ -84,7 +84,9 @@ abstract contract Base is IBase {
     }
 
     function otherToken(IERC20 token) internal view returns (IERC20) {
-        return token == base ? quote : base;
+        if (token == base) return quote;
+        if (token == quote) return base;
+        revert TokenNotAllowed(address(token));
     }
 
     // --- Modifiers --- //

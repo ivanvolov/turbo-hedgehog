@@ -13,6 +13,8 @@ contract Oracle is IOracle {
     AggregatorV3Interface internal immutable feedQuote;
     uint256 public immutable stalenessThresholdQ;
     uint256 public immutable stalenessThresholdB;
+    uint8 public immutable decimalsQuote;
+    uint8 public immutable decimalsBase;
 
     constructor(
         AggregatorV3Interface _feedQuote,
@@ -24,6 +26,8 @@ contract Oracle is IOracle {
         feedBase = _feedBase;
         stalenessThresholdQ = _stalenessThresholdQ;
         stalenessThresholdB = _stalenessThresholdB;
+        decimalsQuote = feedQuote.decimals();
+        decimalsBase = feedBase.decimals();
     }
 
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
@@ -36,8 +40,6 @@ contract Oracle is IOracle {
 
         require(_priceBase > 0 && _priceQuote > 0, "O3");
 
-        uint8 decimalsQuote = feedQuote.decimals();
-        uint8 decimalsBase = feedBase.decimals();
         uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
         _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
         require(_price > 0, "O4");

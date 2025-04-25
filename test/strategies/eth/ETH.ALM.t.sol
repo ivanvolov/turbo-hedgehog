@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
@@ -212,8 +214,11 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        uint256 gasBefore = gasleft();
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        uint256 gasSpend = gasBefore - gasleft();
+        console.log("gasSpend", gasSpend);
         assertEq(hook.balanceOf(alice.addr), 0);
 
         assertEqBalanceState(alice.addr, 99997558771099201211, 0);
@@ -264,7 +269,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(158526172815684277175, 239418121556, 280287349408, 43136709436256714247);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528447264497121574241855098262866);
+        assertEq(hook.sqrtPriceCurrent(), 1528447264497121574081193070973316);
         assertApproxEqAbs(hook.TVL(), 100026254935764449350, 1e1, "tvl");
     }
 
@@ -286,7 +291,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(158526171992372867246, 239418121556, 280287347856, 43136709190707697250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528447263527610140268849222598414);
+        assertEq(hook.sqrtPriceCurrent(), 1528447263527610140107385842404115);
         assertApproxEqAbs(hook.TVL(), 100026254941416541049, 1e1, "tvl");
     }
 
@@ -345,7 +350,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(171571670263886366245, 239418121556, 304640818196, 47027471833088916250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543809324084017912969698893723466);
+        assertEq(hook.sqrtPriceCurrent(), 1543809324084017913133602552127635);
         assertApproxEqAbs(hook.TVL(), 100026243568357104732, 1e1, "tvl");
     }
 
@@ -367,7 +372,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(171571671111689636150, 239418121556, 304640819763, 47027472085942523063);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543809325082370363840873025692688);
+        assertEq(hook.sqrtPriceCurrent(), 1543809325082370364005602442961986);
         assertApproxEqAbs(hook.TVL(), 100026243574253612272, 1e1, "tvl");
     }
 
@@ -389,7 +394,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(158529393672468958824, 239418121556, 280287349408, 43137670042666180704);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528451057299507500732975542401625);
+        assertEq(hook.sqrtPriceCurrent(), 1528451057299507500572393049160986);
         assertApproxEqAbs(hook.TVL(), 100028515186139664542, 1e1, "tvl");
     }
 
@@ -412,7 +417,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(158526171992372867246, 239418121556, 280281274709, 43136709190707697250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528447263527610140268849222598414);
+        assertEq(hook.sqrtPriceCurrent(), 1528447263527610140107385842404115);
         assertApproxEqAbs(hook.TVL(), 100028537906575752918, 1e1, "tvl");
     }
 
@@ -433,7 +438,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(171571670263886366245, 239418121556, 304634745188, 47027471833088916250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543805454764715214760679957408962);
+        assertEq(hook.sqrtPriceCurrent(), 1543805454764715214924501663983928);
         assertApproxEqAbs(hook.TVL(), 100028526481264632732, 1e1, "tvl");
     }
 
@@ -457,7 +462,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(171574956947245480966, 239418121556, 304640819763, 47028452071985494324);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543809325082370363840873025692688);
+        assertEq(hook.sqrtPriceCurrent(), 1543809325082370364005602442961986);
         assertApproxEqAbs(hook.TVL(), 100028549423766485827, 1e1, "tvl");
     }
 
@@ -491,7 +496,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(158529393672468958823, 239418121556, 280288564037, 43137670042666180703);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528451057299507500732975542401625);
+        assertEq(hook.sqrtPriceCurrent(), 1528451057299507500572393049160986);
         assertApproxEqAbs(hook.TVL(), 100028058593258186726, 1e1, "tvl");
     }
 
@@ -523,7 +528,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(158526171992372867246, 239418121556, 280282489338, 43136709190707697250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528447263527610140268849222598414);
+        assertEq(hook.sqrtPriceCurrent(), 1528447263527610140107385842404115);
         assertApproxEqAbs(hook.TVL(), 100028081313694275102, 1e1, "tvl");
     }
 
@@ -553,7 +558,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(171571013096859977608, 239418121556, 304634745188, 47027275835905607358);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543805454764715214760679957408962);
+        assertEq(hook.sqrtPriceCurrent(), 1543805454764715214924501663983928);
         assertApproxEqAbs(hook.TVL(), 100028065311421552987, 1e1, "tvl");
     }
 
@@ -586,7 +591,7 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(171574299780134312006, 239418121556, 304640819763, 47028256074776900073);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543809325082370363840873025692688);
+        assertEq(hook.sqrtPriceCurrent(), 1543809325082370364005602442961986);
         assertApproxEqAbs(hook.TVL(), 100028088253863911118, 1e1, "tvl");
     }
 
@@ -608,7 +613,7 @@ contract ETHALMTest is MorphoTestBase {
 
             assertEqBalanceStateZero(address(hook));
             assertEqPositionState(165295596276407157372, 242257983631, 295920921419, 45148238092042300393);
-            assertApproxEqAbs(hook.TVL(), 100175604781855619056, 1e1, "tvl");
+            assertApproxEqAbs(hook.TVL(), 100175604781855618335, 1e1, "tvl");
         }
     }
 
@@ -784,8 +789,10 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Rebalance
         uint256 preRebalanceTVL = hook.TVL();
+        uint256 gasBefore = gasleft();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
+        console.log("gasSpend", gasBefore - gasleft());
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
