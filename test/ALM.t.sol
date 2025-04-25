@@ -234,12 +234,14 @@ contract ALMGeneralTest is ALMTestBase {
         vm.expectRevert(SafeCallback.NotPoolManager.selector);
         hook.afterInitialize(address(0), key, 0, 0);
 
+        vm.prank(address(manager));
         vm.expectRevert(IALM.AddLiquidityThroughHook.selector);
         hook.beforeAddLiquidity(address(0), key, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");
 
         PoolKey memory failedKey = key;
         failedKey.tickSpacing = 3;
 
+        vm.prank(address(manager));
         vm.expectRevert(IALM.UnauthorizedPool.selector);
         hook.beforeAddLiquidity(address(0), failedKey, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");
 
