@@ -241,14 +241,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
-        if (deltaCL > 0) lendingAdapter.addCollateralLong(uint256(deltaCL));
-        if (deltaCS > 0) lendingAdapter.addCollateralShort(uint256(deltaCS));
-        if (deltaDL < 0) lendingAdapter.repayLong(uint256(-deltaDL));
-        if (deltaDS < 0) lendingAdapter.repayShort(uint256(-deltaDS));
-        if (deltaCL < 0) lendingAdapter.removeCollateralLong(uint256(-deltaCL));
-        if (deltaCS < 0) lendingAdapter.removeCollateralShort(uint256(-deltaCS));
-        if (deltaDL > 0) lendingAdapter.borrowLong(uint256(deltaDL));
-        if (deltaDS > 0) lendingAdapter.borrowShort(uint256(deltaDS));
+        lendingAdapter.updatePosition(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
     // --- Math functions --- //

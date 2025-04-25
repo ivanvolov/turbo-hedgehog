@@ -5,7 +5,10 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ILendingAdapter {
+    // ** Position management
     function getPosition() external view returns (uint256, uint256, uint256, uint256);
+
+    function updatePosition(int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) external;
 
     // ** Flashloan
     function flashLoanSingle(IERC20 token, uint256 amount, bytes calldata data) external;

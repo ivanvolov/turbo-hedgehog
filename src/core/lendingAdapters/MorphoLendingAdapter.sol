@@ -61,8 +61,27 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         }
     }
 
+    // ** Position management
+
     function getPosition() external view returns (uint256, uint256, uint256, uint256) {
         return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
+    }
+
+    function updatePosition(
+        int256 deltaCL,
+        int256 deltaCS,
+        int256 deltaDL,
+        int256 deltaDS
+    ) external onlyModule notPaused {
+        if (deltaCL > 0) addCollateralLong(uint256(deltaCL));
+        if (deltaCL < 0) removeCollateralLong(uint256(-deltaCL));
+        if (deltaCS > 0) addCollateralShort(uint256(deltaCS));
+        if (deltaCS < 0) removeCollateralShort(uint256(-deltaCS));
+
+        if (deltaDL < 0) repayLong(uint256(-deltaDL));
+        if (deltaDL > 0) borrowLong(uint256(deltaDL));
+        if (deltaDS < 0) repayShort(uint256(-deltaDS));
+        if (deltaDS > 0) borrowShort(uint256(deltaDS));
     }
 
     // ** Flashloan
@@ -130,22 +149,22 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         return uint256(p.collateral).wrap(qDec);
     }
 
-    function borrowLong(uint256 amount) external onlyModule notPaused notShutdown isBorrowMode {
+    function borrowLong(uint256 amount) public onlyModule notPaused notShutdown isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
     }
 
-    function repayLong(uint256 amount) external onlyModule notPaused isBorrowMode {
+    function repayLong(uint256 amount) public onlyModule notPaused isBorrowMode {
         base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
     }
 
-    function removeCollateralLong(uint256 amount) external onlyModule notPaused {
+    function removeCollateralLong(uint256 amount) public onlyModule notPaused {
         if (isEarn) earnQuote.withdraw(amount.unwrap(qDec), msg.sender, address(this));
         else
             morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
     }
 
-    function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
+    function addCollateralLong(uint256 amount) public onlyModule notPaused notShutdown {
         quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
@@ -165,16 +184,16 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         return uint256(p.collateral).wrap(bDec);
     }
 
-    function borrowShort(uint256 amount) external onlyModule notPaused notShutdown isBorrowMode {
+    function borrowShort(uint256 amount) public onlyModule notPaused notShutdown isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
     }
 
-    function repayShort(uint256 amount) external onlyModule notPaused isBorrowMode {
+    function repayShort(uint256 amount) public onlyModule notPaused isBorrowMode {
         quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
     }
 
-    function removeCollateralShort(uint256 amount) external onlyModule notPaused {
+    function removeCollateralShort(uint256 amount) public onlyModule notPaused {
         if (isEarn) earnBase.withdraw(amount.unwrap(bDec), msg.sender, address(this));
         else
             morpho.withdrawCollateral(
@@ -185,7 +204,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
             );
     }
 
-    function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
+    function addCollateralShort(uint256 amount) public onlyModule notPaused notShutdown {
         base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");

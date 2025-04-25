@@ -68,11 +68,30 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         return address(uint160(address(this)) ^ uint160(accountId));
     }
 
+    // ** Position management
+
     function getPosition() external view returns (uint256, uint256, uint256, uint256) {
         return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
     }
 
-    // ---- Flashloan ----
+    function updatePosition(
+        int256 deltaCL,
+        int256 deltaCS,
+        int256 deltaDL,
+        int256 deltaDS
+    ) external onlyModule notPaused {
+        if (deltaCL > 0) addCollateralLong(uint256(deltaCL));
+        if (deltaCL < 0) removeCollateralLong(uint256(-deltaCL));
+        if (deltaCS > 0) addCollateralShort(uint256(deltaCS));
+        if (deltaCS < 0) removeCollateralShort(uint256(-deltaCS));
+
+        if (deltaDL < 0) repayLong(uint256(-deltaDL));
+        if (deltaDL > 0) borrowLong(uint256(deltaDL));
+        if (deltaDS < 0) repayShort(uint256(-deltaDS));
+        if (deltaDS > 0) borrowShort(uint256(deltaDS));
+    }
+
+    // ** Flashloan
 
     function flashLoanSingle(IERC20 asset, uint256 amount, bytes calldata data) public onlyModule notPaused {
         bytes memory _data = abi.encode(0, msg.sender, asset, amount, data);
@@ -129,7 +148,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         else revert("M1");
     }
 
-    // ---- Long market ----
+    // ** Long market
 
     function getBorrowedLong() public view returns (uint256) {
         return vault0.debtOf(subAccount0).wrap(bDec);
@@ -139,7 +158,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         return vault1.convertToAssets(vault1.balanceOf(subAccount0)).wrap(qDec);
     }
 
-    function borrowLong(uint256 amount) external onlyModule notPaused notShutdown {
+    function borrowLong(uint256 amount) public onlyModule notPaused notShutdown {
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
 
         items[0] = IEVC.BatchItem({
@@ -151,12 +170,12 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         evc.batch(items);
     }
 
-    function repayLong(uint256 amount) external onlyModule notPaused {
+    function repayLong(uint256 amount) public onlyModule notPaused {
         base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.repay(amount.unwrap(bDec), subAccount0);
     }
 
-    function removeCollateralLong(uint256 amount) external onlyModule notPaused {
+    function removeCollateralLong(uint256 amount) public onlyModule notPaused {
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
         items[0] = IEVC.BatchItem({
             targetContract: address(vault1),
@@ -167,12 +186,12 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         evc.batch(items);
     }
 
-    function addCollateralLong(uint256 amount) external onlyModule notPaused notShutdown {
+    function addCollateralLong(uint256 amount) public onlyModule notPaused notShutdown {
         quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.mint(vault1.convertToShares(amount.unwrap(qDec)), subAccount0);
     }
 
-    // ---- Short market ----
+    // ** Short market
 
     function getBorrowedShort() public view returns (uint256) {
         return vault1.debtOf(subAccount1).wrap(qDec);
@@ -182,7 +201,7 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         return vault0.convertToAssets(vault0.balanceOf(subAccount1)).wrap(bDec);
     }
 
-    function borrowShort(uint256 amount) external onlyModule notPaused notShutdown {
+    function borrowShort(uint256 amount) public onlyModule notPaused notShutdown {
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
 
         items[0] = IEVC.BatchItem({
@@ -194,12 +213,12 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         evc.batch(items);
     }
 
-    function repayShort(uint256 amount) external onlyModule notPaused {
+    function repayShort(uint256 amount) public onlyModule notPaused {
         quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.repay(amount.unwrap(qDec), subAccount1);
     }
 
-    function removeCollateralShort(uint256 amount) external onlyModule notPaused {
+    function removeCollateralShort(uint256 amount) public onlyModule notPaused {
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
         items[0] = IEVC.BatchItem({
             targetContract: address(vault0),
@@ -210,12 +229,12 @@ contract EulerLendingAdapter is Base, ILendingAdapter {
         evc.batch(items);
     }
 
-    function addCollateralShort(uint256 amount) external onlyModule notPaused notShutdown {
+    function addCollateralShort(uint256 amount) public onlyModule notPaused notShutdown {
         base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.mint(vault0.convertToShares(amount.unwrap(bDec)), subAccount1);
     }
 
-    // ---- Helpers ----
+    // ** Helpers
 
     function syncLong() external {
         // Intentionally empty as no synchronization is needed for long positions
