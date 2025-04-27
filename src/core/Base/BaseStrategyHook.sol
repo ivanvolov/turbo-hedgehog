@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -157,10 +159,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(
                 sqrtPriceCurrent,
                 liquidity,
-                token0In.mul(1e18 - positionManager.getSwapFees(true, amountSpecified))
+                token0In
             );
 
-            token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity).mul(1e18 - positionManager.getSwapFees(true, amountSpecified));
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(token0In)), // specified token = token0
                 -int128(uint128(token1Out)) // unspecified token = token1
@@ -190,10 +192,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(
                 sqrtPriceCurrent,
                 liquidity,
-                token1In.mul(1e18 - positionManager.getSwapFees(false, amountSpecified))
+                token1In
             );
 
-            token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
+            token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity).mul(1e18 - positionManager.getSwapFees(false, amountSpecified));
+            console.log("token0Out %s", ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity));
+            console.log("mul %s", 1e18 - positionManager.getSwapFees(false, amountSpecified));
             beforeSwapDelta = toBeforeSwapDelta(
                 int128(uint128(token1In)), // specified token = token1
                 -int128(uint128(token0Out)) // unspecified token = token0

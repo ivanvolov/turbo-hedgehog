@@ -412,6 +412,7 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
+    uint256 public assertEqSqrtThreshold;
 
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
@@ -530,8 +531,14 @@ abstract contract ALMTestBase is Deployers {
         uint256 deltaX;
         uint256 deltaY;
         {
+
+            uint160 sqrtPLower  = TickMath.getSqrtRatioAtTick(hook.tickLower());
+            uint160 sqrtPUpper  = TickMath.getSqrtRatioAtTick(hook.tickUpper());
+
             uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
             uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+
+            (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(preSqrtPrice, sqrtPLower, sqrtPUpper, liquidity);
 
             //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
             uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
