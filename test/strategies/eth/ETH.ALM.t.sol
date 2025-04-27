@@ -495,15 +495,16 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e3);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            console.log("deltaWETH %s", deltaWETH);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
-        // ** Swap Up In
+        // // ** Swap Up In
         {
             uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -514,17 +515,20 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+
+            console.log("deltaWETH %s", deltaWETH);
+
+            assertApproxEqAbs(deltaWETH, deltaX *  (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Swap Down Out
         {
-            uint256 usdcToGetFSwap = 50000e6; //200k USDC
+            uint256 usdcToGetFSwap = 50000e6; //50k USDC
             (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -534,13 +538,15 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 9e14);
-            assertApproxEqAbs(deltaUSDC, deltaY, 3e6);
+            console.log("deltaWETH %s", deltaWETH);
+
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 + fee) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -563,13 +569,13 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -577,7 +583,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Deposit
         {
-            uint256 _amountToDep = 200 ether;
+            uint256 _amountToDep = 100 ether;
             deal(address(WETH), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep);
@@ -594,12 +600,12 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1e15);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1e7);
         }
 
         // ** Swap Up out
@@ -613,12 +619,12 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 3e14);
-            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1);
         }
 
         // ** Swap Down In
@@ -631,12 +637,12 @@ contract ETHALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 42e13);
-            assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY * (1e18 - fee) / 1e18, 1);
         }
 
         // ** Make oracle change with swap price

@@ -106,6 +106,10 @@ contract ALM is BaseStrategyHook, ERC20 {
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0) {
             console.log("case 1");
+
+            console.log("uDL %s", uDL.unwrap(bDec));
+            console.log("uDS %s", uDS.unwrap(qDec));
+            
             lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
         } else if (uDS == 0 && uDL == 0) {
             console.log("case 2");

@@ -138,7 +138,7 @@ contract BTCALMTest is ALMTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -157,7 +157,7 @@ contract BTCALMTest is ALMTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -177,7 +177,7 @@ contract BTCALMTest is ALMTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -217,7 +217,7 @@ contract BTCALMTest is ALMTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -236,7 +236,7 @@ contract BTCALMTest is ALMTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -254,7 +254,7 @@ contract BTCALMTest is ALMTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );

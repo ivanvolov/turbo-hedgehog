@@ -28,7 +28,7 @@ library TestLib {
     address constant eulerUSDTVault1 = 0x313603FA690301b0CaeEf8069c065862f9162162;
     address constant eulerUSDTVault2 = 0x7c280DBDEf569e96c7919251bD2B0edF0734C5A8;
     address constant eulerWETHVault1 = 0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2;
-    address constant eulerWETHVault2 = 0x716bF454066a84F39A2F78b5707e79a9d64f1225;
+    address constant eulerWETHVault2 = 0x45c3B59d53e2e148Aaa6a857521059676D5c0489;
     address constant eulerCbBTCVault1 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
     address constant eulerCbBTCVault2 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
     address constant eulerUSDEVault = 0x2daCa71Cb58285212Dc05D65Cfd4f59A82BC4cF6;

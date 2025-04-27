@@ -12,6 +12,7 @@ import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -524,7 +525,7 @@ abstract contract ALMTestBase is Deployers {
     // --- Test math --- //
 
     function _checkSwap(
-        uint256 liquidity,
+        uint128 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
     ) public view returns (uint256, uint256) {
@@ -532,29 +533,23 @@ abstract contract ALMTestBase is Deployers {
         uint256 deltaY;
         {
 
-            uint160 sqrtPLower  = TickMath.getSqrtRatioAtTick(hook.tickLower());
-            uint160 sqrtPUpper  = TickMath.getSqrtRatioAtTick(hook.tickUpper());
+            (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
+                preSqrtPrice, 
+                TickMath.getSqrtPriceAtTick(hook.tickLower()), 
+                TickMath.getSqrtPriceAtTick(hook.tickUpper()), 
+                liquidity
+                );
 
-            uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-            uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+            (uint256 amt0Post, uint256 amt1Post) =
+                LiquidityAmounts.getAmountsForLiquidity(
+                    postSqrtPrice,
+                    TickMath.getSqrtPriceAtTick(hook.tickLower()), 
+                    TickMath.getSqrtPriceAtTick(hook.tickUpper()), 
+                    liquidity
+                    );
 
-            (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(preSqrtPrice, sqrtPLower, sqrtPUpper, liquidity);
-
-            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
-            uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
-
-            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-                ((priceUpper * prePrice) / 1e18).sqrt();
-            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
-                (priceUpper * postPrice).sqrt();
-
-            uint256 preY = (liquidity *
-                (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-            uint256 postY = (liquidity *
-                (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-
-            deltaX = postX > preX ? postX - preX : preX - postX;
-            deltaY = postY > preY ? postY - preY : preY - postY;
+            deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+            deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
         }
 
         return (deltaX, deltaY);
