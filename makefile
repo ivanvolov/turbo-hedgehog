@@ -53,6 +53,10 @@ tla:
 	clear && forge test -vv --match-contract LendingAdaptersTest --match-test "test_"
 tlal:
 	clear && forge test -vvvv --match-contract LendingAdaptersTest --match-test "test_"
+tdec:
+	clear && forge test -vv --match-contract DecimalsTest --match-test "test_"
+tdecl:
+	clear && forge test -vvvv --match-contract DecimalsTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
@@ -60,6 +64,6 @@ format_write:
 	npx prettier --write "src/**/*.sol" "test/**/*.sol"
 
 gas_r:
-	clear && forge test --match-contract ETHALMTest -vv --gas-report
+	clear && forge test -vv --match-contract "ETHALMTest\b" --match-test "test_lifecycle\b"
 gas_s:
-	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_deposit_rebalance_swap"
+	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_lifecycle"

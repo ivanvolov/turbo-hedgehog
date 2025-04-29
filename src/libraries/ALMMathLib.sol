@@ -149,23 +149,35 @@ library ALMMathLib {
     }
 
     function getPoolPriceFromOraclePrice(
-        uint256 price,
+        uint256 oraclePrice,
         bool reversedOrder,
-        uint8 decimalsDelta
+        int8 decimalsDelta
     ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return price.div(ratio);
+        if (decimalsDelta < 0) {
+            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
+            if (reversedOrder) return ratio.div(oraclePrice);
+            else return oraclePrice.div(ratio);
+        } else {
+            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
+            if (reversedOrder) return WAD.div(oraclePrice.mul(ratio));
+            else return oraclePrice.mul(ratio);
+        }
     }
 
     function getOraclePriceFromPoolPrice(
         uint256 price,
         bool reversedOrder,
-        uint8 decimalsDelta
+        int8 decimalsDelta
     ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return ratio.mul(price);
+        if (decimalsDelta < 0) {
+            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
+            if (reversedOrder) return ratio.div(price);
+            else return price.mul(ratio);
+        } else {
+            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
+            if (reversedOrder) return WAD.div(price.mul(ratio));
+            else return price.div(ratio);
+        }
     }
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {

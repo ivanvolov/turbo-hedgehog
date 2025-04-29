@@ -26,7 +26,7 @@ abstract contract Base is IBase {
     IERC20 public immutable quote;
     uint8 public immutable bDec;
     uint8 public immutable qDec;
-    uint8 public immutable decimalsDelta;
+    int8 public immutable decimalsDelta;
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
@@ -40,7 +40,7 @@ abstract contract Base is IBase {
         quote = _quote;
         bDec = _bDec;
         qDec = _qDec;
-        decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
+        decimalsDelta = int8(bDec) - int8(qDec);
 
         owner = initialOwner;
         emit OwnershipTransferred(address(0), initialOwner);

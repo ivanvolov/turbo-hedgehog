@@ -164,13 +164,14 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function create_oracle(
-        AggregatorV3Interface feed0,
-        AggregatorV3Interface feed1,
-        uint256 stalenessThreshold0,
-        uint256 stalenessThreshold1
-    ) internal {
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint256 stalenessThresholdQ,
+        uint256 stalenessThresholdB
+    ) internal returns (IOracle _oracle) {
         vm.prank(deployer.addr);
-        oracle = new Oracle(feed0, feed1, stalenessThreshold0, stalenessThreshold1);
+        _oracle = new Oracle(feedB, feedQ, stalenessThresholdB, stalenessThresholdQ);
+        oracle = _oracle;
     }
 
     function init_hook(
@@ -300,7 +301,7 @@ abstract contract ALMTestBase is Deployers {
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
                 isInvertedPool,
-                uint8(ALMMathLib.absSub(bDec, qDec))
+                int8(bDec) - int8(qDec)
             );
     }
 
