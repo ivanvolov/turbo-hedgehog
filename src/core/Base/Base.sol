@@ -78,7 +78,6 @@ abstract contract Base is IBase {
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        if (newOwner == address(0)) revert OwnableInvalidOwner(address(0));
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }

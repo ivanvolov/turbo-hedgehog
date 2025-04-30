@@ -14,7 +14,6 @@ import {ISwapAdapter} from "./ISwapAdapter.sol";
 
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
-    error OwnableInvalidOwner(address owner);
     error NotALM(address account);
     error NotRebalanceAdapter(address account);
     error NotModule(address account);

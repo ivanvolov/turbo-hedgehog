@@ -161,7 +161,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(127030217814423042106, 437579999997, 223916116085, 107627371791997377592);
 
         assertEq(hook.sqrtPriceCurrent(), 1528486622351522217505529817740422);
-        assertApproxEqAbs(hook.TVL(), 265279361107121166328307, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265279361107121166325647, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
@@ -182,7 +182,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(127030217814303389142, 437579999997, 223916116085, 107627371791961691620);
 
         assertEq(hook.sqrtPriceCurrent(), 1528486622351402081668869869126668);
-        assertApproxEqAbs(hook.TVL(), 265279361106897797222780, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265279361106897797220120, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
@@ -201,7 +201,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(142330532105138933891, 437579999997, 252477436502, 112190623422561766370);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848682938972248835394931657962);
-        assertApproxEqAbs(hook.TVL(), 265280789280564975018801, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265280789280564975016140, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
@@ -223,7 +223,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(142330532104972960594, 437579999997, 252477436502, 112190623422512265562);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458325);
-        assertApproxEqAbs(hook.TVL(), 265280789280255134746250, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265280789280255134743590, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
@@ -244,7 +244,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(127033975966382267714, 437579999997, 223916116085, 107628492644336094001);
 
         assertEq(hook.sqrtPriceCurrent(), 1528490395669965061503372749034558);
-        assertApproxEqAbs(hook.TVL(), 265286376855133687865402, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265286376855133687862742, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
@@ -267,7 +267,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(127030217814303389142, 437579999997, 223909030198, 107627371791961691620);
 
         assertEq(hook.sqrtPriceCurrent(), 1528486622351402081668869869126668);
-        assertApproxEqAbs(hook.TVL(), 265286446994897797222780, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265286446994897797220120, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
@@ -288,7 +288,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(142330532105138933891, 437579999997, 252470277959, 112190623422561766370);
 
         assertEq(hook.sqrtPriceCurrent(), 1543844793940242073458443147324490);
-        assertApproxEqAbs(hook.TVL(), 265287947823564975018801, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265287947823564975016140, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -312,7 +312,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqPositionState(142334405472253858708, 437579999997, 252477436502, 112191778637315340438);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848682938805605734155714458325);
-        assertApproxEqAbs(hook.TVL(), 265288020113147886214349, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 265288020113147886211689, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_rebalance() public {

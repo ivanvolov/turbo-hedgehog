@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
@@ -230,8 +230,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         bytes calldata data
     ) external notPaused notShutdown onlyLendingAdapter {
         _managePositionDeltas(data);
-        if (amountB > baseBalanceUnwr()) swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr());
-        if (amountQ > quoteBalanceUnwr()) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr());
+
+        uint256 baseBalanceUnwr = base.balanceOf(address(this));
+        if (amountB > baseBalanceUnwr) swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr);
+        else {
+            uint256 quoteBalanceUnwr = quote.balanceOf(address(this));
+            if (amountQ > quoteBalanceUnwr) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr);
+        }
     }
 
     // @Notice: this function is mainly for removing stack too deep error
@@ -261,7 +266,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             uint256 price = oracle.price();
             uint256 TVL = alm.TVL();
             if (isInvertedAssets) {
-                targetCL = TVL.mul(weight).mul(longLeverage).div(price);
+                targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
                 targetCS = TVL.mul(1e18 - weight).mul(shortLeverage);
             } else {
                 targetCL = TVL.mul(weight).mul(longLeverage);
@@ -269,7 +274,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             }
 
             targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
-            targetDS = targetCS.div(price).mul(1e18 - uint256(1e18).div(shortLeverage));
+            targetDS = PRBMath.mulDiv(targetCS, 1e18 - uint256(1e18).div(shortLeverage), price);
 
             if (isNova) {
                 // @Notice: discount to cover slippage
