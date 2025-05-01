@@ -330,7 +330,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 price = oracle.price();
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
 
-        uint256 _longLeverage = (currentCL.mul(price)).div(currentCL.mul(price) - DL);
+        uint256 _longLeverage = PRBMath.mulDiv(currentCL, price, currentCL.mul(price) - DL);
         uint256 _shortLeverage = currentCS.div(currentCS - DS.mul(price));
 
         uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
