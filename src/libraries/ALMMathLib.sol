@@ -39,7 +39,11 @@ library ALMMathLib {
     ) internal pure returns (uint160) {
         return
             SafeCast.toUint160(
-                PRBMath.mulDiv(liquidity, sqrtPriceCurrentX96, liquidity - amount0.mul(sqrtPriceCurrentX96).div(Q96))
+                PRBMath.mulDiv(
+                    liquidity,
+                    sqrtPriceCurrentX96,
+                    liquidity - PRBMath.mulDiv(amount0, sqrtPriceCurrentX96, Q96)
+                )
             );
     }
 
@@ -50,7 +54,11 @@ library ALMMathLib {
     ) internal pure returns (uint160) {
         return
             SafeCast.toUint160(
-                PRBMath.mulDiv(liquidity, sqrtPriceCurrentX96, liquidity + amount0.mul(sqrtPriceCurrentX96).div(Q96))
+                PRBMath.mulDiv(
+                    liquidity,
+                    sqrtPriceCurrentX96,
+                    liquidity + PRBMath.mulDiv(amount0, sqrtPriceCurrentX96, Q96)
+                )
             );
     }
 
