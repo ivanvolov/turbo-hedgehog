@@ -6,6 +6,7 @@ import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
@@ -107,8 +108,8 @@ library ALMMathLib {
 
         return
             isStable
-                ? SafeCast.toUint256((baseValue * SafeCast.toInt256(price)) / int256(WAD) + variableValue)
-                : SafeCast.toUint256(baseValue + (variableValue * int256(WAD)) / SafeCast.toInt256(price));
+                ? SafeCast.toUint256(mulDiv(baseValue, price, WAD) + variableValue)
+                : SafeCast.toUint256(mulDiv(variableValue, WAD, price) + baseValue);
     }
 
     function getVLP(
@@ -178,6 +179,14 @@ library ALMMathLib {
 
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
         return TickMath.getSqrtPriceAtTick(tick);
+    }
+
+    // --- Math functions --- //
+
+    /// @notice Calculates floor(x*y÷denominator) with full precision for signed x and unsigned y and denominator.
+    function mulDiv(int256 a, uint256 b, uint256 denominator) internal pure returns (int256) {
+        uint256 result = PRBMath.mulDiv(SignedMath.abs(a), b, denominator);
+        return a < 0 ? -SafeCast.toInt256(result) : SafeCast.toInt256(result);
     }
 
     function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
