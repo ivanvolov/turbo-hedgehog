@@ -121,7 +121,12 @@ contract ALMGeneralTest is ALMTestBase {
         );
 
         uint128 liquidity = uint128(
-            ALMMathLib.getL(ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18), price, priceUpper, priceLower)
+            ALMMathLib.getVirtualLiquidity(
+                ALMMathLib.getVirtualValue((100e18 * price) / 1e18, 5e17, 3e18, 2e18),
+                price,
+                priceUpper,
+                priceLower
+            )
         );
 
         assertApproxEqAbs(liquidity, 46634530208923600, 1e8);
@@ -162,9 +167,9 @@ contract ALMGeneralTest is ALMTestBase {
             8 - 6
         );
 
-        uint256 VLP = ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
+        uint256 VLP = ALMMathLib.getVirtualValue((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
 
-        uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
+        uint128 liquidity = uint128(ALMMathLib.getVirtualLiquidity(VLP, price, priceUpper, priceLower));
 
         assertApproxEqAbs(liquidity, 280185113050771000, 1e8);
     }
@@ -204,8 +209,8 @@ contract ALMGeneralTest is ALMTestBase {
             8 - 6
         );
 
-        uint256 VLP = ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
-        uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
+        uint256 VLP = ALMMathLib.getVirtualValue((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
+        uint128 liquidity = uint128(ALMMathLib.getVirtualLiquidity(VLP, price, priceUpper, priceLower));
 
         assertApproxEqAbs(liquidity, 279779159321772000, 1e8);
     }

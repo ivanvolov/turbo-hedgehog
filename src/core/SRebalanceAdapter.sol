@@ -308,11 +308,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-        uint256 VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
-        if (!isInvertedAssets) VLP = VLP.mul(oracle.price());
+        uint256 value = ALMMathLib.getVirtualValue(alm.TVL(), weight, longLeverage, shortLeverage);
+        if (!isInvertedAssets) value = value.mul(oracle.price());
 
-        uint256 liquidity = ALMMathLib.getL(
-            VLP,
+        uint256 liquidity = ALMMathLib.getVirtualLiquidity(
+            value,
             oraclePriceAtLastRebalance,
             ALMMathLib.getOraclePriceFromPoolPrice(
                 ALMMathLib.getPriceFromTick(alm.tickUpper()),

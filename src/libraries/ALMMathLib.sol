@@ -112,17 +112,22 @@ library ALMMathLib {
                 : SafeCast.toUint256(mulDiv(variableValue, WAD, price) + baseValue);
     }
 
-    function getVLP(
-        uint256 TVL,
+    function getVirtualValue(
+        uint256 value,
         uint256 weight,
         uint256 longLeverage,
         uint256 shortLeverage
     ) internal pure returns (uint256) {
-        return (weight.mul(longLeverage - shortLeverage) + shortLeverage).mul(TVL);
+        return (weight.mul(longLeverage - shortLeverage) + shortLeverage).mul(value);
     }
 
-    function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        return VLP.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+    function getVirtualLiquidity(
+        uint256 virtualValue,
+        uint256 price,
+        uint256 priceUpper,
+        uint256 priceLower
+    ) internal pure returns (uint256) {
+        return virtualValue.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
     function getUserAmounts(
