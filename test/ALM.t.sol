@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
@@ -14,6 +15,7 @@ import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
+import {PRBMath} from "@prb-math/PRBMath.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
@@ -56,6 +58,13 @@ contract ALMGeneralTest is ALMTestBase {
         init_hook(true, false, false, 0, type(uint256).max, 3000, 3000, 0);
         approve_accounts();
     }
+
+    // function test_gas_per_function() public {
+    //     uint256 gas = gasleft();
+    //     uint256 a = PRBMath.mulDiv(2e18, 3e18, 6e18);
+    //     console.log("mulDiv18", gas - gasleft());
+    //     console.log(a);
+    // }
 
     function test_price_conversion_WETH_USDC() public pure {
         uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
