@@ -19,6 +19,7 @@ import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
+    error LeverageValuesNotValid();
 
     /// @notice Emitted when the rebalance is triggered.
     /// @param slippage                The execution slippage, as a UD60x18 value.
@@ -117,6 +118,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
+        if (longLeverage < shortLeverage) revert LeverageValuesNotValid();
         weight = _weight;
         longLeverage = _longLeverage;
         shortLeverage = _shortLeverage;
