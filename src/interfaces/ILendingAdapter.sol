@@ -10,17 +10,6 @@ interface ILendingAdapter {
 
     function updatePosition(int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) external;
 
-    // ** Flashloan
-    function flashLoanSingle(IERC20 token, uint256 amount, bytes calldata data) external;
-
-    function flashLoanTwoTokens(
-        IERC20 token0,
-        uint256 amount0,
-        IERC20 token1,
-        uint256 amount1,
-        bytes calldata data
-    ) external;
-
     // ** Long market
     function getBorrowedLong() external view returns (uint256);
 
@@ -51,16 +40,4 @@ interface ILendingAdapter {
     function syncLong() external;
 
     function syncShort() external;
-}
-
-interface IFlashLoanReceiver {
-    function onFlashLoanSingle(IERC20 token, uint256 amount, bytes calldata data) external;
-
-    function onFlashLoanTwoTokens(
-        IERC20 token0,
-        uint256 amount0,
-        IERC20 token1,
-        uint256 amount1,
-        bytes calldata data
-    ) external;
 }

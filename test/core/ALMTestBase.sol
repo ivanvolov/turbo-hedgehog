@@ -17,6 +17,7 @@ import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
+import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanAdapter.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapV3SwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
@@ -34,6 +35,7 @@ import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IUniswapV3SwapAdapter} from "@src/interfaces/swapAdapters/IUniswapV3SwapAdapter.sol";
@@ -69,6 +71,7 @@ abstract contract ALMTestBase is Deployers {
     bool isInvertedPool = true;
 
     ILendingAdapter lendingAdapter;
+    IFlashLoanAdapter flashLoanAdapter;
     IPositionManager positionManager;
     ISwapAdapter swapAdapter;
     IOracle oracle;
@@ -112,27 +115,18 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function create_lending_adapter_euler_WETH_USDC() internal {
-        create_lending_adapter_euler(
-            TestLib.eulerUSDCVault1,
-            0,
-            TestLib.eulerWETHVault1,
-            0,
-            TestLib.eulerUSDCVault2,
-            0,
-            TestLib.eulerWETHVault2,
-            0
-        );
+        create_lending_adapter_euler(TestLib.eulerUSDCVault1, 0, TestLib.eulerWETHVault1, 0);
+    }
+
+    function create_flash_loan_adapter_euler_WETH_USDC() internal {
+        create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerWETHVault2, 0);
     }
 
     function create_lending_adapter_euler(
         IEulerVault _vault0,
         uint256 deposit0,
         IEulerVault _vault1,
-        uint256 deposit1,
-        IEulerVault _flVault0,
-        uint256 deposit2,
-        IEulerVault _flVault1,
-        uint256 deposit3
+        uint256 deposit1
     ) internal {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(
@@ -142,14 +136,22 @@ abstract contract ALMTestBase is Deployers {
             qDec,
             TestLib.EULER_VAULT_CONNECT,
             _vault0,
-            _vault1,
-            _flVault0,
-            _flVault1
+            _vault1
         );
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
-        _deposit_to_euler(_flVault0, deposit2);
-        _deposit_to_euler(_flVault1, deposit3);
+    }
+
+    function create_flash_loan_adapter_euler(
+        IEulerVault _flVault0,
+        uint256 deposit0,
+        IEulerVault _flVault1,
+        uint256 deposit1
+    ) internal {
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new EulerFlashLoanAdapter(BASE, QUOTE, bDec, qDec, _flVault0, _flVault1);
+        _deposit_to_euler(_flVault0, deposit0);
+        _deposit_to_euler(_flVault1, deposit1);
     }
 
     function _deposit_to_euler(IEulerVault vault, uint256 toSupply) internal {
@@ -222,6 +224,7 @@ abstract contract ALMTestBase is Deployers {
         _setComponents(address(hook));
 
         _setComponents(address(lendingAdapter));
+        _setComponents(address(flashLoanAdapter));
         _setComponents(address(positionManager));
 
         _setComponents(address(swapAdapter));
@@ -246,7 +249,15 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function _setComponents(address module) internal {
-        IBase(module).setComponents(hook, lendingAdapter, positionManager, oracle, rebalanceAdapter, swapAdapter);
+        IBase(module).setComponents(
+            hook,
+            lendingAdapter,
+            flashLoanAdapter,
+            positionManager,
+            oracle,
+            rebalanceAdapter,
+            swapAdapter
+        );
     }
 
     function approve_accounts() public virtual {

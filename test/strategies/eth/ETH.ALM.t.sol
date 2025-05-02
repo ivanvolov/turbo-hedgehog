@@ -18,6 +18,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
@@ -59,7 +60,7 @@ contract ETHALMTest is MorphoTestBase {
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
-        // create_lending_adapter_morpho();
+        create_flash_loan_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
         assertEq(hook.tickLower(), 200458);
@@ -825,13 +826,12 @@ contract ETHALMTest is MorphoTestBase {
                 qDec,
                 TestLib.EULER_VAULT_CONNECT,
                 IEulerVault(0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9),
-                IEulerVault(0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2),
-                IEulerVault(0xcBC9B61177444A793B85442D3a953B90f6170b7D),
-                IEulerVault(0x716bF454066a84F39A2F78b5707e79a9d64f1225)
+                IEulerVault(0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2)
             );
             IBase(address(newAdapter)).setComponents(
                 hook,
                 newAdapter,
+                flashLoanAdapter,
                 positionManager,
                 oracle,
                 IRebalanceAdapter(migrationContract.addr),
@@ -844,6 +844,7 @@ contract ETHALMTest is MorphoTestBase {
             IBase(address(lendingAdapter)).setComponents(
                 hook,
                 ILendingAdapter(migrationContract.addr),
+                IFlashLoanAdapter(migrationContract.addr),
                 IPositionManager(migrationContract.addr),
                 IOracle(migrationContract.addr),
                 IRebalanceAdapter(migrationContract.addr),
@@ -886,11 +887,20 @@ contract ETHALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
 
-            hook.setComponents(hook, newAdapter, positionManager, oracle, rebalanceAdapter, swapAdapter);
+            hook.setComponents(
+                hook,
+                newAdapter,
+                flashLoanAdapter,
+                positionManager,
+                oracle,
+                rebalanceAdapter,
+                swapAdapter
+            );
 
             IBase(address(newAdapter)).setComponents(
                 hook,
                 newAdapter,
+                flashLoanAdapter,
                 positionManager,
                 oracle,
                 rebalanceAdapter,
@@ -900,6 +910,7 @@ contract ETHALMTest is MorphoTestBase {
             IBase(address(positionManager)).setComponents(
                 hook,
                 newAdapter,
+                flashLoanAdapter,
                 positionManager,
                 oracle,
                 rebalanceAdapter,
@@ -909,6 +920,7 @@ contract ETHALMTest is MorphoTestBase {
             IBase(address(rebalanceAdapter)).setComponents(
                 hook,
                 newAdapter,
+                flashLoanAdapter,
                 positionManager,
                 oracle,
                 rebalanceAdapter,

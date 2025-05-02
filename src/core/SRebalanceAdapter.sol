@@ -171,14 +171,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isNova) {
-            if (quoteToFl != 0) lendingAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
-            else lendingAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
+            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
+            else flashLoanAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
         } else {
-            lendingAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
+            flashLoanAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
@@ -218,7 +218,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         IERC20 token,
         uint256 amount,
         bytes calldata data
-    ) external notPaused notShutdown onlyLendingAdapter {
+    ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
         uint256 balance = token.balanceOf(address(this));
         if (amount > balance) swapAdapter.swapExactOutput(otherToken(token), token, amount - balance);
@@ -230,7 +230,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         IERC20 quote,
         uint256 amountQ,
         bytes calldata data
-    ) external notPaused notShutdown onlyLendingAdapter {
+    ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
         uint256 baseBalanceUnwr = base.balanceOf(address(this));
