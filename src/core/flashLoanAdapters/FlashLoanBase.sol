@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -51,7 +49,6 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
     function _onFlashLoan(bytes calldata _data) internal {
         uint8 loanType = abi.decode(_data, (uint8));
 
-        console.log(loanType);
         if (loanType == 0) {
             (, address sender, IERC20 asset, uint256 amount, bytes memory data) = abi.decode(
                 _data,
