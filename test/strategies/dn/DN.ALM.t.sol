@@ -19,6 +19,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 3e18;
     uint256 weight = 45e16;
+    uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 2e15;
     uint256 fee = 5e14;
 
@@ -56,7 +57,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }

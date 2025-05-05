@@ -63,6 +63,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage).
     uint256 public shortLeverage;
 
+    /// @notice The multiplier applied to the virtual liquidity, encoded as a UD60x18 value.
+    ///         (i.e. virtual_liquidity × 1e18, where 1 = 100%).
+    uint256 public liquidityMultiplier;
+
     uint256 public rebalancePriceThreshold;
     uint256 public rebalanceTimeThreshold;
     uint256 public maxDeviationLong;
@@ -117,9 +121,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         );
     }
 
-    function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
+    function setRebalanceParams(
+        uint256 _weight,
+        uint256 _liquidityMultiplier,
+        uint256 _longLeverage,
+        uint256 _shortLeverage
+    ) external onlyOwner {
         if (longLeverage < shortLeverage) revert LeverageValuesNotValid();
         weight = _weight;
+        liquidityMultiplier = _liquidityMultiplier;
         longLeverage = _longLeverage;
         shortLeverage = _shortLeverage;
 
@@ -325,7 +335,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 decimalsDelta
             )
         );
-        return SafeCast.toUint128(liquidity);
+        return SafeCast.toUint128(liquidity.mul(liquidityMultiplier));
     }
 
     function checkDeviations() internal view {
