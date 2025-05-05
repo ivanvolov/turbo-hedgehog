@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // ** interfaces
 import {IALM} from "./IALM.sol";
 import {ILendingAdapter} from "./ILendingAdapter.sol";
+import {IFlashLoanAdapter} from "./IFlashLoanAdapter.sol";
 import {IPositionManager} from "./IPositionManager.sol";
 import {IOracle} from "./IOracle.sol";
 import {IRebalanceAdapter} from "./IRebalanceAdapter.sol";
@@ -17,7 +18,7 @@ interface IBase {
     error NotALM(address account);
     error NotRebalanceAdapter(address account);
     error NotModule(address account);
-    error NotLendingAdapter(address account);
+    error NotFlashLoanAdapter(address account);
     error ContractPaused();
     error ContractShutdown();
     error TokenNotAllowed(address token);
@@ -29,6 +30,7 @@ interface IBase {
     function setComponents(
         IALM _alm,
         ILendingAdapter _lendingAdapter,
+        IFlashLoanAdapter _flashLoanAdapter,
         IPositionManager _positionManager,
         IOracle _oracle,
         IRebalanceAdapter _rebalanceAdapter,

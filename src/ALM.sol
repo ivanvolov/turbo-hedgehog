@@ -104,13 +104,13 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0)
-            lendingAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+            flashLoanAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
             if (isInvertedAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
             else swapAdapter.swapExactInput(base, quote, baseBalance(false));
-        } else if (uDL > 0) lendingAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
+        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
@@ -135,7 +135,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         IERC20 quote,
         uint256 amount1,
         bytes calldata data
-    ) external notPaused onlyLendingAdapter {
+    ) external notPaused onlyFlashLoanAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         lendingAdapter.repayLong(amount0.wrap(bDec));
@@ -152,7 +152,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         IERC20 token,
         uint256 amount,
         bytes calldata data
-    ) external notPaused onlyLendingAdapter {
+    ) external notPaused onlyFlashLoanAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         if (token == base) lendingAdapter.repayLong(amount.wrap(bDec));

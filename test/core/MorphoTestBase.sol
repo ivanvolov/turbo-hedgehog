@@ -11,6 +11,7 @@ import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IMorphoChai
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
+import {MorphoFlashLoanAdapter} from "@src/core/flashLoanAdapters/MorphoFlashLoanAdapter.sol";
 
 // ** libraries
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
@@ -33,6 +34,11 @@ abstract contract MorphoTestBase is ALMTestBase {
     IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
     IMorphoChainlinkOracleV2Factory oracleFactory =
         IMorphoChainlinkOracleV2Factory(0x3A7bB36Ee3f3eE32A60e9f2b33c1e5f2E83ad766);
+
+    function create_flash_loan_adapter_morpho() internal {
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, bDec, qDec, TestLib.MORPHO);
+    }
 
     function create_lending_adapter_morpho() internal {
         create_and_seed_morpho_markets();

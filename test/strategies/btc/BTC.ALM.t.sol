@@ -41,16 +41,8 @@ contract BTCALMTest is ALMTestBase {
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
-        create_lending_adapter_euler(
-            TestLib.eulerUSDCVault1,
-            2000000e6,
-            TestLib.eulerCbBTCVault1,
-            0,
-            TestLib.eulerUSDCVault2,
-            0,
-            TestLib.eulerCbBTCVault2,
-            100e8
-        );
+        create_lending_adapter_euler(TestLib.eulerUSDCVault1, 2000000e6, TestLib.eulerCbBTCVault1, 0);
+        create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerCbBTCVault2, 100e8);
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
         assertEq(hook.tickLower(), -65897);

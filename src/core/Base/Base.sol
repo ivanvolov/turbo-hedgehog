@@ -11,6 +11,7 @@ import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
 // ** interfaces
 import {IALM} from "../../interfaces/IALM.sol";
 import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
+import {IFlashLoanAdapter} from "../../interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 import {IOracle} from "../../interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
@@ -30,6 +31,7 @@ abstract contract Base is IBase {
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
+    IFlashLoanAdapter public flashLoanAdapter;
     IPositionManager public positionManager;
     IOracle public oracle;
     IRebalanceAdapter public rebalanceAdapter;
@@ -49,6 +51,7 @@ abstract contract Base is IBase {
     function setComponents(
         IALM _alm,
         ILendingAdapter _lendingAdapter,
+        IFlashLoanAdapter _flashLoanAdapter,
         IPositionManager _positionManager,
         IOracle _oracle,
         IRebalanceAdapter _rebalanceAdapter,
@@ -61,6 +64,10 @@ abstract contract Base is IBase {
         _approveSingle(base, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
         _approveSingle(quote, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
         lendingAdapter = _lendingAdapter;
+
+        _approveSingle(base, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+        _approveSingle(quote, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+        flashLoanAdapter = _flashLoanAdapter;
 
         _approveSingle(base, address(positionManager), address(_positionManager), type(uint256).max);
         _approveSingle(quote, address(positionManager), address(_positionManager), type(uint256).max);
@@ -109,9 +116,9 @@ abstract contract Base is IBase {
         _;
     }
 
-    /// @dev Only the lending adapter may call this function
-    modifier onlyLendingAdapter() {
-        if (msg.sender != address(lendingAdapter)) revert NotLendingAdapter(msg.sender);
+    /// @dev Only the flash loan adapter may call this function
+    modifier onlyFlashLoanAdapter() {
+        if (msg.sender != address(flashLoanAdapter)) revert NotFlashLoanAdapter(msg.sender);
         _;
     }
 
@@ -120,6 +127,7 @@ abstract contract Base is IBase {
         if (
             msg.sender != address(alm) &&
             msg.sender != address(lendingAdapter) &&
+            msg.sender != address(flashLoanAdapter) &&
             msg.sender != address(positionManager) &&
             msg.sender != address(rebalanceAdapter) &&
             msg.sender != address(swapAdapter)
