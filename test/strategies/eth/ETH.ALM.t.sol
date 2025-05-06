@@ -199,7 +199,7 @@ contract ETHALMTest is MorphoTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
-        assertEqBalanceState(alice.addr, 99999999999443760900, 0);
+        assertEqBalanceState(alice.addr, 99999999999445539669, 0);
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(hook.TVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
@@ -466,8 +466,8 @@ contract ETHALMTest is MorphoTestBase {
             rebalanceAdapter.rebalance(slippage);
 
             assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(149966846741247506321, 181684542556, 181556094261, 50063932337119792527);
-            assertApproxEqAbs(hook.TVL(), 99973597305011109736, 1e1, "tvl");
+            assertEqPositionState(149966846741247506321, 181684542556, 181496728469, 50063932337119792527);
+            assertApproxEqAbs(hook.TVL(), 100006265285475936457, 1e1, "tvl");
         }
     }
 
@@ -806,4 +806,7 @@ contract ETHALMTest is MorphoTestBase {
     function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, -int256(amount), key);
     }
+
+    
+
 }
