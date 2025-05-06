@@ -20,6 +20,9 @@ import {PRBMath} from "@prb-math/PRBMath.sol";
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {Base} from "@src/core/base/Base.sol";
+import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
+import {ALM} from "@src/ALM.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -364,5 +367,110 @@ contract ALMGeneralTest is ALMTestBase {
 
         uint256 unwrapped = TW.unwrap(wrapped, token_wad);
         assertEq(unwrapped, max_amount, "unwrap should return original max amount");
+    }
+
+    function test_Fuzz_setWeight_valid(uint256 weight) public {
+        weight = bound(weight, 0, 1e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18, 1e18);
+    }
+
+    function test_Fuzz_setWeight_invalid(uint256 weight) public {
+        vm.assume(weight > 1e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.WeightNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18, 1e18);
+    }
+
+    function test_Fuzz_setLiquidityMultiplier_valid(uint256 liquidityMultiplier) public {
+        liquidityMultiplier = bound(liquidityMultiplier, 0, 10e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, liquidityMultiplier, 1e18, 1e18);
+    }
+
+    function test_Fuzz_setLiquidityMultiplier_invalid(uint256 liquidityMultiplier) public {
+        vm.assume(liquidityMultiplier > 10e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LiquidityMultiplierNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, liquidityMultiplier, 1e18, 1e18);
+    }
+
+    function test_Fuzz_setLongLeverage_valid(uint256 longLeverage) public {
+        longLeverage = bound(longLeverage, 0, 5e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, 0);
+    }
+
+    function test_Fuzz_setLongLeverage_invalid(uint256 longLeverage) public {
+        vm.assume(longLeverage > 5e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, 0);
+    }
+
+    function test_Fuzz_setShortLeverage_valid(uint256 shortLeverage) public {
+        shortLeverage = bound(shortLeverage, 0, 5e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, 1e18, 5e18, shortLeverage);
+    }
+
+    function test_Fuzz_setShortLeverage_invalid(uint256 shortLeverage) public {
+        vm.assume(shortLeverage > 5e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, 1e18, 5e18, shortLeverage);
+    }
+
+    function test_Fuzz_longLeverage_gte_shortLeverage(uint256 longLeverage, uint256 shortLeverage) public {
+        longLeverage = bound(longLeverage, 0, 5e18);
+        shortLeverage = bound(shortLeverage, 0, longLeverage);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, shortLeverage);
+    }
+
+    function test_Fuzz_longLeverage_lt_shortLeverage(uint256 longLeverage, uint256 shortLeverage) public {
+        vm.assume(shortLeverage > longLeverage);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, shortLeverage);
+    }
+
+    function test_Fuzz_setMaxDeviationLong_valid(uint256 maxDevLong) public {
+        maxDevLong = bound(maxDevLong, 0, 5e17);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, maxDevLong, 0);
+    }
+
+    function test_Fuzz_setMaxDeviationLong_invalid(uint256 maxDevLong) public {
+        vm.assume(maxDevLong > 5e17);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.MaxDeviationNotValid.selector);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, maxDevLong, 0);
+    }
+
+    function test_Fuzz_setMaxDeviationShort_valid(uint256 maxDevShort) public {
+        maxDevShort = bound(maxDevShort, 0, 5e17);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, 0, maxDevShort);
+    }
+
+    function test_Fuzz_setMaxDeviationShort_invalid(uint256 maxDevShort) public {
+        vm.assume(maxDevShort > 5e17);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.MaxDeviationNotValid.selector);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, 0, maxDevShort);
+    }
+
+    function test_Fuzz_setProtocolFee_valid(uint256 protocolFee) public {
+        protocolFee = bound(protocolFee, 0, 3e16);
+        vm.prank(deployer.addr);
+        hook.setProtocolParams(protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    function test_Fuzz_setProtocolFee_invalid(uint256 protocolFee) public {
+        vm.assume(protocolFee > 3e16);
+        vm.prank(deployer.addr);
+        vm.expectRevert(BaseStrategyHook.ProtocolFeeNotValid.selector);
+        hook.setProtocolParams(protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
     }
 }

@@ -19,7 +19,10 @@ import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
 contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
+    error WeightNotValid();
+    error LiquidityMultiplierNotValid();
     error LeverageValuesNotValid();
+    error MaxDeviationNotValid();
 
     /// @notice Emitted when the rebalance is triggered.
     /// @param slippage                The execution slippage, as a UD60x18 value.
@@ -108,6 +111,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 _maxDeviationLong,
         uint256 _maxDeviationShort
     ) external onlyOwner {
+        if (_maxDeviationLong > 5e17) revert MaxDeviationNotValid();
+        if (_maxDeviationShort > 5e17) revert MaxDeviationNotValid();
+
         rebalancePriceThreshold = _rebalancePriceThreshold;
         rebalanceTimeThreshold = _rebalanceTimeThreshold;
         maxDeviationLong = _maxDeviationLong;
@@ -127,7 +133,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 _longLeverage,
         uint256 _shortLeverage
     ) external onlyOwner {
-        if (longLeverage < shortLeverage) revert LeverageValuesNotValid();
+        if (_weight > 1e18) revert WeightNotValid();
+        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
+        if (_longLeverage > 5e18) revert LeverageValuesNotValid();
+        if (_shortLeverage > 5e18) revert LeverageValuesNotValid();
+        if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
+
         weight = _weight;
         liquidityMultiplier = _liquidityMultiplier;
         longLeverage = _longLeverage;
@@ -160,7 +171,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 oraclePrice = oracle.price();
         uint256 cachedRatio = oraclePrice.div(oraclePriceAtLastRebalance);
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
-
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 

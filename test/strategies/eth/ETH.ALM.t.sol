@@ -473,7 +473,7 @@ contract ETHALMTest is MorphoTestBase {
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
         hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
+            3 * 1e16, // 3% from fees
             hook.tvlCap(),
             hook.tickUpperDelta(),
             hook.tickLowerDelta(),
@@ -493,13 +493,13 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(deltaWETH, 4540776370197221875, 1e4, "tvl");
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
-        assertEqBalanceState(address(hook), 0, 1214629);
-        assertEq(hook.accumulatedFeeB(), 1214629);
+        assertEqBalanceState(address(hook), 0, 182194);
+        assertEq(hook.accumulatedFeeB(), 182194);
 
-        assertEqPositionState(158529393672468958823, 239418121556, 280288564037, 43137670042666180703);
+        assertEqPositionState(158529393672468958823, 239418121556, 280287531602, 43137670042666180703);
 
         assertEq(hook.sqrtPriceCurrent(), 1528451057299507500572393049160986);
-        assertApproxEqAbs(hook.TVL(), 100028058593258186726, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 100028446697339011857, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_protocol_fees() public {
@@ -507,7 +507,7 @@ contract ETHALMTest is MorphoTestBase {
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
         hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
+            3 * 1e16, // 3% from fees
             hook.tvlCap(),
             hook.tickUpperDelta(),
             hook.tickLowerDelta(),
@@ -525,13 +525,13 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(deltaWETH, 4543037198334830000, 1e1, "tvl");
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
-        assertEqBalanceState(address(hook), 0, 1214629);
-        assertEq(hook.accumulatedFeeB(), 1214629);
+        assertEqBalanceState(address(hook), 0, 182194);
+        assertEq(hook.accumulatedFeeB(), 182194);
 
-        assertEqPositionState(158526171992372867246, 239418121556, 280282489338, 43136709190707697250);
+        assertEqPositionState(158526171992372867246, 239418121556, 280281456903, 43136709190707697250);
 
         assertEq(hook.sqrtPriceCurrent(), 1528447263527610140107385842404115);
-        assertApproxEqAbs(hook.TVL(), 100028081313694275102, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 100028469417775100233, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
@@ -540,7 +540,7 @@ contract ETHALMTest is MorphoTestBase {
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
         hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
+            3 * 1e16, // 3% from fees
             hook.tvlCap(),
             hook.tickUpperDelta(),
             hook.tickLowerDelta(),
@@ -555,13 +555,13 @@ contract ETHALMTest is MorphoTestBase {
         assertEq(deltaUSDC, 12201103011);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), 461169843079745, 0);
-        assertEq(hook.accumulatedFeeQ(), 461169843079745);
+        assertEqBalanceState(address(hook), 69175476461962, 0);
+        assertEq(hook.accumulatedFeeQ(), 69175476461962);
 
-        assertEqPositionState(171571013096859977608, 239418121556, 304634745188, 47027275835905607358);
+        assertEqPositionState(171571571688832407949, 239418121556, 304634745188, 47027442433511419916);
 
         assertEq(hook.sqrtPriceCurrent(), 1543805454764715214924501663983928);
-        assertApproxEqAbs(hook.TVL(), 100028065311421552987, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 100028457305788170770, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_protocol_fees() public {
@@ -569,7 +569,7 @@ contract ETHALMTest is MorphoTestBase {
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
         hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
+            3 * 1e16, // 3% from fees
             hook.tvlCap(),
             hook.tickUpperDelta(),
             hook.tickLowerDelta(),
@@ -588,13 +588,13 @@ contract ETHALMTest is MorphoTestBase {
         assertEq(deltaUSDC, usdcToGetFSwap);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), 461169902574711, 0);
-        assertEq(hook.accumulatedFeeQ(), 461169902574711);
+        assertEqBalanceState(address(hook), 69175485386207, 0);
+        assertEq(hook.accumulatedFeeQ(), 69175485386207);
 
-        assertEqPositionState(171574299780134312006, 239418121556, 304640819763, 47028256074776900073);
+        assertEqPositionState(171574858372178805623, 239418121556, 304640819763, 47028422672404205187);
 
         assertEq(hook.sqrtPriceCurrent(), 1543809325082370364005602442961986);
-        assertApproxEqAbs(hook.TVL(), 100028088253863911118, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 100028480248281099621, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_rebalance() public {

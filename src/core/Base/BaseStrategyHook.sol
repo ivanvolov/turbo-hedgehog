@@ -24,6 +24,8 @@ import {Base} from "./Base.sol";
 import {IALM} from "../../interfaces/IALM.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
+    error ProtocolFeeNotValid();
+
     event PausedSet(bool paused);
     event ShutdownSet(bool shutdown);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
@@ -107,6 +109,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickLowerDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
+        if (_protocolFee > 3e16) revert ProtocolFeeNotValid();
         protocolFee = _protocolFee;
         tvlCap = _tvlCap;
         tickUpperDelta = _tickUpperDelta;
