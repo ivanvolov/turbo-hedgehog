@@ -112,7 +112,10 @@ library ALMMathLib {
     }
 
     function getL(uint256 VLP, uint256 price, uint256 priceUpper, uint256 priceLower) internal pure returns (uint256) {
-        return VLP.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+        console.log("price %s", price);
+        console.log("priceUpper %s", priceUpper);
+        console.log("priceLower %s", priceLower);
+        return VLP.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt()) / 1e6 );
     }
 
     function getUserAmounts(

@@ -5,6 +5,8 @@ pragma solidity ^0.8.25;
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+
 import "forge-std/console.sol";
 
 // ** contracts
@@ -304,31 +306,36 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
-    function calcLiquidity() public view returns (uint128) {
-        uint256 VLP;
-        if (isInvertAssets) VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage);
-        else VLP = ALMMathLib.getVLP(alm.TVL(), weight, longLeverage, shortLeverage).mul(oracle.price());
+    function calcLiquidity() public view returns (uint128 liquidity) {
 
-        console.log("here");
+        uint160 sqrtPLower = ALMMathLib.getSqrtPriceAtTick(alm.tickLower());
+        uint160 sqrtPUpper = ALMMathLib.getSqrtPriceAtTick(alm.tickUpper());
 
-        uint256 liquidity = ALMMathLib.getL(
-            VLP,
-            oraclePriceAtLastRebalance,
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickUpper()),
-                alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(bDec, qDec))
-            ),
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickLower()),
-                alm.isInvertedPool(),
-                uint8(ALMMathLib.absSub(bDec, qDec))
-            )
-        );
+        console.log("lower %s", sqrtPLower);
+        console.log("lower %s", sqrtPUpper);
 
+        uint256 amountForCalc = lendingAdapter.getCollateralLong();
+        console.log("amountForCalc %s", amountForCalc);
+
+        if (!alm.isInvertedPool()) {
+            liquidity = LiquidityAmounts.getLiquidityForAmount0(
+                sqrtPLower, 
+                sqrtPUpper, 
+                amountForCalc.unwrap(bDec)
+                );
+        } else {
+            liquidity = LiquidityAmounts.getLiquidityForAmount1(
+                sqrtPLower, 
+                sqrtPUpper, 
+                amountForCalc.unwrap(qDec)
+                );
+        }
         console.log("liquidity %s", liquidity);
 
-        return uint128(liquidity);
+        console.log("derivedAmount0 %s", LiquidityAmounts.getAmount0ForLiquidity(ALMMathLib.getSqrtPriceAtTick(alm.tickLower()), ALMMathLib.getSqrtPriceAtTick(alm.tickUpper()), liquidity));
+        console.log("derivedAmount1 %s", LiquidityAmounts.getAmount1ForLiquidity(ALMMathLib.getSqrtPriceAtTick(alm.tickLower()), ALMMathLib.getSqrtPriceAtTick(alm.tickUpper()), liquidity));
+
+        return liquidity;
     }
 
     function checkDeviations() internal view {

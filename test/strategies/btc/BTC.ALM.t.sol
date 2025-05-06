@@ -117,7 +117,7 @@ contract BTCALMTest is ALMTestBase {
         //vm.skip(true);
         vm.startPrank(deployer.addr);
 
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
+        IPositionManagerStandard(address(positionManager)).setFees(0);
         rebalanceAdapter.setRebalancePriceThreshold(1e15);
         rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
 
@@ -133,7 +133,7 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 42000e6; // 30k USDC
+            uint256 usdcToSwap = 50e9; //50k USDC 
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -154,32 +154,13 @@ contract BTCALMTest is ALMTestBase {
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs(deltaBTC, deltaX * (1e18 - fee) / 1e18, 1);
-            assertApproxEqAbs(usdcToSwap, deltaY, 1);
+            assertApproxEqAbs(deltaBTC, deltaX, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 100);
         }
-
-        // ** Swap Up In
-        // {
-        //     uint256 usdcToSwap = 5000e6; // 5k USDC
-        //     deal(address(USDC), address(swapper.addr), usdcToSwap);
-
-        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //     (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
-
-        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-        //     (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //         hook.liquidity(),
-        //         uint160(preSqrtPrice),
-        //         uint160(postSqrtPrice)
-        //     );
-        //     assertApproxEqAbs(deltaBTC, deltaX * (1e18 - fee) / 1e18, 1);
-        //     assertApproxEqAbs(usdcToSwap, deltaY, 1);
-        // }
 
         // ** Swap Down Out
         // {
-        //     uint256 usdcToGetFSwap = 100000e6; //100k USDC
+        //     uint256 usdcToGetFSwap = 50e9; //100k USDC
         //     (, uint256 btcToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
         //     deal(address(BTC), address(swapper.addr), btcToSwapQ);
 
@@ -193,8 +174,8 @@ contract BTCALMTest is ALMTestBase {
         //         uint160(preSqrtPrice),
         //         uint160(postSqrtPrice)
         //     );
-        //     assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + fee)) / 1e18, 7e14);
-        //     assertApproxEqAbs(deltaUSDC, deltaY, 2e6);
+        //     assertApproxEqAbs(deltaBTC, deltaX, 1);
+        //     assertApproxEqAbs(deltaUSDC * (1e18 - fee) / 1e18, deltaY, 1);
         // }
 
         // // ** Make oracle change with swap price

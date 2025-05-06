@@ -14,6 +14,9 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 
+import{FullMath} from "v4-core/libraries/FullMath.sol";
+import{SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
+
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
@@ -300,54 +303,117 @@ abstract contract ALMTestBase is Deployers {
     uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
     uint256 slippageTolerance = 1e18; // 1% acceptable price difference
 
-    function setV3PoolPrice(uint160 newSqrtPrice) public {
-        uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
+    // function setV3PoolPrice(uint160 newSqrtPrice) public {
+    //     uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
 
-        // ** Configuration parameters
-        uint256 initialStepSize = 1000 ether; // Initial swap amount
-        uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
-        uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
+    //     // ** Configuration parameters
+    //     uint256 initialStepSize = 1000 ether; // Initial swap amount
+    //     uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
+    //     uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
 
-        uint256 currentPrice = getV3PoolPrice(TARGET_SWAP_POOL);
-        uint256 previousPrice = currentPrice;
-        uint256 stepSize = initialStepSize;
+    //     uint256 currentPrice = getV3PoolPrice(TARGET_SWAP_POOL);
+    //     uint256 previousPrice = currentPrice;
+    //     uint256 stepSize = initialStepSize;
 
-        uint256 iterations = 0;
-        while (iterations < 50) {
-            uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
-            if (priceDiff <= slippageTolerance) break;
-            iterations++;
+    //     uint256 iterations = 0;
+    //     while (iterations < 50) {
+    //         uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
+    //         if (priceDiff <= slippageTolerance) break;
+    //         iterations++;
 
-            bool isZeroForOne = currentPrice >= targetPrice;
-            if (invertedPool) isZeroForOne = !isZeroForOne;
-            uint256 swapAmount = stepSize;
-            if ((isZeroForOne && invertedPool) || (!isZeroForOne && !invertedPool))
-                swapAmount = (stepSize * currentPrice) / 1e30;
+    //         bool isZeroForOne = currentPrice >= targetPrice;
+    //         if (invertedPool) isZeroForOne = !isZeroForOne;
+    //         uint256 swapAmount = stepSize;
+    //         if ((isZeroForOne && invertedPool) || (!isZeroForOne && !invertedPool))
+    //             swapAmount = (stepSize * currentPrice) / 1e30;
 
-            _doV3InputSwap(isZeroForOne, swapAmount);
+    //         _doV3InputSwap(isZeroForOne, swapAmount);
 
-            // Get new price and calculate improvement
-            previousPrice = currentPrice;
-            currentPrice = getV3PoolPrice(TARGET_SWAP_POOL);
-            uint256 newPriceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
+    //         // Get new price and calculate improvement
+    //         previousPrice = currentPrice;
+    //         currentPrice = getV3PoolPrice(TARGET_SWAP_POOL);
+    //         uint256 newPriceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
 
-            // Adaptive step size adjustment
-            if (newPriceDiff < priceDiff) {
-                stepSize = (stepSize * adaptiveDecayBase) / 100; // Moving in right direction
-            } else {
-                stepSize = (stepSize * aggressiveDecayBase) / 100; // Overshot or wrong direction
-            }
+    //         // Adaptive step size adjustment
+    //         if (newPriceDiff < priceDiff) {
+    //             stepSize = (stepSize * adaptiveDecayBase) / 100; // Moving in right direction
+    //         } else {
+    //             stepSize = (stepSize * aggressiveDecayBase) / 100; // Overshot or wrong direction
+    //         }
 
-            // Ensure minimum step size
-            if (stepSize < minStepSize) stepSize = minStepSize;
+    //         // Ensure minimum step size
+    //         if (stepSize < minStepSize) stepSize = minStepSize;
+    //     }
+
+    //     console.log("Final price adjustment results:");
+    //     console.log("Target price:", targetPrice);
+    //     console.log("Final price:", currentPrice);
+    //     console.log("Iterations:", iterations);
+
+    //     if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
+    // }
+
+    uint256 constant MAX_ITER = 8;    // binary-search depth
+    uint256 constant MIN_IN   = 3e8;  // 300 USDC   (token1)  or 0.0000003 WETH (token0)
+
+    function setV3PoolPrice(uint160 targetSqrtPriceX96) public {
+        uint160 sqrtCurrent = hook.sqrtPriceCurrent();
+        if (sqrtCurrent == targetSqrtPriceX96) return;
+
+        // ── 0. quick exit if already in band ────────────────────────────────
+        uint256 priceTarget  = _sqrtPriceToOraclePrice(targetSqrtPriceX96);  // 1e18 scale
+        uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
+        if (ALMMathLib.absSub(priceTarget, priceCurrent) <= slippageTolerance) return;
+
+        // ── 1. direction + liquidity snapshot ──────────────────────────────
+        bool zeroForOne   = priceCurrent > priceTarget;   // pool price must drop
+        if (invertedPool) zeroForOne = !zeroForOne;       // flip when quoting inverted
+        uint128 L         = hook.liquidity();
+
+        // Use binary search on the delta-amount rather than on price itself:
+        // upper = “enough to overshoot”, lower = 0.  Each step halves the gap.
+        uint256 hi; uint256 lo = 0;
+
+        // upper bound:  move **whole** way in one go (worst case)
+        if (zeroForOne) {
+            // token0 in
+            hi = SqrtPriceMath.getAmount0Delta(
+                    targetSqrtPriceX96, sqrtCurrent, L, true);
+        } else {
+            // token1 in
+            hi = SqrtPriceMath.getAmount1Delta(
+                    sqrtCurrent, targetSqrtPriceX96, L, true);
         }
 
-        console.log("Final price adjustment results:");
-        console.log("Target price:", targetPrice);
-        console.log("Final price:", currentPrice);
-        console.log("Iterations:", iterations);
+        if (hi < MIN_IN) hi = MIN_IN;
 
-        if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
+        // ── 2. iterative refinement ( ≤ 8 swaps ) ──────────────────────────
+        for (uint8 i; i < MAX_ITER; ++i) {
+            uint256 mid = (hi + lo) >> 1;               // round-down
+            if (mid < MIN_IN) mid = MIN_IN;
+
+            // do the trial swap
+            _doV3InputSwap(zeroForOne, mid);
+
+            // compute new price
+            sqrtCurrent   = hook.sqrtPriceCurrent();
+            priceCurrent  = _sqrtPriceToOraclePrice(sqrtCurrent);
+
+            // good enough?
+            uint256 diff = ALMMathLib.absSub(priceCurrent, priceTarget);
+            if (diff <= slippageTolerance) return;
+
+            bool nowAbove = priceCurrent > priceTarget;
+            if (nowAbove == (invertedPool ? !zeroForOne : zeroForOne)) {
+                // we are still on the start side – need more input
+                lo = mid;
+            } else {
+                // we overshot – mid was too large
+                hi = mid;
+            }
+        }
+
+        revert("setV3PoolPrice: cannot converge");
     }
 
     function _doV3InputSwap(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
