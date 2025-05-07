@@ -237,15 +237,15 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5298120404768043809, 1e4);
+        assertApproxEqAbs(deltaWETH, 5298107325536358731, 1e4);
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(127033975966382267714, 437579999997, 223916116085, 107628492644336094001);
+        assertEqPositionState(127033994604287418950, 437579999997, 223916116085, 107628498203009560160);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528490395669965061503372749034558);
-        assertApproxEqAbs(hook.TVL(), 265286376855133687862742, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528486622351522217505529817740422);
+        assertApproxEqAbs(hook.TVL(), 265286411648523481843729, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
@@ -281,15 +281,15 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14382385928);
+        assertEq(deltaUSDC, 14382349699);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(142330532105138933891, 437579999997, 252470277959, 112190623422561766370);
+        assertEqPositionState(142330532105138933891, 437579999997, 252470241730, 112190623422561766370);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543844793940242073458443147324490);
-        assertApproxEqAbs(hook.TVL(), 265287947823564975016140, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848682938972248835394931657962);
+        assertApproxEqAbs(hook.TVL(), 265287984052564975016140, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -360,7 +360,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -379,7 +379,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -399,7 +399,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -436,7 +436,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -455,7 +455,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
@@ -473,7 +473,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                uint256(hook.liquidity()) / 1e12,
+                hook.liquidity(),
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );

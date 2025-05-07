@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
@@ -328,24 +329,24 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-        uint256 value = ALMMathLib.getVirtualValue(alm.TVL(), weight, longLeverage, shortLeverage);
-        if (!isInvertedAssets) value = value.mul(oracle.price());
+        uint160 sqrtPLower = ALMMathLib.getSqrtPriceAtTick(alm.tickLower());
+        uint160 sqrtPUpper = ALMMathLib.getSqrtPriceAtTick(alm.tickUpper());
 
-        uint256 liquidity = ALMMathLib.getVirtualLiquidity(
-            value,
-            oraclePriceAtLastRebalance,
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickUpper()),
-                isInvertedPool,
-                decimalsDelta
-            ),
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickLower()),
-                isInvertedPool,
-                decimalsDelta
-            )
-        );
-        return SafeCast.toUint128(liquidity.mul(liquidityMultiplier));
+        if (isInvertedPool) {
+            return
+                LiquidityAmounts.getLiquidityForAmount1(
+                    sqrtPLower,
+                    sqrtPUpper,
+                    lendingAdapter.getCollateralLong().unwrap(qDec)
+                );
+        } else {
+            return
+                LiquidityAmounts.getLiquidityForAmount0(
+                    sqrtPLower,
+                    sqrtPUpper,
+                    lendingAdapter.getCollateralLong().unwrap(bDec)
+                );
+        }
     }
 
     function checkDeviations() internal view {

@@ -25,6 +25,7 @@ library TestLib {
     IERC4626 constant morphoUSDTVault = IERC4626(0xbEef047a543E45807105E51A8BBEFCc5950fcfBa);
     IERC4626 constant morphoUSDCVault = IERC4626(0xd63070114470f685b75B74D60EEc7c1113d33a3D);
     IERC4626 constant morphoDAIVault = IERC4626(0x500331c9fF24D9d11aee6B07734Aa72343EA74a5);
+    IERC4626 constant morphoUSDEVault = IERC4626(0x4EDfaB296F8Eb15aC0907CF9eCb7079b1679Da57);
 
     // ** https://app.euler.finance/?asset=USDT&network=ethereum
     IEVC constant EULER_VAULT_CONNECT = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
@@ -36,6 +37,7 @@ library TestLib {
     IEulerVault constant eulerWETHVault2 = IEulerVault(0x716bF454066a84F39A2F78b5707e79a9d64f1225);
     IEulerVault constant eulerCbBTCVault1 = IEulerVault(0x056f3a2E41d2778D3a0c0714439c53af2987718E);
     IEulerVault constant eulerCbBTCVault2 = IEulerVault(0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1);
+    IEulerVault constant eulerUSDEVault = IEulerVault(0x2daCa71Cb58285212Dc05D65Cfd4f59A82BC4cF6);
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
     ISwapRouter constant V3_SWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
@@ -44,6 +46,7 @@ library TestLib {
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
     address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+    address constant uniswap_v3_USDE_USDT_POOL = 0x435664008F38B0650fBC1C9fc971D0A3Bc2f1e47;
 
     // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     AggregatorV3Interface constant chainlink_feed_WETH =
@@ -56,6 +59,8 @@ library TestLib {
         AggregatorV3Interface(0x2665701293fCbEB223D11A08D826563EDcCE423A);
     AggregatorV3Interface constant chainlink_feed_DAI =
         AggregatorV3Interface(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
+    AggregatorV3Interface constant chainlink_feed_USDE =
+        AggregatorV3Interface(0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961);
 
     uint256 constant sqrt_price_10per_price_change = 48808848170151600; //(sqrt(1.1)-1) or max 10% price change
 

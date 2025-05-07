@@ -226,18 +226,34 @@ contract ALM is BaseStrategyHook, ERC20 {
             key.currency0.take(poolManager, address(this), token0In, false);
 
             uint256 protocolFeeAmount = fee.mul(protocolFee);
-            if (isInvertedPool) {
-                accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
-                positionManager.positionAdjustmentPriceUp(
-                    (token0In - protocolFeeAmount).wrap(bDec),
-                    token1Out.wrap(qDec)
-                );
+            if (params.amountSpecified > 0) {
+                if (isInvertedPool) {
+                    accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
+                    positionManager.positionAdjustmentPriceUp(
+                        (token0In - protocolFeeAmount).wrap(bDec),
+                        token1Out.wrap(qDec)
+                    );
+                } else {
+                    accumulatedFeeQ += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceDown(
+                        token1Out.wrap(bDec),
+                        (token0In - protocolFeeAmount).wrap(qDec)
+                    );
+                }
             } else {
-                accumulatedFeeQ += protocolFeeAmount;
-                positionManager.positionAdjustmentPriceDown(
-                    token1Out.wrap(bDec),
-                    (token0In - protocolFeeAmount).wrap(qDec)
-                );
+                if (isInvertedPool) {
+                    accumulatedFeeQ += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceUp(
+                        token0In.wrap(bDec),
+                        (token1Out - protocolFeeAmount).wrap(qDec)
+                    );
+                } else {
+                    accumulatedFeeB += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceDown(
+                        (token1Out - protocolFeeAmount).wrap(bDec),
+                        token0In.wrap(qDec)
+                    );
+                }
             }
 
             // We also need to create a debit so user could take it back from the PM.
@@ -267,18 +283,34 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             uint256 protocolFeeAmount = fee.mul(protocolFee);
             checkSwapDeviations(sqrtPriceNext);
-            if (isInvertedPool) {
-                accumulatedFeeQ += protocolFeeAmount;
-                positionManager.positionAdjustmentPriceDown(
-                    token0Out.wrap(bDec),
-                    (token1In - protocolFeeAmount).wrap(qDec)
-                );
+            if (params.amountSpecified > 0) {
+                if (isInvertedPool) {
+                    accumulatedFeeQ += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceDown(
+                        token0Out.wrap(bDec),
+                        (token1In - protocolFeeAmount).wrap(qDec)
+                    );
+                } else {
+                    accumulatedFeeB += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceUp(
+                        (token1In - protocolFeeAmount).wrap(bDec),
+                        token0Out.wrap(qDec)
+                    );
+                }
             } else {
-                accumulatedFeeB += protocolFeeAmount;
-                positionManager.positionAdjustmentPriceUp(
-                    (token1In - protocolFeeAmount).wrap(bDec),
-                    token0Out.wrap(qDec)
-                );
+                if (isInvertedPool) {
+                    accumulatedFeeB += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceDown(
+                        (token0Out - protocolFeeAmount).wrap(bDec),
+                        token1In.wrap(qDec)
+                    );
+                } else {
+                    accumulatedFeeQ += protocolFeeAmount;
+                    positionManager.positionAdjustmentPriceUp(
+                        token1In.wrap(bDec),
+                        (token0Out - protocolFeeAmount).wrap(qDec)
+                    );
+                }
             }
 
             key.currency0.settle(poolManager, address(this), token0Out, false);

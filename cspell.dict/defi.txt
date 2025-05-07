@@ -32,3 +32,4 @@ circuit
 Brevis
 rebalancer
 IALM
+USDE
