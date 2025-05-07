@@ -172,7 +172,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit BoundariesUpdated(tickLower, tickUpper);
     }
 
-    // --- Deltas calculation --- //
+    // ** Deltas calculation
 
     function getDeltas(
         int256 amountSpecified,
@@ -217,7 +217,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         }
     }
 
-    // --- Modifiers --- //
+    // ** Modifiers
 
     /// @dev Only allows execution for the authorized pool
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {

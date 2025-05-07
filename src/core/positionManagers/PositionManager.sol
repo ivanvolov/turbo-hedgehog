@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -55,8 +56,7 @@ contract PositionManager is Base, IPositionManager {
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
 
-        lendingAdapter.repayLong(deltaBase);
-        lendingAdapter.removeCollateralLong(k.mul(deltaQuote));
+        lendingAdapter.updatePosition(SafeCast.toInt256(k.mul(deltaQuote)), 0, -SafeCast.toInt256(deltaBase), 0);
 
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaQuote));
 

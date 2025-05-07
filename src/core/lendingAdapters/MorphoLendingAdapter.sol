@@ -67,20 +67,28 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
     }
 
+    /**
+     * @notice Updates the position by adjusting collateral and debt for both long and short sides.
+     * @dev The order of operations is critical to avoid "phantom under-collateralization":
+     *      - Collateral is added and debt is repaid first, to ensure the account is not temporarily under-collateralized.
+     *      - Now collateral is removed and debt is borrowed if needed.
+     */
     function updatePosition(
         int256 deltaCL,
         int256 deltaCS,
         int256 deltaDL,
         int256 deltaDS
     ) external onlyModule notPaused {
-        if (deltaCL > 0) addCollateralLong(uint256(deltaCL));
-        if (deltaCL < 0) removeCollateralLong(uint256(-deltaCL));
-        if (deltaCS > 0) addCollateralShort(uint256(deltaCS));
-        if (deltaCS < 0) removeCollateralShort(uint256(-deltaCS));
+        if (deltaCL < 0) addCollateralLong(uint256(-deltaCL));
+        if (deltaCS < 0) addCollateralShort(uint256(-deltaCS));
 
         if (deltaDL < 0) repayLong(uint256(-deltaDL));
-        if (deltaDL > 0) borrowLong(uint256(deltaDL));
         if (deltaDS < 0) repayShort(uint256(-deltaDS));
+
+        if (deltaCL > 0) removeCollateralLong(uint256(deltaCL));
+        if (deltaCS > 0) removeCollateralShort(uint256(deltaCS));
+
+        if (deltaDL > 0) borrowLong(uint256(deltaDL));
         if (deltaDS > 0) borrowShort(uint256(deltaDS));
     }
 
@@ -161,13 +169,14 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
     // ** Helpers
 
-    function syncLong() external {
-        if (!isEarn) morpho.accrueInterest(morpho.idToMarketParams(longMId));
+    function syncPositions() external {
+        if (!isEarn) {
+            morpho.accrueInterest(morpho.idToMarketParams(longMId));
+            morpho.accrueInterest(morpho.idToMarketParams(shortMId));
+        }
     }
 
-    function syncShort() external {
-        if (!isEarn) morpho.accrueInterest(morpho.idToMarketParams(shortMId));
-    }
+    // ** Modifiers
 
     modifier isBorrowMode() {
         if (isEarn) revert NotInBorrowMode();

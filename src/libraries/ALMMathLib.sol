@@ -146,7 +146,7 @@ library ALMMathLib {
         );
     }
 
-    // --- Helpers --- //
+    // ** Helpers
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
         return
             SafeCast.toInt24(
@@ -186,7 +186,7 @@ library ALMMathLib {
         return TickMath.getSqrtPriceAtTick(tick);
     }
 
-    // --- Math functions --- //
+    // ** Math functions
 
     /// @notice Calculates floor(x*y÷denominator) with full precision for signed x and unsigned y and denominator.
     function mulDiv(int256 a, uint256 b, uint256 denominator) internal pure returns (int256) {

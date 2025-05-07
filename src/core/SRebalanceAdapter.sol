@@ -267,10 +267,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
-        lendingAdapter.updatePosition(deltaCL, deltaCS, deltaDL, deltaDS);
+        lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
-    // --- Math functions --- //
+    // ** Math functions
 
     // @Notice: this function is mainly for removing stack too deep error
     function _rebalanceCalculations(
@@ -361,14 +361,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         require(deviationShort <= maxDeviationShort, "D2");
     }
 
-    // --- Modifiers --- //
+    // ** Modifiers
 
     modifier onlyRebalanceOperator() {
         if (msg.sender != rebalanceOperator) revert NotRebalanceOperator();
         _;
     }
 
-    // --- Helpers --- //
+    // ** Helpers
 
     function baseBalanceUnwr() internal view returns (uint256) {
         return base.balanceOf(address(this));

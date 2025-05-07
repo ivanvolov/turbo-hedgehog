@@ -95,7 +95,7 @@ abstract contract Base is IBase {
         revert TokenNotAllowed(address(token));
     }
 
-    // --- Modifiers --- //
+    // ** Modifiers
 
     modifier onlyOwner() {
         if (owner != msg.sender) {
@@ -104,7 +104,7 @@ abstract contract Base is IBase {
         _;
     }
 
-    // @dev Only the ALM may call this function
+    /// @dev Only the ALM may call this function
     modifier onlyALM() {
         if (msg.sender != address(alm)) revert NotALM(msg.sender);
         _;

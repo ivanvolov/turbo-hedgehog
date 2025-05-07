@@ -37,7 +37,5 @@ interface ILendingAdapter {
     function addCollateralShort(uint256 amountUSDC) external;
 
     // ** Helpers
-    function syncLong() external;
-
-    function syncShort() external;
+    function syncPositions() external;
 }

@@ -85,6 +85,7 @@ abstract contract ALMTestBase is Deployers {
     TestAccount treasury;
 
     uint256 almId;
+    uint256 tempGas;
 
     // --- Shortcuts  --- //
 
@@ -648,6 +649,15 @@ abstract contract ALMTestBase is Deployers {
         }
 
         return (deltaX, deltaY);
+    }
+
+    function recordGas() internal {
+        tempGas = gasleft();
+    }
+
+    function logGas() internal {
+        console.log("gasSpend", tempGas - gasleft());
+        tempGas = 0;
     }
 
     // --- Utils --- //

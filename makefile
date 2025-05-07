@@ -60,6 +60,6 @@ format_write:
 	npx prettier --write "src/**/*.sol" "test/**/*.sol"
 
 gas_r:
-	clear && forge test --match-contract ETHALMTest -vv --gas-report
-gas_s:
-	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_deposit_rebalance_swap"
+	clear && forge test -vv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
+gas_rl:
+	clear && forge test -vvvv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"

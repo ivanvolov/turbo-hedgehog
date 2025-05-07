@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 
@@ -216,11 +214,8 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        uint256 gasBefore = gasleft();
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
-        uint256 gasSpend = gasBefore - gasleft();
-        console.log("gasSpend", gasSpend);
         assertEq(hook.balanceOf(alice.addr), 0);
 
         assertEqBalanceState(alice.addr, 99997558771099201211, 0);
@@ -791,10 +786,8 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Rebalance
         uint256 preRebalanceTVL = hook.TVL();
-        uint256 gasBefore = gasleft();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        console.log("gasSpend", gasBefore - gasleft());
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
