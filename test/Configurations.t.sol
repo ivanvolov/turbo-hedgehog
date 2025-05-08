@@ -8,6 +8,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {PRBMath} from "@prb-math/PRBMath.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
@@ -191,7 +192,6 @@ contract ConfigurationsTest is ALMTestBase {
     }
 
     function test_oracles() public {
-        vm.skip(true);
         IOracle oracle1 = create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 50 hours, 50 hours);
         console.log("oracle", oracle1.price());
 
@@ -209,6 +209,42 @@ contract ConfigurationsTest is ALMTestBase {
 
         IOracle oracle6 = create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 50 hours, 50 hours);
         console.log("oracle", oracle6.price());
+
+        {
+            uint256 priceQuote = 1816937883999999885312;
+            uint256 decimalsQuote = 18;
+            uint256 priceBase = 99994904;
+            uint256 decimalsBase = 8;
+            console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
+        }
+
+        {
+            /// @dev: this is illustration of overflow
+            // uint256 priceQuote = 1816937883999999885312 * 1e10;
+            // uint256 decimalsQuote = 28;
+            // uint256 priceBase = 99994904;
+            // uint256 decimalsBase = 8;
+            // console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
+        }
+
+        /// @dev: so delta is an oracle problem but only one way oracle problem
+        {
+            uint256 priceQuote = 1816000000;
+            uint256 decimalsQuote = 6;
+            uint256 priceBase = 99994904000000005278531584;
+            uint256 decimalsBase = 26;
+            console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
+        }
+    }
+
+    function mock_calc_price(
+        uint256 priceQuote,
+        uint256 decimalsQuote,
+        uint256 priceBase,
+        uint256 decimalsBase
+    ) internal pure returns (uint256) {
+        uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
+        return PRBMath.mulDiv(uint256(priceQuote), 10 ** scaleFactor, uint256(priceBase));
     }
 
     function __test_currencies_order(address token0, address token1) internal pure {

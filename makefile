@@ -54,9 +54,9 @@ tla:
 tlal:
 	clear && forge test -vvvv --match-contract LendingAdaptersTest --match-test "test_"
 tdec:
-	clear && forge test -vv --match-contract DecimalsTest --match-test "test_"
+	clear && forge test -vv --match-contract ConfigurationsTest --match-test "test_"
 tdecl:
-	clear && forge test -vvvv --match-contract DecimalsTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ConfigurationsTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
