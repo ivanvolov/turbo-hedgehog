@@ -38,6 +38,15 @@ interface IALM {
     );
     event HookFee(bytes32 indexed id, address indexed sender, uint128 feeAmount0, uint128 feeAmount1);
 
+    function deposit(address to, uint256 amountIn, uint256 minShares) external returns (uint256 sharesMinted);
+
+    function withdraw(
+        address to,
+        uint256 sharesOut,
+        uint256 minAmountOutB,
+        uint256 minAmountOutQ
+    ) external returns (uint256 baseOut, uint256 quoteOut);
+
     function paused() external view returns (bool);
 
     function shutdown() external view returns (bool);

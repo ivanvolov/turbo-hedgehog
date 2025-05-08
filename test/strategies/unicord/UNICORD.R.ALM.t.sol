@@ -115,7 +115,10 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+        (uint256 amountOutB, uint256 amountOutQ) = hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+        assertApproxEqAbs(amountOutB, 49999999999, 1e1, "amountOutB");
+        assertApproxEqAbs(amountOutQ, 0, 1e1, "amountOutQ");
     }
 
     function test_deposit_rebalance() public {
@@ -224,8 +227,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             // console.log("preBalance %s", USDC.balanceOf(alice.addr));
 
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw / 2, 0, 0);
 
             // console.log("postTVL %s", hook.TVL());
             // console.log("postBalance %s", DAI.balanceOf(alice.addr));
@@ -344,8 +346,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

@@ -126,10 +126,13 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        (uint256 amountOutB, uint256 amountOutQ) = hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
+        assertApproxEqAbs(amountOutB, 265144057969, 1e1, "amountOutB");
+        assertApproxEqAbs(amountOutQ, 0, 1e1, "amountOutQ");
         assertEqBalanceState(alice.addr, 0, 265144057969);
+
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(hook.TVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
@@ -413,8 +416,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         // ** Withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         // ** Deposit
@@ -496,8 +498,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

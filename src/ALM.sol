@@ -65,7 +65,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         address to,
         uint256 amountIn,
         uint256 minShares
-    ) external notPaused notShutdown returns (uint256 sharesMinted) {
+    ) external override notPaused notShutdown returns (uint256 sharesMinted) {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         lendingAdapter.syncPositions();
@@ -87,22 +87,27 @@ contract ALM is BaseStrategyHook, ERC20 {
         emit Deposit(to, amountIn, sharesMinted, TVL2, totalSupply());
     }
 
-    function withdraw(address to, uint256 sharesOut, uint256 minAmountOutB, uint256 minAmountOutQ) external notPaused {
+    function withdraw(
+        address to,
+        uint256 sharesToBurn,
+        uint256 minAmountOutB,
+        uint256 minAmountOutQ
+    ) external override notPaused returns (uint256 baseOut, uint256 quoteOut) {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
-        if (sharesOut == 0) revert NotZeroShares();
+        if (sharesToBurn == 0) revert NotZeroShares();
         lendingAdapter.syncPositions();
 
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         (uint256 uCL, uint256 uCS, uint256 uDL, uint256 uDS) = ALMMathLib.getUserAmounts(
             totalSupply(),
-            sharesOut,
+            sharesToBurn,
             CL,
             CS,
             DL,
             DS
         );
 
-        _burn(msg.sender, sharesOut);
+        _burn(msg.sender, sharesToBurn);
         if (uDS != 0 && uDL != 0)
             flashLoanAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
@@ -116,8 +121,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
-        uint256 baseOut;
-        uint256 quoteOut;
         if (isInvertedAssets) {
             baseOut = baseBalance(false);
             if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
@@ -129,7 +132,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
 
         liquidity = rebalanceAdapter.calcLiquidity();
-        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), liquidity);
+        emit Withdraw(to, sharesToBurn, baseOut, quoteOut, TVL(), totalSupply(), liquidity);
     }
 
     function onFlashLoanTwoTokens(

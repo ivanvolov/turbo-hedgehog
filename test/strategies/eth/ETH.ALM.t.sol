@@ -8,6 +8,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
+import {ReferralOperatorMock} from "@src/periphery/ReferralOperator.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -190,6 +191,46 @@ contract ETHALMTest is MorphoTestBase {
         part_withdraw();
     }
 
+    function test_deposit_rebalance_withdraw_referral() public {
+        vm.startPrank(deployer.addr);
+        ReferralOperatorMock referralOperator = new ReferralOperatorMock(hook, WETH);
+        hook.setOperators(address(referralOperator), address(0));
+        vm.stopPrank();
+
+        // ** Deposit
+        vm.prank(alice.addr);
+        WETH.forceApprove(address(referralOperator), type(uint256).max);
+
+        amountToDep = 100 ether;
+        deal(address(WETH), address(alice.addr), amountToDep);
+        vm.prank(alice.addr);
+        (, uint256 posId) = referralOperator.deposit(alice.addr, amountToDep, 0, referral.addr, 2e17); // 20% performance fee
+
+        // ** Rebalance
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(slippage);
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
+        // ** Swap
+        uint256 wethToSwap = 4611698430797450000;
+        deal(address(WETH), address(swapper.addr), wethToSwap);
+        swapWETH_USDC_In(wethToSwap);
+
+        // ** Withdraw
+        vm.prank(alice.addr);
+        uint256 amountOut = referralOperator.withdraw(posId, alice.addr, 0, 0);
+        assertEq(hook.balanceOf(alice.addr), 0);
+        assertEq(amountOut, 100014589866623521033);
+        assertEqBalanceState(alice.addr, amountOut, 0);
+
+        // ** Redeem
+        assertEqBalanceStateZero(referral.addr);
+        vm.startPrank(referral.addr);
+        referralOperator.redeemReferralRewards(referral.addr, referralOperator.referralRewards(referral.addr));
+        vm.stopPrank();
+        assertEqBalanceState(referral.addr, 3647466655880258, 0);
+    }
+
     function test_deposit_rebalance_withdraw_not_operator() public {
         test_deposit_rebalance();
         alignOraclesAndPools(hook.sqrtPriceCurrent());
@@ -215,10 +256,13 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        (uint256 amountOutB, uint256 amountOutQ) = hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
+        assertApproxEqAbs(amountOutB, 0, 1e1, "amountOutB");
+        assertApproxEqAbs(amountOutQ, 99997558771099201211, 1e1, "amountOutQ");
         assertEqBalanceState(alice.addr, 99997558771099201211, 0);
+
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(hook.TVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
@@ -691,8 +735,7 @@ contract ETHALMTest is MorphoTestBase {
         // ** Withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         {
@@ -796,8 +839,7 @@ contract ETHALMTest is MorphoTestBase {
         // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

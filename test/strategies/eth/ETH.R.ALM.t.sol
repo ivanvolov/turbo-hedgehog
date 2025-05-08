@@ -174,8 +174,7 @@ contract ETHRALMTest is ALMTestBase {
         // ** Withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
         {
@@ -279,8 +278,7 @@ contract ETHRALMTest is ALMTestBase {
         // ** Full withdraw
         {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            assertWithdraw(alice.addr, alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

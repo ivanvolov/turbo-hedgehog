@@ -83,6 +83,7 @@ abstract contract ALMTestBase is Deployers {
     TestAccount marketMaker;
     TestAccount zero;
     TestAccount treasury;
+    TestAccount referral;
 
     uint256 almId;
     uint256 tempGas;
@@ -113,6 +114,7 @@ abstract contract ALMTestBase is Deployers {
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
         treasury = TestAccountLib.createTestAccount("treasury");
+        referral = TestAccountLib.createTestAccount("referral");
     }
 
     function create_lending_adapter_euler_WETH_USDC() internal {
@@ -554,6 +556,23 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(TW.unwrap(_leA.getCollateralShort(), bDec), CS, assertEqPSThresholdCS, "CS not equal");
         assertApproxEqAbs(TW.unwrap(_leA.getBorrowedLong(), bDec), DL, assertEqPSThresholdDL, "DL not equal");
         assertApproxEqAbs(TW.unwrap(_leA.getBorrowedShort(), qDec), DS, assertEqPSThresholdDS, "DS not equal");
+    }
+
+    function assertWithdraw(
+        address who,
+        address to,
+        uint256 sharesOut,
+        uint256 minAmountOutB,
+        uint256 minAmountOutQ
+    ) public returns (uint256 amountOutB, uint256 amountOutQ) {
+        uint256 balanceBBefore = BASE.balanceOf(to);
+        uint256 balanceQBefore = QUOTE.balanceOf(to);
+
+        vm.prank(who);
+        (amountOutB, amountOutQ) = hook.withdraw(to, sharesOut, minAmountOutB, minAmountOutQ);
+
+        assertEq(BASE.balanceOf(to), balanceBBefore + amountOutB, "withdraw not correct: Base");
+        assertEq(QUOTE.balanceOf(to), balanceQBefore + amountOutQ, "withdraw not correct: Quote");
     }
 
     // --- Test math --- //
