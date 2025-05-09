@@ -168,6 +168,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 tick = ALMMathLib.getTickFromPrice(
             ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, decimalsDelta)
         );
+        console.log("GET TICK FROM PRICE =========== %S", tick);
         tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
         tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
 
