@@ -255,7 +255,6 @@ contract ETHALMTest is MorphoTestBase {
 
     // @Notice: this is needed for composability testing
     function part_swap_price_up_in() public {
-
         uint256 usdcToSwap = 14541602182;
 
         console.log("preCL %s", lendingAdapter.getCollateralLong());
@@ -301,7 +300,6 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEq(hook.sqrtPriceCurrent(), 1528447458843092032237227028006489);
         assertApproxEqAbs(hook.TVL(), 100033488377518626105, 1e1, "tvl");
-
     }
 
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
@@ -671,7 +669,7 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 - fee)) / 1e18, 1);
             assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
@@ -690,7 +688,7 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 - fee)) / 1e18, 1);
             assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
@@ -711,7 +709,7 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, deltaX * (1e18 + fee) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
         }
 
@@ -741,7 +739,7 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 - fee)) / 1e18, 1);
             assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
@@ -771,8 +769,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
-            assertApproxEqAbs(usdcToSwap , deltaY, 1);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Swap Up out
@@ -791,7 +789,7 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1);
-            assertApproxEqAbs(deltaUSDC, deltaY * (1e18 + fee) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1);
         }
 
         // ** Swap Down In
@@ -809,7 +807,7 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1);
-            assertApproxEqAbs(deltaUSDC, deltaY * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 - fee)) / 1e18, 1);
         }
 
         // ** Make oracle change with swap price
@@ -820,7 +818,7 @@ contract ETHALMTest is MorphoTestBase {
         console.log("preRebalanceTVL %s", preRebalanceTVL);
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        
+
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO check after all the cases on slippage
 
         // ** Make oracle change with swap price
