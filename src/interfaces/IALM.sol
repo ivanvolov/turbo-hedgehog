@@ -50,7 +50,7 @@ interface IALM {
 
     function tickUpper() external view returns (int24);
 
-    function updateBoundaries() external;
+    function updateBoundaries(uint160 sqrtPriceAtLastRebalance) external;
 
     function updateLiquidity(uint128 _liquidity) external;
 

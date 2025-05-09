@@ -59,7 +59,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
         authorizedPool = PoolId.unwrap(key.toId());
         sqrtPriceCurrent = sqrtPrice;
-        _updateBoundaries();
+        _updateBoundaries(sqrtPriceCurrent);
         return ALM.afterInitialize.selector;
     }
 
@@ -243,7 +243,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
                     accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
                     positionManager.positionAdjustmentPriceUp(
-                        (token0In - protocolFeeAmount).wrap(bDec), 
+                        (token0In - protocolFeeAmount).wrap(bDec),
                         token1Out.wrap(qDec)
                     );
                     console.log("here");
@@ -263,7 +263,7 @@ contract ALM is BaseStrategyHook, ERC20 {
                     accumulatedFeeQ += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceUp(
                         token0In.wrap(bDec),
-                        (token1Out + protocolFeeAmount).wrap(qDec) 
+                        (token1Out + protocolFeeAmount).wrap(qDec)
                     );
                 } else {
                     console.log("case 4");

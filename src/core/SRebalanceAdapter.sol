@@ -215,7 +215,15 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         oraclePriceAtLastRebalance = oracle.price();
         console.log("oraclePriceAtLastRebalance %s", oraclePriceAtLastRebalance);
 
-        // sqrtPriceAtLastRebalance = uint160(PRBMath.mulDiv(PRBMathUD60x18.sqrt(ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)), ALMMathLib.Q96, ALMMathLib.WAD));
+        // sqrtPriceAtLastRebalance = uint160(
+        //     PRBMath.mulDiv(
+        //         PRBMathUD60x18.sqrt(
+        //             ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
+        //         ),
+        //         ALMMathLib.Q96,
+        //         ALMMathLib.WAD
+        //     )
+        // );
         // console.log("SQRT PRICE AT LAST REBALANCE ==================== %s", sqrtPriceAtLastRebalance); TODO
 
         sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
@@ -228,9 +236,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
 
-        alm.updateBoundaries();
+        alm.updateBoundaries(sqrtPriceAtLastRebalance);
         timeAtLastRebalance = block.timestamp;
-        uint128 liquidity = calcLiquidity() * uint128(liquidityMultiplier) /  1e18;
+        uint128 liquidity = (calcLiquidity() * uint128(liquidityMultiplier)) / 1e18;
         console.log("liquidity %s", liquidity);
         alm.updateLiquidity(liquidity);
 
@@ -332,7 +340,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             console.log("target CS %s", targetCS);
             console.log("target DL %s", targetDL);
             console.log("target DS %s", targetDS);
-
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -354,10 +361,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("sqrtPUpper %s", sqrtPUpper);
 
         uint128 liqui = LiquidityAmounts.getLiquidityForAmount1(
-                    sqrtPLower,
-                    sqrtPUpper,
-                    lendingAdapter.getCollateralLong().unwrap(qDec) 
-                ); //TODO remove in prod
+            sqrtPLower,
+            sqrtPUpper,
+            lendingAdapter.getCollateralLong().unwrap(qDec)
+        ); //TODO remove in prod
 
         uint256 amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
         uint256 amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
@@ -383,7 +390,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                     lendingAdapter.getCollateralLong().unwrap(bDec)
                 );
         }
-
     }
 
     function checkDeviations() internal view {

@@ -12,6 +12,8 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 
+import {TickMath} from "v4-core/libraries/TickMath.sol";
+
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -150,8 +152,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    function updateBoundaries() external onlyRebalanceAdapter {
-        _updateBoundaries();
+    function updateBoundaries(uint160 sqrtPriceAtLastRebalance) external onlyRebalanceAdapter {
+        _updateBoundaries(sqrtPriceAtLastRebalance);
     }
 
     function updateLiquidity(uint128 _liquidity) external onlyRebalanceAdapter {
@@ -164,7 +166,11 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit SqrtPriceUpdated(_sqrtPrice);
     }
 
-    function _updateBoundaries() internal {
+    function _updateBoundaries(uint160 sqrtPriceAtLastRebalance) internal {
+        //int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceAtLastRebalance);
+
+        //console.log("TICK NEW ======= %s", tick);
+
         int24 tick = ALMMathLib.getTickFromPrice(
             ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, decimalsDelta)
         );
