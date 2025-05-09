@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
@@ -211,6 +213,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         // ** Update state
         oraclePriceAtLastRebalance = oracle.price();
+        console.log("oraclePriceAtLastRebalance %s", oraclePriceAtLastRebalance);
 
         sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
             ALMMathLib.getTickFromPrice(
@@ -218,11 +221,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             )
         );
 
+        console.log("sqrtPriceAtLastRebalance %s", sqrtPriceAtLastRebalance);
+
         alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
 
         alm.updateBoundaries();
         timeAtLastRebalance = block.timestamp;
-        uint128 liquidity = calcLiquidity();
+        uint128 liquidity = calcLiquidity() * uint128(liquidityMultiplier) /  1e18;
+        console.log("liquidity %s", liquidity);
         alm.updateLiquidity(liquidity);
 
         emit Rebalance(
@@ -318,6 +324,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
             deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(DL);
             deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(DS);
+
+            console.log("target CL %s", targetCL);
+            console.log("target CS %s", targetCS);
+            console.log("target DL %s", targetDL);
+            console.log("target DS %s", targetDS);
+
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -332,12 +344,33 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint160 sqrtPLower = ALMMathLib.getSqrtPriceAtTick(alm.tickLower());
         uint160 sqrtPUpper = ALMMathLib.getSqrtPriceAtTick(alm.tickUpper());
 
+        console.log("amountForLiquidity %s", lendingAdapter.getCollateralLong().unwrap(qDec));
+        console.log("isInvertedPool %s", isInvertedPool);
+
+        console.log("sqrtPLower %s", sqrtPLower);
+        console.log("sqrtPUpper %s", sqrtPUpper);
+
+        uint128 liqui = LiquidityAmounts.getLiquidityForAmount1(
+                    sqrtPLower,
+                    sqrtPUpper,
+                    lendingAdapter.getCollateralLong().unwrap(qDec) 
+                ); //TODO remove in prod
+
+        uint256 amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
+        uint256 amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
+
+        console.log("amount0", amount0);
+        console.log("amount1", amount1);
+
+        console.log("liquiCheck0 %s", LiquidityAmounts.getLiquidityForAmount0(sqrtPLower, sqrtPUpper, amount0));
+        console.log("liquiCheck1 %s", LiquidityAmounts.getLiquidityForAmount1(sqrtPLower, sqrtPUpper, amount1));
+
         if (isInvertedPool) {
             return
                 LiquidityAmounts.getLiquidityForAmount1(
                     sqrtPLower,
                     sqrtPUpper,
-                    lendingAdapter.getCollateralLong().unwrap(qDec)
+                    lendingAdapter.getCollateralLong().unwrap(qDec) //TODO check in all cases
                 );
         } else {
             return
@@ -347,6 +380,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                     lendingAdapter.getCollateralLong().unwrap(bDec)
                 );
         }
+
     }
 
     function checkDeviations() internal view {
@@ -355,6 +389,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         uint256 _longLeverage = PRBMath.mulDiv(currentCL, price, currentCL.mul(price) - DL);
         uint256 _shortLeverage = currentCS.div(currentCS - DS.mul(price));
+
+        console.log("currentCL %s", currentCL);
+        console.log("currentCS %s", currentCS);
+        console.log("DL %s", DL);
+        console.log("DS %s", DS);
+
+        console.log("_longLeverage %s", _longLeverage);
+        console.log("_shortLeverage %s", _shortLeverage);
 
         uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
         uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);

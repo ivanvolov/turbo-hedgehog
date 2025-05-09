@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -109,7 +111,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickLowerDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
-        if (_protocolFee > 3e16) revert ProtocolFeeNotValid();
+        if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
         protocolFee = _protocolFee;
         tvlCap = _tvlCap;
         tickUpperDelta = _tickUpperDelta;
@@ -183,6 +185,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         returns (BeforeSwapDelta beforeSwapDelta, uint256 tokenIn, uint256 tokenOut, uint160 sqrtPriceNext, uint256 fee)
     {
         if (amountSpecified > 0) {
+            console.log("case AS1");
             tokenOut = uint256(amountSpecified);
             sqrtPriceNext = zeroForOne
                 ? ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, tokenOut)
@@ -199,6 +202,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 SafeCast.toInt128(tokenIn) // unspecified token = zeroForOne ? token0 : token1
             );
         } else {
+            console.log("case AS2");
             unchecked {
                 tokenIn = uint256(-amountSpecified);
             }

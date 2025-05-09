@@ -60,6 +60,8 @@ interface IALM {
 
     function TVL() external view returns (uint256);
 
+    function protocolFee() external view returns (uint256);
+
     function updateSqrtPrice(uint160 _sqrtPrice) external;
 
     function baseBalance(bool wrap) external view returns (uint256);
