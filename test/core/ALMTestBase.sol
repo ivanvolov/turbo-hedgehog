@@ -556,12 +556,19 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
-
+        
+        console.log("here0");
+        
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
+        
+        console.log("here1");
 
         uint256 tvlRatio = hook.TVL() > preRebalanceTVL
             ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
             : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
+        
+        console.log("here2");
+        console.log("current TVL %s", hook.TVL());
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }

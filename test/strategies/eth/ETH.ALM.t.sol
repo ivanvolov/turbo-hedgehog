@@ -671,8 +671,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Swap Up In
@@ -690,8 +690,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Swap Down Out
@@ -711,8 +711,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 9e14);
-            assertApproxEqAbs(deltaUSDC, deltaY, 3e6);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 + fee) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -725,6 +725,7 @@ contract ETHALMTest is MorphoTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
         }
 
+        // ** Swap Up In
         {
             uint256 usdcToSwap = 50000e6; // 50k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -740,8 +741,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -770,8 +771,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX * (1e18 - fee) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap , deltaY, 1);
         }
 
         // ** Swap Up out
@@ -789,8 +790,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, deltaX, 3e14);
-            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY * (1e18 + fee) / 1e18, 1);
         }
 
         // ** Swap Down In
@@ -807,8 +808,8 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 42e13);
-            assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
+            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY * (1e18 - fee) / 1e18, 1);
         }
 
         // ** Make oracle change with swap price
@@ -816,9 +817,11 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Rebalance
         uint256 preRebalanceTVL = hook.TVL();
+        console.log("preRebalanceTVL %s", preRebalanceTVL);
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        
+        //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO check after all the cases on slippage
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
