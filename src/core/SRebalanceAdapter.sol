@@ -215,22 +215,22 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         oraclePriceAtLastRebalance = oracle.price();
         console.log("oraclePriceAtLastRebalance %s", oraclePriceAtLastRebalance);
 
-        // sqrtPriceAtLastRebalance = uint160(
-        //     PRBMath.mulDiv(
-        //         PRBMathUD60x18.sqrt(
-        //             ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
-        //         ),
-        //         ALMMathLib.Q96,
-        //         ALMMathLib.WAD
-        //     )
-        // );
-        // console.log("SQRT PRICE AT LAST REBALANCE ==================== %s", sqrtPriceAtLastRebalance); TODO
-
-        sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
-            ALMMathLib.getTickFromPrice(
-                ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
+        sqrtPriceAtLastRebalance = uint160(
+            PRBMath.mulDiv(
+                PRBMathUD60x18.sqrt(
+                    ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
+                ),
+                ALMMathLib.Q96,
+                ALMMathLib.WAD
             )
         );
+        //console.log("SQRT PRICE AT LAST REBALANCE ==================== %s", sqrtPriceAtLastRebalance);
+
+        // sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
+        //     ALMMathLib.getTickFromPrice(
+        //         ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
+        //     )
+        // );
 
         console.log("sqrtPriceAtLastRebalance %s", sqrtPriceAtLastRebalance);
 
