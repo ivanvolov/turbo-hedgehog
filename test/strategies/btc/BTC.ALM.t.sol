@@ -46,8 +46,8 @@ contract BTCALMTest is ALMTestBase {
         create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerCbBTCVault2, 100e8);
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
-        assertEq(hook.tickLower(), -65897);
-        assertEq(hook.tickUpper(), -71897);
+        assertEq(hook.tickLower(), -65807);
+        assertEq(hook.tickUpper(), -71807);
 
         // ** Setting up strategy params
         {

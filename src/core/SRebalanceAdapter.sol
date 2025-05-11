@@ -360,7 +360,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("sqrtPLower %s", sqrtPLower);
         console.log("sqrtPUpper %s", sqrtPUpper);
 
-        uint128 liqui = LiquidityAmounts.getLiquidityForAmount1(
+        uint128 liqui = LiquidityAmounts.getLiquidityForAmount0(
             sqrtPLower,
             sqrtPUpper,
             lendingAdapter.getCollateralLong().unwrap(qDec)
@@ -369,11 +369,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
         uint256 amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
 
+        console.log("current CL %s", lendingAdapter.getCollateralLong().unwrap(qDec));
         console.log("amount0", amount0);
         console.log("amount1", amount1);
-
-        console.log("liquiCheck0 %s", LiquidityAmounts.getLiquidityForAmount0(sqrtPLower, sqrtPUpper, amount0));
-        console.log("liquiCheck1 %s", LiquidityAmounts.getLiquidityForAmount1(sqrtPLower, sqrtPUpper, amount1));
 
         if (isInvertedPool) {
             return
@@ -387,7 +385,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 LiquidityAmounts.getLiquidityForAmount0(
                     sqrtPLower,
                     sqrtPUpper,
-                    lendingAdapter.getCollateralLong().unwrap(bDec)
+                    lendingAdapter.getCollateralLong().unwrap(qDec)
                 );
         }
     }

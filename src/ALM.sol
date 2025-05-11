@@ -248,7 +248,7 @@ contract ALM is BaseStrategyHook, ERC20 {
                     );
                     console.log("here");
                 } else {
-                    console.log("case 2");
+                    console.log("case 2"); //DONE
 
                     accumulatedFeeQ += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceDown(
@@ -266,12 +266,12 @@ contract ALM is BaseStrategyHook, ERC20 {
                         (token1Out + protocolFeeAmount).wrap(qDec)
                     );
                 } else {
-                    console.log("case 4");
+                    console.log("case 4"); //DONE
 
                     accumulatedFeeB += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceDown(
-                        (token1Out - protocolFeeAmount).wrap(bDec),
-                        token0In.wrap(qDec)
+                        (token1Out + protocolFeeAmount).wrap(bDec),
+                        (token0In).wrap(qDec)
                     );
                 }
             }
@@ -324,9 +324,10 @@ contract ALM is BaseStrategyHook, ERC20 {
                         (token1In - protocolFeeAmount).wrap(qDec)
                     );
                 } else {
-                    console.log("case 6");
+                    console.log("case 6"); //DONE
 
                     accumulatedFeeB += protocolFeeAmount;
+                    console.log("accumulatedFeeB %s", accumulatedFeeB);
                     positionManager.positionAdjustmentPriceUp(
                         (token1In - protocolFeeAmount).wrap(bDec),
                         token0Out.wrap(qDec)
@@ -342,12 +343,12 @@ contract ALM is BaseStrategyHook, ERC20 {
                         token1In.wrap(qDec)
                     );
                 } else {
-                    console.log("case 8");
+                    console.log("case 8"); //DONE
 
                     accumulatedFeeQ += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceUp(
                         token1In.wrap(bDec),
-                        (token0Out - protocolFeeAmount).wrap(qDec)
+                        (token0Out + protocolFeeAmount).wrap(qDec)
                     );
                 }
             }
@@ -392,8 +393,9 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
 
         console.log("sqrtPriceNext %s", sqrtPriceNext);
-
+        console.log("ALARM");
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
+        console.log("ALARM");
     }
 
     // ** Helpers
