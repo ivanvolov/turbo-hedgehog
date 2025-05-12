@@ -222,7 +222,6 @@ contract ALM is BaseStrategyHook, ERC20 {
             ) = getDeltas(params.amountSpecified, params.zeroForOne);
 
             console.log("feeOutput %s", fee);
-            console.log("protocolFee %s", protocolFee);
 
             checkSwapDeviations(sqrtPriceNext);
 

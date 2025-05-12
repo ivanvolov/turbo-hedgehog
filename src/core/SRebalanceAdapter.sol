@@ -360,7 +360,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         console.log("sqrtPLower %s", sqrtPLower);
         console.log("sqrtPUpper %s", sqrtPUpper);
 
-        uint128 liqui = LiquidityAmounts.getLiquidityForAmount0(
+        uint128 liqui = LiquidityAmounts.getLiquidityForAmount1(
             sqrtPLower,
             sqrtPUpper,
             lendingAdapter.getCollateralLong().unwrap(qDec)
@@ -407,6 +407,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
         uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);
+        console.log("deviationLong %s", deviationLong);
+        console.log("deviationShort %s", deviationShort);
+
         require(deviationLong <= maxDeviationLong, "D1");
         require(deviationShort <= maxDeviationShort, "D2");
     }
