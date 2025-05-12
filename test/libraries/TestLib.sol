@@ -63,6 +63,7 @@ library TestLib {
         AggregatorV3Interface(0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961);
 
     uint256 constant sqrt_price_10per_price_change = 48808848170151600; //(sqrt(1.1)-1) or max 10% price change
+    uint256 constant sqrt_price_1per_price_change = 4987562112088950; //(sqrt(1.01)-1) or max 1% price change
 
     function nearestUsableTick(int24 tick_, uint24 tickSpacing) public pure returns (int24 result) {
         result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);

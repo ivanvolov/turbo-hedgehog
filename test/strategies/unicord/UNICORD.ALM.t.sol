@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
@@ -41,7 +43,7 @@ contract UNICORDALMTest is MorphoTestBase {
     uint256 shortLeverage = 1e18;
     uint256 weight = 50e16; //50%
     uint128 liquidityMultiplier = 1e18;
-    uint256 slippage = 10e14; //0.1%
+    uint256 slippage = 30e14; //0.015%
     uint256 fee = 1e14; //0.05%
 
     IERC20 USDT = IERC20(TestLib.USDT);
@@ -70,9 +72,9 @@ contract UNICORDALMTest is MorphoTestBase {
         create_lending_adapter_morpho_earn();
         create_flash_loan_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(true, false, true, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per_price_change);
-        assertEq(hook.tickLower(), 102);
-        assertEq(hook.tickUpper(), -98);
+        init_hook(true, false, true, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per_price_change);
+        assertEq(hook.tickLower(), 101);
+        assertEq(hook.tickUpper(), -99);
 
         // ** Setting up strategy params
         {
@@ -345,20 +347,17 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 1000e6; // 1k USDC
+            uint256 usdcToSwap = 10000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwapUnicord(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
+
+            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Swap Up In
@@ -366,18 +365,15 @@ contract UNICORDALMTest is MorphoTestBase {
             uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
+
+            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Swap Down Out
@@ -386,18 +382,15 @@ contract UNICORDALMTest is MorphoTestBase {
             (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDT_USDC_Out(usdcToGetFSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 + fee)) / 1e18, 9e14);
-            // assertApproxEqAbs(deltaUSDC, deltaY, 3e6);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
+
+            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 + fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -408,24 +401,25 @@ contract UNICORDALMTest is MorphoTestBase {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            console.log("WITHDRAW DONE");
+
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
 
+        // ** Swap Up In
         {
-            uint256 usdcToSwap = 10000e6; // 10k USDC
+            uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
+
+            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(usdcToSwap, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -433,29 +427,25 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Deposit
         {
-            uint256 _amountToDep = 10000e6; //10k USDC
+            uint256 _amountToDep = 100000e6; //100k USDC
             deal(address(USDT), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep, 0);
         }
 
-        // ** Swap Up In
+        // ** Swap Down In
         {
-            uint256 usdcToSwap = 10000e6; // 10k USDC
-            deal(address(USDC), address(swapper.addr), usdcToSwap);
+            uint256 usdtToSwap = 10000e6;
+            deal(address(USDT), address(swapper.addr), usdtToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDT_USDC_In(usdtToSwap);
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaUSDT, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaUSDT, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 - fee)) / 1e18, 1);
         }
 
         // ** Swap Up out
@@ -464,47 +454,28 @@ contract UNICORDALMTest is MorphoTestBase {
             (uint256 usdcToSwapQ, uint256 ethToSwapQ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
+
             // assertApproxEqAbs(deltaUSDT, deltaX, 3e14);
             // assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
-        }
-
-        // ** Swap Down In
-        {
-            uint256 usdtToSwap = 20000e6;
-            deal(address(USDT), address(swapper.addr), usdtToSwap);
-
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDT_USDC_In(usdtToSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs((deltaUSDT * (1e18 - fee)) / 1e18, deltaX, 42e13);
-            // assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
         }
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
-        // ** Rebalance
+        // // ** Rebalance
         uint256 preRebalanceTVL = hook.TVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
-        // ** Make oracle change with swap price
+        // // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Full withdraw

@@ -653,6 +653,9 @@ abstract contract ALMTestBase is Deployers {
                 liquidity
             );
 
+            console.log("dx %s", SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
+            console.log("dy %s", SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, false));
+
             deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
             deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
         }
