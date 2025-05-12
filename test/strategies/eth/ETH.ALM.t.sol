@@ -27,6 +27,10 @@ import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 
+import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
+
 contract ETHALMTest is MorphoTestBase {
     using SafeERC20 for IERC20;
 
@@ -35,7 +39,7 @@ contract ETHALMTest is MorphoTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16; //50%
-    uint256 liquidityMultiplier = 2e18;
+    uint128 liquidityMultiplier = 2e18;
     uint256 slippage = 15e14; //0.15%
     uint256 fee = 5e14; //0.05%
 
@@ -168,6 +172,15 @@ contract ETHALMTest is MorphoTestBase {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+
+        console.log("liquidity %s", hook.liquidity());
+        uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
+            ALMMathLib.getSqrtPriceAtTick(hook.tickLower()),
+            ALMMathLib.getSqrtPriceAtTick(hook.tickUpper()),
+            TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+        );
+
+        assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
@@ -721,6 +734,16 @@ contract ETHALMTest is MorphoTestBase {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+            uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
+                ALMMathLib.getSqrtPriceAtTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceAtTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+
+            assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
+            console.log("liquidity %s", hook.liquidity());
+            console.log("liquidityCheck %s", liquidityCheck);
         }
 
         // ** Swap Up In
@@ -817,7 +840,7 @@ contract ETHALMTest is MorphoTestBase {
         uint256 preRebalanceTVL = hook.TVL();
         console.log("preRebalanceTVL %s", preRebalanceTVL);
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
+        rebalanceAdapter.rebalance(slippage * 2);
 
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO check after all the cases on slippage
 

@@ -660,6 +660,25 @@ abstract contract ALMTestBase is Deployers {
         return (deltaX, deltaY);
     }
 
+    function _liquidityCheck(bool _isInvertedPool, uint128 liquidityMultiplier) public view {
+        uint128 liquidityCheck;
+        if (_isInvertedPool) {
+            liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
+                ALMMathLib.getSqrtPriceAtTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceAtTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+        } else {
+            liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
+                ALMMathLib.getSqrtPriceAtTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceAtTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+        }
+
+        assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
+    }
+
     function _checkSwapReverse(
         uint256 liquidity,
         uint160 preSqrtPrice,

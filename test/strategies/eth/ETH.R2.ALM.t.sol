@@ -18,7 +18,7 @@ contract ETHR2ALMTest is ALMTestBase {
     uint256 longLeverage = 2e18;
     uint256 shortLeverage = 1e18;
     uint256 weight = 55e16; //50%
-    uint256 liquidityMultiplier = 1e18;
+    uint128 liquidityMultiplier = 1e18;
     uint256 slippage = 15e14; //0.15%
     uint256 fee = 5e14; //0.05%
 

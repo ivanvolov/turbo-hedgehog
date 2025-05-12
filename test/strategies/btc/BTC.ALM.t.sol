@@ -14,6 +14,8 @@ import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
 contract BTCALMTest is ALMTestBase {
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
@@ -21,7 +23,7 @@ contract BTCALMTest is ALMTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;
-    uint256 liquidityMultiplier = 1e18;
+    uint128 liquidityMultiplier = 1e18;
     uint256 slippage = 7e15;
     uint256 fee = 5e14;
 
@@ -101,6 +103,8 @@ contract BTCALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
@@ -268,6 +272,8 @@ contract BTCALMTest is ALMTestBase {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
 
         // ** Make oracle change with swap price
@@ -409,6 +415,8 @@ contract BTCALMTest is ALMTestBase {
         uint256 preRebalanceTVL = hook.TVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
@@ -419,6 +427,8 @@ contract BTCALMTest is ALMTestBase {
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
     }
 

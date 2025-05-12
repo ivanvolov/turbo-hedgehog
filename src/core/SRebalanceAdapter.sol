@@ -71,7 +71,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     /// @notice The multiplier applied to the virtual liquidity, encoded as a UD60x18 value.
     ///         (i.e. virtual_liquidity × 1e18, where 1 = 100%).
-    uint256 public liquidityMultiplier;
+    uint128 public liquidityMultiplier;
 
     uint256 public rebalancePriceThreshold;
     uint256 public rebalanceTimeThreshold;
@@ -132,7 +132,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
     function setRebalanceParams(
         uint256 _weight,
-        uint256 _liquidityMultiplier,
+        uint128 _liquidityMultiplier,
         uint256 _longLeverage,
         uint256 _shortLeverage
     ) external onlyOwner {
@@ -238,7 +238,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
 
         alm.updateBoundaries(sqrtPriceAtLastRebalance);
         timeAtLastRebalance = block.timestamp;
-        uint128 liquidity = (calcLiquidity() * uint128(liquidityMultiplier)) / 1e18;
+        uint128 liquidity = calcLiquidity();
         console.log("liquidity %s", liquidity);
         alm.updateLiquidity(liquidity);
 
@@ -370,23 +370,26 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPLower, sqrtPUpper, liqui); //TODO remove in prod
 
         console.log("current CL %s", lendingAdapter.getCollateralLong().unwrap(qDec));
+        console.log("PRE LIQUI %s", liqui);
         console.log("amount0", amount0);
         console.log("amount1", amount1);
 
         if (isInvertedPool) {
             return
-                LiquidityAmounts.getLiquidityForAmount1(
-                    sqrtPLower,
-                    sqrtPUpper,
-                    lendingAdapter.getCollateralLong().unwrap(qDec) //TODO check in all cases
-                );
+                (liquidityMultiplier *
+                    LiquidityAmounts.getLiquidityForAmount1(
+                        sqrtPLower,
+                        sqrtPUpper,
+                        lendingAdapter.getCollateralLong().unwrap(qDec)
+                    )) / 1e18; //TODO check in all cases
         } else {
             return
-                LiquidityAmounts.getLiquidityForAmount0(
-                    sqrtPLower,
-                    sqrtPUpper,
-                    lendingAdapter.getCollateralLong().unwrap(qDec)
-                );
+                (liquidityMultiplier *
+                    LiquidityAmounts.getLiquidityForAmount0(
+                        sqrtPLower,
+                        sqrtPUpper,
+                        lendingAdapter.getCollateralLong().unwrap(qDec)
+                    )) / 1e18;
         }
     }
 
