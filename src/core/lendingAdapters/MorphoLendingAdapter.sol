@@ -12,14 +12,15 @@ import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 // ** libraries
 import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
+import {IUniversalRewardsDistributor} from "../../interfaces/lendingAdapters/IUniversalRewardsDistributor.sol";
 
 // ** contracts
-import {Base} from "../base/Base.sol";
+import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 
 // ** interfaces
-import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
+import {IMerklDistributor} from "../../interfaces/lendingAdapters/IMerklDistributor.sol";
 
-contract MorphoLendingAdapter is Base, ILendingAdapter {
+contract MorphoLendingAdapter is LendingBase {
     error NotInBorrowMode();
 
     using TokenWrapperLib for uint256;
@@ -27,6 +28,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
     // ** Morpho
     IMorpho immutable morpho;
+    IUniversalRewardsDistributor public URD;
     Id public immutable longMId;
     Id public immutable shortMId;
     IERC4626 public immutable earnQuote;
@@ -42,8 +44,9 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         Id _longMId,
         Id _shortMId,
         IERC4626 _earnBase,
-        IERC4626 _earnQuote
-    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+        IERC4626 _earnQuote,
+        IMerklDistributor _merklRewardsDistributor
+    ) LendingBase(_merklRewardsDistributor, _base, _quote, _bDec, _qDec) {
         morpho = _morpho;
 
         base.forceApprove(address(morpho), type(uint256).max);
@@ -61,67 +64,59 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
         }
     }
 
-    // ** Position management
+    // ** Morpho rewards support
 
-    function getPosition() external view returns (uint256, uint256, uint256, uint256) {
-        return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
+    function setURD(IUniversalRewardsDistributor _URD) external onlyOwner {
+        URD = _URD;
     }
 
-    /**
-     * @notice Updates the position by adjusting collateral and debt for both long and short sides.
-     * @dev The order of operations is critical to avoid "phantom under-collateralization":
-     *      - Collateral is added and debt is repaid first, to ensure the account is not temporarily under-collateralized.
-     *      - Now collateral is removed and debt is borrowed if needed.
-     */
-    function updatePosition(
-        int256 deltaCL,
-        int256 deltaCS,
-        int256 deltaDL,
-        int256 deltaDS
-    ) external onlyModule notPaused {
-        if (deltaCL < 0) addCollateralLong(uint256(-deltaCL));
-        if (deltaCS < 0) addCollateralShort(uint256(-deltaCS));
-
-        if (deltaDL < 0) repayLong(uint256(-deltaDL));
-        if (deltaDS < 0) repayShort(uint256(-deltaDS));
-
-        if (deltaCL > 0) removeCollateralLong(uint256(deltaCL));
-        if (deltaCS > 0) removeCollateralShort(uint256(deltaCS));
-
-        if (deltaDL > 0) borrowLong(uint256(deltaDL));
-        if (deltaDS > 0) borrowShort(uint256(deltaDS));
+    /// @notice Claims rewards from Universal Rewards Distributor.
+    /// @param to The address where the tokens will be sent.
+    /// @param rewardToken The address of the reward token.
+    /// @param claimable The overall claimable amount of token rewards.
+    /// @param proof The merkle proof that validates this claim.
+    function claimRewards(
+        address to,
+        IERC20 rewardToken,
+        uint256 claimable,
+        bytes32[] calldata proof
+    ) external notPaused onlyOwner {
+        URD.claim(address(this), address(rewardToken), claimable, proof);
+        // The `balanceOf` is necessary because the amount received is not always equal `claimable`.
+        // This happens in case some rewards were already claimed.
+        rewardToken.safeTransfer(to, rewardToken.balanceOf(address(this)));
     }
 
     // ** Long market
 
-    function getBorrowedLong() public view returns (uint256) {
+    function getBorrowedLong() public view override returns (uint256) {
         if (isEarn) return 0;
         return
             MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(longMId), address(this)).wrap(bDec);
     }
 
-    function getCollateralLong() public view returns (uint256) {
+    function getCollateralLong() public view override returns (uint256) {
         if (isEarn) return earnQuote.convertToAssets(earnQuote.balanceOf(address(this))).wrap(qDec);
         Position memory p = morpho.position(longMId, address(this));
         return uint256(p.collateral).wrap(qDec);
     }
 
-    function borrowLong(uint256 amount) public onlyModule notPaused notShutdown isBorrowMode {
+    function borrowLong(uint256 amount) public override onlyModule notPaused notShutdown isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
     }
 
-    function repayLong(uint256 amount) public onlyModule notPaused isBorrowMode {
+    function repayLong(uint256 amount) public override onlyModule notPaused isBorrowMode {
         base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
     }
 
-    function removeCollateralLong(uint256 amount) public onlyModule notPaused {
+    function removeCollateralLong(uint256 amount) public override onlyModule notPaused {
         if (isEarn) earnQuote.withdraw(amount.unwrap(qDec), msg.sender, address(this));
         else
             morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
     }
 
-    function addCollateralLong(uint256 amount) public onlyModule notPaused notShutdown {
+    function addCollateralLong(uint256 amount) public override onlyModule notPaused notShutdown {
         quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
@@ -129,28 +124,28 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
 
     // ** Short market
 
-    function getBorrowedShort() public view returns (uint256) {
+    function getBorrowedShort() public view override returns (uint256) {
         if (isEarn) return 0;
         return
             MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(shortMId), address(this)).wrap(qDec);
     }
 
-    function getCollateralShort() public view returns (uint256) {
+    function getCollateralShort() public view override returns (uint256) {
         if (isEarn) return earnBase.convertToAssets(earnBase.balanceOf(address(this))).wrap(bDec);
         Position memory p = morpho.position(shortMId, address(this));
         return uint256(p.collateral).wrap(bDec);
     }
 
-    function borrowShort(uint256 amount) public onlyModule notPaused notShutdown isBorrowMode {
+    function borrowShort(uint256 amount) public override onlyModule notPaused notShutdown isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
     }
 
-    function repayShort(uint256 amount) public onlyModule notPaused isBorrowMode {
+    function repayShort(uint256 amount) public override onlyModule notPaused isBorrowMode {
         quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
     }
 
-    function removeCollateralShort(uint256 amount) public onlyModule notPaused {
+    function removeCollateralShort(uint256 amount) public override onlyModule notPaused {
         if (isEarn) earnBase.withdraw(amount.unwrap(bDec), msg.sender, address(this));
         else
             morpho.withdrawCollateral(
@@ -161,7 +156,7 @@ contract MorphoLendingAdapter is Base, ILendingAdapter {
             );
     }
 
-    function addCollateralShort(uint256 amount) public onlyModule notPaused notShutdown {
+    function addCollateralShort(uint256 amount) public override onlyModule notPaused notShutdown {
         base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");

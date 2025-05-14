@@ -32,9 +32,11 @@ import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** interfaces
+import {IALM} from "@src/interfaces/IALM.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
+import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
@@ -44,6 +46,7 @@ import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {IMerklDistributor, IrEUL} from "@src/interfaces/lendingAdapters/IMerklDistributor.sol";
 
 abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
@@ -137,7 +140,9 @@ abstract contract ALMTestBase is Deployers {
             qDec,
             TestLib.EULER_VAULT_CONNECT,
             _vault0,
-            _vault1
+            _vault1,
+            IMerklDistributor(address(TestLib.merklRewardsDistributor)),
+            IrEUL(address(TestLib.rEUL))
         );
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
@@ -677,5 +682,20 @@ abstract contract ALMTestBase is Deployers {
             // must be unchecked in order to support `n = type(int256).min`
             return uint256(n >= 0 ? n : -n);
         }
+    }
+
+    function _fakeSetComponents(address adapter, address fakeHook) internal {
+        vm.mockCall(fakeHook, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
+        vm.mockCall(fakeHook, abi.encodeWithSelector(IALM.shutdown.selector), abi.encode(false));
+        vm.prank(deployer.addr);
+        IBase(adapter).setComponents(
+            IALM(fakeHook),
+            ILendingAdapter(alice.addr),
+            IFlashLoanAdapter(alice.addr),
+            IPositionManager(alice.addr),
+            IOracle(alice.addr),
+            IRebalanceAdapter(alice.addr),
+            ISwapAdapter(alice.addr)
+        );
     }
 }
