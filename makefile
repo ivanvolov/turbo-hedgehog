@@ -53,6 +53,10 @@ tla:
 	clear && forge test -vv --match-contract LendingAdaptersTest --match-test "test_"
 tlal:
 	clear && forge test -vvvv --match-contract LendingAdaptersTest --match-test "test_"
+tra:
+	clear && forge test -vv --match-contract RewardsAdaptersTest --match-test "test_"
+tral:
+	clear && forge test -vvvv --match-contract RewardsAdaptersTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
@@ -63,3 +67,8 @@ gas_r:
 	clear && forge test -vv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
 gas_rl:
 	clear && forge test -vvvv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
+
+merkl_data:
+	clear && npm run merkl
+morpho_data:
+	clear && npm run morpho

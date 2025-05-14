@@ -21,6 +21,9 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {ILendingAdapterMorpho} from "@test/interfaces/ILendingAdapterMorpho.sol";
+import {IMerklDistributor} from "@src/interfaces/lendingAdapters/IMerklDistributor.sol";
+import {IUniversalRewardsDistributor} from "@src/interfaces/lendingAdapters/IUniversalRewardsDistributor.sol";
 
 abstract contract MorphoTestBase is ALMTestBase {
     using TestAccountLib for TestAccount;
@@ -53,8 +56,11 @@ abstract contract MorphoTestBase is ALMTestBase {
             longMId,
             shortMId,
             mockAdapter,
-            mockAdapter
+            mockAdapter,
+            IMerklDistributor(address(TestLib.merklRewardsDistributor))
         );
+
+        setURD();
     }
 
     function create_lending_adapter_morpho_earn() internal {
@@ -68,8 +74,11 @@ abstract contract MorphoTestBase is ALMTestBase {
             Id.wrap(""),
             Id.wrap(""),
             TestLib.morphoUSDCVault,
-            TestLib.morphoUSDTVault
+            TestLib.morphoUSDTVault,
+            IMerklDistributor(address(TestLib.merklRewardsDistributor))
         );
+
+        setURD();
     }
 
     function create_lending_adapter_morpho_earn_dai_usdc() internal {
@@ -83,7 +92,17 @@ abstract contract MorphoTestBase is ALMTestBase {
             Id.wrap(""),
             Id.wrap(""),
             TestLib.morphoUSDCVault,
-            TestLib.morphoDAIVault
+            TestLib.morphoDAIVault,
+            IMerklDistributor(address(TestLib.merklRewardsDistributor))
+        );
+
+        setURD();
+    }
+
+    function setURD() internal {
+        vm.prank(deployer.addr);
+        ILendingAdapterMorpho(address(lendingAdapter)).setURD(
+            IUniversalRewardsDistributor(address(TestLib.universalRewardsDistributor))
         );
     }
 

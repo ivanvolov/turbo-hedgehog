@@ -12,6 +12,8 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
 import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
+import {IMerklDistributorFull, IrEULFull} from "@test/interfaces/ILendingAdapterEuler.sol";
+import {IUniversalRewardsDistributorFull} from "@test/interfaces/ILendingAdapterMorpho.sol";
 
 library TestLib {
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -22,12 +24,17 @@ library TestLib {
 
     // ** https://app.morpho.org/ethereum/earn
     IMorpho constant MORPHO = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
+    IUniversalRewardsDistributorFull constant universalRewardsDistributor =
+        IUniversalRewardsDistributorFull(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb);
     IERC4626 constant morphoUSDTVault = IERC4626(0xbEef047a543E45807105E51A8BBEFCc5950fcfBa);
     IERC4626 constant morphoUSDCVault = IERC4626(0xd63070114470f685b75B74D60EEc7c1113d33a3D);
     IERC4626 constant morphoDAIVault = IERC4626(0x500331c9fF24D9d11aee6B07734Aa72343EA74a5);
 
     // ** https://app.euler.finance/?asset=USDT&network=ethereum
     IEVC constant EULER_VAULT_CONNECT = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
+    IMerklDistributorFull constant merklRewardsDistributor =
+        IMerklDistributorFull(0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae);
+    IrEULFull constant rEUL = IrEULFull(0xf3e621395fc714B90dA337AA9108771597b4E696);
     IEulerVault constant eulerUSDCVault1 = IEulerVault(0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9);
     IEulerVault constant eulerUSDCVault2 = IEulerVault(0xcBC9B61177444A793B85442D3a953B90f6170b7D);
     IEulerVault constant eulerUSDTVault1 = IEulerVault(0x313603FA690301b0CaeEf8069c065862f9162162);

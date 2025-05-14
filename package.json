@@ -2,11 +2,21 @@
   "name": "young-hh-hook",
   "version": "1.0.0",
   "description": "Simulation of the Young Hook",
+  "scripts": {
+    "merkl": "ts-node ./test/simulations/getMerklTestData.ts",
+    "morpho": "ts-node ./test/simulations/getMorphoTestData.ts"
+  },
   "keywords": [],
   "author": "IV",
   "license": "ISC",
   "dependencies": {
     "ethers": "^5.6.9",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "prettier-plugin-solidity": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
