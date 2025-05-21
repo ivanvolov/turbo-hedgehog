@@ -20,7 +20,7 @@ import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter
 import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanAdapter.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
-import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
+import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries

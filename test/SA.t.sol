@@ -13,7 +13,7 @@ import {Currency, CurrencyLibrary} from "v4-core/types/Currency.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
-import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
+import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
