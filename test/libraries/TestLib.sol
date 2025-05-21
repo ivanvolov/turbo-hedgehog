@@ -9,11 +9,13 @@ import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
+import {ISwapRouter} from "@test/forks/uniswap-v3/ISwapRouter.sol";
 import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
 import {IMerklDistributorFull, IrEULFull} from "@test/interfaces/ILendingAdapterEuler.sol";
 import {IUniversalRewardsDistributorFull} from "@test/interfaces/ILendingAdapterMorpho.sol";
+import {IUniversalRouter} from "@src/interfaces/swapAdapters/IUniversalRouter.sol";
+import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 
 library TestLib {
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -45,12 +47,15 @@ library TestLib {
     IEulerVault constant eulerCbBTCVault2 = IEulerVault(0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1);
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
-    ISwapRouter constant V3_SWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter constant UNISWAP_V3_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
     address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+
+    IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af);
+    IPermit2 constant PERMIT_2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
     // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     AggregatorV3Interface constant chainlink_feed_WETH =

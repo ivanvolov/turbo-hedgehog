@@ -241,7 +241,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
         uint256 balance = token.balanceOf(address(this));
-        if (amount > balance) swapAdapter.swapExactOutput(otherToken(token), token, amount - balance);
+        if (amount > balance) swapAdapter.swapExactOutput(token == quote, amount - balance);
     }
 
     function onFlashLoanTwoTokens(
@@ -254,10 +254,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         _managePositionDeltas(data);
 
         uint256 baseBalanceUnwr = base.balanceOf(address(this));
-        if (amountB > baseBalanceUnwr) swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr);
+        if (amountB > baseBalanceUnwr) swapAdapter.swapExactOutput(false, amountB - baseBalanceUnwr);
         else {
             uint256 quoteBalanceUnwr = quote.balanceOf(address(this));
-            if (amountQ > quoteBalanceUnwr) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr);
+            if (amountQ > quoteBalanceUnwr) swapAdapter.swapExactOutput(true, amountQ - quoteBalanceUnwr);
         }
     }
 

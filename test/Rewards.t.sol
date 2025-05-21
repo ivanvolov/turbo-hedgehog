@@ -22,10 +22,6 @@ contract RewardsAdaptersTest is MorphoTestBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
-    IERC20 USDT = IERC20(TestLib.USDT);
-
     IMerklDistributorFull MRD = TestLib.merklRewardsDistributor;
     IUniversalRewardsDistributorFull URD = TestLib.universalRewardsDistributor;
 

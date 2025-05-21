@@ -21,7 +21,6 @@ interface IBase {
     error NotFlashLoanAdapter(address account);
     error ContractPaused();
     error ContractShutdown();
-    error TokenNotAllowed(address token);
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 

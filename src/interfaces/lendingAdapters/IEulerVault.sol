@@ -8,8 +8,6 @@ interface IEulerVault {
 
     function borrow(uint256 amount, address receiver) external returns (uint256);
 
-    function maxWithdraw(address owner) external view returns (uint256);
-
     function balanceOf(address account) external view returns (uint256);
 
     function convertToAssets(uint256 shares) external view returns (uint256);

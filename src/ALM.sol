@@ -111,8 +111,8 @@ contract ALM is BaseStrategyHook, ERC20 {
             else if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             else if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
 
-            if (isInvertedAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
-            else swapAdapter.swapExactInput(base, quote, baseBalance(false));
+            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
+            else swapAdapter.swapExactInput(true, baseBalance(false));
         } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
@@ -164,20 +164,20 @@ contract ALM is BaseStrategyHook, ERC20 {
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
         if (token == base) {
-            if (isInvertedAssets) swapAdapter.swapExactInput(quote, base, quoteBalance(false));
+            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
             else _ensureEnoughBalance(amount, base);
         } else {
             if (isInvertedAssets) _ensureEnoughBalance(amount, quote);
-            else swapAdapter.swapExactInput(base, quote, baseBalance(false));
+            else swapAdapter.swapExactInput(true, baseBalance(false));
         }
     }
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
         uint256 _balance = token == base ? baseBalance(false) : quoteBalance(false);
         if (balance >= _balance) {
-            swapAdapter.swapExactOutput(otherToken(token), token, balance - _balance);
+            swapAdapter.swapExactOutput(token == quote, balance - _balance);
         } else {
-            swapAdapter.swapExactInput(token, otherToken(token), _balance - balance);
+            swapAdapter.swapExactInput(token == base, _balance - balance);
         }
     }
 

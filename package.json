@@ -4,7 +4,8 @@
   "description": "Simulation of the Young Hook",
   "scripts": {
     "merkl": "ts-node ./test/simulations/getMerklTestData.ts",
-    "morpho": "ts-node ./test/simulations/getMorphoTestData.ts"
+    "morpho": "ts-node ./test/simulations/getMorphoTestData.ts",
+    "init_pool_events": "node ./test/simulations/getInitPoolData.js"
   },
   "keywords": [],
   "author": "IV",
@@ -12,7 +13,8 @@
   "dependencies": {
     "ethers": "^5.6.9",
     "fs": "^0.0.1-security",
-    "prettier-plugin-solidity": "^2.0.0"
+    "prettier-plugin-solidity": "^2.0.0",
+    "web3": "^1.7.5"
   },
   "devDependencies": {
     "@types/node": "^22.15.17",

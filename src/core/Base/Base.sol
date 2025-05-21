@@ -89,12 +89,6 @@ abstract contract Base is IBase {
         owner = newOwner;
     }
 
-    function otherToken(IERC20 token) internal view returns (IERC20) {
-        if (token == base) return quote;
-        if (token == quote) return base;
-        revert TokenNotAllowed(address(token));
-    }
-
     // ** Modifiers
 
     modifier onlyOwner() {
