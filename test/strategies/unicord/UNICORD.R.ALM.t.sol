@@ -42,7 +42,7 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
     uint256 weight = 50e16; //50%
-    uint256 liquidityMultiplier = 1e18;
+    uint128 liquidityMultiplier = 1e18;
     uint256 slippage = 10e14; //0.1%
     uint256 fee = 1e14; //0.05%
 

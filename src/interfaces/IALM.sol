@@ -50,7 +50,7 @@ interface IALM {
 
     function tickUpper() external view returns (int24);
 
-    function updateBoundaries() external;
+    function updateBoundaries(uint160 sqrtPriceAtLastRebalance) external;
 
     function updateLiquidity(uint128 _liquidity) external;
 
@@ -59,6 +59,8 @@ interface IALM {
     function isInvertedPool() external view returns (bool);
 
     function TVL() external view returns (uint256);
+
+    function protocolFee() external view returns (uint256);
 
     function updateSqrtPrice(uint160 _sqrtPrice) external;
 

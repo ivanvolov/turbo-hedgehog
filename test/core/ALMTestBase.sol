@@ -557,11 +557,18 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
+        console.log("here0");
+
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
+
+        console.log("here1");
 
         uint256 tvlRatio = hook.TVL() > preRebalanceTVL
             ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
             : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
+
+        console.log("here2");
+        console.log("current TVL %s", hook.TVL());
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
@@ -646,11 +653,33 @@ abstract contract ALMTestBase is Deployers {
                 liquidity
             );
 
+            console.log("dx %s", SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
+            console.log("dy %s", SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, false));
+
             deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
             deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
         }
 
         return (deltaX, deltaY);
+    }
+
+    function _liquidityCheck(bool _isInvertedPool, uint128 liquidityMultiplier) public view {
+        uint128 liquidityCheck;
+        if (_isInvertedPool) {
+            liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
+                ALMMathLib.getSqrtPriceAtTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceAtTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+        } else {
+            liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
+                ALMMathLib.getSqrtPriceAtTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceAtTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+        }
+
+        assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
     }
 
     function _checkSwapReverse(

@@ -374,13 +374,13 @@ contract ALMGeneralTest is ALMTestBase {
         rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18, 1e18);
     }
 
-    function test_Fuzz_setLiquidityMultiplier_valid(uint256 liquidityMultiplier) public {
-        liquidityMultiplier = bound(liquidityMultiplier, 0, 10e18);
+    function test_Fuzz_setLiquidityMultiplier_valid(uint128 liquidityMultiplier) public {
+        liquidityMultiplier = uint128(bound(uint256(liquidityMultiplier), 0, 10e18));
         vm.prank(deployer.addr);
         rebalanceAdapter.setRebalanceParams(1e18, liquidityMultiplier, 1e18, 1e18);
     }
 
-    function test_Fuzz_setLiquidityMultiplier_invalid(uint256 liquidityMultiplier) public {
+    function test_Fuzz_setLiquidityMultiplier_invalid(uint128 liquidityMultiplier) public {
         vm.assume(liquidityMultiplier > 10e18);
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.LiquidityMultiplierNotValid.selector);

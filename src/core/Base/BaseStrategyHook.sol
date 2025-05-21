@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -9,6 +11,8 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+
+import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -109,7 +113,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickLowerDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
-        if (_protocolFee > 3e16) revert ProtocolFeeNotValid();
+        if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
         protocolFee = _protocolFee;
         tvlCap = _tvlCap;
         tickUpperDelta = _tickUpperDelta;
@@ -148,8 +152,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    function updateBoundaries() external onlyRebalanceAdapter {
-        _updateBoundaries();
+    function updateBoundaries(uint160 sqrtPriceAtLastRebalance) external onlyRebalanceAdapter {
+        _updateBoundaries(sqrtPriceAtLastRebalance);
     }
 
     function updateLiquidity(uint128 _liquidity) external onlyRebalanceAdapter {
@@ -162,10 +166,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit SqrtPriceUpdated(_sqrtPrice);
     }
 
-    function _updateBoundaries() internal {
-        int24 tick = ALMMathLib.getTickFromPrice(
-            ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, decimalsDelta)
-        );
+    function _updateBoundaries(uint160 sqrtPriceAtLastRebalance) internal {
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceAtLastRebalance);
+
+        console.log("GET TICK FROM PRICE =========== %S", tick);
         tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
         tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
 
@@ -183,6 +187,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         returns (BeforeSwapDelta beforeSwapDelta, uint256 tokenIn, uint256 tokenOut, uint160 sqrtPriceNext, uint256 fee)
     {
         if (amountSpecified > 0) {
+            console.log("case AS1");
             tokenOut = uint256(amountSpecified);
             sqrtPriceNext = zeroForOne
                 ? ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, tokenOut)
@@ -199,6 +204,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 SafeCast.toInt128(tokenIn) // unspecified token = zeroForOne ? token0 : token1
             );
         } else {
+            console.log("case AS2");
             unchecked {
                 tokenIn = uint256(-amountSpecified);
             }
