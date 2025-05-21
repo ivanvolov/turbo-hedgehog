@@ -148,13 +148,7 @@ library ALMMathLib {
 
     // ** Helpers
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
-
         return TickMath.getTickAtSqrtPrice(uint160(PRBMath.mulDiv(PRBMathUD60x18.sqrt(price), Q96, WAD)));
-
-        // return
-        //     SafeCast.toInt24(
-        //         ((SafeCast.toInt256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297
-        //     );
     }
 
     function getPriceFromTick(int24 tick) internal pure returns (uint256) {

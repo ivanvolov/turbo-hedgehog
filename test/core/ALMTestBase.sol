@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** V4 imports
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -190,10 +188,6 @@ abstract contract ALMTestBase is Deployers {
         uint256 _swapPriceThreshold
     ) internal {
         isInvertedPool = _isInvertedPool;
-        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
-        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
-        console.log("oracle: initialPrice %s", oracle.price());
         vm.startPrank(deployer.addr);
 
         // MARK: UniV4 hook deployment process
@@ -364,11 +358,7 @@ abstract contract ALMTestBase is Deployers {
             if (stepSize < minStepSize) stepSize = minStepSize;
         }
 
-        // console.log("Final price adjustment results:");
-        // console.log("Target price:", targetPrice);
-        // console.log("Final price:", currentPrice);
-        // console.log("Iterations:", iterations);
-
+        //         //         //         //
         if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
     }
 
@@ -509,8 +499,6 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqBalanceState(owner, _balanceQ, _balanceB) {
             // Intentionally empty
         } catch {
-            console.log("QUOTE Balance", QUOTE.balanceOf(owner));
-            console.log("BASE Balance", BASE.balanceOf(owner));
             _assertEqBalanceState(owner, _balanceQ, _balanceB); // @Notice: this is to throw the error
         }
     }
@@ -557,18 +545,11 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
         assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
 
-        console.log("here0");
-
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
-
-        console.log("here1");
 
         uint256 tvlRatio = hook.TVL() > preRebalanceTVL
             ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
             : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
-
-        console.log("here2");
-        console.log("current TVL %s", hook.TVL());
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
@@ -613,10 +594,6 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqPositionState(CL, CS, DL, DS) {
             // Intentionally empty
         } catch {
-            console.log("CL", TW.unwrap(_leA.getCollateralLong(), qDec));
-            console.log("CS", TW.unwrap(_leA.getCollateralShort(), bDec));
-            console.log("DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
-            console.log("DS", TW.unwrap(_leA.getBorrowedShort(), qDec));
             _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
@@ -652,9 +629,6 @@ abstract contract ALMTestBase is Deployers {
                 TickMath.getSqrtPriceAtTick(hook.tickUpper()),
                 liquidity
             );
-
-            console.log("dx %s", SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
-            console.log("dy %s", SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, false));
 
             deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
             deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
@@ -749,7 +723,6 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function logGas() internal {
-        console.log("gasSpend", tempGas - gasleft());
         tempGas = 0;
     }
 

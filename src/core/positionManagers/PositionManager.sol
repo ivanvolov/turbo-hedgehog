@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
@@ -73,15 +71,12 @@ contract PositionManager is Base, IPositionManager {
         // Borrow (k1-1) * dETH from short by increasing debt;
         // Borrow dUSD from long by increasing debt;
         lendingAdapter.addCollateralLong(deltaQuote);
-        console.log("deltaQuote0 %s", deltaQuote);
 
         if (k != 1e18) {
             lendingAdapter.borrowShort((k - 1e18).mul(deltaQuote));
             lendingAdapter.addCollateralLong((k - 1e18).mul(deltaQuote));
         }
         lendingAdapter.borrowLong(deltaBase);
-        console.log("deltaQuote1 %s", deltaQuote);
-        console.log("deltaBase %s", deltaBase);
 
         base.safeTransfer(address(alm), deltaBase.unwrap(bDec));
     }
