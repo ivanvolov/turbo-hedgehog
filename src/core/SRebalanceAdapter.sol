@@ -253,11 +253,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
-        uint256 baseBalanceUnwr = base.balanceOf(address(this));
-        if (amountB > baseBalanceUnwr) swapAdapter.swapExactOutput(false, amountB - baseBalanceUnwr);
+        uint256 baseBalance = base.balanceOf(address(this));
+        if (amountB > baseBalance) swapAdapter.swapExactOutput(false, amountB - baseBalance);
         else {
-            uint256 quoteBalanceUnwr = quote.balanceOf(address(this));
-            if (amountQ > quoteBalanceUnwr) swapAdapter.swapExactOutput(true, amountQ - quoteBalanceUnwr);
+            uint256 quoteBalance = quote.balanceOf(address(this));
+            if (amountQ > quoteBalance) swapAdapter.swapExactOutput(true, amountQ - quoteBalance);
         }
     }
 

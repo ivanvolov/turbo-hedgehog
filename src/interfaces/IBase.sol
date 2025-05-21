@@ -11,7 +11,7 @@ import {IFlashLoanAdapter} from "./IFlashLoanAdapter.sol";
 import {IPositionManager} from "./IPositionManager.sol";
 import {IOracle} from "./IOracle.sol";
 import {IRebalanceAdapter} from "./IRebalanceAdapter.sol";
-import {ISwapAdapter} from "./ISwapAdapter.sol";
+import {ISwapAdapter} from "./swapAdapters/ISwapAdapter.sol";
 
 interface IBase {
     error OwnableUnauthorizedAccount(address account);

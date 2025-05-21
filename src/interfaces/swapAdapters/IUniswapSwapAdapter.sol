@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** interfaces
-import {ISwapAdapter} from "../ISwapAdapter.sol";
+import {ISwapAdapter} from "./ISwapAdapter.sol";
 
 interface IUniswapSwapAdapter is ISwapAdapter {
     function setRoutesOperator(address _routesOperator) external;

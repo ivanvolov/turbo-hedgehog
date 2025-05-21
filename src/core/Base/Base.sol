@@ -15,7 +15,7 @@ import {IFlashLoanAdapter} from "../../interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 import {IOracle} from "../../interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
+import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
 import {IBase} from "../../interfaces/IBase.sol";
 
 abstract contract Base is IBase {

@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** External imports
-import {Currency} from "v4-core/types/Currency.sol";
-import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
-import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
-import {Actions} from "v4-periphery/src/libraries/Actions.sol";
+// ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Actions} from "v4-periphery/src/libraries/Actions.sol";
+import {Currency} from "v4-core/types/Currency.sol";
+import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
+import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
+
+// ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Commands} from "@universal-router/Commands.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
 
 // ** contracts
 import {Base} from "../base/Base.sol";
 
 // ** interfaces
-import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
-import {IUniversalRouter} from "../../interfaces/swapAdapters/IUniversalRouter.sol";
+import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
 
 contract UniswapSwapAdapter is Base, ISwapAdapter {
     error InvalidSwapRoute();
@@ -74,7 +76,6 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
      * For example, [1, 35e18, 3] means 35% of the amount is routed through path 1 and the remaining 65% through path 3.
      * The array must have an odd number of elements, where even indices are path IDs and odd indices are multipliers (in 1e18 precision).
      */
-
     function setSwapRoute(
         bool isExactInput,
         bool isBaseToQuote,

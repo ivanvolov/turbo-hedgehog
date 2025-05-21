@@ -1,7 +1,6 @@
 {
-  "name": "young-hh-hook",
+  "name": "turbo-hh-hook",
   "version": "1.0.0",
-  "description": "Simulation of the Young Hook",
   "scripts": {
     "merkl": "ts-node ./test/simulations/getMerklTestData.ts",
     "morpho": "ts-node ./test/simulations/getMorphoTestData.ts",

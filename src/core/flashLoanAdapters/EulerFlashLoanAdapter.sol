@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** Euler imports
-import {IEulerVault} from "../../interfaces/lendingAdapters/IEulerVault.sol";
-
 // ** External imports
+import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** contracts

@@ -17,7 +17,7 @@ import {Constants} from "v4-core-test/utils/Constants.sol";
 import {SortTokens} from "v4-core-test/utils/SortTokens.sol";
 import {PoolModifyLiquidityTest} from "v4-core/test/PoolModifyLiquidityTest.sol";
 import {PoolModifyLiquidityTestNoChecks} from "v4-core/test/PoolModifyLiquidityTestNoChecks.sol";
-import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
+import {PoolSwapTest} from "./PoolSwapTest.sol";
 import {SwapRouterNoChecks} from "v4-core/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "v4-core/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "v4-core/test/PoolNestedActionsTest.sol";

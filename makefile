@@ -1,3 +1,6 @@
+build:
+	clear && forge clean && forge build
+
 ta:
 	clear && forge test -vv --no-match-contract "SimulationTest|BTCALMTest"
 

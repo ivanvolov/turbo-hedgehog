@@ -20,11 +20,9 @@ import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
-import {IMerklDistributor, IrEUL} from "@src/interfaces/lendingAdapters/IMerklDistributor.sol";
 
 contract ETHALMTest is MorphoTestBase {
     using SafeERC20 for IERC20;
@@ -820,10 +818,10 @@ contract ETHALMTest is MorphoTestBase {
                 bDec,
                 qDec,
                 TestLib.EULER_VAULT_CONNECT,
-                IEulerVault(0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9),
-                IEulerVault(0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2),
-                IMerklDistributor(address(TestLib.merklRewardsDistributor)),
-                IrEUL(address(TestLib.rEUL))
+                TestLib.eulerUSDCVault1,
+                TestLib.eulerWETHVault1,
+                TestLib.merklRewardsDistributor,
+                TestLib.rEUL
             );
             IBase(address(newAdapter)).setComponents(
                 hook,

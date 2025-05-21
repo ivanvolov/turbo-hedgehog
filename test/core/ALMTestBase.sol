@@ -39,14 +39,13 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
 import {IUniswapSwapAdapter} from "@src/interfaces/swapAdapters/IUniswapSwapAdapter.sol";
-import {ISwapRouter} from "@test/forks/uniswap-v3/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@test/forks/uniswap-v3/IUniswapV3Pool.sol";
-import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
+import {ISwapRouter} from "@uniswap-v3/ISwapRouter.sol";
+import {IUniswapV3Pool} from "@uniswap-v3/IUniswapV3Pool.sol";
+import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IMerklDistributor, IrEUL} from "@src/interfaces/lendingAdapters/IMerklDistributor.sol";
 
 abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
@@ -140,8 +139,8 @@ abstract contract ALMTestBase is Deployers {
             TestLib.EULER_VAULT_CONNECT,
             _vault0,
             _vault1,
-            IMerklDistributor(address(TestLib.merklRewardsDistributor)),
-            IrEUL(address(TestLib.rEUL))
+            TestLib.merklRewardsDistributor,
+            TestLib.rEUL
         );
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
