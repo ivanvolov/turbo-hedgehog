@@ -15,7 +15,7 @@ import {IFlashLoanAdapter} from "../../interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 import {IOracle} from "../../interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
+import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
 import {IBase} from "../../interfaces/IBase.sol";
 
 abstract contract Base is IBase {
@@ -87,12 +87,6 @@ abstract contract Base is IBase {
     function transferOwnership(address newOwner) public virtual onlyOwner {
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-    }
-
-    function otherToken(IERC20 token) internal view returns (IERC20) {
-        if (token == base) return quote;
-        if (token == quote) return base;
-        revert TokenNotAllowed(address(token));
     }
 
     // ** Modifiers

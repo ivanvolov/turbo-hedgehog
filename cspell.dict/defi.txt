@@ -36,3 +36,5 @@ Merkl
 tral
 collateralization
 collateralized
+Reentrancy
+Lockdown

@@ -2,10 +2,12 @@
 pragma solidity ^0.8.0;
 
 // ** Euler imports
-import {IEulerVault} from "../../interfaces/lendingAdapters/IEulerVault.sol";
-import {IEVC} from "../../interfaces/lendingAdapters/IEVC.sol";
+import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
+import {IEVC as EVCLib, IEthereumVaultConnector as IEVC} from "@euler-interfaces/IEVC.sol";
+import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
 
 // ** External imports
+import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -14,9 +16,6 @@ import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {LendingBase} from "../lendingAdapters/LendingBase.sol";
-
-// ** interfaces
-import {IMerklDistributor, IrEUL} from "../../interfaces/lendingAdapters/IMerklDistributor.sol";
 
 contract EulerLendingAdapter is LendingBase {
     using TokenWrapperLib for uint256;
@@ -78,9 +77,9 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function borrowLong(uint256 amount) public override onlyModule notPaused notShutdown {
-        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
+        EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
 
-        items[0] = IEVC.BatchItem({
+        items[0] = EVCLib.BatchItem({
             targetContract: address(vault0),
             onBehalfOfAccount: subAccount0,
             value: 0,
@@ -95,8 +94,8 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function removeCollateralLong(uint256 amount) public override onlyModule notPaused {
-        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
-        items[0] = IEVC.BatchItem({
+        EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
+        items[0] = EVCLib.BatchItem({
             targetContract: address(vault1),
             onBehalfOfAccount: subAccount0,
             value: 0,
@@ -121,9 +120,9 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function borrowShort(uint256 amount) public override onlyModule notPaused notShutdown {
-        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
+        EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
 
-        items[0] = IEVC.BatchItem({
+        items[0] = EVCLib.BatchItem({
             targetContract: address(vault1),
             onBehalfOfAccount: subAccount1,
             value: 0,
@@ -138,8 +137,8 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function removeCollateralShort(uint256 amount) public override onlyModule notPaused {
-        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](1);
-        items[0] = IEVC.BatchItem({
+        EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
+        items[0] = EVCLib.BatchItem({
             targetContract: address(vault0),
             onBehalfOfAccount: subAccount1,
             value: 0,

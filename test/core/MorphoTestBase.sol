@@ -6,7 +6,7 @@ import {IMorpho, Id, MarketParams} from "@morpho-blue/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 import {MarketParamsLib} from "@morpho-blue/libraries/MarketParamsLib.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IMorphoChainlinkOracleV2Factory} from "@forks/morpho-oracles/IMorphoChainlinkOracleV2Factory.sol";
+import {IMorphoChainlinkOracleV2Factory} from "@morpho-oracles/IMorphoChainlinkOracleV2Factory.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
@@ -22,8 +22,6 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {ILendingAdapterMorpho} from "@test/interfaces/ILendingAdapterMorpho.sol";
-import {IMerklDistributor} from "@src/interfaces/lendingAdapters/IMerklDistributor.sol";
-import {IUniversalRewardsDistributor} from "@src/interfaces/lendingAdapters/IUniversalRewardsDistributor.sol";
 
 abstract contract MorphoTestBase is ALMTestBase {
     using TestAccountLib for TestAccount;
@@ -57,7 +55,7 @@ abstract contract MorphoTestBase is ALMTestBase {
             shortMId,
             mockAdapter,
             mockAdapter,
-            IMerklDistributor(address(TestLib.merklRewardsDistributor))
+            TestLib.merklRewardsDistributor
         );
 
         setURD();
@@ -75,7 +73,7 @@ abstract contract MorphoTestBase is ALMTestBase {
             Id.wrap(""),
             TestLib.morphoUSDCVault,
             TestLib.morphoUSDTVault,
-            IMerklDistributor(address(TestLib.merklRewardsDistributor))
+            TestLib.merklRewardsDistributor
         );
 
         setURD();
@@ -93,7 +91,7 @@ abstract contract MorphoTestBase is ALMTestBase {
             Id.wrap(""),
             TestLib.morphoUSDCVault,
             TestLib.morphoDAIVault,
-            IMerklDistributor(address(TestLib.merklRewardsDistributor))
+            TestLib.merklRewardsDistributor
         );
 
         setURD();
@@ -101,9 +99,7 @@ abstract contract MorphoTestBase is ALMTestBase {
 
     function setURD() internal {
         vm.prank(deployer.addr);
-        ILendingAdapterMorpho(address(lendingAdapter)).setURD(
-            IUniversalRewardsDistributor(address(TestLib.universalRewardsDistributor))
-        );
+        ILendingAdapterMorpho(address(lendingAdapter)).setURD(TestLib.universalRewardsDistributor);
     }
 
     function create_accounts_and_tokens(

@@ -20,7 +20,7 @@ import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter
 import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanAdapter.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
-import {UniswapV3SwapAdapter} from "@src/core/swapAdapters/UniswapV3SwapAdapter.sol";
+import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {Oracle} from "@src/core/Oracle.sol";
 
 // ** libraries
@@ -39,14 +39,13 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {IUniswapV3SwapAdapter} from "@src/interfaces/swapAdapters/IUniswapV3SwapAdapter.sol";
-import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@src/interfaces/swapAdapters/IUniswapV3Pool.sol";
-import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
+import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
+import {IUniswapSwapAdapter} from "@src/interfaces/swapAdapters/IUniswapSwapAdapter.sol";
+import {ISwapRouter} from "@uniswap-v3/ISwapRouter.sol";
+import {IUniswapV3Pool} from "@uniswap-v3/IUniswapV3Pool.sol";
+import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IMerklDistributor, IrEUL} from "@src/interfaces/lendingAdapters/IMerklDistributor.sol";
 
 abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
@@ -60,7 +59,6 @@ abstract contract ALMTestBase is Deployers {
     SRebalanceAdapter rebalanceAdapter;
 
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
-    address constant UNISWAP_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     IERC20 BASE;
     IERC20 QUOTE;
@@ -141,8 +139,8 @@ abstract contract ALMTestBase is Deployers {
             TestLib.EULER_VAULT_CONNECT,
             _vault0,
             _vault1,
-            IMerklDistributor(address(TestLib.merklRewardsDistributor)),
-            IrEUL(address(TestLib.rEUL))
+            TestLib.merklRewardsDistributor,
+            TestLib.rEUL
         );
         _deposit_to_euler(_vault0, deposit0);
         _deposit_to_euler(_vault1, deposit1);
@@ -222,7 +220,7 @@ abstract contract ALMTestBase is Deployers {
         if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE, bDec, qDec);
         else positionManager = new PositionManager(BASE, QUOTE, bDec, qDec);
 
-        swapAdapter = new UniswapV3SwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.V3_SWAP_ROUTER);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, _isNova);
 
@@ -234,7 +232,7 @@ abstract contract ALMTestBase is Deployers {
         _setComponents(address(positionManager));
 
         _setComponents(address(swapAdapter));
-        IUniswapV3SwapAdapter(address(swapAdapter)).setTargetPool(IUniswapV3Pool(TARGET_SWAP_POOL));
+        setSwapAdapterToV3SingleSwap();
 
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setRebalanceOperator(deployer.addr);
@@ -248,6 +246,24 @@ abstract contract ALMTestBase is Deployers {
         deal(address(BASE), address(manager), 1000 ether);
         deal(address(QUOTE), address(manager), 1000 ether);
         vm.stopPrank();
+    }
+
+    function setSwapAdapterToV3SingleSwap() internal {
+        IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
+
+        uint256 fee = IUniswapV3Pool(TARGET_SWAP_POOL).fee();
+
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(0, 1, abi.encodePacked(BASE, uint24(fee), QUOTE));
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(1, 1, abi.encodePacked(QUOTE, uint24(fee), BASE));
+
+        uint256[] memory activeSwapRoute = new uint256[](1);
+        activeSwapRoute[0] = 0;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute);
+
+        activeSwapRoute[0] = 1;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute);
     }
 
     function getTokensInOrder() internal view returns (address, address) {
@@ -278,8 +294,8 @@ abstract contract ALMTestBase is Deployers {
         vm.stopPrank();
 
         vm.startPrank(marketMaker.addr);
-        BASE.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
-        QUOTE.forceApprove(address(UNISWAP_V3_ROUTER), type(uint256).max);
+        BASE.forceApprove(address(TestLib.UNISWAP_V3_ROUTER), type(uint256).max);
+        QUOTE.forceApprove(address(TestLib.UNISWAP_V3_ROUTER), type(uint256).max);
         vm.stopPrank();
     }
 
@@ -378,7 +394,7 @@ abstract contract ALMTestBase is Deployers {
         (address _token0, address _token1) = getTokensInOrder();
         deal(zeroForOne ? _token0 : _token1, address(marketMaker.addr), amountIn);
         vm.startPrank(marketMaker.addr);
-        amountOut = ISwapRouter(UNISWAP_V3_ROUTER).exactInputSingle(
+        amountOut = TestLib.UNISWAP_V3_ROUTER.exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
                 tokenIn: zeroForOne ? _token0 : _token1,
                 tokenOut: zeroForOne ? _token1 : _token0,
@@ -684,12 +700,12 @@ abstract contract ALMTestBase is Deployers {
         }
     }
 
-    function _fakeSetComponents(address adapter, address fakeHook) internal {
-        vm.mockCall(fakeHook, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
-        vm.mockCall(fakeHook, abi.encodeWithSelector(IALM.shutdown.selector), abi.encode(false));
+    function _fakeSetComponents(address adapter, address fakeALM) internal {
+        vm.mockCall(fakeALM, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
+        vm.mockCall(fakeALM, abi.encodeWithSelector(IALM.shutdown.selector), abi.encode(false));
         vm.prank(deployer.addr);
         IBase(adapter).setComponents(
-            IALM(fakeHook),
+            IALM(fakeALM),
             ILendingAdapter(alice.addr),
             IFlashLoanAdapter(alice.addr),
             IPositionManager(alice.addr),
@@ -697,5 +713,11 @@ abstract contract ALMTestBase is Deployers {
             IRebalanceAdapter(alice.addr),
             ISwapAdapter(alice.addr)
         );
+    }
+
+    function otherToken(IERC20 token) internal view returns (IERC20) {
+        if (token == BASE) return QUOTE;
+        if (token == QUOTE) return BASE;
+        revert("Token not allowed");
     }
 }

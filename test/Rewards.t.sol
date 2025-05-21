@@ -13,8 +13,12 @@ import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ILendingAdapterEuler, IMerklDistributorFull, MerkleTree} from "@test/interfaces/ILendingAdapterEuler.sol";
-import {IUniversalRewardsDistributorFull, PendingRoot} from "@test/interfaces/ILendingAdapterMorpho.sol";
+import {ILendingAdapterEuler} from "@test/interfaces/ILendingAdapterEuler.sol";
+import {IMerklDistributor, MerkleTree} from "@merkl-contracts/IMerklDistributor.sol";
+import {
+    IUniversalRewardsDistributor,
+    PendingRoot
+} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 import {ILendingAdapterMorpho} from "./interfaces/ILendingAdapterMorpho.sol";
 
 contract RewardsAdaptersTest is MorphoTestBase {
@@ -22,12 +26,8 @@ contract RewardsAdaptersTest is MorphoTestBase {
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
-    IERC20 USDT = IERC20(TestLib.USDT);
-
-    IMerklDistributorFull MRD = TestLib.merklRewardsDistributor;
-    IUniversalRewardsDistributorFull URD = TestLib.universalRewardsDistributor;
+    IMerklDistributor MRD = TestLib.merklRewardsDistributor;
+    IUniversalRewardsDistributor URD = TestLib.universalRewardsDistributor;
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -68,7 +68,7 @@ contract RewardsAdaptersTest is MorphoTestBase {
             vm.prank(deployer.addr);
             ILendingAdapterEuler(address(lendingAdapter)).claimMerklRewards(
                 address(lendingAdapter),
-                TestLib.rEUL,
+                IERC20(address(TestLib.rEUL)),
                 amount,
                 proof
             );
@@ -115,7 +115,7 @@ contract RewardsAdaptersTest is MorphoTestBase {
             vm.warp(root.validAt);
             URD.acceptRoot();
 
-            bool verified = MerkleProof.verify(
+            MerkleProof.verify(
                 proof,
                 URD.root(),
                 keccak256(bytes.concat(keccak256(abi.encode(address(lendingAdapter), MORPHO, amount))))
@@ -298,7 +298,7 @@ contract RewardsAdaptersTest is MorphoTestBase {
         address token,
         uint256 amount,
         bytes32[] memory proof
-    ) internal view returns (bytes32 currentHash) {
+    ) internal pure returns (bytes32 currentHash) {
         bytes32 leaf = keccak256(abi.encode(user, token, amount));
         currentHash = leaf;
         uint256 proofLength = proof.length;

@@ -7,13 +7,16 @@ import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
 
 // ** interfaces
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {IEulerVault} from "@src/interfaces/lendingAdapters/IEulerVault.sol";
+import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {ISwapRouter} from "@src/interfaces/swapAdapters/ISwapRouter.sol";
+import {ISwapRouter} from "@uniswap-v3/ISwapRouter.sol";
 import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
-import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
-import {IMerklDistributorFull, IrEULFull} from "@test/interfaces/ILendingAdapterEuler.sol";
-import {IUniversalRewardsDistributorFull} from "@test/interfaces/ILendingAdapterMorpho.sol";
+import {IEthereumVaultConnector as IEVC} from "@euler-interfaces/IEVC.sol";
+import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
+import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
+import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
+import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
+import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 
 library TestLib {
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -24,17 +27,16 @@ library TestLib {
 
     // ** https://app.morpho.org/ethereum/earn
     IMorpho constant MORPHO = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
-    IUniversalRewardsDistributorFull constant universalRewardsDistributor =
-        IUniversalRewardsDistributorFull(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb);
+    IUniversalRewardsDistributor constant universalRewardsDistributor =
+        IUniversalRewardsDistributor(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb);
     IERC4626 constant morphoUSDTVault = IERC4626(0xbEef047a543E45807105E51A8BBEFCc5950fcfBa);
     IERC4626 constant morphoUSDCVault = IERC4626(0xd63070114470f685b75B74D60EEc7c1113d33a3D);
     IERC4626 constant morphoDAIVault = IERC4626(0x500331c9fF24D9d11aee6B07734Aa72343EA74a5);
 
     // ** https://app.euler.finance/?asset=USDT&network=ethereum
-    IEVC constant EULER_VAULT_CONNECT = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
-    IMerklDistributorFull constant merklRewardsDistributor =
-        IMerklDistributorFull(0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae);
-    IrEULFull constant rEUL = IrEULFull(0xf3e621395fc714B90dA337AA9108771597b4E696);
+    IEVC constant EULER_VAULT_CONNECT = IEVC(payable(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383));
+    IMerklDistributor constant merklRewardsDistributor = IMerklDistributor(0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae);
+    IrEUL constant rEUL = IrEUL(0xf3e621395fc714B90dA337AA9108771597b4E696);
     IEulerVault constant eulerUSDCVault1 = IEulerVault(0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9);
     IEulerVault constant eulerUSDCVault2 = IEulerVault(0xcBC9B61177444A793B85442D3a953B90f6170b7D);
     IEulerVault constant eulerUSDTVault1 = IEulerVault(0x313603FA690301b0CaeEf8069c065862f9162162);
@@ -45,12 +47,15 @@ library TestLib {
     IEulerVault constant eulerCbBTCVault2 = IEulerVault(0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1);
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
-    ISwapRouter constant V3_SWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter constant UNISWAP_V3_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
     address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+
+    IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af);
+    IPermit2 constant PERMIT_2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
     // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     AggregatorV3Interface constant chainlink_feed_WETH =

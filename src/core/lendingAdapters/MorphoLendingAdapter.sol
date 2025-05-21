@@ -9,16 +9,14 @@ import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalances
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
+import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 
 // ** libraries
 import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
-import {IUniversalRewardsDistributor} from "../../interfaces/lendingAdapters/IUniversalRewardsDistributor.sol";
 
 // ** contracts
 import {LendingBase} from "../lendingAdapters/LendingBase.sol";
-
-// ** interfaces
-import {IMerklDistributor} from "../../interfaces/lendingAdapters/IMerklDistributor.sol";
 
 contract MorphoLendingAdapter is LendingBase {
     error NotInBorrowMode();

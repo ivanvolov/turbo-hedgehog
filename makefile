@@ -1,3 +1,6 @@
+build:
+	clear && forge clean && forge build
+
 ta:
 	clear && forge test -vv --no-match-contract "SimulationTest|BTCALMTest"
 
@@ -57,6 +60,10 @@ tra:
 	clear && forge test -vv --match-contract RewardsAdaptersTest --match-test "test_"
 tral:
 	clear && forge test -vvvv --match-contract RewardsAdaptersTest --match-test "test_"
+tsa:
+	clear && forge test -vv --match-contract SwapAdapterTest --match-test "test_"
+tsal:
+	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
@@ -72,3 +79,5 @@ merkl_data:
 	clear && npm run merkl
 morpho_data:
 	clear && npm run morpho
+init_pool_events:
+	clear && npm run init_pool_events
