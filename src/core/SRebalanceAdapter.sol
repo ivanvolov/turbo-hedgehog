@@ -209,29 +209,21 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         checkDeviations();
 
         // ** Update state
-        oraclePriceAtLastRebalance = oracle.price();
-
-        sqrtPriceAtLastRebalance = ALMMathLib.getSqrtPriceAtTick(
-            ALMMathLib.getTickFromPrice(
-                ALMMathLib.getPoolPriceFromOraclePrice(oraclePriceAtLastRebalance, isInvertedPool, decimalsDelta)
-            )
+        uint256 currentPrice = oracle.price();
+        uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(
+            ALMMathLib.getPoolPriceFromOraclePrice(currentPrice, isInvertedPool, decimalsDelta)
         );
-
-        alm.updateSqrtPrice(sqrtPriceAtLastRebalance);
-
-        alm.updateBoundaries();
+        oraclePriceAtLastRebalance = currentPrice;
+        sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
-        uint128 liquidity = calcLiquidity();
+
+        alm.updateSqrtPrice(currentSqrtPrice);
+        alm.updateBoundaries(currentSqrtPrice);
+
+        uint128 liquidity = calcLiquidity(); // This uses new boundaries from AMM, which are updated first.
         alm.updateLiquidity(liquidity);
 
-        emit Rebalance(
-            priceThreshold,
-            auctionTriggerTime,
-            slippage,
-            liquidity,
-            oraclePriceAtLastRebalance,
-            sqrtPriceAtLastRebalance
-        );
+        emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);
     }
 
     function onFlashLoanSingle(
@@ -245,19 +237,19 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function onFlashLoanTwoTokens(
-        IERC20 base,
+        IERC20 _base,
         uint256 amountB,
-        IERC20 quote,
+        IERC20 _quote,
         uint256 amountQ,
         bytes calldata data
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
-        uint256 baseBalanceUnwr = base.balanceOf(address(this));
-        if (amountB > baseBalanceUnwr) swapAdapter.swapExactOutput(quote, base, amountB - baseBalanceUnwr);
+        uint256 baseBalance = _base.balanceOf(address(this));
+        if (amountB > baseBalance) swapAdapter.swapExactOutput(_quote, _base, amountB - baseBalance);
         else {
-            uint256 quoteBalanceUnwr = quote.balanceOf(address(this));
-            if (amountQ > quoteBalanceUnwr) swapAdapter.swapExactOutput(base, quote, amountQ - quoteBalanceUnwr);
+            uint256 quoteBalance = _quote.balanceOf(address(this));
+            if (amountQ > quoteBalance) swapAdapter.swapExactOutput(_base, _quote, amountQ - quoteBalance);
         }
     }
 
@@ -328,37 +320,22 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function calcLiquidity() public view returns (uint128) {
-        uint256 value = ALMMathLib.getVirtualValue(alm.TVL(), weight, longLeverage, shortLeverage);
-        if (!isInvertedAssets) value = value.mul(oracle.price());
-
-        uint256 liquidity = ALMMathLib.getVirtualLiquidity(
-            value,
-            oraclePriceAtLastRebalance,
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickUpper()),
+        return
+            ALMMathLib.getLiquidity(
                 isInvertedPool,
-                decimalsDelta
-            ),
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromTick(alm.tickLower()),
-                isInvertedPool,
-                decimalsDelta
-            )
-        );
-        return SafeCast.toUint128(liquidity.mul(liquidityMultiplier));
+                alm.tickLower(),
+                alm.tickUpper(),
+                lendingAdapter.getCollateralLong().unwrap(qDec),
+                liquidityMultiplier
+            );
     }
 
     function checkDeviations() internal view {
-        uint256 price = oracle.price();
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
+        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(oracle.price(), currentCL, currentCS, DL, DS);
 
-        uint256 _longLeverage = PRBMath.mulDiv(currentCL, price, currentCL.mul(price) - DL);
-        uint256 _shortLeverage = currentCS.div(currentCS - DS.mul(price));
-
-        uint256 deviationLong = ALMMathLib.absSub(_longLeverage, longLeverage);
-        uint256 deviationShort = ALMMathLib.absSub(_shortLeverage, shortLeverage);
-        require(deviationLong <= maxDeviationLong, "D1");
-        require(deviationShort <= maxDeviationShort, "D2");
+        require(ALMMathLib.absSub(lLeverage, longLeverage) <= maxDeviationLong, "D1");
+        require(ALMMathLib.absSub(sLeverage, shortLeverage) <= maxDeviationShort, "D2");
     }
 
     // ** Modifiers

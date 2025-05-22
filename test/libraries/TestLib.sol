@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
+import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
@@ -14,6 +16,8 @@ import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {IEVC} from "@src/interfaces/lendingAdapters/IEVC.sol";
 
 library TestLib {
+    using PRBMathUD60x18 for uint256;
+
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant cbBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -25,6 +29,7 @@ library TestLib {
     IERC4626 constant morphoUSDTVault = IERC4626(0xbEef047a543E45807105E51A8BBEFCc5950fcfBa);
     IERC4626 constant morphoUSDCVault = IERC4626(0xd63070114470f685b75B74D60EEc7c1113d33a3D);
     IERC4626 constant morphoDAIVault = IERC4626(0x500331c9fF24D9d11aee6B07734Aa72343EA74a5);
+    IERC4626 constant morphoUSDEVault = IERC4626(0x4EDfaB296F8Eb15aC0907CF9eCb7079b1679Da57);
 
     // ** https://app.euler.finance/?asset=USDT&network=ethereum
     IEVC constant EULER_VAULT_CONNECT = IEVC(0x0C9a3dd6b8F28529d72d7f9cE918D493519EE383);
@@ -36,6 +41,7 @@ library TestLib {
     IEulerVault constant eulerWETHVault2 = IEulerVault(0x716bF454066a84F39A2F78b5707e79a9d64f1225);
     IEulerVault constant eulerCbBTCVault1 = IEulerVault(0x056f3a2E41d2778D3a0c0714439c53af2987718E);
     IEulerVault constant eulerCbBTCVault2 = IEulerVault(0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1);
+    IEulerVault constant eulerUSDEVault = IEulerVault(0x2daCa71Cb58285212Dc05D65Cfd4f59A82BC4cF6);
 
     // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
     ISwapRouter constant V3_SWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
@@ -44,6 +50,7 @@ library TestLib {
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
     address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+    address constant uniswap_v3_USDE_USDT_POOL = 0x435664008F38B0650fBC1C9fc971D0A3Bc2f1e47;
 
     // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     AggregatorV3Interface constant chainlink_feed_WETH =
@@ -56,10 +63,58 @@ library TestLib {
         AggregatorV3Interface(0x2665701293fCbEB223D11A08D826563EDcCE423A);
     AggregatorV3Interface constant chainlink_feed_DAI =
         AggregatorV3Interface(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
+    AggregatorV3Interface constant chainlink_feed_USDE =
+        AggregatorV3Interface(0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961);
 
-    uint256 constant sqrt_price_10per_price_change = 48808848170151600; //(sqrt(1.1)-1) or max 10% price change
+    uint256 constant sqrt_price_10per_price_change = 48808848170151600; // (sqrt(1.1)-1) or max 10% price change
+    uint256 constant sqrt_price_1per_price_change = 4987562112088950; // (sqrt(1.01)-1) or max 1% price change
 
-    function nearestUsableTick(int24 tick_, uint24 tickSpacing) public pure returns (int24 result) {
+    // ** Uniswap math
+
+    uint256 constant WAD = 1e18;
+    uint256 constant Q192 = 2 ** 192;
+
+    function getOraclePriceFromPoolPrice(
+        uint256 price,
+        bool reversedOrder,
+        uint8 decimalsDelta
+    ) internal pure returns (uint256) {
+        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+        if (reversedOrder) return ratio.div(price);
+        return ratio.mul(price);
+    }
+
+    function getVirtualValue(
+        uint256 value,
+        uint256 weight,
+        uint256 longLeverage,
+        uint256 shortLeverage
+    ) internal pure returns (uint256) {
+        return (weight.mul(longLeverage - shortLeverage) + shortLeverage).mul(value);
+    }
+
+    function getVirtualLiquidity(
+        uint256 virtualValue,
+        uint256 price,
+        uint256 priceUpper,
+        uint256 priceLower
+    ) internal view returns (uint256) {
+        return virtualValue.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+    }
+
+    function getTickFromPrice(uint256 price) internal pure returns (int24) {
+        return ALMMathLib.getTickFromSqrtPriceX96(ALMMathLib.getSqrtPriceX96FromPrice(price));
+    }
+
+    function getPriceFromTick(int24 tick) internal pure returns (uint256) {
+        return getPriceFromSqrtPriceX96(ALMMathLib.getSqrtPriceX96FromTick(tick));
+    }
+
+    function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
+        return PRBMath.mulDiv(uint256(sqrtPriceX96).mul(sqrtPriceX96), WAD * WAD, Q192);
+    }
+
+    function nearestUsableTick(int24 tick_, uint24 tickSpacing) internal pure returns (int24 result) {
         result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);
 
         if (result < TickMath.MIN_TICK) {
@@ -79,7 +134,7 @@ library TestLib {
         }
     }
 
-    function getTickSpacingFromFee(uint24 fee) public pure returns (int24) {
+    function getTickSpacingFromFee(uint24 fee) internal pure returns (int24) {
         return int24((fee / 100) * 2);
     }
 }
