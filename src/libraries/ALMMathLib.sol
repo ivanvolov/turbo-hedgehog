@@ -13,54 +13,49 @@ library ALMMathLib {
 
     uint256 constant WAD = 1e18;
     uint256 constant Q96 = 2 ** 96;
-    uint256 constant Q192 = 2 ** 192;
 
-    function sqrtPriceNextX96OneForZeroIn(
+    function getSqrtPriceNextX96(
+        bool zeroForOne,
+        bool exactInput,
         uint160 sqrtPriceCurrentX96,
         uint128 liquidity,
-        uint256 amount1
+        uint256 amount
     ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = SafeCast.toUint160(PRBMath.mulDiv(amount1, Q96, liquidity));
-        return sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
+        if (zeroForOne != exactInput) {
+            uint160 sqrtPriceDeltaX96 = SafeCast.toUint160(PRBMath.mulDiv(amount, Q96, liquidity));
+            return zeroForOne ? sqrtPriceCurrentX96 - sqrtPriceDeltaX96 : sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
+        } else {
+            uint256 liquidityDelta = PRBMath.mulDiv(amount, sqrtPriceCurrentX96, Q96);
+            return
+                SafeCast.toUint160(
+                    PRBMath.mulDiv(
+                        liquidity,
+                        sqrtPriceCurrentX96,
+                        zeroForOne ? liquidity + liquidityDelta : liquidity - liquidityDelta
+                    )
+                );
+        }
     }
 
-    function sqrtPriceNextX96ZeroForOneOut(
-        uint160 sqrtPriceCurrentX96,
-        uint128 liquidity,
-        uint256 amount1
-    ) internal pure returns (uint160) {
-        uint160 sqrtPriceDeltaX96 = SafeCast.toUint160(PRBMath.mulDiv(amount1, Q96, liquidity));
-        return sqrtPriceCurrentX96 - sqrtPriceDeltaX96;
-    }
-
-    function sqrtPriceNextX96OneForZeroOut(
-        uint160 sqrtPriceCurrentX96,
-        uint128 liquidity,
-        uint256 amount0
-    ) internal pure returns (uint160) {
-        return
-            SafeCast.toUint160(
-                PRBMath.mulDiv(
-                    liquidity,
-                    sqrtPriceCurrentX96,
-                    liquidity - PRBMath.mulDiv(amount0, sqrtPriceCurrentX96, Q96)
-                )
+    function getLiquidity(
+        bool isInvertedPool,
+        int24 tickLower,
+        int24 tickUpper,
+        uint256 amount,
+        uint256 multiplier
+    ) internal pure returns (uint128) {
+        uint256 _liquidity = isInvertedPool
+            ? LiquidityAmounts.getLiquidityForAmount1(
+                getSqrtPriceX96FromTick(tickLower),
+                getSqrtPriceX96FromTick(tickUpper),
+                amount
+            )
+            : LiquidityAmounts.getLiquidityForAmount0(
+                getSqrtPriceX96FromTick(tickLower),
+                getSqrtPriceX96FromTick(tickUpper),
+                amount
             );
-    }
-
-    function sqrtPriceNextX96ZeroForOneIn(
-        uint160 sqrtPriceCurrentX96,
-        uint128 liquidity,
-        uint256 amount0
-    ) internal pure returns (uint160) {
-        return
-            SafeCast.toUint160(
-                PRBMath.mulDiv(
-                    liquidity,
-                    sqrtPriceCurrentX96,
-                    liquidity + PRBMath.mulDiv(amount0, sqrtPriceCurrentX96, Q96)
-                )
-            );
+        return SafeCast.toUint128(PRBMath.mulDiv(_liquidity, multiplier, WAD));
     }
 
     function getSwapAmount0(
@@ -112,24 +107,6 @@ library ALMMathLib {
                 : SafeCast.toUint256(mulDiv(variableValue, WAD, price) + baseValue);
     }
 
-    function getVirtualValue(
-        uint256 value,
-        uint256 weight,
-        uint256 longLeverage,
-        uint256 shortLeverage
-    ) internal pure returns (uint256) {
-        return (weight.mul(longLeverage - shortLeverage) + shortLeverage).mul(value);
-    }
-
-    function getVirtualLiquidity(
-        uint256 virtualValue,
-        uint256 price,
-        uint256 priceUpper,
-        uint256 priceLower
-    ) internal pure returns (uint256) {
-        return virtualValue.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
-    }
-
     function getUserAmounts(
         uint256 totalSupply,
         uint256 sharesOut,
@@ -146,20 +123,29 @@ library ALMMathLib {
         );
     }
 
+    function getLeverages(
+        uint256 price,
+        uint256 currentCL,
+        uint256 currentCS,
+        uint256 DL,
+        uint256 DS
+    ) internal pure returns (uint256 longLeverage, uint256 shortLeverage) {
+        longLeverage = PRBMath.mulDiv(currentCL, price, currentCL.mul(price) - DL);
+        shortLeverage = currentCS.div(currentCS - DS.mul(price));
+    }
+
     // ** Helpers
-    function getTickFromPrice(uint256 price) internal pure returns (int24) {
-        return
-            SafeCast.toInt24(
-                ((SafeCast.toInt256(PRBMathUD60x18.ln(price * WAD)) - int256(41446531673892820000))) / 99995000333297
-            );
+
+    function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
+        return SafeCast.toUint160(PRBMath.mulDiv(PRBMathUD60x18.sqrt(price), Q96, WAD));
     }
 
-    function getPriceFromTick(int24 tick) internal pure returns (uint256) {
-        return getPriceFromSqrtPriceX96(getSqrtPriceAtTick(tick));
+    function getSqrtPriceX96FromTick(int24 tick) internal pure returns (uint160) {
+        return TickMath.getSqrtPriceAtTick(tick);
     }
 
-    function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
-        return PRBMath.mulDiv(uint256(sqrtPriceX96).mul(sqrtPriceX96), WAD * WAD, Q192);
+    function getTickFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (int24) {
+        return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
     function getPoolPriceFromOraclePrice(
@@ -170,20 +156,6 @@ library ALMMathLib {
         uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
         if (reversedOrder) return ratio.div(price);
         return price.div(ratio);
-    }
-
-    function getOraclePriceFromPoolPrice(
-        uint256 price,
-        bool reversedOrder,
-        uint8 decimalsDelta
-    ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return ratio.mul(price);
-    }
-
-    function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160) {
-        return TickMath.getSqrtPriceAtTick(tick);
     }
 
     // ** Math functions

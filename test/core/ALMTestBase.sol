@@ -12,6 +12,8 @@ import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -330,8 +332,8 @@ abstract contract ALMTestBase is Deployers {
 
     function _sqrtPriceToOraclePrice(uint160 sqrtPriceX96) internal view returns (uint256) {
         return
-            ALMMathLib.getOraclePriceFromPoolPrice(
-                ALMMathLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
+            TestLib.getOraclePriceFromPoolPrice(
+                TestLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
                 isInvertedPool,
                 uint8(ALMMathLib.absSub(bDec, qDec))
             );
@@ -340,7 +342,7 @@ abstract contract ALMTestBase is Deployers {
     uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
     uint256 slippageTolerance = 1e18; // 1% acceptable price difference
 
-    function setV3PoolPrice(uint160 newSqrtPrice) public {
+    function _setV3PoolPrice(uint160 newSqrtPrice) public {
         uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
 
         // ** Configuration parameters
@@ -388,6 +390,68 @@ abstract contract ALMTestBase is Deployers {
         // console.log("Iterations:", iterations);
 
         if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
+    }
+
+    uint256 constant MAX_ITER = 8; // binary-search depth
+    uint256 constant MIN_IN = 3e8; // 300 USDC   (token1)  or 0.0000003 WETH (token0)
+
+    function setV3PoolPrice(uint160 targetSqrtPriceX96) public {
+        uint160 sqrtCurrent = hook.sqrtPriceCurrent();
+        if (sqrtCurrent == targetSqrtPriceX96) return;
+
+        // ── 0. quick exit if already in band ────────────────────────────────
+        uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
+        uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
+        if (ALMMathLib.absSub(priceTarget, priceCurrent) <= slippageTolerance) return;
+
+        // ── 1. direction + liquidity snapshot ──────────────────────────────
+        bool zeroForOne = priceCurrent > priceTarget; // pool price must drop
+        if (isInvertedPool) zeroForOne = !zeroForOne; // flip when quoting inverted
+        uint128 L = hook.liquidity();
+
+        // Use binary search on the delta-amount rather than on price itself:
+        // upper = “enough to overshoot”, lower = 0.  Each step halves the gap.
+        uint256 hi;
+        uint256 lo = 0;
+
+        // upper bound:  move **whole** way in one go (worst case)
+        if (zeroForOne) {
+            // token0 in
+            hi = SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true);
+        } else {
+            // token1 in
+            hi = SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
+        }
+
+        if (hi < MIN_IN) hi = MIN_IN;
+
+        // ── 2. iterative refinement ( ≤ 8 swaps ) ──────────────────────────
+        for (uint8 i; i < MAX_ITER; ++i) {
+            uint256 mid = (hi + lo) >> 1; // round-down
+            if (mid < MIN_IN) mid = MIN_IN;
+
+            // do the trial swap
+            _doV3InputSwap(zeroForOne, mid);
+
+            // compute new price
+            sqrtCurrent = hook.sqrtPriceCurrent();
+            priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
+
+            // good enough?
+            uint256 diff = ALMMathLib.absSub(priceCurrent, priceTarget);
+            if (diff <= slippageTolerance) return;
+
+            bool nowAbove = priceCurrent > priceTarget;
+            if (nowAbove == (isInvertedPool ? !zeroForOne : zeroForOne)) {
+                // we are still on the start side – need more input
+                lo = mid;
+            } else {
+                // we overshot – mid was too large
+                hi = mid;
+            }
+        }
+
+        revert("setV3PoolPrice: cannot converge");
     }
 
     function _doV3InputSwap(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
@@ -455,6 +519,7 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdDS;
     uint256 public assertEqBalanceQuoteThreshold = 1e5;
     uint256 public assertEqBalanceBaseThreshold = 1e1;
+    uint256 public assertEqSqrtThreshold;
 
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
@@ -464,8 +529,8 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqBalanceState(owner, _balanceQ, _balanceB) {
             // Intentionally empty
         } catch {
-            console.log("QUOTE Balance", QUOTE.balanceOf(owner));
-            console.log("BASE Balance", BASE.balanceOf(owner));
+            console.log("Error: QUOTE Balance", QUOTE.balanceOf(owner));
+            console.log("Error: BASE Balance", BASE.balanceOf(owner));
             _assertEqBalanceState(owner, _balanceQ, _balanceB); // @Notice: this is to throw the error
         }
     }
@@ -561,10 +626,10 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqPositionState(CL, CS, DL, DS) {
             // Intentionally empty
         } catch {
-            console.log("CL", TW.unwrap(_leA.getCollateralLong(), qDec));
-            console.log("CS", TW.unwrap(_leA.getCollateralShort(), bDec));
-            console.log("DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
-            console.log("DS", TW.unwrap(_leA.getBorrowedShort(), qDec));
+            console.log("Error: CL", TW.unwrap(_leA.getCollateralLong(), qDec));
+            console.log("Error: CS", TW.unwrap(_leA.getCollateralShort(), bDec));
+            console.log("Error: DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
+            console.log("Error: DS", TW.unwrap(_leA.getBorrowedShort(), qDec));
             _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
@@ -580,34 +645,51 @@ abstract contract ALMTestBase is Deployers {
     // --- Test math --- //
 
     function _checkSwap(
-        uint256 liquidity,
+        uint128 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
     ) public view returns (uint256, uint256) {
         uint256 deltaX;
         uint256 deltaY;
         {
-            uint256 prePrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-            uint256 postPrice = 1e48 / ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+            (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
+                preSqrtPrice,
+                TickMath.getSqrtPriceAtTick(hook.tickLower()),
+                TickMath.getSqrtPriceAtTick(hook.tickUpper()),
+                liquidity
+            );
 
-            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
-            uint256 priceUpper = 1e48 / ALMMathLib.getPriceFromTick(hook.tickUpper());
+            (uint256 amt0Post, uint256 amt1Post) = LiquidityAmounts.getAmountsForLiquidity(
+                postSqrtPrice,
+                TickMath.getSqrtPriceAtTick(hook.tickLower()),
+                TickMath.getSqrtPriceAtTick(hook.tickUpper()),
+                liquidity
+            );
 
-            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-                ((priceUpper * prePrice) / 1e18).sqrt();
-            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
-                (priceUpper * postPrice).sqrt();
-
-            uint256 preY = (liquidity *
-                (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-            uint256 postY = (liquidity *
-                (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-
-            deltaX = postX > preX ? postX - preX : preX - postX;
-            deltaY = postY > preY ? postY - preY : preY - postY;
+            deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+            deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
         }
 
         return (deltaX, deltaY);
+    }
+
+    function _liquidityCheck(bool _isInvertedPool, uint256 liquidityMultiplier) public view {
+        uint128 liquidityCheck;
+        if (_isInvertedPool) {
+            liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
+                ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+        } else {
+            liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
+                ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
+                ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
+                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            );
+        }
+
+        assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
     }
 
     function _checkSwapReverse(
@@ -618,11 +700,11 @@ abstract contract ALMTestBase is Deployers {
         uint256 deltaX;
         uint256 deltaY;
         {
-            uint256 prePrice = 1e12 * ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-            uint256 postPrice = 1e12 * ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+            uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+            uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            //uint256 priceLower = 1e48 / ALMMathLib.getPriceFromTick(hook.tickLower()); //stack too deep
-            uint256 priceUpper = 1e12 * ALMMathLib.getPriceFromTick(hook.tickUpper());
+            //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(hook.tickLower()); //stack too deep
+            uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(hook.tickUpper());
 
             uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
                 ((priceUpper * prePrice) / 1e18).sqrt();
@@ -630,9 +712,9 @@ abstract contract ALMTestBase is Deployers {
                 (priceUpper * postPrice).sqrt();
 
             uint256 preY = (liquidity *
-                (prePrice.sqrt() - (1e12 * ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+                (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
             uint256 postY = (liquidity *
-                (postPrice.sqrt() - (1e12 * ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+                (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
 
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;
@@ -649,10 +731,10 @@ abstract contract ALMTestBase is Deployers {
         uint256 deltaX;
         uint256 deltaY;
         {
-            uint256 prePrice = ALMMathLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-            uint256 postPrice = ALMMathLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+            uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+            uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            uint256 priceUpper = 1e36 / ALMMathLib.getPriceFromTick(hook.tickUpper());
+            uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(hook.tickUpper());
 
             uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
                 (((priceUpper * prePrice) / 1e18).sqrt());
@@ -661,9 +743,9 @@ abstract contract ALMTestBase is Deployers {
                 ((priceUpper * postPrice).sqrt());
 
             uint256 preY = (liquidity *
-                (prePrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+                (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
             uint256 postY = (liquidity *
-                (postPrice.sqrt() - (1e48 / ALMMathLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+                (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
 
             deltaX = postX > preX ? postX - preX : preX - postX;
             deltaY = postY > preY ? postY - preY : preY - postY;

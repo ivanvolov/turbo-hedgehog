@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -22,7 +21,6 @@ import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 contract UnicordPositionManager is Base, IPositionManager {
     event FeesSet(uint256 newFees);
 
-    using PRBMathUD60x18 for uint256;
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 

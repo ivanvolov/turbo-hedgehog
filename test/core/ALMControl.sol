@@ -241,9 +241,9 @@ contract ALMControl is BaseHook, ERC20 {
         return
             _getLiquidityForValue(
                 value,
-                uint256(1e30).div(ALMMathLib.getPriceFromTick(currentTick)),
-                uint256(1e30).div(ALMMathLib.getPriceFromTick(tickUpper)),
-                uint256(1e30).div(ALMMathLib.getPriceFromTick(tickLower)),
+                uint256(1e30).div(TestLib.getPriceFromTick(currentTick)),
+                uint256(1e30).div(TestLib.getPriceFromTick(tickUpper)),
+                uint256(1e30).div(TestLib.getPriceFromTick(tickLower)),
                 1e12
             );
     }

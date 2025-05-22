@@ -38,3 +38,7 @@ collateralization
 collateralized
 Reentrancy
 Lockdown
+USDE
+CBBTC
+UNICORDRALM
+ABDK

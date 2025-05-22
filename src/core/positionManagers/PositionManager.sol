@@ -57,7 +57,6 @@ contract PositionManager is Base, IPositionManager {
         // Repay (k-1) * dETH to short debt;
 
         lendingAdapter.updatePosition(SafeCast.toInt256(k.mul(deltaQuote)), 0, -SafeCast.toInt256(deltaBase), 0);
-
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaQuote));
 
         quote.safeTransfer(address(alm), deltaQuote.unwrap(qDec));

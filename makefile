@@ -2,7 +2,7 @@ build:
 	clear && forge clean && forge build
 
 ta:
-	clear && forge test -vv --no-match-contract "SimulationTest|BTCALMTest"
+	clear && forge test -vv --no-match-contract "SimulationTest|ETHR2ALMTest|UNICORDRALMTest"
 
 ts:
 	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_simulation --ffi
