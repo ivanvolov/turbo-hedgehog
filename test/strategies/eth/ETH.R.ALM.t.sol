@@ -9,8 +9,6 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
-import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
