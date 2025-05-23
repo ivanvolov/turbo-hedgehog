@@ -13,39 +13,29 @@ contract EulerFlashLoanAdapter is FlashLoanBase {
     error FlashLoanAssetNotAllowed(address asset);
 
     // ** EulerV2
-    IEulerVault public immutable flVault0;
-    IEulerVault public immutable flVault1;
-    address public immutable flVault0Asset;
-    address public immutable flVault1Asset;
+    IEulerVault public immutable flVaultBase;
+    IEulerVault public immutable flVaultQuote;
 
     constructor(
         IERC20 _base,
         IERC20 _quote,
         uint8 _bDec,
         uint8 _qDec,
-        IEulerVault _flVault0,
-        IEulerVault _flVault1
+        IEulerVault _flVaultBase,
+        IEulerVault _flVaultQuote
     ) FlashLoanBase(false, _base, _quote, _bDec, _qDec) {
-        flVault0 = _flVault0;
-        flVault1 = _flVault1;
-
-        flVault0Asset = flVault0.asset();
-        flVault1Asset = flVault1.asset();
+        flVaultBase = _flVaultBase;
+        flVaultQuote = _flVaultQuote;
     }
 
     function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
-        if (msg.sender != address(flVault0) && msg.sender != address(flVault1)) revert NotAllowedEulerVault(msg.sender);
+        if (msg.sender != address(flVaultBase) && msg.sender != address(flVaultQuote))
+            revert NotAllowedEulerVault(msg.sender);
         _onFlashLoan(_data);
         return bytes32(0);
     }
 
-    function _flashLoanSingle(IERC20 asset, uint256 amount, bytes memory _data) internal virtual override {
-        getVaultByToken(asset).flashLoan(amount, _data);
-    }
-
-    function getVaultByToken(IERC20 token) internal view returns (IEulerVault) {
-        if (flVault0Asset == address(token)) return flVault0;
-        else if (flVault1Asset == address(token)) return flVault1;
-        else revert FlashLoanAssetNotAllowed(address(token));
+    function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual override {
+        isBase ? flVaultBase.flashLoan(amount, _data) : flVaultQuote.flashLoan(amount, _data);
     }
 }

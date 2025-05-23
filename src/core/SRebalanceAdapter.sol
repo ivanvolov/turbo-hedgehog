@@ -191,14 +191,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isNova) {
-            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(QUOTE, quoteToFl.unwrap(qDec), data);
-            else flashLoanAdapter.flashLoanSingle(BASE, baseToFl.unwrap(bDec), data);
+            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl.unwrap(qDec), data);
+            else flashLoanAdapter.flashLoanSingle(true, baseToFl.unwrap(bDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
         } else {
-            flashLoanAdapter.flashLoanTwoTokens(BASE, baseToFl.unwrap(bDec), QUOTE, quoteToFl.unwrap(qDec), data);
+            flashLoanAdapter.flashLoanTwoTokens(baseToFl.unwrap(bDec), quoteToFl.unwrap(qDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
@@ -227,29 +227,27 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     }
 
     function onFlashLoanSingle(
-        IERC20 token,
+        bool isBase,
         uint256 amount,
         bytes calldata data
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
-        uint256 balance = token.balanceOf(address(this));
-        if (amount > balance) swapAdapter.swapExactOutput(token == QUOTE, amount - balance);
+        uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
+        if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
 
     function onFlashLoanTwoTokens(
-        IERC20,
-        uint256 amountB,
-        IERC20,
-        uint256 amountQ,
+        uint256 amountBase,
+        uint256 amountQuote,
         bytes calldata data
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
         uint256 baseBalance = BASE.balanceOf(address(this));
-        if (amountB > baseBalance) swapAdapter.swapExactOutput(false, amountB - baseBalance);
+        if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
         else {
             uint256 quoteBalance = QUOTE.balanceOf(address(this));
-            if (amountQ > quoteBalance) swapAdapter.swapExactOutput(true, amountQ - quoteBalance);
+            if (amountQuote > quoteBalance) swapAdapter.swapExactOutput(true, amountQuote - quoteBalance);
         }
     }
 

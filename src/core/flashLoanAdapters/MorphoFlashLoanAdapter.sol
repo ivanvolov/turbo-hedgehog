@@ -38,7 +38,7 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
         return bytes32(0);
     }
 
-    function _flashLoanSingle(IERC20 asset, uint256 amount, bytes memory _data) internal virtual override {
-        morpho.flashLoan(address(asset), amount, _data);
+    function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual override {
+        morpho.flashLoan(isBase ? address(BASE) : address(QUOTE), amount, _data);
     }
 }

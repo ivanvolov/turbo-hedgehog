@@ -230,16 +230,10 @@ contract ALMGeneralTest is ALMTestBase {
         assertEq(oracle.price(), 2660201350640229959005, "price should eq");
     }
 
-    function onFlashLoanTwoTokens(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1,
-        bytes calldata data
-    ) public view {
-        assertEq(token0, address(USDC), "token should be USDC");
+    function onFlashLoanTwoTokens(uint256 amount0, uint256 amount1, bytes calldata data) public view {
+        assertEq(address(BASE), address(USDC), "token should be USDC");
         assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
-        assertEq(token1, address(WETH), "token should be WETH");
+        assertEq(address(QUOTE), address(WETH), "token should be WETH");
         assertEq(amount1, 1 ether, "amount should be 1 WETH");
         assertEq(data, "0x3", "data should eq");
         assertEqBalanceState(address(this), amount1, amount0);

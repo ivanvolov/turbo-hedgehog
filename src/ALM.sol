@@ -104,7 +104,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0)
-            flashLoanAdapter.flashLoanTwoTokens(BASE, uDL.unwrap(bDec), QUOTE, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+            flashLoanAdapter.flashLoanTwoTokens(uDL.unwrap(bDec), uDS.unwrap(qDec), abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0 && uCS != 0)
                 lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), 0, 0);
@@ -113,7 +113,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
             else swapAdapter.swapExactInput(true, baseBalance(false));
-        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(BASE, uDL.unwrap(bDec), abi.encode(uCL, uCS));
+        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
@@ -133,37 +133,35 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function onFlashLoanTwoTokens(
-        IERC20 BASE,
-        uint256 amount0,
-        IERC20 QUOTE,
-        uint256 amount1,
+        uint256 amountBase,
+        uint256 amountQuote,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
         lendingAdapter.updatePosition(
             SafeCast.toInt256(uCL),
             SafeCast.toInt256(uCS),
-            -SafeCast.toInt256(amount0.wrap(bDec)),
-            -SafeCast.toInt256(amount1.wrap(qDec))
+            -SafeCast.toInt256(amountBase.wrap(bDec)),
+            -SafeCast.toInt256(amountQuote.wrap(qDec))
         );
 
-        if (isInvertedAssets) _ensureEnoughBalance(amount1, QUOTE);
-        else _ensureEnoughBalance(amount0, BASE);
+        if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
+        else _ensureEnoughBalance(amountBase, BASE);
     }
 
     function onFlashLoanSingle(
-        IERC20 token,
+        bool isBase,
         uint256 amount,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
-        (int256 deltaDL, int256 deltaDS) = (token == BASE)
+        (int256 deltaDL, int256 deltaDS) = isBase
             ? (-SafeCast.toInt256(amount.wrap(bDec)), int256(0))
             : (int256(0), -SafeCast.toInt256(amount.wrap(qDec)));
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
-        if (token == BASE) {
+        if (isBase) {
             if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
             else _ensureEnoughBalance(amount, BASE);
         } else {
