@@ -99,7 +99,7 @@ contract RewardsAdaptersTest is MorphoTestBase {
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
         uint256 amount = 30151918784160194072;
-        assertEq(MORPHO.balanceOf(deployer.addr), 0, "before");
+        assertEq(MORPHO.balanceOf(alice.addr), 0, "before");
 
         bytes32[] memory proof = new bytes32[](1);
         proof[0] = 0x302ac0237181fdc70530e69cdda68df1b7ce4853c1f30d8d289da066db747f8f;
@@ -124,10 +124,10 @@ contract RewardsAdaptersTest is MorphoTestBase {
 
         // ** Claim rewards
         vm.prank(deployer.addr);
-        ILendingAdapterMorpho(address(lendingAdapter)).claimRewards(deployer.addr, MORPHO, amount, proof);
+        ILendingAdapterMorpho(address(lendingAdapter)).claimRewards(alice.addr, MORPHO, amount, proof);
 
         // It eq amount because it was not claimed before, but usually it is not equal
-        assertEq(MORPHO.balanceOf(deployer.addr), amount, "after");
+        assertEq(MORPHO.balanceOf(alice.addr), amount, "after");
     }
 
     // recreate last claim and withdraw 20$ and burn other 80%
