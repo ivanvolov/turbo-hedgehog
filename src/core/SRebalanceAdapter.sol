@@ -191,14 +191,14 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isNova) {
-            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
-            else flashLoanAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
+            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(QUOTE, quoteToFl.unwrap(qDec), data);
+            else flashLoanAdapter.flashLoanSingle(BASE, baseToFl.unwrap(bDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
         } else {
-            flashLoanAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
+            flashLoanAdapter.flashLoanTwoTokens(BASE, baseToFl.unwrap(bDec), QUOTE, quoteToFl.unwrap(qDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
@@ -233,7 +233,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
         uint256 balance = token.balanceOf(address(this));
-        if (amount > balance) swapAdapter.swapExactOutput(token == quote, amount - balance);
+        if (amount > balance) swapAdapter.swapExactOutput(token == QUOTE, amount - balance);
     }
 
     function onFlashLoanTwoTokens(
@@ -245,10 +245,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     ) external notPaused notShutdown onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
-        uint256 baseBalance = base.balanceOf(address(this));
+        uint256 baseBalance = BASE.balanceOf(address(this));
         if (amountB > baseBalance) swapAdapter.swapExactOutput(false, amountB - baseBalance);
         else {
-            uint256 quoteBalance = quote.balanceOf(address(this));
+            uint256 quoteBalance = QUOTE.balanceOf(address(this));
             if (amountQ > quoteBalance) swapAdapter.swapExactOutput(true, amountQ - quoteBalance);
         }
     }
@@ -348,10 +348,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     // ** Helpers
 
     function baseBalanceUnwr() internal view returns (uint256) {
-        return base.balanceOf(address(this));
+        return BASE.balanceOf(address(this));
     }
 
     function quoteBalanceUnwr() internal view returns (uint256) {
-        return quote.balanceOf(address(this));
+        return QUOTE.balanceOf(address(this));
     }
 }

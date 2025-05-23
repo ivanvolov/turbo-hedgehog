@@ -50,10 +50,10 @@ contract EulerLendingAdapter is LendingBase {
         evc.enableController(subAccount1, address(vault1));
         evc.enableCollateral(subAccount1, address(vault0));
 
-        base.forceApprove(address(vault0), type(uint256).max);
-        quote.forceApprove(address(vault0), type(uint256).max);
-        base.forceApprove(address(vault1), type(uint256).max);
-        quote.forceApprove(address(vault1), type(uint256).max);
+        BASE.forceApprove(address(vault0), type(uint256).max);
+        QUOTE.forceApprove(address(vault0), type(uint256).max);
+        BASE.forceApprove(address(vault1), type(uint256).max);
+        QUOTE.forceApprove(address(vault1), type(uint256).max);
     }
 
     function getSubAccountAddress(uint8 accountId) internal view returns (address) {
@@ -89,7 +89,7 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function repayLong(uint256 amount) public override onlyModule notPaused {
-        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.repay(amount.unwrap(bDec), subAccount0);
     }
 
@@ -105,7 +105,7 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function addCollateralLong(uint256 amount) public override onlyModule notPaused notShutdown {
-        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.mint(vault1.convertToShares(amount.unwrap(qDec)), subAccount0);
     }
 
@@ -132,7 +132,7 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function repayShort(uint256 amount) public override onlyModule notPaused {
-        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.repay(amount.unwrap(qDec), subAccount1);
     }
 
@@ -148,7 +148,7 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function addCollateralShort(uint256 amount) public override onlyModule notPaused notShutdown {
-        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.mint(vault0.convertToShares(amount.unwrap(bDec)), subAccount1);
     }
 

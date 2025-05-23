@@ -28,8 +28,8 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
     ) FlashLoanBase(true, _base, _quote, _bDec, _qDec) {
         morpho = _morpho;
 
-        base.forceApprove(address(morpho), type(uint256).max);
-        quote.forceApprove(address(morpho), type(uint256).max);
+        BASE.forceApprove(address(morpho), type(uint256).max);
+        QUOTE.forceApprove(address(morpho), type(uint256).max);
     }
 
     function onMorphoFlashLoan(uint256, bytes calldata _data) external notPaused returns (bytes32) {

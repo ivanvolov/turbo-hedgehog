@@ -23,8 +23,8 @@ abstract contract Base is IBase {
 
     address public owner;
 
-    IERC20 public immutable base;
-    IERC20 public immutable quote;
+    IERC20 public immutable BASE;
+    IERC20 public immutable QUOTE;
     uint8 public immutable bDec;
     uint8 public immutable qDec;
     uint8 public immutable decimalsDelta;
@@ -38,8 +38,8 @@ abstract contract Base is IBase {
     ISwapAdapter public swapAdapter;
 
     constructor(address initialOwner, IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) {
-        base = _base;
-        quote = _quote;
+        BASE = _base;
+        QUOTE = _quote;
         bDec = _bDec;
         qDec = _qDec;
         decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
@@ -61,20 +61,20 @@ abstract contract Base is IBase {
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        _approveSingle(base, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
-        _approveSingle(quote, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+        _approveSingle(BASE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+        _approveSingle(QUOTE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
         lendingAdapter = _lendingAdapter;
 
-        _approveSingle(base, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
-        _approveSingle(quote, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+        _approveSingle(BASE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+        _approveSingle(QUOTE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
         flashLoanAdapter = _flashLoanAdapter;
 
-        _approveSingle(base, address(positionManager), address(_positionManager), type(uint256).max);
-        _approveSingle(quote, address(positionManager), address(_positionManager), type(uint256).max);
+        _approveSingle(BASE, address(positionManager), address(_positionManager), type(uint256).max);
+        _approveSingle(QUOTE, address(positionManager), address(_positionManager), type(uint256).max);
         positionManager = _positionManager;
 
-        _approveSingle(base, address(swapAdapter), address(_swapAdapter), type(uint256).max);
-        _approveSingle(quote, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+        _approveSingle(BASE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+        _approveSingle(QUOTE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
         swapAdapter = _swapAdapter;
     }
 

@@ -36,15 +36,15 @@ contract UnicordPositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        base.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
+        BASE.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
         lendingAdapter.updatePosition(SafeCast.toInt256(deltaQuote), -SafeCast.toInt256(deltaBase), 0, 0);
-        quote.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
     }
 
     function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        quote.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
         lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
-        base.safeTransfer(address(alm), deltaBase.unwrap(bDec));
+        BASE.safeTransfer(address(alm), deltaBase.unwrap(bDec));
     }
 
     function getSwapFees(bool, int256) external view returns (uint256) {
