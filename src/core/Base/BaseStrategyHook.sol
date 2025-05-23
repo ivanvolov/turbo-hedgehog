@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -182,7 +184,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     {
         if (amountSpecified > 0) {
             tokenOut = uint256(amountSpecified);
+            sqrtPriceNext = ALMMathLib.getNextSqrtPriceFromOutput(sqrtPriceCurrent, liquidity, tokenOut, zeroForOne);
+            console.log(">> (1) sqrtPriceNext %s", sqrtPriceNext);
             sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, false, sqrtPriceCurrent, liquidity, tokenOut);
+            console.log(">> (2) sqrtPriceNext %s", sqrtPriceNext);
 
             tokenIn = zeroForOne
                 ? ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity)
@@ -198,7 +203,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             unchecked {
                 tokenIn = uint256(-amountSpecified);
             }
+            sqrtPriceNext = ALMMathLib.getNextSqrtPriceFromInput(sqrtPriceCurrent, liquidity, tokenIn, zeroForOne);
+            console.log(">> (3) sqrtPriceNext %s", sqrtPriceNext);
             sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, true, sqrtPriceCurrent, liquidity, tokenIn);
+            console.log(">> (4) sqrtPriceNext %s", sqrtPriceNext);
 
             tokenOut = zeroForOne
                 ? ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity)

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
@@ -13,6 +14,24 @@ library ALMMathLib {
 
     uint256 constant WAD = 1e18;
     uint256 constant Q96 = 2 ** 96;
+
+    function getNextSqrtPriceFromOutput(
+        uint160 sqrtPX96,
+        uint128 liquidity,
+        uint256 amountOut,
+        bool zeroForOne
+    ) internal pure returns (uint160 sqrtQX96) {
+        return SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtPX96, liquidity, amountOut, zeroForOne);
+    }
+
+    function getNextSqrtPriceFromInput(
+        uint160 sqrtPX96,
+        uint128 liquidity,
+        uint256 amountIn,
+        bool zeroForOne
+    ) internal pure returns (uint160 sqrtQX96) {
+        return SqrtPriceMath.getNextSqrtPriceFromInput(sqrtPX96, liquidity, amountIn, zeroForOne);
+    }
 
     function getSqrtPriceNextX96(
         bool zeroForOne,
