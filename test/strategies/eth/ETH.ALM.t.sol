@@ -3,18 +3,16 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-// ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
-
 // ** contracts
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** libraries
+import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
 // ** interfaces

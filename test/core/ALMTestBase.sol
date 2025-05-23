@@ -12,7 +12,6 @@ import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 
 // ** contracts
@@ -28,6 +27,7 @@ import {Oracle} from "@src/core/Oracle.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
