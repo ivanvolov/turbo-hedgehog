@@ -243,7 +243,7 @@ contract ETHALMTest is MorphoTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
-        hook.setShutdown(true);
+        hook.setStatus(2);
 
         part_withdraw();
     }

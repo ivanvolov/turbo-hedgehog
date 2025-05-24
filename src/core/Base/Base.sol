@@ -130,15 +130,19 @@ abstract contract Base is IBase {
         _;
     }
 
-    /// @dev Only allows execution when the contract is not paused
+    /// @notice Restricts function execution when contract is paused.
+    /// @dev Allows execution when status is active (0) or shutdown (2).
+    /// @dev Reverts with ContractPaused when status equals 1 (paused).
     modifier notPaused() {
-        if (alm.paused()) revert ContractPaused();
+        if (alm.status() == 1) revert ContractPaused();
         _;
     }
 
-    /// @dev Only allows execution when the contract is not shut down
-    modifier notShutdown() {
-        if (alm.shutdown()) revert ContractShutdown();
+    /// @notice Restricts function execution to active state only.
+    /// @dev Only allows execution when status equals 0 (active).
+    /// @dev Reverts with ContractNotActive when status is paused (1) or shutdown (2).
+    modifier onlyActive() {
+        if (alm.status() != 0) revert ContractNotActive();
         _;
     }
 }

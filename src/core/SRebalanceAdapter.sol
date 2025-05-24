@@ -182,11 +182,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         needRebalance = block.timestamp >= triggerTime;
     }
 
-    function rebalance(uint256 slippage) external notPaused notShutdown onlyRebalanceOperator {
+    function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
         if (!isRebalance) revert RebalanceConditionNotMet();
-        alm.refreshReserves();
-        alm.transferFees();
+        alm.refreshReservesAndTransferFees();
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
@@ -217,9 +216,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
 
-        alm.updateSqrtPrice(currentSqrtPrice);
-        alm.updateBoundaries(currentSqrtPrice);
-
+        alm.updatePriceAndBoundaries(currentSqrtPrice);
         uint128 liquidity = calcLiquidity(); // This uses new boundaries from AMM, which are updated first.
         alm.updateLiquidity(liquidity);
 
@@ -230,7 +227,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         bool isBase,
         uint256 amount,
         bytes calldata data
-    ) external notPaused notShutdown onlyFlashLoanAdapter {
+    ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
         uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
@@ -240,7 +237,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         uint256 amountBase,
         uint256 amountQuote,
         bytes calldata data
-    ) external notPaused notShutdown onlyFlashLoanAdapter {
+    ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
         uint256 baseBalance = BASE.balanceOf(address(this));

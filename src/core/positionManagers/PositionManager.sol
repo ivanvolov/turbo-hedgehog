@@ -48,7 +48,7 @@ contract PositionManager is Base, IPositionManager {
         emit FeesSet(_fees);
     }
 
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
+    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
         BASE.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
@@ -62,7 +62,7 @@ contract PositionManager is Base, IPositionManager {
         QUOTE.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
+    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;

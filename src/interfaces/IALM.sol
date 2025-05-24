@@ -38,19 +38,17 @@ interface IALM {
     );
     event HookFee(bytes32 indexed id, address indexed sender, uint128 feeAmount0, uint128 feeAmount1);
 
-    function paused() external view returns (bool);
-
-    function shutdown() external view returns (bool);
+    function status() external view returns (uint8);
 
     function refreshReserves() external;
 
-    function transferFees() external;
+    function refreshReservesAndTransferFees() external;
 
     function tickLower() external view returns (int24);
 
     function tickUpper() external view returns (int24);
 
-    function updateBoundaries(uint160 _sqrtPrice) external;
+    function updatePriceAndBoundaries(uint160 _sqrtPrice) external;
 
     function updateLiquidity(uint128 _liquidity) external;
 
@@ -61,8 +59,6 @@ interface IALM {
     function TVL() external view returns (uint256);
 
     function protocolFee() external view returns (uint256);
-
-    function updateSqrtPrice(uint160 _sqrtPrice) external;
 
     function baseBalance(bool wrap) external view returns (uint256);
 

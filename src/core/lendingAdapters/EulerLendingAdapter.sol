@@ -76,7 +76,7 @@ contract EulerLendingAdapter is LendingBase {
         return vault1.convertToAssets(vault1.balanceOf(subAccount0)).wrap(qDec);
     }
 
-    function borrowLong(uint256 amount) public override onlyModule notPaused notShutdown {
+    function borrowLong(uint256 amount) public override onlyModule onlyActive {
         EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
 
         items[0] = EVCLib.BatchItem({
@@ -104,7 +104,7 @@ contract EulerLendingAdapter is LendingBase {
         evc.batch(items);
     }
 
-    function addCollateralLong(uint256 amount) public override onlyModule notPaused notShutdown {
+    function addCollateralLong(uint256 amount) public override onlyModule onlyActive {
         QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         vault1.mint(vault1.convertToShares(amount.unwrap(qDec)), subAccount0);
     }
@@ -119,7 +119,7 @@ contract EulerLendingAdapter is LendingBase {
         return vault0.convertToAssets(vault0.balanceOf(subAccount1)).wrap(bDec);
     }
 
-    function borrowShort(uint256 amount) public override onlyModule notPaused notShutdown {
+    function borrowShort(uint256 amount) public override onlyModule onlyActive {
         EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
 
         items[0] = EVCLib.BatchItem({
@@ -147,7 +147,7 @@ contract EulerLendingAdapter is LendingBase {
         evc.batch(items);
     }
 
-    function addCollateralShort(uint256 amount) public override onlyModule notPaused notShutdown {
+    function addCollateralShort(uint256 amount) public override onlyModule onlyActive {
         BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         vault0.mint(vault0.convertToShares(amount.unwrap(bDec)), subAccount1);
     }

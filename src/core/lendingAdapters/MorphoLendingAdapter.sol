@@ -99,7 +99,7 @@ contract MorphoLendingAdapter is LendingBase {
         return uint256(p.collateral).wrap(qDec);
     }
 
-    function borrowLong(uint256 amount) public override onlyModule notPaused notShutdown isBorrowMode {
+    function borrowLong(uint256 amount) public override onlyModule onlyActive isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
     }
 
@@ -114,7 +114,7 @@ contract MorphoLendingAdapter is LendingBase {
             morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
     }
 
-    function addCollateralLong(uint256 amount) public override onlyModule notPaused notShutdown {
+    function addCollateralLong(uint256 amount) public override onlyModule onlyActive {
         QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
@@ -134,7 +134,7 @@ contract MorphoLendingAdapter is LendingBase {
         return uint256(p.collateral).wrap(bDec);
     }
 
-    function borrowShort(uint256 amount) public override onlyModule notPaused notShutdown isBorrowMode {
+    function borrowShort(uint256 amount) public override onlyModule onlyActive isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
     }
 
@@ -154,7 +154,7 @@ contract MorphoLendingAdapter is LendingBase {
             );
     }
 
-    function addCollateralShort(uint256 amount) public override onlyModule notPaused notShutdown {
+    function addCollateralShort(uint256 amount) public override onlyModule onlyActive {
         BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");

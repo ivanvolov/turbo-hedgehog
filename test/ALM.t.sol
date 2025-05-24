@@ -263,29 +263,33 @@ contract ALMGeneralTest is ALMTestBase {
 
     function test_hook_pause() public {
         vm.prank(deployer.addr);
-        hook.setPaused(true);
+        hook.setStatus(1);
 
-        vm.expectRevert(IBase.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.deposit(address(0), 0, 0);
 
         vm.expectRevert(IBase.ContractPaused.selector);
         hook.withdraw(deployer.addr, 0, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(IBase.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
-    function test_hook_shutdown() public {
+    function test_hook_shutdown_allows_withdraw() public {
         vm.prank(deployer.addr);
-        hook.setShutdown(true);
+        hook.setStatus(2);
 
-        vm.expectRevert(IBase.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.deposit(deployer.addr, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(IBase.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+
+        // This is not ContractsNotActive, so it works
+        vm.expectRevert(IALM.NotZeroShares.selector);
+        hook.withdraw(deployer.addr, 0, 0, 0);
     }
 
     function test_TokenWrapperLib_wrap_unwrap_same_wad() public pure {

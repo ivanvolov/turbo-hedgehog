@@ -26,8 +26,7 @@ import {IALM} from "../../interfaces/IALM.sol";
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     error ProtocolFeeNotValid();
 
-    event PausedSet(bool paused);
-    event ShutdownSet(bool shutdown);
+    event StatusSet(uint8 status);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
     event TreasurySet(address indexed treasury);
     event ProtocolParamsSet(
@@ -48,8 +47,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     bool public immutable isInvertedPool;
     bytes32 public authorizedPool;
 
-    bool public paused = false;
-    bool public shutdown = false;
+    /// @notice Current operational status of the contract.
+    /// @dev 0 = active, 1 = paused, 2 = shutdown.
+    uint8 public status = 0;
+
     address public liquidityOperator;
     address public swapOperator;
 
@@ -81,14 +82,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         isInvertedAssets = _isInvertedAssets;
     }
 
-    function setPaused(bool _paused) external onlyOwner {
-        paused = _paused;
-        emit PausedSet(_paused);
-    }
-
-    function setShutdown(bool _shutdown) external onlyOwner {
-        shutdown = _shutdown;
-        emit ShutdownSet(_shutdown);
+    function setStatus(uint8 _status) external onlyOwner {
+        status = _status;
+        emit StatusSet(_status);
     }
 
     function setOperators(address _liquidityOperator, address _swapOperator) external onlyOwner {
@@ -148,8 +144,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    function updateBoundaries(uint160 _sqrtPrice) external onlyRebalanceAdapter {
-        _updateBoundaries(_sqrtPrice);
+    function updatePriceAndBoundaries(uint160 _sqrtPrice) external onlyRebalanceAdapter {
+        _updatePriceAndBoundaries(_sqrtPrice);
     }
 
     function updateLiquidity(uint128 _liquidity) external onlyRebalanceAdapter {
@@ -157,16 +153,13 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit LiquidityUpdated(_liquidity);
     }
 
-    function updateSqrtPrice(uint160 _sqrtPrice) external onlyRebalanceAdapter {
+    function _updatePriceAndBoundaries(uint160 _sqrtPrice) internal {
         sqrtPriceCurrent = _sqrtPrice;
-        emit SqrtPriceUpdated(_sqrtPrice);
-    }
-
-    function _updateBoundaries(uint160 _sqrtPrice) internal {
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
-        tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
         tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
+        tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
 
+        emit SqrtPriceUpdated(_sqrtPrice);
         emit BoundariesUpdated(tickLower, tickUpper);
     }
 

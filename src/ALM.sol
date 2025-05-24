@@ -52,12 +52,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager notPaused notShutdown returns (bytes4) {
+    ) external override onlyPoolManager onlyActive returns (bytes4) {
         if (creator != owner) revert OwnableUnauthorizedAccount(creator);
         if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
         authorizedPool = PoolId.unwrap(key.toId());
-        sqrtPriceCurrent = sqrtPrice;
-        _updateBoundaries(sqrtPrice);
+        _updatePriceAndBoundaries(sqrtPrice);
         return ALM.afterInitialize.selector;
     }
 
@@ -65,7 +64,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         address to,
         uint256 amountIn,
         uint256 minShares
-    ) external notPaused notShutdown returns (uint256 sharesMinted) {
+    ) external onlyActive returns (uint256 sharesMinted) {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         lendingAdapter.syncPositions();
@@ -172,11 +171,8 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
         uint256 _balance = token == BASE ? baseBalance(false) : quoteBalance(false);
-        if (balance >= _balance) {
-            swapAdapter.swapExactOutput(token == QUOTE, balance - _balance);
-        } else {
-            swapAdapter.swapExactInput(token == BASE, _balance - balance);
-        }
+        if (balance >= _balance) swapAdapter.swapExactOutput(token == QUOTE, balance - _balance);
+        else swapAdapter.swapExactInput(token == BASE, _balance - balance);
     }
 
     // ** Swapping logic
@@ -186,15 +182,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata
-    )
-        external
-        override
-        notPaused
-        notShutdown
-        onlyAuthorizedPool(key)
-        onlyPoolManager
-        returns (bytes4, BeforeSwapDelta, uint24)
-    {
+    ) external override onlyActive onlyAuthorizedPool(key) onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         return (this.beforeSwap.selector, _beforeSwap(params, key, swapper), 0);
     }
@@ -332,7 +320,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
 
-    function transferFees() external onlyRebalanceAdapter {
+    function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
+        lendingAdapter.syncPositions();
         accumulatedFeeB = 0;
         BASE.safeTransfer(treasury, accumulatedFeeB);
         accumulatedFeeQ = 0;

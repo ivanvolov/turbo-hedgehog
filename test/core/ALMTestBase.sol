@@ -783,8 +783,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function _fakeSetComponents(address adapter, address fakeALM) internal {
-        vm.mockCall(fakeALM, abi.encodeWithSelector(IALM.paused.selector), abi.encode(false));
-        vm.mockCall(fakeALM, abi.encodeWithSelector(IALM.shutdown.selector), abi.encode(false));
+        vm.mockCall(fakeALM, abi.encodeWithSelector(IALM.status.selector), abi.encode(0));
         vm.prank(deployer.addr);
         IBase(adapter).setComponents(
             IALM(fakeALM),
