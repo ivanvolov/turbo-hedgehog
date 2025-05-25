@@ -120,11 +120,8 @@ abstract contract Base is IBase {
     modifier onlyModule() {
         if (
             msg.sender != address(alm) &&
-            msg.sender != address(lendingAdapter) &&
-            msg.sender != address(flashLoanAdapter) &&
-            msg.sender != address(positionManager) &&
             msg.sender != address(rebalanceAdapter) &&
-            msg.sender != address(swapAdapter)
+            msg.sender != address(positionManager)
         ) revert NotModule(msg.sender);
 
         _;
