@@ -19,6 +19,8 @@ interface IALM {
     error NotMinShares();
     error ProtocolFeeNotValid();
     error LiquidityMultiplierNotValid();
+    error TickLowerOutOfBounds();
+    error TickUpperOutOfBounds();
 
     event StatusSet(uint8 status);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);

@@ -9,6 +9,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -169,6 +170,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
         int24 newTickLower = isInvertedPool ? tick + deltas.lower : tick - deltas.lower;
         int24 newTickUpper = isInvertedPool ? tick - deltas.upper : tick + deltas.upper;
+        if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK) revert TickLowerOutOfBounds();
+        if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds();
+
         activeTicks = Ticks(newTickLower, newTickUpper);
 
         emit SqrtPriceUpdated(_sqrtPrice);
