@@ -127,8 +127,9 @@ contract ALM is BaseStrategyHook, ERC20 {
             QUOTE.safeTransfer(to, quoteOut);
         }
 
-        liquidity = rebalanceAdapter.calcLiquidity();
-        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), liquidity);
+        uint128 newLiquidity = _calcLiquidity();
+        liquidity = newLiquidity;
+        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), newLiquidity);
     }
 
     function onFlashLoanTwoTokens(
@@ -338,18 +339,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
-    // ** Helpers
-
-    function baseBalance(bool wrap) public view returns (uint256) {
-        uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
-        return wrap ? balance.wrap(bDec) : balance;
-    }
-
-    function quoteBalance(bool wrap) public view returns (uint256) {
-        uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
-        return wrap ? balance.wrap(qDec) : balance;
-    }
-
     // ** Math functions
 
     function TVL() public view returns (uint256) {
@@ -361,5 +350,17 @@ contract ALM is BaseStrategyHook, ERC20 {
     function sharePrice() external view returns (uint256) {
         if (totalSupply() == 0) return 0;
         return TVL().div(totalSupply());
+    }
+
+    // ** Helpers
+
+    function baseBalance(bool wrap) public view returns (uint256) {
+        uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
+        return wrap ? balance.wrap(bDec) : balance;
+    }
+
+    function quoteBalance(bool wrap) public view returns (uint256) {
+        uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
+        return wrap ? balance.wrap(qDec) : balance;
     }
 }

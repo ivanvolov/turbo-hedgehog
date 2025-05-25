@@ -72,15 +72,14 @@ contract UNICORDALMTest is MorphoTestBase {
         create_lending_adapter_morpho_earn();
         create_flash_loan_adapter_morpho();
         create_oracle(TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(true, false, true, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per_price_change);
-        assertEq(hook.tickLower(), 101);
-        assertEq(hook.tickUpper(), -99);
+        init_hook(true, false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
+        assertTicks(101, -99);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(2, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
@@ -174,14 +173,9 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
 
-        vm.prank(deployer.addr);
-        hook.setProtocolParams(
-            hook.protocolFee(),
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            3 * 1e15
-        );
+        vm.startPrank(deployer.addr);
+        updateProtocolPriceThreshold(3 * 1e15);
+        vm.stopPrank();
 
         uint256 usdtToGetFSwap = 4626903915919660000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));

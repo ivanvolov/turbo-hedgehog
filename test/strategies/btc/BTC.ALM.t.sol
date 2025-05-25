@@ -53,9 +53,8 @@ contract BTCALMTest is ALMTestBase {
         create_lending_adapter_euler(TestLib.eulerUSDCVault1, 2000000e6, TestLib.eulerCbBTCVault1, 0);
         create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerCbBTCVault2, 100e8);
         create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
-        assertEq(hook.tickLower(), -65807);
-        assertEq(hook.tickUpper(), -71807);
+        init_hook(true, false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        assertTicks(-65807, -71807);
 
         // ** Setting up strategy params
         {
@@ -63,7 +62,7 @@ contract BTCALMTest is ALMTestBase {
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2); // 1.425 1.425
-            rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 2e17, 2e17); // 0.2 (2%), 0.2 (2%)
             vm.stopPrank();
         }
@@ -107,13 +106,7 @@ contract BTCALMTest is ALMTestBase {
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
 
-        hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
+        updateProtocolFees(20 * 1e16); // 20% from fees
         IPositionManagerStandard(address(positionManager)).setFees(fee);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
 

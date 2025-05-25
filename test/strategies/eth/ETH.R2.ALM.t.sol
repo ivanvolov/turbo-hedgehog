@@ -46,9 +46,8 @@ contract ETHR2ALMTest is ALMTestBase {
         create_lending_adapter_euler(TestLib.eulerUSDTVault1, 3000000 * 1e6, TestLib.eulerWETHVault1, 0);
         create_flash_loan_adapter_euler(TestLib.eulerUSDTVault2, 3000000 * 1e6, TestLib.eulerWETHVault2, 0);
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
-        init_hook(false, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
-        assertEq(hook.tickLower(), -200460);
-        assertEq(hook.tickUpper(), -194460);
+        init_hook(false, false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        assertTicks(-200460, -194460);
 
         // ** Setting up strategy params
         {
@@ -56,7 +55,7 @@ contract ETHR2ALMTest is ALMTestBase {
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1e18, 1e18);
-            rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }

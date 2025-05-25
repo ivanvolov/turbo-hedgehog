@@ -185,10 +185,11 @@ abstract contract ALMTestBase is Deployers {
         bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova,
+        uint256 _liquidityMultiplier,
         uint256 _protocolFee,
         uint256 _tvlCap,
-        int24 _tickUpperDelta,
         int24 _tickLowerDelta,
+        int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) internal {
         isInvertedPool = _isInvertedPool;
@@ -226,7 +227,14 @@ abstract contract ALMTestBase is Deployers {
         // @Notice: oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, _isNova);
 
-        hook.setProtocolParams(_protocolFee, _tvlCap, _tickUpperDelta, _tickLowerDelta, _swapPriceThreshold);
+        hook.setProtocolParams(
+            _liquidityMultiplier,
+            _protocolFee,
+            _tvlCap,
+            _tickLowerDelta,
+            _tickUpperDelta,
+            _swapPriceThreshold
+        );
         _setComponents(address(hook));
 
         _setComponents(address(lendingAdapter));
@@ -248,6 +256,42 @@ abstract contract ALMTestBase is Deployers {
         deal(address(BASE), address(manager), 1000 ether);
         deal(address(QUOTE), address(manager), 1000 ether);
         vm.stopPrank();
+    }
+
+    function updateProtocolFees(uint256 _protocolFee) internal {
+        (int24 lower, int24 upper) = hook.tickDeltas();
+        hook.setProtocolParams(
+            hook.liquidityMultiplier(),
+            _protocolFee,
+            hook.tvlCap(),
+            lower,
+            upper,
+            hook.swapPriceThreshold()
+        );
+    }
+
+    function updateProtocolTVLCap(uint256 _tvlCap) internal {
+        (int24 lower, int24 upper) = hook.tickDeltas();
+        hook.setProtocolParams(
+            hook.liquidityMultiplier(),
+            hook.protocolFee(),
+            _tvlCap,
+            lower,
+            upper,
+            hook.swapPriceThreshold()
+        );
+    }
+
+    function updateProtocolPriceThreshold(uint256 _swapPriceThreshold) internal {
+        (int24 lower, int24 upper) = hook.tickDeltas();
+        hook.setProtocolParams(
+            hook.liquidityMultiplier(),
+            hook.protocolFee(),
+            hook.tvlCap(),
+            lower,
+            upper,
+            _swapPriceThreshold
+        );
     }
 
     function setSwapAdapterToV3SingleSwap() internal {
@@ -550,6 +594,12 @@ abstract contract ALMTestBase is Deployers {
         );
     }
 
+    function assertTicks(int24 lower, int24 upper) internal view {
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
+        assertEq(tickLower, lower);
+        assertEq(tickUpper, upper);
+    }
+
     function assertEqHookPositionState(
         uint256 preRebalanceTVL,
         uint256 weight,
@@ -649,42 +699,40 @@ abstract contract ALMTestBase is Deployers {
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
     ) public view returns (uint256, uint256) {
-        uint256 deltaX;
-        uint256 deltaY;
-        {
-            (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
-                preSqrtPrice,
-                TickMath.getSqrtPriceAtTick(hook.tickLower()),
-                TickMath.getSqrtPriceAtTick(hook.tickUpper()),
-                liquidity
-            );
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
+        (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
+            preSqrtPrice,
+            TickMath.getSqrtPriceAtTick(tickLower),
+            TickMath.getSqrtPriceAtTick(tickUpper),
+            liquidity
+        );
 
-            (uint256 amt0Post, uint256 amt1Post) = LiquidityAmounts.getAmountsForLiquidity(
-                postSqrtPrice,
-                TickMath.getSqrtPriceAtTick(hook.tickLower()),
-                TickMath.getSqrtPriceAtTick(hook.tickUpper()),
-                liquidity
-            );
+        (uint256 amt0Post, uint256 amt1Post) = LiquidityAmounts.getAmountsForLiquidity(
+            postSqrtPrice,
+            TickMath.getSqrtPriceAtTick(tickLower),
+            TickMath.getSqrtPriceAtTick(tickUpper),
+            liquidity
+        );
 
-            deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
-            deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
-        }
-
-        return (deltaX, deltaY);
+        return (
+            amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post,
+            amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post
+        );
     }
 
     function _liquidityCheck(bool _isInvertedPool, uint256 liquidityMultiplier) public view {
         uint128 liquidityCheck;
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         if (_isInvertedPool) {
             liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
-                ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
-                ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
+                ALMMathLib.getSqrtPriceX96FromTick(tickLower),
+                ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
                 TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
             );
         } else {
             liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
-                ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
-                ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
+                ALMMathLib.getSqrtPriceX96FromTick(tickLower),
+                ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
                 TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
             );
         }
@@ -697,30 +745,21 @@ abstract contract ALMTestBase is Deployers {
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
     ) public view returns (uint256, uint256) {
-        uint256 deltaX;
-        uint256 deltaY;
-        {
-            uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-            uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+        uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+        uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(hook.tickLower()); //stack too deep
-            uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(hook.tickUpper());
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
+        //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(activeTicks.lower); //TODO: stack too deep?
+        uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(tickUpper);
 
-            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-                ((priceUpper * prePrice) / 1e18).sqrt();
-            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
-                (priceUpper * postPrice).sqrt();
+        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
+            ((priceUpper * prePrice) / 1e18).sqrt();
+        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / (priceUpper * postPrice).sqrt();
 
-            uint256 preY = (liquidity *
-                (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-            uint256 postY = (liquidity *
-                (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
+        uint256 preY = (liquidity * (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
+        uint256 postY = (liquidity * (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
 
-            deltaX = postX > preX ? postX - preX : preX - postX;
-            deltaY = postY > preY ? postY - preY : preY - postY;
-        }
-
-        return (deltaX, deltaY);
+        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
     }
 
     function _checkSwapUnicord(
@@ -728,30 +767,20 @@ abstract contract ALMTestBase is Deployers {
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
     ) public view returns (uint256, uint256) {
-        uint256 deltaX;
-        uint256 deltaY;
-        {
-            uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-            uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
+        uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
+        uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
 
-            uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(hook.tickUpper());
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
 
-            uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-                (((priceUpper * prePrice) / 1e18).sqrt());
+        uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(tickUpper);
 
-            uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) /
-                ((priceUpper * postPrice).sqrt());
+        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
+            (((priceUpper * prePrice) / 1e18).sqrt());
 
-            uint256 preY = (liquidity *
-                (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-            uint256 postY = (liquidity *
-                (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(hook.tickLower())).sqrt())) / 1e12;
-
-            deltaX = postX > preX ? postX - preX : preX - postX;
-            deltaY = postY > preY ? postY - preY : preY - postY;
-        }
-
-        return (deltaX, deltaY);
+        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / ((priceUpper * postPrice).sqrt());
+        uint256 preY = (liquidity * (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
+        uint256 postY = (liquidity * (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickUpper)).sqrt())) / 1e12;
+        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
     }
 
     function recordGas() internal {

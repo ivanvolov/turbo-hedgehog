@@ -20,7 +20,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
     error WeightNotValid();
-    error LiquidityMultiplierNotValid();
     error LeverageValuesNotValid();
     error MaxDeviationNotValid();
 
@@ -65,10 +64,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     /// @notice The leverage multiplier applied to short positions, encoded as a UD60x18 value.
     ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage).
     uint256 public shortLeverage;
-
-    /// @notice The multiplier applied to the virtual liquidity, encoded as a UD60x18 value.
-    ///         (i.e. virtual_liquidity × 1e18, where 1 = 100%).
-    uint256 public liquidityMultiplier;
 
     uint256 public rebalancePriceThreshold;
     uint256 public rebalanceTimeThreshold;
@@ -127,20 +122,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         );
     }
 
-    function setRebalanceParams(
-        uint256 _weight,
-        uint256 _liquidityMultiplier,
-        uint256 _longLeverage,
-        uint256 _shortLeverage
-    ) external onlyOwner {
+    function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
         if (_weight > 1e18) revert WeightNotValid();
-        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
         if (_longLeverage > 5e18) revert LeverageValuesNotValid();
         if (_shortLeverage > 5e18) revert LeverageValuesNotValid();
         if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
 
         weight = _weight;
-        liquidityMultiplier = _liquidityMultiplier;
         longLeverage = _longLeverage;
         shortLeverage = _shortLeverage;
 
@@ -216,10 +204,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
 
-        alm.updatePriceAndBoundaries(currentSqrtPrice);
-        uint128 liquidity = calcLiquidity(); // This uses new boundaries from AMM, which are updated first.
-        alm.updateLiquidity(liquidity);
-
+        uint128 liquidity = alm.updateLiquidityAndBoundaries(currentSqrtPrice);
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);
     }
 
@@ -312,17 +297,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         if (deltaDS < 0) quoteToFl += uint256(-deltaDS);
 
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
-    }
-
-    function calcLiquidity() public view returns (uint128) {
-        return
-            ALMMathLib.getLiquidity(
-                isInvertedPool,
-                alm.tickLower(),
-                alm.tickUpper(),
-                lendingAdapter.getCollateralLong().unwrap(qDec),
-                liquidityMultiplier
-            );
     }
 
     function checkDeviations() internal view {
