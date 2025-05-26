@@ -21,6 +21,14 @@ import {IBase} from "../../interfaces/IBase.sol";
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 
+    enum ComponentType {
+        ALM,
+        REBALANCE_ADAPTER,
+        POSITION_MANAGER,
+        EXTERNAL_ADAPTER
+    }
+
+    ComponentType public immutable componentType;
     address public owner;
 
     IERC20 public immutable BASE;
@@ -37,7 +45,15 @@ abstract contract Base is IBase {
     IRebalanceAdapter public rebalanceAdapter;
     ISwapAdapter public swapAdapter;
 
-    constructor(address initialOwner, IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) {
+    constructor(
+        ComponentType _componentType,
+        address initialOwner,
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec
+    ) {
+        componentType = _componentType;
         BASE = _base;
         QUOTE = _quote;
         bDec = _bDec;
@@ -61,27 +77,36 @@ abstract contract Base is IBase {
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        _approveSingle(BASE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
-        _approveSingle(QUOTE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+        if (
+            componentType == ComponentType.ALM ||
+            componentType == ComponentType.REBALANCE_ADAPTER ||
+            componentType == ComponentType.POSITION_MANAGER
+        ) {
+            _approveSingle(BASE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+            _approveSingle(QUOTE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+
+            _approveSingle(BASE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+            _approveSingle(QUOTE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+
+            _approveSingle(BASE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+            _approveSingle(QUOTE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+
+            if (componentType == ComponentType.ALM) {
+                _approveSingle(BASE, address(positionManager), address(_positionManager), type(uint256).max);
+                _approveSingle(QUOTE, address(positionManager), address(_positionManager), type(uint256).max);
+            }
+        }
+
         lendingAdapter = _lendingAdapter;
-
-        _approveSingle(BASE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
-        _approveSingle(QUOTE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
         flashLoanAdapter = _flashLoanAdapter;
-
-        _approveSingle(BASE, address(positionManager), address(_positionManager), type(uint256).max);
-        _approveSingle(QUOTE, address(positionManager), address(_positionManager), type(uint256).max);
-        positionManager = _positionManager;
-
-        _approveSingle(BASE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
-        _approveSingle(QUOTE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
         swapAdapter = _swapAdapter;
+        positionManager = _positionManager;
     }
 
     function _approveSingle(IERC20 token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0) && moduleOld != address(this) && moduleOld != moduleNew)
-            token.forceApprove(moduleOld, 0);
-        if (moduleNew != address(this)) token.forceApprove(moduleNew, amount);
+        if (moduleOld == moduleNew) return;
+        if (moduleOld != address(0)) token.forceApprove(moduleOld, 0);
+        token.forceApprove(moduleNew, amount);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {

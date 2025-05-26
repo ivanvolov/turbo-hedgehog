@@ -52,7 +52,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         uint8 _qDec,
         IUniversalRouter _router,
         IPermit2 _permit2
-    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
         router = _router;
         permit2 = _permit2;
 

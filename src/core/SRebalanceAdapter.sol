@@ -82,7 +82,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova
-    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;

@@ -64,7 +64,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         bool _isInvertedPool,
         bool _isInvertedAssets,
         IPoolManager _poolManager
-    ) BaseHook(_poolManager) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote, _bDec, _qDec) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
     }
