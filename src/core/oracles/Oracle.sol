@@ -2,26 +2,26 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {PRBMath} from "@prb-math/PRBMath.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
-// ** interfaces
-import {IOracle} from "../interfaces/IOracle.sol";
+// ** contracts
+import {OracleBase} from "./OracleBase.sol";
 
-contract Oracle is IOracle {
+contract Oracle is OracleBase {
     AggregatorV3Interface internal immutable feedBase;
     AggregatorV3Interface internal immutable feedQuote;
     uint256 public immutable stalenessThresholdQ;
     uint256 public immutable stalenessThresholdB;
-    uint8 public immutable decimalsQuote;
-    uint8 public immutable decimalsBase;
 
     constructor(
+        bool _isInvertedPool,
+        uint8 _bDec,
+        uint8 _qDec,
         AggregatorV3Interface _feedQuote,
         AggregatorV3Interface _feedBase,
         uint256 _stalenessThresholdQ,
         uint256 _stalenessThresholdB
-    ) {
+    ) OracleBase(_isInvertedPool, _bDec, _qDec) {
         feedQuote = _feedQuote;
         feedBase = _feedBase;
         stalenessThresholdQ = _stalenessThresholdQ;
@@ -30,18 +30,14 @@ contract Oracle is IOracle {
         decimalsBase = feedBase.decimals();
     }
 
-    /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
-    function price() external view returns (uint256 _price) {
+    function _fetchAssetsPrices() internal view override returns (uint256, uint256) {
         (, int256 _priceQuote, , uint256 updatedAtQuote, ) = feedQuote.latestRoundData();
         require(block.timestamp - updatedAtQuote <= stalenessThresholdQ, "O1");
 
         (, int256 _priceBase, , uint256 updatedAtBase, ) = feedBase.latestRoundData();
         require(block.timestamp - updatedAtBase <= stalenessThresholdB, "O2");
 
-        require(_priceBase > 0 && _priceQuote > 0, "O3");
-
-        uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
-        _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
-        require(_price > 0, "O4");
+        require(_priceQuote > 0 && _priceBase > 0, "O3");
+        return (uint256(_priceQuote), uint256(_priceBase));
     }
 }

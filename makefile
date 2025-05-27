@@ -35,9 +35,9 @@ tul:
 	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_"
 
 tur:
-	clear && forge test -vv --match-contract UNICORDRALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract UNICORDRALMTest --match-test "test_"
 turl:
-	clear && forge test -vvvv --match-contract UNICORDRALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract UNICORDRALMTest --match-test "test_"
 
 tb:
 	clear && forge test -vv --match-contract BTCALMTest --match-test "test_"

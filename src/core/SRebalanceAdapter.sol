@@ -209,10 +209,8 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         checkDeviations();
 
         // ** Update state
-        uint256 currentPrice = oracle.price();
-        uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(
-            ALMMathLib.getPoolPriceFromOraclePrice(currentPrice, isInvertedPool, decimalsDelta)
-        );
+        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
+        uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(currentPoolPrice);
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;

@@ -23,7 +23,7 @@ import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanA
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
-import {Oracle} from "@src/core/Oracle.sol";
+import {Oracle} from "@src/core/oracles/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -172,17 +172,18 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function create_oracle(
+        bool _isInvertedPool,
         AggregatorV3Interface feed0,
         AggregatorV3Interface feed1,
         uint256 stalenessThreshold0,
         uint256 stalenessThreshold1
     ) internal {
+        isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
-        oracle = new Oracle(feed0, feed1, stalenessThreshold0, stalenessThreshold1);
+        oracle = new Oracle(_isInvertedPool, bDec, qDec, feed0, feed1, stalenessThreshold0, stalenessThreshold1);
     }
 
     function init_hook(
-        bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova,
         uint256 _protocolFee,
@@ -191,7 +192,6 @@ abstract contract ALMTestBase is Deployers {
         int24 _tickLowerDelta,
         uint256 _swapPriceThreshold
     ) internal {
-        isInvertedPool = _isInvertedPool;
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
@@ -209,7 +209,7 @@ abstract contract ALMTestBase is Deployers {
         );
         deployCodeTo(
             "ALM.sol",
-            abi.encode(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            abi.encode(BASE, QUOTE, bDec, qDec, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
             hookAddress
         );
         hook = ALM(hookAddress);
@@ -224,7 +224,7 @@ abstract contract ALMTestBase is Deployers {
 
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
         // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, _isNova);
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, isInvertedPool, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(_protocolFee, _tvlCap, _tickUpperDelta, _tickLowerDelta, _swapPriceThreshold);
         _setComponents(address(hook));

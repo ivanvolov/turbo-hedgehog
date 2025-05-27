@@ -40,8 +40,8 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, true, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
+        create_oracle(true, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
+        init_hook(true, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
 
         // ** Setting up strategy params
         {

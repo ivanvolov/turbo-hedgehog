@@ -148,16 +148,6 @@ library ALMMathLib {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    function getPoolPriceFromOraclePrice(
-        uint256 price,
-        bool reversedOrder,
-        uint8 decimalsDelta
-    ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return price.div(ratio);
-    }
-
     // ** Math functions
 
     /// @notice Calculates floor(x*y÷denominator) with full precision for signed x and unsigned y and denominator.
