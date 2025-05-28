@@ -13,7 +13,6 @@ import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
@@ -175,7 +174,7 @@ contract ETHALMTest is MorphoTestBase {
         uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
             ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
             ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
-            TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            lendingAdapter.getCollateralLong()
         );
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
@@ -731,7 +730,7 @@ contract ETHALMTest is MorphoTestBase {
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
                 ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
                 ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
 
             assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);

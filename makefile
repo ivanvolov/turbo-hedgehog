@@ -44,9 +44,9 @@ tb:
 tbl:
 	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
+	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_deposit_rebalance\b"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_deposit_rebalance\b"
 
 tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"

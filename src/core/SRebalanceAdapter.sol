@@ -8,7 +8,6 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {ALMMathLib} from "../libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "../libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Base} from "./base/Base.sol";
@@ -46,7 +45,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     event RebalanceOperatorSet(address indexed operator);
 
     using PRBMathUD60x18 for uint256;
-    using TokenWrapperLib for uint256;
 
     // ** Last rebalance snapshot
     uint160 public sqrtPriceAtLastRebalance;
@@ -191,18 +189,18 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isNova) {
-            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl.unwrap(qDec), data);
-            else flashLoanAdapter.flashLoanSingle(true, baseToFl.unwrap(bDec), data);
+            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
+            else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
             uint256 baseBalance = baseBalanceUnwr();
-            if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
+            if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance);
             uint256 quoteBalance = quoteBalanceUnwr();
-            if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
+            if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
         } else {
-            flashLoanAdapter.flashLoanTwoTokens(baseToFl.unwrap(bDec), quoteToFl.unwrap(qDec), data);
+            flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
             uint256 baseBalance = baseBalanceUnwr();
-            if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
+            if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
             uint256 quoteBalance = quoteBalanceUnwr();
-            if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance.wrap(qDec));
+            if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance);
         }
 
         // ** Check max deviation
@@ -321,7 +319,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 isInvertedPool,
                 alm.tickLower(),
                 alm.tickUpper(),
-                lendingAdapter.getCollateralLong().unwrap(qDec),
+                lendingAdapter.getCollateralLong(),
                 liquidityMultiplier
             );
     }

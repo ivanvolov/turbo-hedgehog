@@ -17,7 +17,6 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {ALMMathLib} from "./libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "./libraries/TokenWrapperLib.sol";
 import {CurrencySettlerSafe} from "./libraries/CurrencySettlerSafe.sol";
 
 // ** contracts
@@ -29,7 +28,6 @@ import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 contract ALM is BaseStrategyHook, ERC20 {
     using PoolIdLibrary for PoolKey;
     using CurrencySettlerSafe for Currency;
-    using TokenWrapperLib for uint256;
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
@@ -103,8 +101,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         );
 
         _burn(msg.sender, sharesOut);
-        if (uDS != 0 && uDL != 0)
-            flashLoanAdapter.flashLoanTwoTokens(uDL.unwrap(bDec), uDS.unwrap(qDec), abi.encode(uCL, uCS));
+        if (uDS != 0 && uDL != 0) flashLoanAdapter.flashLoanTwoTokens(uDL, uDS, abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0 && uCS != 0)
                 lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), 0, 0);
@@ -113,7 +110,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
             else swapAdapter.swapExactInput(true, baseBalance(false));
-        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL.unwrap(bDec), abi.encode(uCL, uCS));
+        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL, abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
@@ -141,8 +138,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         lendingAdapter.updatePosition(
             SafeCast.toInt256(uCL),
             SafeCast.toInt256(uCS),
-            -SafeCast.toInt256(amountBase.wrap(bDec)),
-            -SafeCast.toInt256(amountQuote.wrap(qDec))
+            -SafeCast.toInt256(amountBase),
+            -SafeCast.toInt256(amountQuote)
         );
 
         if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
@@ -157,8 +154,8 @@ contract ALM is BaseStrategyHook, ERC20 {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         (int256 deltaDL, int256 deltaDS) = isBase
-            ? (-SafeCast.toInt256(amount.wrap(bDec)), int256(0))
-            : (int256(0), -SafeCast.toInt256(amount.wrap(qDec)));
+            ? (-SafeCast.toInt256(amount), int256(0))
+            : (int256(0), -SafeCast.toInt256(amount));
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
         if (isBase) {
@@ -226,30 +223,18 @@ contract ALM is BaseStrategyHook, ERC20 {
             if (params.amountSpecified > 0) {
                 if (isInvertedPool) {
                     accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
-                    positionManager.positionAdjustmentPriceUp(
-                        (token0In - protocolFeeAmount).wrap(bDec),
-                        token1Out.wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceUp((token0In - protocolFeeAmount), token1Out);
                 } else {
                     accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token1Out.wrap(bDec),
-                        (token0In - protocolFeeAmount).wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceDown(token1Out, (token0In - protocolFeeAmount));
                 }
             } else {
                 if (isInvertedPool) {
                     accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        token0In.wrap(bDec),
-                        (token1Out + protocolFeeAmount).wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceUp(token0In, (token1Out + protocolFeeAmount));
                 } else {
                     accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        (token1Out + protocolFeeAmount).wrap(bDec),
-                        (token0In).wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceDown((token1Out + protocolFeeAmount), (token0In));
                 }
             }
 
@@ -284,30 +269,18 @@ contract ALM is BaseStrategyHook, ERC20 {
             if (params.amountSpecified > 0) {
                 if (isInvertedPool) {
                     accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token0Out.wrap(bDec),
-                        (token1In - protocolFeeAmount).wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceDown(token0Out, (token1In - protocolFeeAmount));
                 } else {
                     accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        (token1In - protocolFeeAmount).wrap(bDec),
-                        token0Out.wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceUp((token1In - protocolFeeAmount), token0Out);
                 }
             } else {
                 if (isInvertedPool) {
                     accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        (token0Out + protocolFeeAmount).wrap(bDec),
-                        token1In.wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceDown((token0Out + protocolFeeAmount), token1In);
                 } else {
                     accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        token1In.wrap(bDec),
-                        (token0Out + protocolFeeAmount).wrap(qDec)
-                    );
+                    positionManager.positionAdjustmentPriceUp(token1In, (token0Out + protocolFeeAmount));
                 }
             }
 
@@ -353,12 +326,12 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     function baseBalance(bool wrap) public view returns (uint256) {
         uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
-        return wrap ? balance.wrap(bDec) : balance;
+        return wrap ? balance : balance;
     }
 
     function quoteBalance(bool wrap) public view returns (uint256) {
         uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
-        return wrap ? balance.wrap(qDec) : balance;
+        return wrap ? balance : balance;
     }
 
     // ** Math functions

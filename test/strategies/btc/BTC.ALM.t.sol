@@ -5,7 +5,6 @@ import "forge-std/console.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
@@ -165,10 +164,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdcToSwap,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
+                CL - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL - usdcToSwap,
+                DS - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -207,10 +206,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdcToSwap,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
+                CL - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL - usdcToSwap,
+                DS - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -249,10 +248,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) + ((deltaBTC - deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDC,
-                TW.unwrap(DS, qDec) + ((k1 - 1e18) * (deltaBTC - deltaTreasuryFee)) / 1e18
+                CL + ((deltaBTC - deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL + deltaUSDC,
+                DS + ((k1 - 1e18) * (deltaBTC - deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -313,10 +312,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdcToSwap,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
+                CL - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL - usdcToSwap,
+                DS - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -348,10 +347,10 @@ contract BTCALMTest is ALMTestBase {
             assertApproxEqAbs(hook.accumulatedFeeB(), deltaTreasuryFeeB, 3, "treasuryFee");
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - deltaUSDC + deltaTreasuryFeeB,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC)) / 1e18
+                CL - ((deltaBTC) * k1) / 1e18,
+                CS,
+                DL - deltaUSDC + deltaTreasuryFeeB,
+                DS - ((k1 - 1e18) * (deltaBTC)) / 1e18
             );
         }
 
@@ -392,10 +391,10 @@ contract BTCALMTest is ALMTestBase {
             //console.log("deltaTreasuryFeeQ %s", treasuryFeeB);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) + (deltaBTC * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDC + deltaTreasuryFeeB,
-                TW.unwrap(DS, qDec) + ((k1 - 1e18) * (deltaBTC)) / 1e18
+                CL + (deltaBTC * k1) / 1e18,
+                CS,
+                DL + deltaUSDC + deltaTreasuryFeeB,
+                DS + ((k1 - 1e18) * (deltaBTC)) / 1e18
             );
         }
 
