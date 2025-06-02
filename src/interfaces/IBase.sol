@@ -24,8 +24,6 @@ interface IBase {
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    function oracle() external view returns (IOracle);
-
     function setComponents(
         IALM _alm,
         ILendingAdapter _lendingAdapter,
@@ -35,6 +33,4 @@ interface IBase {
         IRebalanceAdapter _rebalanceAdapter,
         ISwapAdapter _swapAdapter
     ) external;
-
-    function transferOwnership(address newOwner) external;
 }

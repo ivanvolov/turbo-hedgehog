@@ -347,7 +347,7 @@ abstract contract ALMTestBase is Deployers {
 
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
         vm.mockCall(
-            address(hook.oracle()),
+            address(oracle),
             abi.encodeWithSelector(IOracle.price.selector),
             abi.encode(_sqrtPriceToOraclePrice(newSqrtPrice))
         );

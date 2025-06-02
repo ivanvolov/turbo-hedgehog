@@ -71,7 +71,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     /**
      * @notice Sets the swap route for a given swap key based on input/output and base/quote direction.
      * @param isExactInput Indicates whether the swap is for an exact input amount (true) or an exact output amount (false).
-     * @param isBaseToQuote Indicates the direction of the swap: true for base-to-QUOTE, false for quote-to-BASE.
+     * @param isBaseToQuote Indicates the direction of the swap: true for base-to-quote, false for quote-to-base.
      * @param _swapRoute An array representing path IDs and their corresponding multipliers.
      * For example, [1, 35e18, 3] means 35% of the amount is routed through path 1 and the remaining 65% through path 3.
      * The array must have an odd number of elements, where even indices are path IDs and odd indices are multipliers (in 1e18 precision).

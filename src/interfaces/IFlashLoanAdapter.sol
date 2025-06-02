@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IFlashLoanAdapter {
-    // ** Flashloan
     function flashLoanSingle(bool isBase, uint256 amount, bytes calldata data) external;
 
     function flashLoanTwoTokens(uint256 amountBase, uint256 amountQuote, bytes calldata data) external;

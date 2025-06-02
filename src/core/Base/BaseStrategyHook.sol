@@ -170,8 +170,11 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
         int24 newTickLower = isInvertedPool ? tick + deltas.lower : tick - deltas.lower;
         int24 newTickUpper = isInvertedPool ? tick - deltas.upper : tick + deltas.upper;
-        if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK) revert TickLowerOutOfBounds();
-        if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds();
+
+        if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
+            revert TickLowerOutOfBounds(newTickLower);
+        if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK)
+            revert TickUpperOutOfBounds(newTickUpper);
 
         activeTicks = Ticks(newTickLower, newTickUpper);
 

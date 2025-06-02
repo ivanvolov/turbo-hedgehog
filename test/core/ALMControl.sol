@@ -23,10 +23,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
-
-// ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
+import {ALM} from "@src/ALM.sol";
 
 /// @title ALM Control hook for simulation
 /// @author IVikkk
@@ -37,15 +34,15 @@ contract ALMControl is BaseHook, ERC20 {
     using StateLibrary for IPoolManager;
     using PRBMathUD60x18 for uint256;
 
-    IALM alm;
+    ALM alm;
 
     PoolKey key;
 
     int24 public tickLower;
     int24 public tickUpper;
 
-    constructor(IPoolManager _manager, address _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
-        alm = IALM(_alm);
+    constructor(IPoolManager _manager, ALM _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
+        alm = _alm;
 
         (int24 tickLower, int24 tickUpper) = alm.activeTicks();
         tickLower = TestLib.nearestUsableTick(tickLower, 2);
@@ -212,7 +209,7 @@ contract ALMControl is BaseHook, ERC20 {
     }
 
     function TVL(uint256 amount0, uint256 amount1) public view returns (uint256) {
-        return amount1 + (amount0 * 1e30) / IBase(address(alm)).oracle().price();
+        return amount1 + (amount0 * 1e30) / alm.oracle().price();
     }
 
     function getUniswapPositionAmounts() public view returns (uint256, uint256) {
