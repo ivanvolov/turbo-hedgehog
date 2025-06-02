@@ -20,7 +20,7 @@ interface IBase {
     error NotModule(address account);
     error NotFlashLoanAdapter(address account);
     error ContractPaused();
-    error ContractShutdown();
+    error ContractNotActive();
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 

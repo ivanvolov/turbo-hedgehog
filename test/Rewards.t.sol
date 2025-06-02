@@ -20,6 +20,7 @@ import {
     PendingRoot
 } from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 import {ILendingAdapterMorpho} from "./interfaces/ILendingAdapterMorpho.sol";
+import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
 
 contract RewardsAdaptersTest is MorphoTestBase {
     using SafeERC20 for IERC20;
@@ -38,97 +39,10 @@ contract RewardsAdaptersTest is MorphoTestBase {
     address targetUser = 0xB4E906060EABc5F30299e8098B61e41496a7233c;
     IERC20 constant EUL = IERC20(0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b);
     IERC20 constant MORPHO = IERC20(0x58D97B57BB95320F9a05dC918Aef65434969c2B2);
+    IERC20 constant UNI = IERC20(0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984);
+    IrEUL constant rEUL = TestLib.rEUL;
 
-    // claim some rewards and withdraw through adapter
-    function test_lending_adapter_euler_rewards_and_claim() public {
-        vm.rollFork(22469023);
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
-        _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
-
-        uint256 amount = 183012673785523122481;
-
-        assertEq(TestLib.rEUL.balanceOf(address(lendingAdapter)), 0, "before");
-
-        // ** Claim rEUL
-        {
-            bytes32[] memory proof = new bytes32[](1);
-            proof[0] = 0xc41888d0709f07a669eaa5faecc34122980bd31f12a174eb9bc6ab3a1b46811e;
-
-            // ** Update root to allow our fake proof
-            {
-                vm.prank(0x435046800Fb9149eE65159721A92cB7d50a7534b); // root updater
-                MRD.updateTree(
-                    MerkleTree(_verifyProof(address(lendingAdapter), address(TestLib.rEUL), amount, proof), bytes32(0))
-                );
-                vm.warp(MRD.endOfDisputePeriod());
-            }
-
-            // ** Claim rewards
-            vm.prank(deployer.addr);
-            ILendingAdapterEuler(address(lendingAdapter)).claimMerklRewards(
-                address(lendingAdapter),
-                IERC20(address(TestLib.rEUL)),
-                amount,
-                proof
-            );
-        }
-
-        assertEq(TestLib.rEUL.balanceOf(address(lendingAdapter)), amount, "after");
-        assertEq(EUL.balanceOf(alice.addr), 0, "before");
-
-        // ** Withdraw EUL
-        {
-            vm.warp(block.timestamp + 180 days);
-
-            uint256[] memory ts_array = TestLib.rEUL.getLockedAmountsLockTimestamps(address(lendingAdapter));
-
-            vm.prank(deployer.addr);
-            ILendingAdapterEuler(address(lendingAdapter)).unlockRewardEUL(alice.addr, ts_array[0]);
-        }
-
-        assertEq(TestLib.rEUL.balanceOf(address(lendingAdapter)), 0, "after");
-        assertEq(EUL.balanceOf(alice.addr), amount, "after");
-    }
-
-    // claim some rewards and withdraw through adapter
-    function test_lending_adapter_morpho_claim() public {
-        vm.rollFork(22476376 - 1);
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_morpho();
-        _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
-
-        uint256 amount = 30151918784160194072;
-        assertEq(MORPHO.balanceOf(deployer.addr), 0, "before");
-
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = 0x302ac0237181fdc70530e69cdda68df1b7ce4853c1f30d8d289da066db747f8f;
-
-        // ** Set fake root
-        {
-            bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(address(lendingAdapter), MORPHO, amount))));
-            bytes32 proofRoot = MerkleProof.processProof(proof, leaf);
-            vm.prank(0x640428D38189B11B844dAEBDBAAbbdfbd8aE0143);
-            URD.submitRoot(proofRoot, bytes32(0));
-
-            PendingRoot memory root = URD.pendingRoot();
-            vm.warp(root.validAt);
-            URD.acceptRoot();
-
-            MerkleProof.verify(
-                proof,
-                URD.root(),
-                keccak256(bytes.concat(keccak256(abi.encode(address(lendingAdapter), MORPHO, amount))))
-            );
-        }
-
-        // ** Claim rewards
-        vm.prank(deployer.addr);
-        ILendingAdapterMorpho(address(lendingAdapter)).claimRewards(deployer.addr, MORPHO, amount, proof);
-
-        // It eq amount because it was not claimed before, but usually it is not equal
-        assertEq(MORPHO.balanceOf(deployer.addr), amount, "after");
-    }
+    // ** Euler rewards
 
     // recreate last claim and withdraw 20$ and burn other 80%
     function test_rewards_euler_recreate_claims() public {
@@ -136,13 +50,13 @@ contract RewardsAdaptersTest is MorphoTestBase {
 
         // ** Claim rEUL
         {
-            uint256 _before = TestLib.rEUL.balanceOf(targetUser);
+            uint256 _before = rEUL.balanceOf(targetUser);
             assertEq(_before, 0, "before");
 
             address[] memory users = new address[](1);
             users[0] = targetUser;
             address[] memory tokens = new address[](1);
-            tokens[0] = address(TestLib.rEUL);
+            tokens[0] = address(rEUL);
             uint256[] memory amounts = new uint256[](1);
             amounts[0] = 170831077052791407402;
 
@@ -168,55 +82,60 @@ contract RewardsAdaptersTest is MorphoTestBase {
 
             vm.prank(targetUser);
             MRD.claim(users, tokens, amounts, proofs);
-            assertEq(TestLib.rEUL.balanceOf(targetUser), _before + amounts[0], "after");
+            assertEq(rEUL.balanceOf(targetUser), _before + amounts[0], "after");
         }
 
         // ** Withdraw EUL
         {
             assertEq(EUL.balanceOf(targetUser), 0, "before");
-            uint256[] memory ts_array = TestLib.rEUL.getLockedAmountsLockTimestamps(targetUser);
-            // console.log(TestLib.rEUL.getLockedAmountsLength(targetUser));
+            uint256[] memory ts_array = rEUL.getLockedAmountsLockTimestamps(targetUser);
 
             vm.prank(targetUser);
-            TestLib.rEUL.withdrawToByLockTimestamp(targetUser, ts_array[0], true);
+            rEUL.withdrawToByLockTimestamp(targetUser, ts_array[0], true);
             assertEq(EUL.balanceOf(targetUser), 34166215410558281480, "after"); // 20% of amount
+            assertEq(rEUL.balanceOf(targetUser), 0, "after");
         }
     }
 
-    // wait till expiration and withdraw all 100%
+    // after last claim wait till expiration and withdraw all 100%
     function test_rewards_euler_withdraw_all() public {
         vm.rollFork(22159144 + 1);
         vm.warp(block.timestamp + 180 days);
 
         // ** Withdraw EUL now
         {
-            assertEq(TestLib.rEUL.balanceOf(targetUser), 170831077052791407402, "before");
+            assertEq(rEUL.balanceOf(targetUser), 170831077052791407402, "before");
             assertEq(EUL.balanceOf(targetUser), 0, "before");
-            uint256[] memory ts_array = TestLib.rEUL.getLockedAmountsLockTimestamps(targetUser);
+            uint256[] memory ts_array = rEUL.getLockedAmountsLockTimestamps(targetUser);
 
             vm.prank(targetUser);
-            TestLib.rEUL.withdrawToByLockTimestamp(targetUser, ts_array[0], true);
-            assertEq(TestLib.rEUL.balanceOf(targetUser), 0, "after");
+            rEUL.withdrawToByLockTimestamp(targetUser, ts_array[0], true);
+            assertEq(rEUL.balanceOf(targetUser), 0, "after");
             assertEq(EUL.balanceOf(targetUser), 170831077052791407402, "after");
         }
     }
 
-    // claim all rewards, wait till expiration and withdraw all 100%
+    // claim all remaining rewards and withdraw 20% of already claimed and new
+    // real-life proof from api call
     function test_rewards_euler_claim_real_time_api() public {
         vm.rollFork(22469023);
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
 
-        // ** Claim rEUL
-        {
-            uint256 _before = TestLib.rEUL.balanceOf(targetUser);
-            assertEq(_before, 170831077052791407402, "before");
+        uint256 totalRewardsAmount = 183012673785523122481;
+        uint256 rewardsInFirstClaimedBatch = 170831077052791407402;
+        uint256 rewardsInSecondClaimedBatch = 12181596732731715079;
+        assertEq(EUL.balanceOf(targetUser), 0, "before");
+        assertEq(EUL.balanceOf(alice.addr), 0, "before");
+        assertEq(rEUL.balanceOf(targetUser), rewardsInFirstClaimedBatch, "before");
 
+        // ** Claim all remaining rEUL
+        {
             address[] memory users = new address[](1);
             users[0] = targetUser;
             address[] memory tokens = new address[](1);
-            tokens[0] = address(TestLib.rEUL);
+            tokens[0] = address(rEUL);
             uint256[] memory amounts = new uint256[](1);
-            amounts[0] = 183012673785523122481;
+            amounts[0] = totalRewardsAmount;
 
             bytes32[][] memory proofs = new bytes32[][](1);
             proofs[0] = new bytes32[](17);
@@ -240,25 +159,80 @@ contract RewardsAdaptersTest is MorphoTestBase {
 
             vm.prank(targetUser);
             MRD.claim(users, tokens, amounts, proofs);
-            assertEq(TestLib.rEUL.balanceOf(targetUser), amounts[0], "after");
+            assertEq(rEUL.balanceOf(targetUser), amounts[0], "after");
         }
 
         // ** Withdraw EUL
         {
             vm.warp(block.timestamp + 180 days);
             assertEq(EUL.balanceOf(targetUser), 0, "before");
-            // console.log(TestLib.rEUL.getLockedAmountsLength(targetUser));
-            uint256[] memory ts_array = TestLib.rEUL.getLockedAmountsLockTimestamps(targetUser);
+            uint256[] memory ts_array = rEUL.getLockedAmountsLockTimestamps(targetUser);
 
             vm.prank(targetUser);
-            TestLib.rEUL.withdrawToByLockTimestamp(targetUser, ts_array[0], true);
+            rEUL.withdrawToByLockTimestamp(targetUser, ts_array[0], true);
             vm.prank(targetUser);
-            TestLib.rEUL.withdrawToByLockTimestamp(alice.addr, ts_array[1], true);
-
-            assertEq(EUL.balanceOf(targetUser), 170831077052791407402, "after"); // 20% of amount
-            assertEq(EUL.balanceOf(alice.addr), 12181596732731715079, "after"); // 20% of amount
+            rEUL.withdrawToByLockTimestamp(alice.addr, ts_array[1], true);
         }
+
+        assertEq(rEUL.balanceOf(targetUser), 0, "after");
+        assertEq(EUL.balanceOf(targetUser), rewardsInFirstClaimedBatch, "after"); // 20% of amount
+        assertEq(EUL.balanceOf(alice.addr), rewardsInSecondClaimedBatch, "after"); // 20% of amount
+        assertEq(rewardsInFirstClaimedBatch + rewardsInSecondClaimedBatch, totalRewardsAmount, "after");
     }
+
+    // claim some rewards and withdraw through adapter
+    function test_lending_adapter_euler_rewards_and_claim() public {
+        vm.rollFork(22469023);
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_lending_adapter_euler_WETH_USDC();
+        _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
+
+        uint256 amount = 183012673785523122481;
+
+        assertEq(rEUL.balanceOf(address(lendingAdapter)), 0, "before");
+
+        // ** Claim rEUL
+        {
+            bytes32[] memory proof = new bytes32[](1);
+            proof[0] = 0xc41888d0709f07a669eaa5faecc34122980bd31f12a174eb9bc6ab3a1b46811e;
+
+            // ** Update root to allow our fake proof
+            {
+                vm.prank(0x435046800Fb9149eE65159721A92cB7d50a7534b); // root updater
+                MRD.updateTree(
+                    MerkleTree(_verifyProof(address(lendingAdapter), address(rEUL), amount, proof), bytes32(0))
+                );
+                vm.warp(MRD.endOfDisputePeriod());
+            }
+
+            // ** Claim rewards
+            vm.prank(deployer.addr);
+            ILendingAdapterEuler(address(lendingAdapter)).claimMerklRewards(
+                address(lendingAdapter),
+                IERC20(address(rEUL)),
+                amount,
+                proof
+            );
+        }
+
+        assertEq(rEUL.balanceOf(address(lendingAdapter)), amount, "after");
+        assertEq(EUL.balanceOf(alice.addr), 0, "before");
+
+        // ** Withdraw EUL
+        {
+            vm.warp(block.timestamp + 180 days);
+
+            uint256[] memory ts_array = rEUL.getLockedAmountsLockTimestamps(address(lendingAdapter));
+
+            vm.prank(deployer.addr);
+            ILendingAdapterEuler(address(lendingAdapter)).unlockRewardEUL(alice.addr, ts_array[0]);
+        }
+
+        assertEq(rEUL.balanceOf(address(lendingAdapter)), 0, "after");
+        assertEq(EUL.balanceOf(alice.addr), amount, "after");
+    }
+
+    // ** Morpho rewards
 
     // recreate reward claim
     function test_rewards_morpho_recreate_claims() public {
@@ -289,6 +263,82 @@ contract RewardsAdaptersTest is MorphoTestBase {
         vm.prank(targetUser);
         URD.claim(targetUser, address(MORPHO), amount, proof);
         assertEq(MORPHO.balanceOf(targetUser), 8725665134517793063, "after");
+    }
+
+    // claim some rewards and withdraw through adapter
+    function test_lending_adapter_morpho_claim() public {
+        vm.rollFork(22476376 - 1);
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_lending_adapter_morpho();
+        _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
+
+        uint256 amount = 30151918784160194072;
+        assertEq(MORPHO.balanceOf(alice.addr), 0, "before");
+
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = 0x302ac0237181fdc70530e69cdda68df1b7ce4853c1f30d8d289da066db747f8f;
+
+        // ** Set fake root
+        {
+            bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(address(lendingAdapter), MORPHO, amount))));
+            bytes32 proofRoot = MerkleProof.processProof(proof, leaf);
+            vm.prank(0x640428D38189B11B844dAEBDBAAbbdfbd8aE0143);
+            URD.submitRoot(proofRoot, bytes32(0));
+
+            PendingRoot memory root = URD.pendingRoot();
+            vm.warp(root.validAt);
+            URD.acceptRoot();
+
+            MerkleProof.verify(
+                proof,
+                URD.root(),
+                keccak256(bytes.concat(keccak256(abi.encode(address(lendingAdapter), MORPHO, amount))))
+            );
+        }
+
+        // ** Claim rewards
+        vm.prank(deployer.addr);
+        ILendingAdapterMorpho(address(lendingAdapter)).claimRewards(alice.addr, MORPHO, amount, proof);
+
+        // It eq amount because it was not claimed before, but usually it is not equal
+        assertEq(MORPHO.balanceOf(alice.addr), amount, "after");
+    }
+
+    // ** Merkle claim in general
+
+    // claim UNI token rewards and withdraw through adapter
+    function test_lending_adapter_merkle_rewards_and_claim_UNI() public {
+        vm.rollFork(22469023);
+        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_lending_adapter_euler_WETH_USDC();
+        _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
+
+        uint256 amount = 183012673785523122481;
+
+        assertEq(UNI.balanceOf(address(lendingAdapter)), 0, "before");
+        assertEq(UNI.balanceOf(address(deployer.addr)), 0, "before");
+
+        // ** Claim UNI
+        {
+            bytes32[] memory proof = new bytes32[](1);
+            proof[0] = 0xc41888d0709f07a669eaa5faecc34122980bd31f12a174eb9bc6ab3a1b46811e;
+
+            // ** Update root to allow our fake proof
+            {
+                vm.prank(0x435046800Fb9149eE65159721A92cB7d50a7534b); // root updater
+                MRD.updateTree(
+                    MerkleTree(_verifyProof(address(lendingAdapter), address(UNI), amount, proof), bytes32(0))
+                );
+                vm.warp(MRD.endOfDisputePeriod());
+            }
+
+            // ** Claim rewards
+            vm.prank(deployer.addr);
+            ILendingAdapterEuler(address(lendingAdapter)).claimMerklRewards(deployer.addr, UNI, amount, proof);
+        }
+
+        assertEq(UNI.balanceOf(address(lendingAdapter)), 0, "before");
+        assertEq(UNI.balanceOf(address(deployer.addr)), amount, "after");
     }
 
     // ** Helpers

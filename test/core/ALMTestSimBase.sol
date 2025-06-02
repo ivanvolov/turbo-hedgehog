@@ -144,8 +144,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         uint128 liquidity = hook.liquidity();
         uint160 sqrtPriceX96 = hook.sqrtPriceCurrent();
 
-        int24 tickLower = hook.tickLower();
-        int24 tickUpper = hook.tickUpper();
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         assertApproxEqAbs(tickLower, hookControl.tickLower(), 1);
         assertApproxEqAbs(tickUpper, hookControl.tickUpper(), 1);
 

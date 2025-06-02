@@ -21,10 +21,18 @@ import {IBase} from "../../interfaces/IBase.sol";
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 
+    enum ComponentType {
+        ALM,
+        REBALANCE_ADAPTER,
+        POSITION_MANAGER,
+        EXTERNAL_ADAPTER
+    }
+
+    ComponentType public immutable componentType;
     address public owner;
 
-    IERC20 public immutable base;
-    IERC20 public immutable quote;
+    IERC20 public immutable BASE;
+    IERC20 public immutable QUOTE;
     uint8 public immutable bDec;
     uint8 public immutable qDec;
     uint8 public immutable decimalsDelta;
@@ -37,9 +45,17 @@ abstract contract Base is IBase {
     IRebalanceAdapter public rebalanceAdapter;
     ISwapAdapter public swapAdapter;
 
-    constructor(address initialOwner, IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) {
-        base = _base;
-        quote = _quote;
+    constructor(
+        ComponentType _componentType,
+        address initialOwner,
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec
+    ) {
+        componentType = _componentType;
+        BASE = _base;
+        QUOTE = _quote;
         bDec = _bDec;
         qDec = _qDec;
         decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
@@ -61,27 +77,36 @@ abstract contract Base is IBase {
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        _approveSingle(base, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
-        _approveSingle(quote, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+        if (
+            componentType == ComponentType.ALM ||
+            componentType == ComponentType.REBALANCE_ADAPTER ||
+            componentType == ComponentType.POSITION_MANAGER
+        ) {
+            _approveSingle(BASE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+            _approveSingle(QUOTE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
+
+            _approveSingle(BASE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+            _approveSingle(QUOTE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
+
+            _approveSingle(BASE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+            _approveSingle(QUOTE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
+
+            if (componentType == ComponentType.ALM) {
+                _approveSingle(BASE, address(positionManager), address(_positionManager), type(uint256).max);
+                _approveSingle(QUOTE, address(positionManager), address(_positionManager), type(uint256).max);
+            }
+        }
+
         lendingAdapter = _lendingAdapter;
-
-        _approveSingle(base, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
-        _approveSingle(quote, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
         flashLoanAdapter = _flashLoanAdapter;
-
-        _approveSingle(base, address(positionManager), address(_positionManager), type(uint256).max);
-        _approveSingle(quote, address(positionManager), address(_positionManager), type(uint256).max);
-        positionManager = _positionManager;
-
-        _approveSingle(base, address(swapAdapter), address(_swapAdapter), type(uint256).max);
-        _approveSingle(quote, address(swapAdapter), address(_swapAdapter), type(uint256).max);
         swapAdapter = _swapAdapter;
+        positionManager = _positionManager;
     }
 
     function _approveSingle(IERC20 token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0) && moduleOld != address(this) && moduleOld != moduleNew)
-            token.forceApprove(moduleOld, 0);
-        if (moduleNew != address(this)) token.forceApprove(moduleNew, amount);
+        if (moduleOld == moduleNew) return;
+        if (moduleOld != address(0)) token.forceApprove(moduleOld, 0);
+        token.forceApprove(moduleNew, amount);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
@@ -120,25 +145,26 @@ abstract contract Base is IBase {
     modifier onlyModule() {
         if (
             msg.sender != address(alm) &&
-            msg.sender != address(lendingAdapter) &&
-            msg.sender != address(flashLoanAdapter) &&
-            msg.sender != address(positionManager) &&
             msg.sender != address(rebalanceAdapter) &&
-            msg.sender != address(swapAdapter)
+            msg.sender != address(positionManager)
         ) revert NotModule(msg.sender);
 
         _;
     }
 
-    /// @dev Only allows execution when the contract is not paused
+    /// @notice Restricts function execution when contract is paused.
+    /// @dev Allows execution when status is active (0) or shutdown (2).
+    /// @dev Reverts with ContractPaused when status equals 1 (paused).
     modifier notPaused() {
-        if (alm.paused()) revert ContractPaused();
+        if (alm.status() == 1) revert ContractPaused();
         _;
     }
 
-    /// @dev Only allows execution when the contract is not shut down
-    modifier notShutdown() {
-        if (alm.shutdown()) revert ContractShutdown();
+    /// @notice Restricts function execution to active state only.
+    /// @dev Only allows execution when status equals 0 (active).
+    /// @dev Reverts with ContractNotActive when status is paused (1) or shutdown (2).
+    modifier onlyActive() {
+        if (alm.status() != 0) revert ContractNotActive();
         _;
     }
 }

@@ -65,9 +65,8 @@ contract ETHALMTest is MorphoTestBase {
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
-        assertEq(hook.tickLower(), 200466);
-        assertEq(hook.tickUpper(), 194466);
+        init_hook(true, false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        assertTicks(200466, 194466);
 
         // ** Setting up strategy params
         {
@@ -75,7 +74,7 @@ contract ETHALMTest is MorphoTestBase {
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
@@ -117,13 +116,7 @@ contract ETHALMTest is MorphoTestBase {
 
     function test_deposit_cap() public {
         vm.startPrank(deployer.addr);
-        hook.setProtocolParams(
-            hook.protocolFee(),
-            10 ether,
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
+        updateProtocolTVLCap(10 ether);
         vm.stopPrank();
 
         deal(address(WETH), address(alice.addr), amountToDep);
@@ -172,9 +165,10 @@ contract ETHALMTest is MorphoTestBase {
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         console.log("liquidity %s", hook.liquidity());
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
-            ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
-            ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
+            ALMMathLib.getSqrtPriceX96FromTick(tickLower),
+            ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
             TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
         );
 
@@ -243,7 +237,7 @@ contract ETHALMTest is MorphoTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
-        hook.setShutdown(true);
+        hook.setStatus(2);
 
         part_withdraw();
     }
@@ -491,15 +485,10 @@ contract ETHALMTest is MorphoTestBase {
 
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
         test_deposit_rebalance();
+
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        hook.setProtocolParams(
-            20 * 1e16, // 20% cut from trading fees
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
+        updateProtocolFees(20 * 1e16); // 20% cut from trading fees
         vm.stopPrank();
 
         assertEqBalanceState(address(hook), 0, 0);
@@ -530,13 +519,7 @@ contract ETHALMTest is MorphoTestBase {
         test_deposit_rebalance();
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
+        updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
 
         uint256 wethToGetFSwap = 5438946754462608168;
@@ -561,15 +544,10 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
         uint256 wethToSwap = 5521148324215010000;
         test_deposit_rebalance();
+
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
+        updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
@@ -592,13 +570,7 @@ contract ETHALMTest is MorphoTestBase {
         test_deposit_rebalance();
         vm.startPrank(deployer.addr);
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        hook.setProtocolParams(
-            20 * 1e16, // 3% from fees
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
+        updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
 
         console.log("preCL %s", lendingAdapter.getCollateralLong());
@@ -728,9 +700,10 @@ contract ETHALMTest is MorphoTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
+            (int24 tickLower, int24 tickUpper) = hook.activeTicks();
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
-                ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
-                ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
+                ALMMathLib.getSqrtPriceX96FromTick(tickLower),
+                ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
                 TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
             );
 

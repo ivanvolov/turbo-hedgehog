@@ -55,9 +55,8 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, true, false, 0, 1000000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
-        assertEq(hook.tickLower(), 200466);
-        assertEq(hook.tickUpper(), 194466);
+        init_hook(true, true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        assertTicks(200466, 194466);
 
         // ** Setting up strategy params
         {
@@ -65,7 +64,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2);
-            rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
@@ -348,20 +347,11 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
-
         IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
-        hook.setProtocolParams(
-            20 * 1e16, // 20% from fees
-            hook.tvlCap(),
-            hook.tickUpperDelta(),
-            hook.tickLowerDelta(),
-            hook.swapPriceThreshold()
-        );
-
+        updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
+
         test_deposit_rebalance();
 
         // ** Make oracle change with swap price

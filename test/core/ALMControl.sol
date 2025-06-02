@@ -46,8 +46,10 @@ contract ALMControl is BaseHook, ERC20 {
 
     constructor(IPoolManager _manager, address _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
         alm = IALM(_alm);
-        tickLower = TestLib.nearestUsableTick(alm.tickLower(), 2);
-        tickUpper = TestLib.nearestUsableTick(alm.tickUpper(), 2);
+
+        (int24 tickLower, int24 tickUpper) = alm.activeTicks();
+        tickLower = TestLib.nearestUsableTick(tickLower, 2);
+        tickUpper = TestLib.nearestUsableTick(tickUpper, 2);
     }
 
     // --- Logic --- //
@@ -71,8 +73,9 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        tickLower = TestLib.nearestUsableTick(alm.tickLower(), 2);
-        tickUpper = TestLib.nearestUsableTick(alm.tickUpper(), 2);
+        (int24 tickLower, int24 tickUpper) = alm.activeTicks();
+        tickLower = TestLib.nearestUsableTick(tickLower, 2);
+        tickUpper = TestLib.nearestUsableTick(tickUpper, 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
 

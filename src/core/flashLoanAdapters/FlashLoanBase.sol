@@ -24,55 +24,58 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
         IERC20 _quote,
         uint8 _bDec,
         uint8 _qDec
-    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
         assetReturnSelf = _assetReturnSelf;
     }
 
-    function flashLoanSingle(IERC20 asset, uint256 amount, bytes calldata data) external onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(0), msg.sender, asset, amount, data);
-        _flashLoanSingle(asset, amount, _data);
+    function flashLoanSingle(bool isBase, uint256 amount, bytes calldata data) external onlyModule notPaused {
+        bytes memory _data = abi.encode(uint8(0), msg.sender, isBase, amount, data);
+        _flashLoanSingle(isBase, amount, _data);
     }
 
     function flashLoanTwoTokens(
-        IERC20 asset0,
-        uint256 amount0,
-        IERC20 asset1,
-        uint256 amount1,
+        uint256 amountBase,
+        uint256 amountQuote,
         bytes calldata data
     ) external onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(2), msg.sender, asset0, amount0, asset1, amount1, data);
-        _flashLoanSingle(asset0, amount0, _data);
+        bytes memory _data = abi.encode(uint8(2), msg.sender, amountBase, amountQuote, data);
+        _flashLoanSingle(true, amountBase, _data);
     }
 
-    function _flashLoanSingle(IERC20 asset, uint256 amount, bytes memory _data) internal virtual;
+    function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual;
 
     function _onFlashLoan(bytes calldata _data) internal {
         uint8 loanType = abi.decode(_data, (uint8));
 
         if (loanType == 0) {
-            (, address sender, IERC20 asset, uint256 amount, bytes memory data) = abi.decode(
+            (, address sender, bool isBase, uint256 amount, bytes memory data) = abi.decode(
                 _data,
-                (uint8, address, IERC20, uint256, bytes)
+                (uint8, address, bool, uint256, bytes)
             );
+            IERC20 asset = isBase ? BASE : QUOTE;
 
             asset.safeTransfer(sender, amount);
-            IFlashLoanReceiver(sender).onFlashLoanSingle(asset, amount, data);
+            IFlashLoanReceiver(sender).onFlashLoanSingle(isBase, amount, data);
             asset.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amount);
         } else if (loanType == 2) {
-            (, address sender, IERC20 asset0, uint256 amount0, IERC20 asset1, uint256 amount1, bytes memory data) = abi
-                .decode(_data, (uint8, address, IERC20, uint256, IERC20, uint256, bytes));
-            bytes memory __data = abi.encode(uint8(1), sender, asset0, amount0, asset1, amount1, data);
+            (, address sender, uint256 amountBase, uint256 amountQuote, bytes memory data) = abi.decode(
+                _data,
+                (uint8, address, uint256, uint256, bytes)
+            );
+            bytes memory __data = abi.encode(uint8(1), sender, amountBase, amountQuote, data);
 
-            asset0.safeTransfer(sender, amount0);
-            _flashLoanSingle(asset1, amount1, __data);
-            asset0.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amount0);
+            BASE.safeTransfer(sender, amountBase);
+            _flashLoanSingle(false, amountQuote, __data);
+            BASE.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amountBase);
         } else if (loanType == 1) {
-            (, address sender, IERC20 asset0, uint256 amount0, IERC20 asset1, uint256 amount1, bytes memory data) = abi
-                .decode(_data, (uint8, address, IERC20, uint256, IERC20, uint256, bytes));
+            (, address sender, uint256 amountBase, uint256 amountQuote, bytes memory data) = abi.decode(
+                _data,
+                (uint8, address, uint256, uint256, bytes)
+            );
 
-            asset1.safeTransfer(sender, amount1);
-            IFlashLoanReceiver(sender).onFlashLoanTwoTokens(asset0, amount0, asset1, amount1, data);
-            asset1.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amount1);
+            QUOTE.safeTransfer(sender, amountQuote);
+            IFlashLoanReceiver(sender).onFlashLoanTwoTokens(amountBase, amountQuote, data);
+            QUOTE.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amountQuote);
         } else revert NotAllowedLoanType(loanType);
     }
 }

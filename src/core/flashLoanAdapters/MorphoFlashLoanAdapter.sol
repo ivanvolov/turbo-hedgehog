@@ -28,8 +28,8 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
     ) FlashLoanBase(true, _base, _quote, _bDec, _qDec) {
         morpho = _morpho;
 
-        base.forceApprove(address(morpho), type(uint256).max);
-        quote.forceApprove(address(morpho), type(uint256).max);
+        BASE.forceApprove(address(morpho), type(uint256).max);
+        QUOTE.forceApprove(address(morpho), type(uint256).max);
     }
 
     function onMorphoFlashLoan(uint256, bytes calldata _data) external notPaused returns (bytes32) {
@@ -38,7 +38,7 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
         return bytes32(0);
     }
 
-    function _flashLoanSingle(IERC20 asset, uint256 amount, bytes memory _data) internal virtual override {
-        morpho.flashLoan(address(asset), amount, _data);
+    function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual override {
+        morpho.flashLoan(isBase ? address(BASE) : address(QUOTE), amount, _data);
     }
 }

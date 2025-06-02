@@ -20,7 +20,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
     error WeightNotValid();
-    error LiquidityMultiplierNotValid();
     error LeverageValuesNotValid();
     error MaxDeviationNotValid();
 
@@ -66,10 +65,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage).
     uint256 public shortLeverage;
 
-    /// @notice The multiplier applied to the virtual liquidity, encoded as a UD60x18 value.
-    ///         (i.e. virtual_liquidity × 1e18, where 1 = 100%).
-    uint256 public liquidityMultiplier;
-
     uint256 public rebalancePriceThreshold;
     uint256 public rebalanceTimeThreshold;
     uint256 public maxDeviationLong;
@@ -87,7 +82,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova
-    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;
@@ -127,20 +122,13 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         );
     }
 
-    function setRebalanceParams(
-        uint256 _weight,
-        uint256 _liquidityMultiplier,
-        uint256 _longLeverage,
-        uint256 _shortLeverage
-    ) external onlyOwner {
+    function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
         if (_weight > 1e18) revert WeightNotValid();
-        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
         if (_longLeverage > 5e18) revert LeverageValuesNotValid();
         if (_shortLeverage > 5e18) revert LeverageValuesNotValid();
         if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
 
         weight = _weight;
-        liquidityMultiplier = _liquidityMultiplier;
         longLeverage = _longLeverage;
         shortLeverage = _shortLeverage;
 
@@ -182,23 +170,22 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         needRebalance = block.timestamp >= triggerTime;
     }
 
-    function rebalance(uint256 slippage) external notPaused notShutdown onlyRebalanceOperator {
+    function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
         if (!isRebalance) revert RebalanceConditionNotMet();
-        alm.refreshReserves();
-        alm.transferFees();
+        alm.refreshReservesAndTransferFees();
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isNova) {
-            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(quote, quoteToFl.unwrap(qDec), data);
-            else flashLoanAdapter.flashLoanSingle(base, baseToFl.unwrap(bDec), data);
+            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl.unwrap(qDec), data);
+            else flashLoanAdapter.flashLoanSingle(true, baseToFl.unwrap(bDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
         } else {
-            flashLoanAdapter.flashLoanTwoTokens(base, baseToFl.unwrap(bDec), quote, quoteToFl.unwrap(qDec), data);
+            flashLoanAdapter.flashLoanTwoTokens(baseToFl.unwrap(bDec), quoteToFl.unwrap(qDec), data);
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
             uint256 quoteBalance = quoteBalanceUnwr();
@@ -217,39 +204,32 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
 
-        alm.updateSqrtPrice(currentSqrtPrice);
-        alm.updateBoundaries(currentSqrtPrice);
-
-        uint128 liquidity = calcLiquidity(); // This uses new boundaries from AMM, which are updated first.
-        alm.updateLiquidity(liquidity);
-
+        uint128 liquidity = alm.updateLiquidityAndBoundaries(currentSqrtPrice);
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);
     }
 
     function onFlashLoanSingle(
-        IERC20 token,
+        bool isBase,
         uint256 amount,
         bytes calldata data
-    ) external notPaused notShutdown onlyFlashLoanAdapter {
+    ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
-        uint256 balance = token.balanceOf(address(this));
-        if (amount > balance) swapAdapter.swapExactOutput(token == quote, amount - balance);
+        uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
+        if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
 
     function onFlashLoanTwoTokens(
-        IERC20,
-        uint256 amountB,
-        IERC20,
-        uint256 amountQ,
+        uint256 amountBase,
+        uint256 amountQuote,
         bytes calldata data
-    ) external notPaused notShutdown onlyFlashLoanAdapter {
+    ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
 
-        uint256 baseBalance = base.balanceOf(address(this));
-        if (amountB > baseBalance) swapAdapter.swapExactOutput(false, amountB - baseBalance);
+        uint256 baseBalance = BASE.balanceOf(address(this));
+        if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
         else {
-            uint256 quoteBalance = quote.balanceOf(address(this));
-            if (amountQ > quoteBalance) swapAdapter.swapExactOutput(true, amountQ - quoteBalance);
+            uint256 quoteBalance = QUOTE.balanceOf(address(this));
+            if (amountQuote > quoteBalance) swapAdapter.swapExactOutput(true, amountQuote - quoteBalance);
         }
     }
 
@@ -319,17 +299,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
-    function calcLiquidity() public view returns (uint128) {
-        return
-            ALMMathLib.getLiquidity(
-                isInvertedPool,
-                alm.tickLower(),
-                alm.tickUpper(),
-                lendingAdapter.getCollateralLong().unwrap(qDec),
-                liquidityMultiplier
-            );
-    }
-
     function checkDeviations() internal view {
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(oracle.price(), currentCL, currentCS, DL, DS);
@@ -348,10 +317,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     // ** Helpers
 
     function baseBalanceUnwr() internal view returns (uint256) {
-        return base.balanceOf(address(this));
+        return BASE.balanceOf(address(this));
     }
 
     function quoteBalanceUnwr() internal view returns (uint256) {
-        return quote.balanceOf(address(this));
+        return QUOTE.balanceOf(address(this));
     }
 }

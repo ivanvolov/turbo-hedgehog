@@ -43,7 +43,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, false, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per_price_change);
+        init_hook(true, false, false, 0, 1e18, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
         {
@@ -51,7 +51,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
             hook.setTreasury(treasury.addr);
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalanceParams(6 * 1e17, 1e18, 3 * 1e18, 2 * 1e18);
+            rebalanceAdapter.setRebalanceParams(6 * 1e17, 3 * 1e18, 2 * 1e18);
             rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }

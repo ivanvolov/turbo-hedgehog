@@ -9,6 +9,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -16,6 +17,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
+import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Base} from "./Base.sol";
@@ -24,45 +26,31 @@ import {Base} from "./Base.sol";
 import {IALM} from "../../interfaces/IALM.sol";
 
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
-    error ProtocolFeeNotValid();
-
-    event PausedSet(bool paused);
-    event ShutdownSet(bool shutdown);
-    event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
-    event TreasurySet(address indexed treasury);
-    event ProtocolParamsSet(
-        uint256 protocolFee,
-        uint256 tvlCap,
-        int24 tickUpperDelta,
-        int24 tickLowerDelta,
-        uint256 swapPriceThreshold
-    );
-    event LiquidityUpdated(uint128 newLiquidity);
-    event SqrtPriceUpdated(uint160 newSqrtPrice);
-    event BoundariesUpdated(int24 newTickLower, int24 newTickUpper);
-
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;
+    using TokenWrapperLib for uint256;
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
     bytes32 public authorizedPool;
 
-    bool public paused = false;
-    bool public shutdown = false;
-    address public liquidityOperator;
-    address public swapOperator;
+    /// @notice Current operational status of the contract.
+    /// @dev 0 = active, 1 = paused, 2 = shutdown.
+    uint8 public status = 0;
 
+    /// @notice The multiplier applied to the virtual liquidity, encoded as a UD60x18 value.
+    ///         (i.e. virtual_liquidity × 1e18, where 1 = 100%).
+    uint256 public liquidityMultiplier;
     uint128 public liquidity;
-    uint160 public sqrtPriceCurrent;
-    int24 public tickLower;
-    int24 public tickUpper;
 
-    int24 public tickUpperDelta;
-    int24 public tickLowerDelta;
+    Ticks public activeTicks;
+    Ticks public tickDeltas;
+    uint160 public sqrtPriceCurrent;
     uint256 public swapPriceThreshold;
     uint256 public tvlCap;
 
+    address public liquidityOperator;
+    address public swapOperator;
     address public treasury;
     uint256 public protocolFee;
     uint256 public accumulatedFeeB;
@@ -76,19 +64,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         bool _isInvertedPool,
         bool _isInvertedAssets,
         IPoolManager _poolManager
-    ) BaseHook(_poolManager) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote, _bDec, _qDec) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
     }
 
-    function setPaused(bool _paused) external onlyOwner {
-        paused = _paused;
-        emit PausedSet(_paused);
-    }
-
-    function setShutdown(bool _shutdown) external onlyOwner {
-        shutdown = _shutdown;
-        emit ShutdownSet(_shutdown);
+    function setStatus(uint8 _status) external onlyOwner {
+        status = _status;
+        emit StatusSet(_status);
     }
 
     function setOperators(address _liquidityOperator, address _swapOperator) external onlyOwner {
@@ -103,19 +86,30 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     function setProtocolParams(
+        uint256 _liquidityMultiplier,
         uint256 _protocolFee,
         uint256 _tvlCap,
-        int24 _tickUpperDelta,
         int24 _tickLowerDelta,
+        int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
         if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
+        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
+
+        liquidityMultiplier = _liquidityMultiplier;
         protocolFee = _protocolFee;
-        tvlCap = _tvlCap;
-        tickUpperDelta = _tickUpperDelta;
-        tickLowerDelta = _tickLowerDelta;
         swapPriceThreshold = _swapPriceThreshold;
-        emit ProtocolParamsSet(_protocolFee, _tvlCap, _tickUpperDelta, _tickLowerDelta, _swapPriceThreshold);
+        tvlCap = _tvlCap;
+        tickDeltas = Ticks(_tickLowerDelta, _tickUpperDelta);
+
+        emit ProtocolParamsSet(
+            _liquidityMultiplier,
+            _protocolFee,
+            _tvlCap,
+            _swapPriceThreshold,
+            _tickLowerDelta,
+            _tickUpperDelta
+        );
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -148,26 +142,41 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    function updateBoundaries(uint160 _sqrtPrice) external onlyRebalanceAdapter {
-        _updateBoundaries(_sqrtPrice);
+    function updateLiquidityAndBoundaries(
+        uint160 _sqrtPrice
+    ) external override onlyRebalanceAdapter returns (uint128 newLiquidity) {
+        _updatePriceAndBoundaries(_sqrtPrice);
+        newLiquidity = _calcLiquidity();
+        liquidity = newLiquidity;
+        emit LiquidityUpdated(newLiquidity);
     }
 
-    function updateLiquidity(uint128 _liquidity) external onlyRebalanceAdapter {
-        liquidity = _liquidity;
-        emit LiquidityUpdated(_liquidity);
+    function _calcLiquidity() internal view returns (uint128) {
+        Ticks memory _activeTicks = activeTicks;
+        return
+            ALMMathLib.getLiquidity(
+                isInvertedPool,
+                _activeTicks.lower,
+                _activeTicks.upper,
+                lendingAdapter.getCollateralLong().unwrap(qDec),
+                liquidityMultiplier
+            );
     }
 
-    function updateSqrtPrice(uint160 _sqrtPrice) external onlyRebalanceAdapter {
+    function _updatePriceAndBoundaries(uint160 _sqrtPrice) internal {
         sqrtPriceCurrent = _sqrtPrice;
-        emit SqrtPriceUpdated(_sqrtPrice);
-    }
-
-    function _updateBoundaries(uint160 _sqrtPrice) internal {
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
-        tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
-        tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
+        Ticks memory deltas = tickDeltas;
 
-        emit BoundariesUpdated(tickLower, tickUpper);
+        int24 newTickLower = isInvertedPool ? tick + deltas.lower : tick - deltas.lower;
+        int24 newTickUpper = isInvertedPool ? tick - deltas.upper : tick + deltas.upper;
+        if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK) revert TickLowerOutOfBounds();
+        if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds();
+
+        activeTicks = Ticks(newTickLower, newTickUpper);
+
+        emit SqrtPriceUpdated(_sqrtPrice);
+        emit BoundariesUpdated(newTickLower, newTickUpper);
     }
 
     // ** Deltas calculation

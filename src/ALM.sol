@@ -52,12 +52,11 @@ contract ALM is BaseStrategyHook, ERC20 {
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager notPaused notShutdown returns (bytes4) {
+    ) external override onlyPoolManager onlyActive returns (bytes4) {
         if (creator != owner) revert OwnableUnauthorizedAccount(creator);
         if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
         authorizedPool = PoolId.unwrap(key.toId());
-        sqrtPriceCurrent = sqrtPrice;
-        _updateBoundaries(sqrtPrice);
+        _updatePriceAndBoundaries(sqrtPrice);
         return ALM.afterInitialize.selector;
     }
 
@@ -65,17 +64,17 @@ contract ALM is BaseStrategyHook, ERC20 {
         address to,
         uint256 amountIn,
         uint256 minShares
-    ) external notPaused notShutdown returns (uint256 sharesMinted) {
+    ) external onlyActive returns (uint256 sharesMinted) {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         lendingAdapter.syncPositions();
         uint256 TVL1 = TVL();
 
         if (isInvertedAssets) {
-            base.safeTransferFrom(msg.sender, address(this), amountIn);
+            BASE.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralShort(baseBalance(true));
         } else {
-            quote.safeTransferFrom(msg.sender, address(this), amountIn);
+            QUOTE.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }
         uint256 TVL2 = TVL();
@@ -104,7 +103,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
         _burn(msg.sender, sharesOut);
         if (uDS != 0 && uDL != 0)
-            flashLoanAdapter.flashLoanTwoTokens(base, uDL.unwrap(bDec), quote, uDS.unwrap(qDec), abi.encode(uCL, uCS));
+            flashLoanAdapter.flashLoanTwoTokens(uDL.unwrap(bDec), uDS.unwrap(qDec), abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0 && uCS != 0)
                 lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), 0, 0);
@@ -113,7 +112,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
             else swapAdapter.swapExactInput(true, baseBalance(false));
-        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(base, uDL.unwrap(bDec), abi.encode(uCL, uCS));
+        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL.unwrap(bDec), abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
@@ -121,64 +120,60 @@ contract ALM is BaseStrategyHook, ERC20 {
         if (isInvertedAssets) {
             baseOut = baseBalance(false);
             if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
-            base.safeTransfer(to, baseOut);
+            BASE.safeTransfer(to, baseOut);
         } else {
             quoteOut = quoteBalance(false);
             if (quoteOut < minAmountOutQ) revert NotMinOutWithdrawQuote();
-            quote.safeTransfer(to, quoteOut);
+            QUOTE.safeTransfer(to, quoteOut);
         }
 
-        liquidity = rebalanceAdapter.calcLiquidity();
-        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), liquidity);
+        uint128 newLiquidity = _calcLiquidity();
+        liquidity = newLiquidity;
+        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), newLiquidity);
     }
 
     function onFlashLoanTwoTokens(
-        IERC20 base,
-        uint256 amount0,
-        IERC20 quote,
-        uint256 amount1,
+        uint256 amountBase,
+        uint256 amountQuote,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
         lendingAdapter.updatePosition(
             SafeCast.toInt256(uCL),
             SafeCast.toInt256(uCS),
-            -SafeCast.toInt256(amount0.wrap(bDec)),
-            -SafeCast.toInt256(amount1.wrap(qDec))
+            -SafeCast.toInt256(amountBase.wrap(bDec)),
+            -SafeCast.toInt256(amountQuote.wrap(qDec))
         );
 
-        if (isInvertedAssets) _ensureEnoughBalance(amount1, quote);
-        else _ensureEnoughBalance(amount0, base);
+        if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
+        else _ensureEnoughBalance(amountBase, BASE);
     }
 
     function onFlashLoanSingle(
-        IERC20 token,
+        bool isBase,
         uint256 amount,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
-        (int256 deltaDL, int256 deltaDS) = (token == base)
+        (int256 deltaDL, int256 deltaDS) = isBase
             ? (-SafeCast.toInt256(amount.wrap(bDec)), int256(0))
             : (int256(0), -SafeCast.toInt256(amount.wrap(qDec)));
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
-        if (token == base) {
+        if (isBase) {
             if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
-            else _ensureEnoughBalance(amount, base);
+            else _ensureEnoughBalance(amount, BASE);
         } else {
-            if (isInvertedAssets) _ensureEnoughBalance(amount, quote);
+            if (isInvertedAssets) _ensureEnoughBalance(amount, QUOTE);
             else swapAdapter.swapExactInput(true, baseBalance(false));
         }
     }
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
-        uint256 _balance = token == base ? baseBalance(false) : quoteBalance(false);
-        if (balance >= _balance) {
-            swapAdapter.swapExactOutput(token == quote, balance - _balance);
-        } else {
-            swapAdapter.swapExactInput(token == base, _balance - balance);
-        }
+        uint256 _balance = token == BASE ? baseBalance(false) : quoteBalance(false);
+        if (balance >= _balance) swapAdapter.swapExactOutput(token == QUOTE, balance - _balance);
+        else swapAdapter.swapExactInput(token == BASE, _balance - balance);
     }
 
     // ** Swapping logic
@@ -188,15 +183,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata
-    )
-        external
-        override
-        notPaused
-        notShutdown
-        onlyAuthorizedPool(key)
-        onlyPoolManager
-        returns (bytes4, BeforeSwapDelta, uint24)
-    {
+    ) external override onlyActive onlyAuthorizedPool(key) onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         return (this.beforeSwap.selector, _beforeSwap(params, key, swapper), 0);
     }
@@ -334,11 +321,12 @@ contract ALM is BaseStrategyHook, ERC20 {
         (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
 
-    function transferFees() external onlyRebalanceAdapter {
+    function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
+        lendingAdapter.syncPositions();
         accumulatedFeeB = 0;
-        base.safeTransfer(treasury, accumulatedFeeB);
+        BASE.safeTransfer(treasury, accumulatedFeeB);
         accumulatedFeeQ = 0;
-        quote.safeTransfer(treasury, accumulatedFeeQ);
+        QUOTE.safeTransfer(treasury, accumulatedFeeQ);
     }
 
     function refreshReserves() external notPaused {
@@ -349,18 +337,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         uint256 ratio = uint256(sqrtPriceNext).div(rebalanceAdapter.sqrtPriceAtLastRebalance());
         uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
-    }
-
-    // ** Helpers
-
-    function baseBalance(bool wrap) public view returns (uint256) {
-        uint256 balance = base.balanceOf(address(this)) - accumulatedFeeB;
-        return wrap ? balance.wrap(bDec) : balance;
-    }
-
-    function quoteBalance(bool wrap) public view returns (uint256) {
-        uint256 balance = quote.balanceOf(address(this)) - accumulatedFeeQ;
-        return wrap ? balance.wrap(qDec) : balance;
     }
 
     // ** Math functions
@@ -374,5 +350,17 @@ contract ALM is BaseStrategyHook, ERC20 {
     function sharePrice() external view returns (uint256) {
         if (totalSupply() == 0) return 0;
         return TVL().div(totalSupply());
+    }
+
+    // ** Helpers
+
+    function baseBalance(bool wrap) public view returns (uint256) {
+        uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
+        return wrap ? balance.wrap(bDec) : balance;
+    }
+
+    function quoteBalance(bool wrap) public view returns (uint256) {
+        uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
+        return wrap ? balance.wrap(qDec) : balance;
     }
 }

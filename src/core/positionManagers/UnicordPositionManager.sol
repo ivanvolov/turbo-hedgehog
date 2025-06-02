@@ -26,7 +26,12 @@ contract UnicordPositionManager is Base, IPositionManager {
 
     uint256 fees;
 
-    constructor(IERC20 _base, IERC20 _quote, uint8 _bDec, uint8 _qDec) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        uint8 _bDec,
+        uint8 _qDec
+    ) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote, _bDec, _qDec) {
         // Intentionally empty as all initialization is handled by the parent Base contract
     }
 
@@ -35,16 +40,16 @@ contract UnicordPositionManager is Base, IPositionManager {
         emit FeesSet(_fees);
     }
 
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        base.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
+    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+        BASE.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
         lendingAdapter.updatePosition(SafeCast.toInt256(deltaQuote), -SafeCast.toInt256(deltaBase), 0, 0);
-        quote.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        quote.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
+    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
         lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
-        base.safeTransfer(address(alm), deltaBase.unwrap(bDec));
+        BASE.safeTransfer(address(alm), deltaBase.unwrap(bDec));
     }
 
     function getSwapFees(bool, int256) external view returns (uint256) {

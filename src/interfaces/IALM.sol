@@ -17,7 +17,25 @@ interface IALM {
     error TVLCapExceeded();
     error NotAValidPositionState();
     error NotMinShares();
+    error ProtocolFeeNotValid();
+    error LiquidityMultiplierNotValid();
+    error TickLowerOutOfBounds();
+    error TickUpperOutOfBounds();
 
+    event StatusSet(uint8 status);
+    event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
+    event TreasurySet(address indexed treasury);
+    event ProtocolParamsSet(
+        uint256 liquidityMultiplier,
+        uint256 protocolFee,
+        uint256 tvlCap,
+        uint256 swapPriceThreshold,
+        int24 tickLowerDelta,
+        int24 tickUpperDelta
+    );
+    event LiquidityUpdated(uint128 newLiquidity);
+    event SqrtPriceUpdated(uint160 newSqrtPrice);
+    event BoundariesUpdated(int24 newTickLower, int24 newTickUpper);
     event Deposit(address indexed to, uint256 amount, uint256 delShares, uint256 TVL, uint256 totalSupply);
     event Withdraw(
         address indexed to,
@@ -38,21 +56,22 @@ interface IALM {
     );
     event HookFee(bytes32 indexed id, address indexed sender, uint128 feeAmount0, uint128 feeAmount1);
 
-    function paused() external view returns (bool);
+    struct Ticks {
+        int24 lower;
+        int24 upper;
+    }
 
-    function shutdown() external view returns (bool);
+    function activeTicks() external view returns (int24 lower, int24 upper);
+
+    function tickDeltas() external view returns (int24 lower, int24 upper);
+
+    function status() external view returns (uint8);
 
     function refreshReserves() external;
 
-    function transferFees() external;
+    function refreshReservesAndTransferFees() external;
 
-    function tickLower() external view returns (int24);
-
-    function tickUpper() external view returns (int24);
-
-    function updateBoundaries(uint160 _sqrtPrice) external;
-
-    function updateLiquidity(uint128 _liquidity) external;
+    function updateLiquidityAndBoundaries(uint160 _sqrtPrice) external returns (uint128 newLiquidity);
 
     function sqrtPriceCurrent() external view returns (uint160);
 
@@ -61,10 +80,4 @@ interface IALM {
     function TVL() external view returns (uint256);
 
     function protocolFee() external view returns (uint256);
-
-    function updateSqrtPrice(uint160 _sqrtPrice) external;
-
-    function baseBalance(bool wrap) external view returns (uint256);
-
-    function quoteBalance(bool wrap) external view returns (uint256);
 }

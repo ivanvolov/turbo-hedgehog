@@ -58,7 +58,7 @@ contract ALMGeneralTest is ALMTestBase {
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
         create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, false, 0, type(uint256).max, 3000, 3000, 0);
+        init_hook(true, false, false, 1e18, 0, type(uint256).max, 3000, 3000, 0);
         approve_accounts();
     }
 
@@ -230,16 +230,10 @@ contract ALMGeneralTest is ALMTestBase {
         assertEq(oracle.price(), 2660201350640229959005, "price should eq");
     }
 
-    function onFlashLoanTwoTokens(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1,
-        bytes calldata data
-    ) public view {
-        assertEq(token0, address(USDC), "token should be USDC");
+    function onFlashLoanTwoTokens(uint256 amount0, uint256 amount1, bytes calldata data) public view {
+        assertEq(address(BASE), address(USDC), "token should be USDC");
         assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
-        assertEq(token1, address(WETH), "token should be WETH");
+        assertEq(address(QUOTE), address(WETH), "token should be WETH");
         assertEq(amount1, 1 ether, "amount should be 1 WETH");
         assertEq(data, "0x3", "data should eq");
         assertEqBalanceState(address(this), amount1, amount0);
@@ -269,29 +263,33 @@ contract ALMGeneralTest is ALMTestBase {
 
     function test_hook_pause() public {
         vm.prank(deployer.addr);
-        hook.setPaused(true);
+        hook.setStatus(1);
 
-        vm.expectRevert(IBase.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.deposit(address(0), 0, 0);
 
         vm.expectRevert(IBase.ContractPaused.selector);
         hook.withdraw(deployer.addr, 0, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(IBase.ContractPaused.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
     }
 
-    function test_hook_shutdown() public {
+    function test_hook_shutdown_allows_withdraw() public {
         vm.prank(deployer.addr);
-        hook.setShutdown(true);
+        hook.setStatus(2);
 
-        vm.expectRevert(IBase.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.deposit(deployer.addr, 0, 0);
 
         vm.prank(address(manager));
-        vm.expectRevert(IBase.ContractShutdown.selector);
+        vm.expectRevert(IBase.ContractNotActive.selector);
         hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+
+        // This is not ContractsNotActive, so it works
+        vm.expectRevert(IALM.NotZeroShares.selector);
+        hook.withdraw(deployer.addr, 0, 0, 0);
     }
 
     function test_TokenWrapperLib_wrap_unwrap_same_wad() public pure {
@@ -369,67 +367,54 @@ contract ALMGeneralTest is ALMTestBase {
     function test_Fuzz_setWeight_valid(uint256 weight) public {
         weight = bound(weight, 0, 1e18);
         vm.prank(deployer.addr);
-        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18, 1e18);
+        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18);
     }
 
     function test_Fuzz_setWeight_invalid(uint256 weight) public {
         vm.assume(weight > 1e18);
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.WeightNotValid.selector);
-        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18, 1e18);
-    }
-
-    function test_Fuzz_setLiquidityMultiplier_valid(uint256 liquidityMultiplier) public {
-        liquidityMultiplier = bound(liquidityMultiplier, 0, 10e18);
-        vm.prank(deployer.addr);
-        rebalanceAdapter.setRebalanceParams(1e18, liquidityMultiplier, 1e18, 1e18);
-    }
-
-    function test_Fuzz_setLiquidityMultiplier_invalid(uint256 liquidityMultiplier) public {
-        vm.assume(liquidityMultiplier > 10e18);
-        vm.prank(deployer.addr);
-        vm.expectRevert(SRebalanceAdapter.LiquidityMultiplierNotValid.selector);
-        rebalanceAdapter.setRebalanceParams(1e18, liquidityMultiplier, 1e18, 1e18);
+        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18);
     }
 
     function test_Fuzz_setLongLeverage_valid(uint256 longLeverage) public {
         longLeverage = bound(longLeverage, 0, 5e18);
         vm.prank(deployer.addr);
-        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, 0);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, 0);
     }
 
     function test_Fuzz_setLongLeverage_invalid(uint256 longLeverage) public {
         vm.assume(longLeverage > 5e18);
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
-        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, 0);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, 0);
     }
 
     function test_Fuzz_setShortLeverage_valid(uint256 shortLeverage) public {
         shortLeverage = bound(shortLeverage, 0, 5e18);
         vm.prank(deployer.addr);
-        rebalanceAdapter.setRebalanceParams(1e18, 1e18, 5e18, shortLeverage);
+        rebalanceAdapter.setRebalanceParams(1e18, 5e18, shortLeverage);
     }
 
     function test_Fuzz_setShortLeverage_invalid(uint256 shortLeverage) public {
         vm.assume(shortLeverage > 5e18);
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
-        rebalanceAdapter.setRebalanceParams(1e18, 1e18, 5e18, shortLeverage);
+        rebalanceAdapter.setRebalanceParams(1e18, 5e18, shortLeverage);
     }
 
     function test_Fuzz_longLeverage_gte_shortLeverage(uint256 longLeverage, uint256 shortLeverage) public {
         longLeverage = bound(longLeverage, 0, 5e18);
         shortLeverage = bound(shortLeverage, 0, longLeverage);
         vm.prank(deployer.addr);
-        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, shortLeverage);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, shortLeverage);
     }
 
     function test_Fuzz_longLeverage_lt_shortLeverage(uint256 longLeverage, uint256 shortLeverage) public {
         vm.assume(shortLeverage > longLeverage);
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
-        rebalanceAdapter.setRebalanceParams(1e18, 1e18, longLeverage, shortLeverage);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, shortLeverage);
     }
 
     function test_Fuzz_setMaxDeviationLong_valid(uint256 maxDevLong) public {
@@ -461,13 +446,26 @@ contract ALMGeneralTest is ALMTestBase {
     function test_Fuzz_setProtocolFee_valid(uint256 protocolFee) public {
         protocolFee = bound(protocolFee, 0, 3e16);
         vm.prank(deployer.addr);
-        hook.setProtocolParams(protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+        hook.setProtocolParams(1e18, protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
     }
 
     function test_Fuzz_setProtocolFee_invalid(uint256 protocolFee) public {
         vm.assume(protocolFee > 1e18);
         vm.prank(deployer.addr);
-        vm.expectRevert(BaseStrategyHook.ProtocolFeeNotValid.selector);
-        hook.setProtocolParams(protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+        vm.expectRevert(IALM.ProtocolFeeNotValid.selector);
+        hook.setProtocolParams(1e18, protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    function test_Fuzz_setLiquidityMultiplier_valid(uint256 liquidityMultiplier) public {
+        liquidityMultiplier = bound(liquidityMultiplier, 0, 10e18);
+        vm.prank(deployer.addr);
+        hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    function test_Fuzz_setLiquidityMultiplier_invalid(uint256 liquidityMultiplier) public {
+        vm.assume(liquidityMultiplier > 10e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(IALM.LiquidityMultiplierNotValid.selector);
+        hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
     }
 }

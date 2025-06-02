@@ -77,12 +77,12 @@ contract LendingAdaptersTest is MorphoTestBase {
         test_payload = "0x2";
         _extraQuoteBefore = QUOTE.balanceOf(testAddress);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
-        flashLoanAdapter.flashLoanSingle(BASE, uint256(1000e18).unwrap(bDec), test_payload);
+        flashLoanAdapter.flashLoanSingle(true, uint256(1000e18).unwrap(bDec), test_payload);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
     }
 
-    function onFlashLoanSingle(IERC20 token, uint256 amount, bytes calldata data) public view {
-        assertEq(address(token), address(BASE), string.concat("token should be ", baseName));
+    function onFlashLoanSingle(bool isBase, uint256 amount, bytes calldata data) public view {
+        assertEq(isBase, true, string.concat("token should be ", baseName));
         assertEq(amount, uint256(1000e18).unwrap(bDec), string.concat("amount should be 1000 ", baseName));
         assertEq(data, test_payload, "data should eq");
         assertEqBalanceState(address(this), _extraQuoteBefore, amount);
@@ -124,26 +124,12 @@ contract LendingAdaptersTest is MorphoTestBase {
         _extraQuoteBefore = QUOTE.balanceOf(testAddress);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
         test_payload = "0x3";
-        flashLoanAdapter.flashLoanTwoTokens(
-            BASE,
-            uint256(1000e18).unwrap(bDec),
-            QUOTE,
-            uint256(100e18).unwrap(qDec),
-            test_payload
-        );
+        flashLoanAdapter.flashLoanTwoTokens(uint256(1000e18).unwrap(bDec), uint256(100e18).unwrap(qDec), test_payload);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
     }
 
-    function onFlashLoanTwoTokens(
-        IERC20 token0,
-        uint256 amount0,
-        IERC20 token1,
-        uint256 amount1,
-        bytes calldata data
-    ) public view {
-        assertEq(address(token0), address(BASE), string.concat("token should be ", baseName));
+    function onFlashLoanTwoTokens(uint256 amount0, uint256 amount1, bytes calldata data) public view {
         assertEq(amount0, uint256(1000e18).unwrap(bDec), string.concat("amount should be 1000 ", baseName));
-        assertEq(address(token1), address(QUOTE), string.concat("token should be ", quoteName));
         assertEq(amount1, uint256(100e18).unwrap(qDec), string.concat("amount should be 100 ", quoteName));
         assertEq(data, test_payload, "data should eq");
         assertEqBalanceState(address(this), _extraQuoteBefore + amount1, amount0);

@@ -52,15 +52,15 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         uint8 _qDec,
         IUniversalRouter _router,
         IPermit2 _permit2
-    ) Base(msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
         router = _router;
         permit2 = _permit2;
 
-        _base.forceApprove(address(permit2), type(uint256).max);
-        permit2.approve(address(_base), address(router), type(uint160).max, type(uint48).max);
+        BASE.forceApprove(address(permit2), type(uint256).max);
+        permit2.approve(address(BASE), address(router), type(uint160).max, type(uint48).max);
 
-        _quote.forceApprove(address(permit2), type(uint256).max);
-        permit2.approve(address(_quote), address(router), type(uint160).max, type(uint48).max);
+        QUOTE.forceApprove(address(permit2), type(uint256).max);
+        permit2.approve(address(QUOTE), address(router), type(uint160).max, type(uint48).max);
     }
 
     function setRoutesOperator(address _routesOperator) external onlyOwner {
@@ -71,7 +71,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     /**
      * @notice Sets the swap route for a given swap key based on input/output and base/quote direction.
      * @param isExactInput Indicates whether the swap is for an exact input amount (true) or an exact output amount (false).
-     * @param isBaseToQuote Indicates the direction of the swap: true for base-to-quote, false for quote-to-base.
+     * @param isBaseToQuote Indicates the direction of the swap: true for base-to-QUOTE, false for quote-to-BASE.
      * @param _swapRoute An array representing path IDs and their corresponding multipliers.
      * For example, [1, 35e18, 3] means 35% of the amount is routed through path 1 and the remaining 65% through path 3.
      * The array must have an odd number of elements, where even indices are path IDs and odd indices are multipliers (in 1e18 precision).
@@ -103,8 +103,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
 
     function swapExactInput(bool isBaseToQuote, uint256 amountIn) external onlyModule returns (uint256 amountOut) {
         if (amountIn == 0) return 0;
-        IERC20 tokenIn = isBaseToQuote ? base : quote;
-        IERC20 tokenOut = isBaseToQuote ? quote : base;
+        IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
+        IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
 
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, true, amountIn);
@@ -115,8 +115,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
 
     function swapExactOutput(bool isBaseToQuote, uint256 amountOut) external onlyModule returns (uint256 amountIn) {
         if (amountOut == 0) return 0;
-        IERC20 tokenIn = isBaseToQuote ? base : quote;
-        IERC20 tokenOut = isBaseToQuote ? quote : base;
+        IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
+        IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
 
         amountIn = tokenIn.balanceOf(msg.sender);
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
@@ -189,7 +189,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
                 // We use ExactInputParams structure for both exact input and output swaps
                 // since the parameter structure is identical.
                 IV4Router.ExactInputParams({
-                    currencyIn: Currency.wrap(address(isBaseToQuote == isExactInput ? base : quote)),
+                    currencyIn: Currency.wrap(address(isBaseToQuote == isExactInput ? BASE : QUOTE)),
                     path: path,
                     amountIn: uint128(amount),
                     amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max
@@ -213,10 +213,10 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         }
 
         params[1] = abi.encode(
-            Currency.wrap(address(isBaseToQuote ? base : quote)),
+            Currency.wrap(address(isBaseToQuote ? BASE : QUOTE)),
             isExactInput ? amount : type(uint256).max
         );
-        params[2] = abi.encode(Currency.wrap(address(isBaseToQuote ? quote : base)), isExactInput ? 0 : amount);
+        params[2] = abi.encode(Currency.wrap(address(isBaseToQuote ? QUOTE : BASE)), isExactInput ? 0 : amount);
 
         return abi.encode(abi.encodePacked(swapAction, uint8(Actions.SETTLE_ALL), uint8(Actions.TAKE_ALL)), params);
     }

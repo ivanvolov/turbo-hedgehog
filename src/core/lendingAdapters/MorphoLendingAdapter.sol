@@ -47,14 +47,14 @@ contract MorphoLendingAdapter is LendingBase {
     ) LendingBase(_merklRewardsDistributor, _base, _quote, _bDec, _qDec) {
         morpho = _morpho;
 
-        base.forceApprove(address(morpho), type(uint256).max);
-        quote.forceApprove(address(morpho), type(uint256).max);
+        BASE.forceApprove(address(morpho), type(uint256).max);
+        QUOTE.forceApprove(address(morpho), type(uint256).max);
         if (address(_earnQuote) != address(0) && address(_earnBase) != address(0)) {
             isEarn = true;
             earnQuote = _earnQuote;
             earnBase = _earnBase;
-            base.forceApprove(address(earnBase), type(uint256).max);
-            quote.forceApprove(address(earnQuote), type(uint256).max);
+            BASE.forceApprove(address(earnBase), type(uint256).max);
+            QUOTE.forceApprove(address(earnQuote), type(uint256).max);
         } else {
             isEarn = false;
             longMId = _longMId;
@@ -99,12 +99,12 @@ contract MorphoLendingAdapter is LendingBase {
         return uint256(p.collateral).wrap(qDec);
     }
 
-    function borrowLong(uint256 amount) public override onlyModule notPaused notShutdown isBorrowMode {
+    function borrowLong(uint256 amount) public override onlyModule onlyActive isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
     }
 
     function repayLong(uint256 amount) public override onlyModule notPaused isBorrowMode {
-        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+        BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
     }
 
@@ -114,8 +114,8 @@ contract MorphoLendingAdapter is LendingBase {
             morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
     }
 
-    function addCollateralLong(uint256 amount) public override onlyModule notPaused notShutdown {
-        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+    function addCollateralLong(uint256 amount) public override onlyModule onlyActive {
+        QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
     }
@@ -134,12 +134,12 @@ contract MorphoLendingAdapter is LendingBase {
         return uint256(p.collateral).wrap(bDec);
     }
 
-    function borrowShort(uint256 amount) public override onlyModule notPaused notShutdown isBorrowMode {
+    function borrowShort(uint256 amount) public override onlyModule onlyActive isBorrowMode {
         morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
     }
 
     function repayShort(uint256 amount) public override onlyModule notPaused isBorrowMode {
-        quote.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
+        QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
         morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
     }
 
@@ -154,8 +154,8 @@ contract MorphoLendingAdapter is LendingBase {
             );
     }
 
-    function addCollateralShort(uint256 amount) public override onlyModule notPaused notShutdown {
-        base.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
+    function addCollateralShort(uint256 amount) public override onlyModule onlyActive {
+        BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
         if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
         else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");
     }
