@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // ** libraries
 import {ALMMathLib} from "../libraries/ALMMathLib.sol";
@@ -16,7 +17,7 @@ import {Base} from "./base/Base.sol";
 // ** interfaces
 import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
 
-contract SRebalanceAdapter is Base, IRebalanceAdapter {
+contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
     error WeightNotValid();
@@ -170,7 +171,7 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         needRebalance = block.timestamp >= triggerTime;
     }
 
-    function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator {
+    function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator nonReentrant {
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();

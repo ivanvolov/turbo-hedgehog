@@ -14,6 +14,7 @@ import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // ** libraries
 import {ALMMathLib} from "./libraries/ALMMathLib.sol";
@@ -26,7 +27,7 @@ import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 /// @title ALM
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
-contract ALM is BaseStrategyHook, ERC20 {
+contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
     using TokenWrapperLib for uint256;
@@ -64,7 +65,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         address to,
         uint256 amountIn,
         uint256 minShares
-    ) external onlyActive returns (uint256 sharesMinted) {
+    ) external onlyActive nonReentrant returns (uint256 sharesMinted) {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         lendingAdapter.syncPositions();
@@ -86,7 +87,12 @@ contract ALM is BaseStrategyHook, ERC20 {
         emit Deposit(to, amountIn, sharesMinted, TVL2, totalSupply());
     }
 
-    function withdraw(address to, uint256 sharesOut, uint256 minAmountOutB, uint256 minAmountOutQ) external notPaused {
+    function withdraw(
+        address to,
+        uint256 sharesOut,
+        uint256 minAmountOutB,
+        uint256 minAmountOutQ
+    ) external notPaused nonReentrant {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (sharesOut == 0) revert NotZeroShares();
         lendingAdapter.syncPositions();
@@ -183,7 +189,15 @@ contract ALM is BaseStrategyHook, ERC20 {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata
-    ) external override onlyActive onlyAuthorizedPool(key) onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
+    )
+        external
+        override
+        onlyActive
+        onlyAuthorizedPool(key)
+        onlyPoolManager
+        nonReentrant
+        returns (bytes4, BeforeSwapDelta, uint24)
+    {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         return (this.beforeSwap.selector, _beforeSwap(params, key, swapper), 0);
     }
@@ -316,7 +330,7 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
-    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
+    function quoteSwap(bool zeroForOne, int256 amountSpecified) external view returns (uint256 token0, uint256 token1) {
         (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(amountSpecified, zeroForOne);
         (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
@@ -327,10 +341,6 @@ contract ALM is BaseStrategyHook, ERC20 {
         BASE.safeTransfer(treasury, accumulatedFeeB);
         accumulatedFeeQ = 0;
         QUOTE.safeTransfer(treasury, accumulatedFeeQ);
-    }
-
-    function refreshReserves() external notPaused {
-        lendingAdapter.syncPositions();
     }
 
     function checkSwapDeviations(uint160 sqrtPriceNext) internal view {
@@ -354,12 +364,12 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     // ** Helpers
 
-    function baseBalance(bool wrap) public view returns (uint256) {
+    function baseBalance(bool wrap) internal view returns (uint256) {
         uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
         return wrap ? balance.wrap(bDec) : balance;
     }
 
-    function quoteBalance(bool wrap) public view returns (uint256) {
+    function quoteBalance(bool wrap) internal view returns (uint256) {
         uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
         return wrap ? balance.wrap(qDec) : balance;
     }

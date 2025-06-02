@@ -67,8 +67,6 @@ interface IALM {
 
     function status() external view returns (uint8);
 
-    function refreshReserves() external;
-
     function refreshReservesAndTransferFees() external;
 
     function updateLiquidityAndBoundaries(uint160 _sqrtPrice) external returns (uint128 newLiquidity);
