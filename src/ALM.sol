@@ -18,7 +18,7 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 // ** libraries
 import {ALMMathLib} from "./libraries/ALMMathLib.sol";
 import {TokenWrapperLib} from "./libraries/TokenWrapperLib.sol";
-import {CurrencySettlerSafe} from "./libraries/CurrencySettlerSafe.sol";
+import {CurrencySettler} from "./libraries/CurrencySettler.sol";
 
 // ** contracts
 import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
@@ -28,7 +28,7 @@ import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 /// @custom:contact vivan.volovik@gmail.com
 contract ALM is BaseStrategyHook, ERC20 {
     using PoolIdLibrary for PoolKey;
-    using CurrencySettlerSafe for Currency;
+    using CurrencySettler for Currency;
     using TokenWrapperLib for uint256;
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;

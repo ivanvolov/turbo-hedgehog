@@ -13,7 +13,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {CurrencySettlerSafe} from "@src/libraries/CurrencySettlerSafe.sol";
+import {CurrencySettler} from "@src/libraries/CurrencySettler.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
 // ** libraries
@@ -29,7 +29,7 @@ import {ALM} from "@src/ALM.sol";
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
 contract ALMControl is BaseHook, ERC20 {
-    using CurrencySettlerSafe for Currency;
+    using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
     using PRBMathUD60x18 for uint256;
