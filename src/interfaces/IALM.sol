@@ -22,7 +22,7 @@ interface IALM {
     error TickLowerOutOfBounds(int24 tick);
     error TickUpperOutOfBounds(int24 tick);
 
-    event StatusSet(uint8 status);
+    event StatusSet(uint8 indexed status);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
     event TreasurySet(address indexed treasury);
     event ProtocolParamsSet(

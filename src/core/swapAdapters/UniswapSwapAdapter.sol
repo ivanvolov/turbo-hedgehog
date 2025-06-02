@@ -26,9 +26,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     error InvalidProtocolType();
     error NotRoutesOperator(address account);
 
-    event RoutesOperatorSet(address routesOperator);
-    event DefaultSwapPath(uint256 swapRouteId, uint8 protocolType, bytes input);
-    event SwapRouteSet(uint8 swapKey, uint256[] swapRoute);
+    event RoutesOperatorSet(address indexed routesOperator);
+    event SwapPathSet(uint256 indexed swapRouteId, uint8 indexed protocolType, bytes input);
+    event SwapRouteSet(uint8 indexed swapKey, uint256[] swapRoute);
 
     using SafeERC20 for IERC20;
     using PRBMathUD60x18 for uint256;
@@ -98,7 +98,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
      */
     function setSwapPath(uint256 _swapPathId, uint8 _protocolType, bytes calldata _input) external onlyRoutesOperator {
         swapPaths[_swapPathId] = SwapPath({protocolType: _protocolType, input: _input});
-        emit DefaultSwapPath(_swapPathId, _protocolType, _input);
+        emit SwapPathSet(_swapPathId, _protocolType, _input);
     }
 
     function swapExactInput(bool isBaseToQuote, uint256 amountIn) external onlyModule returns (uint256 amountOut) {

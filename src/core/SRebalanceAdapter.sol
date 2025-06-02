@@ -30,12 +30,12 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     event Rebalance(
         uint256 indexed priceThreshold,
         uint256 indexed auctionTriggerTime,
-        uint256 slippage,
+        uint256 indexed slippage,
         uint128 liquidity,
         uint256 oraclePriceAtRebalance,
         uint160 sqrtPriceAtRebalance
     );
-    event LastRebalanceSnapshotSet(uint256 indexed oraclePrice, uint160 indexed sqrtPrice, uint256 indexed timestamp);
+    event LastRebalanceSnapshotSet(uint256 oraclePrice, uint160 sqrtPrice, uint256 timestamp);
     event RebalanceConstraintsSet(
         uint256 priceThreshold,
         uint256 timeThreshold,
