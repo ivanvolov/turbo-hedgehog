@@ -169,8 +169,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     /// @return priceThreshold  The current price threshold for the price based rebalance
     function isPriceRebalance() public view returns (bool needRebalance, uint256 priceThreshold) {
         uint256 oraclePrice = oracle.price();
-        uint256 cachedRatio = oraclePrice.div(oraclePriceAtLastRebalance);
-        priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
+        priceThreshold = oraclePrice > oraclePriceAtLastRebalance
+            ? oraclePrice.div(oraclePriceAtLastRebalance)
+            : oraclePriceAtLastRebalance.div(oraclePrice);
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 

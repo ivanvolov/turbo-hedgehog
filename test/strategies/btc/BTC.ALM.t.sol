@@ -62,7 +62,7 @@ contract BTCALMTest is ALMTestBase {
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
-            rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 2e17, 2e17); // 0.2 (2%), 0.2 (2%)
+            rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 2e17, 2e17); // 0.2 (2%), 0.2 (2%)
             vm.stopPrank();
         }
         approve_accounts();

@@ -299,8 +299,9 @@ contract ALM is BaseStrategyHook, ERC20 {
     }
 
     function checkSwapDeviations(uint160 sqrtPriceNext) internal view {
-        uint256 ratio = uint256(sqrtPriceNext).div(rebalanceAdapter.sqrtPriceAtLastRebalance());
-        uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
+        uint256 sqrtPriceAtLastRebalance = rebalanceAdapter.sqrtPriceAtLastRebalance();
+        uint256 priceThreshold = uint256(sqrtPriceNext).div(sqrtPriceAtLastRebalance);
+        if (priceThreshold < ALMMathLib.WAD) priceThreshold = sqrtPriceAtLastRebalance.div(sqrtPriceNext);
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
