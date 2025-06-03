@@ -170,7 +170,9 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     function isPriceRebalance() public view returns (bool needRebalance, uint256 priceThreshold) {
         uint256 oraclePrice = oracle.price();
         uint256 cachedRatio = oraclePrice.div(oraclePriceAtLastRebalance);
-        priceThreshold = oraclePrice > oraclePriceAtLastRebalance ? cachedRatio - 1e18 : 1e18 - cachedRatio;
+        priceThreshold = oraclePrice > oraclePriceAtLastRebalance
+            ? cachedRatio.div(ALMMathLib.WAD)
+            : ALMMathLib.WAD.div(cachedRatio);
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 
