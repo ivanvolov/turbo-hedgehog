@@ -226,7 +226,8 @@ contract ALM is BaseStrategyHook, ERC20 {
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
 
-            uint256 protocolFeeAmount = fee.mul(protocolFee);
+            // uint256 protocolFeeAmount = fee.mul(protocolFee);
+            uint256 protocolFeeAmount = 0;
             if (params.amountSpecified > 0) {
                 if (isInvertedPool) {
                     accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
@@ -284,7 +285,8 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             key.currency1.take(poolManager, address(this), token1In, false);
 
-            uint256 protocolFeeAmount = fee.mul(protocolFee);
+            // uint256 protocolFeeAmount = fee.mul(protocolFee);
+            uint256 protocolFeeAmount = 0;
             if (params.amountSpecified > 0) {
                 if (isInvertedPool) {
                     accumulatedFeeQ += protocolFeeAmount;
