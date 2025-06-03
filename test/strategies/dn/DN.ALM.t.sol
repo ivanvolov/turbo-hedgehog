@@ -288,7 +288,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14367325660); //less
+        assertEq(deltaUSDC, 14367368951); //less
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);

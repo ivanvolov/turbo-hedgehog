@@ -181,7 +181,23 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
+    function transferFees() external onlyRebalanceAdapter {
+        accumulatedFeeB = 0;
+        base.safeTransfer(treasury, accumulatedFeeB);
+        accumulatedFeeQ = 0;
+        quote.safeTransfer(treasury, accumulatedFeeQ);
+    }
+
+    function refreshReserves() external notPaused {
+        lendingAdapter.syncPositions();
+    }
+
     // ** Swapping logic
+
+    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
+        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(amountSpecified, zeroForOne);
+        (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
+    }
 
     function beforeSwap(
         address swapper,
@@ -224,36 +240,7 @@ contract ALM is BaseStrategyHook, ERC20 {
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
 
-            uint256 protocolFeeAmount = fee.mul(protocolFee);
-            if (params.amountSpecified > 0) {
-                if (isInvertedPool) {
-                    accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
-                    positionManager.positionAdjustmentPriceUp(
-                        (token0In - protocolFeeAmount).wrap(bDec),
-                        token1Out.wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token1Out.wrap(bDec),
-                        (token0In - protocolFeeAmount).wrap(qDec)
-                    );
-                }
-            } else {
-                if (isInvertedPool) {
-                    accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        (token0In - protocolFeeAmount).wrap(bDec),
-                        (token1Out).wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token1Out.wrap(bDec),
-                        (token0In - protocolFeeAmount).wrap(qDec)
-                    );
-                }
-            }
+            updatePosition(fee.mul(protocolFee), token0In, token1Out, isInvertedPool);
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), token1Out, false);
@@ -282,36 +269,7 @@ contract ALM is BaseStrategyHook, ERC20 {
 
             key.currency1.take(poolManager, address(this), token1In, false);
 
-            uint256 protocolFeeAmount = fee.mul(protocolFee);
-            if (params.amountSpecified > 0) {
-                if (isInvertedPool) {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token0Out.wrap(bDec),
-                        (token1In - protocolFeeAmount).wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        (token1In - protocolFeeAmount).wrap(bDec),
-                        token0Out.wrap(qDec)
-                    );
-                }
-            } else {
-                if (isInvertedPool) {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token0Out.wrap(bDec),
-                        (token1In - protocolFeeAmount).wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        (token1In - protocolFeeAmount).wrap(bDec),
-                        token0Out.wrap(qDec)
-                    );
-                }
-            }
+            updatePosition(fee.mul(protocolFee), token1In, token0Out, !isInvertedPool);
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
@@ -329,20 +287,15 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
-    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
-        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(amountSpecified, zeroForOne);
-        (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
-    }
-
-    function transferFees() external onlyRebalanceAdapter {
-        accumulatedFeeB = 0;
-        base.safeTransfer(treasury, accumulatedFeeB);
-        accumulatedFeeQ = 0;
-        quote.safeTransfer(treasury, accumulatedFeeQ);
-    }
-
-    function refreshReserves() external notPaused {
-        lendingAdapter.syncPositions();
+    function updatePosition(uint256 protocolFeeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
+        tokenIn -= protocolFeeAmount; // cut protocol fee from the calculated swap amounts
+        if (up) {
+            accumulatedFeeB += protocolFeeAmount;
+            positionManager.positionAdjustmentPriceUp(tokenIn.wrap(bDec), tokenOut.wrap(qDec));
+        } else {
+            accumulatedFeeQ += protocolFeeAmount;
+            positionManager.positionAdjustmentPriceDown(tokenOut.wrap(bDec), tokenIn.wrap(qDec));
+        }
     }
 
     function checkSwapDeviations(uint160 sqrtPriceNext) internal view {

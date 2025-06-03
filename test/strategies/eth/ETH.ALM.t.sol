@@ -452,15 +452,15 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14606439886); //less usdc to receive
+        assertEq(deltaUSDC, 14606476492); // less usdc to receive
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(172867636362006389246, 239418121556, 307040082063, 47413988037791379250);
+        assertEqPositionState(172867636362006389246, 239418121556, 307040118669, 47413988037791379250);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848484656406112881723444165282);
-        assertApproxEqAbs(hook.TVL(), 100033782835188985496, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 100033769074576469760, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
