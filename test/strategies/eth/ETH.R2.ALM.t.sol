@@ -20,7 +20,7 @@ contract ETHR2ALMTest is ALMTestBase {
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 15e14; //0.15%
-    uint256 fee = 5e14; //0.05%
+    uint24 fee = 500; //0.05%
 
     IERC20 WETH = IERC20(TestLib.WETH);
     IERC20 USDT = IERC20(TestLib.USDT);

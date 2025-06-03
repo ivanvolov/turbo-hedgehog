@@ -37,7 +37,7 @@ contract ETHALMTest is MorphoTestBase {
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 2e18;
     uint256 slippage = 15e14; //0.15%
-    uint256 fee = 5e14; //0.05%
+    uint24 fee = 500; //0.05%
 
     IERC20 WETH = IERC20(TestLib.WETH);
     IERC20 USDC = IERC20(TestLib.USDC);
@@ -397,7 +397,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdcToSwap = 14541602182;
 
@@ -422,7 +422,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 wethToGetFSwap = 5438946754462608168;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -446,7 +446,7 @@ contract ETHALMTest is MorphoTestBase {
         uint256 wethToSwap = 5521148324215010000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -466,7 +466,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdcToGetFSwap = 14614493789;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -490,7 +490,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
         test_deposit_rebalance();
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         hook.setProtocolParams(
             20 * 1e16, // 20% cut from trading fees
             hook.tvlCap(),
@@ -527,7 +527,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_out_protocol_fees() public {
         test_deposit_rebalance();
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         hook.setProtocolParams(
             20 * 1e16, // 20% from fees
             hook.tvlCap(),
@@ -560,7 +560,7 @@ contract ETHALMTest is MorphoTestBase {
         uint256 wethToSwap = 5521148324215010000;
         test_deposit_rebalance();
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         hook.setProtocolParams(
             20 * 1e16, // 20% from fees
             hook.tvlCap(),
@@ -589,7 +589,7 @@ contract ETHALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_down_out_protocol_fees() public {
         test_deposit_rebalance();
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         hook.setProtocolParams(
             20 * 1e16, // 3% from fees
             hook.tvlCap(),

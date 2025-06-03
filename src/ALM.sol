@@ -241,16 +241,16 @@ contract ALM is BaseStrategyHook, ERC20 {
                 }
             } else {
                 if (isInvertedPool) {
-                    accumulatedFeeQ += protocolFeeAmount;
+                    accumulatedFeeB += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceUp(
-                        token0In.wrap(bDec),
-                        (token1Out + protocolFeeAmount).wrap(qDec)
+                        (token0In - protocolFeeAmount).wrap(bDec),
+                        (token1Out).wrap(qDec)
                     );
                 } else {
-                    accumulatedFeeB += protocolFeeAmount;
+                    accumulatedFeeQ += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceDown(
-                        (token1Out + protocolFeeAmount).wrap(bDec),
-                        (token0In).wrap(qDec)
+                        token1Out.wrap(bDec),
+                        (token0In - protocolFeeAmount).wrap(qDec)
                     );
                 }
             }
@@ -299,16 +299,16 @@ contract ALM is BaseStrategyHook, ERC20 {
                 }
             } else {
                 if (isInvertedPool) {
-                    accumulatedFeeB += protocolFeeAmount;
+                    accumulatedFeeQ += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceDown(
-                        (token0Out + protocolFeeAmount).wrap(bDec),
-                        token1In.wrap(qDec)
+                        token0Out.wrap(bDec),
+                        (token1In - protocolFeeAmount).wrap(qDec)
                     );
                 } else {
-                    accumulatedFeeQ += protocolFeeAmount;
+                    accumulatedFeeB += protocolFeeAmount;
                     positionManager.positionAdjustmentPriceUp(
-                        token1In.wrap(bDec),
-                        (token0Out + protocolFeeAmount).wrap(qDec)
+                        (token1In - protocolFeeAmount).wrap(bDec),
+                        token0Out.wrap(qDec)
                     );
                 }
             }

@@ -22,7 +22,7 @@ contract BTCALMTest is ALMTestBase {
     uint256 weight = 55e16;
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 7e15;
-    uint256 fee = 5e14;
+    uint24 fee = 500; //0.05%
 
     IERC20 BTC = IERC20(TestLib.cbBTC);
     IERC20 USDC = IERC20(TestLib.USDC);

@@ -44,7 +44,7 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 weight = 50e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 10e14; //0.1%
-    uint256 fee = 1e14; //0.05%
+    uint24 fee = 100; //0.01%
 
     IERC20 DAI = IERC20(TestLib.DAI);
     IERC20 USDC = IERC20(TestLib.USDC);

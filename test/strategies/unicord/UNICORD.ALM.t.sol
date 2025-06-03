@@ -44,7 +44,7 @@ contract UNICORDALMTest is MorphoTestBase {
     uint256 weight = 50e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 30e14; //0.3%
-    uint256 fee = 1e14; //0.05%
+    uint24 fee = 100; //0.01%
 
     IERC20 USDT = IERC20(TestLib.USDT);
     IERC20 USDC = IERC20(TestLib.USDC);
@@ -243,7 +243,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdcToSwap = 17897776432;
 
@@ -266,7 +266,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdtToGetFSwap = 4626903915919660000;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
@@ -291,7 +291,7 @@ contract UNICORDALMTest is MorphoTestBase {
         uint256 usdtToSwap = 4696832668752530000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         deal(address(USDT), address(swapper.addr), usdtToSwap);
         assertEqBalanceState(swapper.addr, usdtToSwap, 0);
@@ -312,7 +312,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdcToGetFSwap = 17987491283;
         (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));

@@ -24,7 +24,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     uint256 weight = 45e16;
     uint256 liquidityMultiplier = 2e18;
     uint256 slippage = 2e15;
-    uint256 fee = 5e14;
+    uint24 fee = 500; //0.05%
 
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
@@ -237,7 +237,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         uint256 usdcToSwap = 14171775946;
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -258,7 +258,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 wethToGetFSwap = 5295866784427776090;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
@@ -282,7 +282,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         uint256 wethToSwap = 5436304955762950000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -302,7 +302,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdcToGetFSwap = 14374512916;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
@@ -350,7 +350,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         IPositionManagerStandard(address(positionManager)).setFees(fee);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
 
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         hook.setProtocolParams(
             20 * 1e16, // 20% from fees
             hook.tvlCap(),

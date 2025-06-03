@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -11,6 +9,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {SwapMath} from "v4-core/libraries/SwapMath.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -185,15 +184,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         if (amountSpecified > 0) {
             tokenOut = uint256(amountSpecified);
             sqrtPriceNext = ALMMathLib.getNextSqrtPriceFromOutput(sqrtPriceCurrent, liquidity, tokenOut, zeroForOne);
-            console.log(">> (1) sqrtPriceNext %s", sqrtPriceNext);
-            sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, false, sqrtPriceCurrent, liquidity, tokenOut);
-            console.log(">> (2) sqrtPriceNext %s", sqrtPriceNext);
 
-            tokenIn = zeroForOne
-                ? ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity)
-                : ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = tokenIn.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
-            tokenIn += fee;
+            (, tokenIn, , fee) = SwapMath.computeSwapStep(
+                sqrtPriceCurrent,
+                sqrtPriceNext,
+                liquidity,
+                amountSpecified,
+                positionManager.getSwapFees(zeroForOne, amountSpecified)
+            );
 
             beforeSwapDelta = toBeforeSwapDelta(
                 -SafeCast.toInt128(tokenOut), // specified token = zeroForOne ? token1 : token0
@@ -204,15 +202,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 tokenIn = uint256(-amountSpecified);
             }
             sqrtPriceNext = ALMMathLib.getNextSqrtPriceFromInput(sqrtPriceCurrent, liquidity, tokenIn, zeroForOne);
-            console.log(">> (3) sqrtPriceNext %s", sqrtPriceNext);
-            sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, true, sqrtPriceCurrent, liquidity, tokenIn);
-            console.log(">> (4) sqrtPriceNext %s", sqrtPriceNext);
 
-            tokenOut = zeroForOne
-                ? ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity)
-                : ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = tokenOut.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
-            tokenOut -= fee;
+            (, , tokenOut, fee) = SwapMath.computeSwapStep(
+                sqrtPriceCurrent,
+                sqrtPriceNext,
+                liquidity,
+                amountSpecified,
+                positionManager.getSwapFees(zeroForOne, amountSpecified)
+            );
 
             beforeSwapDelta = toBeforeSwapDelta(
                 SafeCast.toInt128(tokenIn), // specified token = zeroForOne ? token0 : token1
