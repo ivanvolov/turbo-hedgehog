@@ -17,6 +17,7 @@ interface IALM {
     error TVLCapExceeded();
     error NotAValidPositionState();
     error NotMinShares();
+    error TickDeltasNotValid();
 
     event Deposit(address indexed to, uint256 amount, uint256 delShares, uint256 TVL, uint256 totalSupply);
     event Withdraw(

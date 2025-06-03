@@ -111,6 +111,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         uint256 _swapPriceThreshold
     ) external onlyOwner {
         if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
+        if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
         protocolFee = _protocolFee;
         tvlCap = _tvlCap;
         tickUpperDelta = _tickUpperDelta;
@@ -165,8 +166,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     function _updateBoundaries(uint160 _sqrtPrice) internal {
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
-        tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
-        tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
+        tickLower = tick - tickLowerDelta;
+        tickUpper = tick + tickLowerDelta;
+        if (tickLower > tickUpper) (tickLower, tickUpper) = (tickUpper, tickLower);
 
         emit BoundariesUpdated(tickLower, tickUpper);
     }
