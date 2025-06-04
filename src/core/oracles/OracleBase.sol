@@ -35,6 +35,21 @@ abstract contract OracleBase is IOracle {
         require(_price > 0, "O4");
     }
 
+    /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
+    function test_price() external view returns (uint256 _price) {
+        (uint256 _priceQuote, uint256 _priceBase) = _fetchAssetsPrices();
+
+        uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
+        _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
+
+        {
+            uint256 decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
+            uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+            // _price = ratio.div(_price);
+            _price = _price.div(ratio); // TODO: it either always this or depends on isInvertPool
+        }
+    }
+
     uint256 constant WAD = 1e18;
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
         (uint256 _priceQuote, uint256 _priceBase) = _fetchAssetsPrices();
