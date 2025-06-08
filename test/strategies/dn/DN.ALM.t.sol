@@ -176,7 +176,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         test_deposit_rebalance();
 
         uint256 wethToGetFSwap = 5295866784427776090;
-        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+        (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(wethToGetFSwap));
         assertApproxEqAbs(usdcToSwapQ, 14171775946, 1);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -216,7 +216,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         test_deposit_rebalance();
 
         uint256 usdcToGetFSwap = 14374512916;
-        (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        (, uint256 wethToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
         assertEq(wethToSwapQ, 5436304955762642991);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -261,7 +261,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 wethToGetFSwap = 5295866784427776090;
-        (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+        (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(wethToGetFSwap));
         assertEq(usdcToSwapQ, 14178861833); //more
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -305,7 +305,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         IPositionManagerStandard(address(positionManager)).setFees(500);
 
         uint256 usdcToGetFSwap = 14374512916;
-        (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+        (, uint256 wethToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
         assertEq(wethToSwapQ, 5439023108240524312); //more
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -465,7 +465,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             );
 
             uint256 usdcToGetFSwap = 20000e6; //20k USDC
-            (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
+            (, uint256 wethToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -567,7 +567,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             );
 
             uint256 wethToGetFSwap = 5e18;
-            (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
+            (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(wethToGetFSwap));
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();

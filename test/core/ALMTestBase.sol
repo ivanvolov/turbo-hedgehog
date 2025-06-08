@@ -13,6 +13,7 @@ import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -478,6 +479,11 @@ abstract contract ALMTestBase is Deployers {
     }
 
     // --- Uniswap V4 --- //
+
+    function _quoteSwap(bool zeroForOne, int256 amount) internal returns (uint256, uint256) {
+        uint160 sqrtPriceLimitX96 = zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1;
+        return hook.quoteSwap(zeroForOne, amount, sqrtPriceLimitX96);
+    }
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
         (int256 delta0, int256 delta1) = __swap(zeroForOne, amount, _key);

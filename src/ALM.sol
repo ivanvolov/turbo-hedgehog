@@ -194,8 +194,12 @@ contract ALM is BaseStrategyHook, ERC20 {
 
     // ** Swapping logic
 
-    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
-        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(amountSpecified, zeroForOne);
+    function quoteSwap(
+        bool zeroForOne,
+        int256 amountSpecified,
+        uint160 sqrtPriceLimitX96
+    ) public view returns (uint256 token0, uint256 token1) {
+        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(zeroForOne, amountSpecified, sqrtPriceLimitX96);
         (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
 
@@ -232,27 +236,27 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token0In,
                 uint256 token1Out,
                 uint160 sqrtPriceNext,
-                uint256 fee
-            ) = getDeltas(params.amountSpecified, params.zeroForOne);
+                uint256 feeAmount
+            ) = getDeltas(params.zeroForOne, params.amountSpecified, params.sqrtPriceLimitX96);
             checkSwapDeviations(sqrtPriceNext);
 
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
 
-            updatePosition(fee.mul(protocolFee), token0In, token1Out, isInvertedPool);
+            updatePosition(feeAmount, token0In, token1Out, isInvertedPool);
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), token1Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
 
-            emit HookFee(authorizedPool, swapper, SafeCast.toUint128(fee), 0);
+            emit HookFee(authorizedPool, swapper, SafeCast.toUint128(feeAmount), 0);
             emit HookSwap(
                 authorizedPool,
                 swapper,
                 SafeCast.toInt128(token0In),
                 SafeCast.toInt128(token1Out),
-                SafeCast.toUint128(fee),
+                SafeCast.toUint128(feeAmount),
                 0
             );
             return beforeSwapDelta;
@@ -263,38 +267,38 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token1In,
                 uint256 token0Out,
                 uint160 sqrtPriceNext,
-                uint256 fee
-            ) = getDeltas(params.amountSpecified, params.zeroForOne);
+                uint256 feeAmount
+            ) = getDeltas(params.zeroForOne, params.amountSpecified, params.sqrtPriceLimitX96);
             checkSwapDeviations(sqrtPriceNext);
 
             key.currency1.take(poolManager, address(this), token1In, false);
 
-            updatePosition(fee.mul(protocolFee), token1In, token0Out, !isInvertedPool);
+            updatePosition(feeAmount, token1In, token0Out, !isInvertedPool);
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
 
-            emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(fee));
+            emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(feeAmount));
             emit HookSwap(
                 authorizedPool,
                 swapper,
                 SafeCast.toInt128(token0Out),
                 SafeCast.toInt128(token1In),
                 0,
-                SafeCast.toUint128(fee)
+                SafeCast.toUint128(feeAmount)
             );
             return beforeSwapDelta;
         }
     }
 
-    function updatePosition(uint256 protocolFeeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
-        tokenIn -= protocolFeeAmount; // cut protocol fee from the calculated swap amounts
+    function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
+        uint256 protocolFeeAmount = protocolFee == 0 ? 0 : feeAmount.mul(protocolFee);
         if (up) {
             accumulatedFeeB += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceUp(tokenIn.wrap(bDec), tokenOut.wrap(qDec));
+            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount).wrap(bDec), tokenOut.wrap(qDec));
         } else {
             accumulatedFeeQ += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceDown(tokenOut.wrap(bDec), tokenIn.wrap(qDec));
+            positionManager.positionAdjustmentPriceDown(tokenOut.wrap(bDec), (tokenIn - protocolFeeAmount).wrap(qDec));
         }
     }
 

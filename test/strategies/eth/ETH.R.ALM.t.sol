@@ -219,7 +219,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 usdtToGetFSwap = 20000e6; //20k USDT
-            (uint256 wethToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
+            (uint256 wethToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -368,7 +368,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 wethToGetFSwap = 1e18;
-            (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(wethToGetFSwap));
+            (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(wethToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();

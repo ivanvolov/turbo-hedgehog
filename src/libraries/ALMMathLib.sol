@@ -15,24 +15,6 @@ library ALMMathLib {
     uint256 constant WAD = 1e18;
     uint256 constant Q96 = 2 ** 96;
 
-    function getNextSqrtPriceFromOutput(
-        uint160 sqrtPX96,
-        uint128 liquidity,
-        uint256 amountOut,
-        bool zeroForOne
-    ) internal pure returns (uint160 sqrtQX96) {
-        return SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtPX96, liquidity, amountOut, zeroForOne);
-    }
-
-    function getNextSqrtPriceFromInput(
-        uint160 sqrtPX96,
-        uint128 liquidity,
-        uint256 amountIn,
-        bool zeroForOne
-    ) internal pure returns (uint160 sqrtQX96) {
-        return SqrtPriceMath.getNextSqrtPriceFromInput(sqrtPX96, liquidity, amountIn, zeroForOne);
-    }
-
     function getLiquidity(
         bool isInvertedPool,
         int24 tickLower,
