@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMath} from "@prb-math/PRBMath.sol";
 
@@ -20,7 +19,6 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 
 contract OracleTest is ALMTestBase {
     using SafeERC20 for IERC20;
-    using TokenWrapperLib for uint256;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
