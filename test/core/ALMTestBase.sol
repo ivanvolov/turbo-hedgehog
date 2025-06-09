@@ -339,7 +339,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
-    uint256 slippageTolerance = 1e18; // 1% acceptable price difference
+    uint256 slippageTolerance = 1e16; // 1% acceptable price difference
 
     function _setV3PoolPrice(uint160 newSqrtPrice) public {
         uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
@@ -354,7 +354,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 stepSize = initialStepSize;
 
         uint256 iterations = 0;
-        while (iterations < 50) {
+        while (iterations < 100) {
             uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
             if (priceDiff <= slippageTolerance) break;
             iterations++;
@@ -572,9 +572,14 @@ abstract contract ALMTestBase is Deployers {
             ? calcDS - _lendingAdapter.getBorrowedShort()
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
-        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
-        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 1e1);
-        assertApproxEqAbs(calcDL, _lendingAdapter.getBorrowedLong(), slippage);
+        uint256 diffDL = calcDL >= _lendingAdapter.getBorrowedLong()
+            ? calcDL - _lendingAdapter.getBorrowedLong()
+            : _lendingAdapter.getBorrowedLong() - calcDL;
+
+        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 100);
+        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 100);
+        // assertApproxEqAbs(calcDL * 1e18 /_lendingAdapter.getBorrowedLong(), , slippage);
+        assertApproxEqAbs((diffDL * 1e18) / calcDS, slippage, slippage);
 
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 

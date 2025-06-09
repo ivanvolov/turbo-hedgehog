@@ -308,6 +308,11 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetDS.mul(k);
             }
 
+            console.log("targetCL %s", targetCL);
+            console.log("targetCS %s", targetCS);
+            console.log("targetDL %s", targetDL);
+            console.log("targetDS %s", targetDS);
+
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
             deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(CL);
             deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
