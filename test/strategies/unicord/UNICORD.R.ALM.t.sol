@@ -99,14 +99,14 @@ contract UNICORDRALMTest is MorphoTestBase {
         vm.prank(alice.addr);
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 99999999999000000000000, 1e1);
+        assertApproxEqAbs(shares, 99999999999, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(0, amountToDep - 1, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 99999999999000000000000, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 99999999999, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 

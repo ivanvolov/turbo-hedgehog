@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
@@ -8,7 +10,6 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {ALMMathLib} from "../libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "../libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Base} from "./base/Base.sol";
@@ -46,7 +47,6 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
     event RebalanceOperatorSet(address indexed operator);
 
     using PRBMathUD60x18 for uint256;
-    using TokenWrapperLib for uint256;
 
     // ** Last rebalance snapshot
     uint160 public sqrtPriceAtLastRebalance;
@@ -191,18 +191,18 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
 
         if (isNova) {
-            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl.unwrap(qDec), data);
-            else flashLoanAdapter.flashLoanSingle(true, baseToFl.unwrap(bDec), data);
+            if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
+            else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
             uint256 baseBalance = baseBalanceUnwr();
-            if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance.wrap(bDec));
+            if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance);
             uint256 quoteBalance = quoteBalanceUnwr();
-            if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance.wrap(qDec));
+            if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
         } else {
-            flashLoanAdapter.flashLoanTwoTokens(baseToFl.unwrap(bDec), quoteToFl.unwrap(qDec), data);
+            flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
             uint256 baseBalance = baseBalanceUnwr();
-            if (baseBalance != 0) lendingAdapter.repayLong(baseBalance.wrap(bDec));
+            if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
             uint256 quoteBalance = quoteBalanceUnwr();
-            if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance.wrap(qDec));
+            if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance);
         }
 
         // ** Check max deviation
@@ -255,6 +255,12 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
+        console.log("deltaCL %s", deltaCL);
+        console.log("deltaCS %s", deltaCS);
+        console.log("deltaDL %s", deltaDL);
+        console.log("deltaDS %s", deltaDS);
+        console.log("balanceBase", baseBalanceUnwr());
+        console.log("balanceQuote", quoteBalanceUnwr());
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
@@ -273,8 +279,10 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
         {
             uint256 targetCL;
             uint256 targetCS;
-            uint256 price = oracle.price();
+            uint256 price = oracle.test_price();
+            console.log("> price %s", price);
             uint256 TVL = alm.TVL();
+            console.log("TVL %s", TVL);
             if (isInvertedAssets) {
                 targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
                 targetCS = TVL.mul(1e18 - weight).mul(shortLeverage);
@@ -300,11 +308,20 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 targetDS = targetDS.mul(k);
             }
 
+            console.log("targetCL %s", targetCL);
+            console.log("targetCS %s", targetCS);
+            console.log("targetDL %s", targetDL);
+            console.log("targetDS %s", targetDS);
+
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
             deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(CL);
             deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
             deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(DL);
             deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(DS);
+            console.log("deltaCL %s", deltaCL);
+            console.log("deltaCS %s", deltaCS);
+            console.log("deltaDL %s", deltaDL);
+            console.log("deltaDS %s", deltaDS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -321,14 +338,20 @@ contract SRebalanceAdapter is Base, IRebalanceAdapter {
                 isInvertedPool,
                 alm.tickLower(),
                 alm.tickUpper(),
-                lendingAdapter.getCollateralLong().unwrap(qDec),
+                lendingAdapter.getCollateralLong(),
                 liquidityMultiplier
             );
     }
 
     function checkDeviations() internal view {
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(oracle.price(), currentCL, currentCS, DL, DS);
+        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(
+            oracle.test_price(),
+            currentCL,
+            currentCS,
+            DL,
+            DS
+        );
 
         require(ALMMathLib.absSub(lLeverage, longLeverage) <= maxDeviationLong, "D1");
         require(ALMMathLib.absSub(sLeverage, shortLeverage) <= maxDeviationShort, "D2");

@@ -13,7 +13,6 @@ import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
@@ -38,7 +37,7 @@ contract ETHALMTest is MorphoTestBase {
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 2e18;
-    uint256 slippage = 15e14; //0.15%
+    uint256 slippage = 10e14; //0.1%
     uint256 fee = 5e14; //0.05%
 
     IERC20 WETH = IERC20(TestLib.WETH);
@@ -169,16 +168,25 @@ contract ETHALMTest is MorphoTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
+        console.log("preRebalanceTVL %s", preRebalanceTVL);
+        console.log("postRebalanceTVL %s", hook.TVL());
+
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         console.log("liquidity %s", hook.liquidity());
         uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
             ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
             ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
-            TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            lendingAdapter.getCollateralLong()
         );
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
+    }
+
+    function test_only_rebalance() public {
+        test_deposit_rebalance();
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
@@ -731,7 +739,7 @@ contract ETHALMTest is MorphoTestBase {
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
                 ALMMathLib.getSqrtPriceX96FromTick(hook.tickLower()),
                 ALMMathLib.getSqrtPriceX96FromTick(hook.tickUpper()),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
 
             assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);

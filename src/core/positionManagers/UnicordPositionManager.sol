@@ -6,9 +6,6 @@ import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// ** libraries
-import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
-
 // ** contracts
 import {Base} from "../base/Base.sol";
 
@@ -21,7 +18,6 @@ import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 contract UnicordPositionManager is Base, IPositionManager {
     event FeesSet(uint256 newFees);
 
-    using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
     uint256 fees;
@@ -36,15 +32,15 @@ contract UnicordPositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        BASE.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
+        BASE.safeTransferFrom(address(alm), address(this), deltaBase);
         lendingAdapter.updatePosition(SafeCast.toInt256(deltaQuote), -SafeCast.toInt256(deltaBase), 0, 0);
-        QUOTE.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransfer(address(alm), deltaQuote);
     }
 
     function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
         lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
-        BASE.safeTransfer(address(alm), deltaBase.unwrap(bDec));
+        BASE.safeTransfer(address(alm), deltaBase);
     }
 
     function getSwapFees(bool, int256) external view returns (uint256) {

@@ -5,7 +5,6 @@ import "forge-std/console.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
@@ -164,8 +163,8 @@ contract ETHRALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -205,8 +204,8 @@ contract ETHRALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -246,8 +245,8 @@ contract ETHRALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
             assertEqPositionState(
                 CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDT,
+                CS,
+                DL + deltaUSDT,
                 DS + ((k1 - 1e18) * (deltaWETH - deltaTreasuryFee)) / 1e18
             );
         }
@@ -300,8 +299,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -354,8 +353,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -395,8 +394,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL - ((deltaWETH) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - deltaUSDT + deltaTreasuryFeeB,
+                CS,
+                DL - deltaUSDT + deltaTreasuryFeeB,
                 DS - ((k1 - 1e18) * (deltaWETH)) / 1e18
             );
         }
@@ -444,8 +443,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL + (deltaWETH * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDT + deltaTreasuryFeeB,
+                CS,
+                DL + deltaUSDT + deltaTreasuryFeeB,
                 DS + ((k1 - 1e18) * (deltaWETH)) / 1e18
             );
         }
