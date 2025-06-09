@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 // ** External imports
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {ProtocolFeeLibrary} from "v4-core/libraries/ProtocolFeeLibrary.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -19,12 +20,14 @@ import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 /// @author IVikkk
 /// @custom:contact vivan.volovik@gmail.com
 contract UnicordPositionManager is Base, IPositionManager {
-    event FeesSet(uint256 newFees);
+    event FeesSet(uint24 newFees);
 
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
+    using ProtocolFeeLibrary for uint24;
 
-    uint256 fees;
+    /// @notice The fee taken from the input amount, expressed in hundredths of a bip.
+    uint24 fees;
 
     constructor(
         IERC20 _base,
@@ -35,7 +38,8 @@ contract UnicordPositionManager is Base, IPositionManager {
         // Intentionally empty as all initialization is handled by the parent Base contract
     }
 
-    function setFees(uint256 _fees) external onlyOwner {
+    function setFees(uint24 _fees) external onlyOwner {
+        if (!_fees.isValidProtocolFee()) revert ProtocolFeeTooLarge(_fees);
         fees = _fees;
         emit FeesSet(_fees);
     }
@@ -52,7 +56,7 @@ contract UnicordPositionManager is Base, IPositionManager {
         BASE.safeTransfer(address(alm), deltaBase.unwrap(bDec));
     }
 
-    function getSwapFees(bool, int256) external view returns (uint256) {
+    function getSwapFees(bool, int256) external view returns (uint24) {
         return fees;
     }
 }

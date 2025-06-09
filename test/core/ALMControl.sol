@@ -19,6 +19,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts

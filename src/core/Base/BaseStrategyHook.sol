@@ -9,7 +9,7 @@ import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {SwapMath} from "v4-core/libraries/SwapMath.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -95,6 +95,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     ) external onlyOwner {
         if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
         if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
+        if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
 
         liquidityMultiplier = _liquidityMultiplier;
         protocolFee = _protocolFee;
@@ -166,10 +167,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     function _updatePriceAndBoundaries(uint160 _sqrtPrice) internal {
         sqrtPriceCurrent = _sqrtPrice;
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
-        Ticks memory deltas = tickDeltas;
 
-        int24 newTickLower = isInvertedPool ? tick + deltas.lower : tick - deltas.lower;
-        int24 newTickUpper = isInvertedPool ? tick - deltas.upper : tick + deltas.upper;
+        Ticks memory deltas = tickDeltas;
+        int24 newTickLower = tick - deltas.lower;
+        int24 newTickUpper = tick + deltas.upper;
 
         if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
             revert TickLowerOutOfBounds(newTickLower);
@@ -185,39 +186,40 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     // ** Deltas calculation
 
     function getDeltas(
+        bool zeroForOne,
         int256 amountSpecified,
-        bool zeroForOne
+        uint160 sqrtPriceLimitX96
     )
         internal
         view
-        returns (BeforeSwapDelta beforeSwapDelta, uint256 tokenIn, uint256 tokenOut, uint160 sqrtPriceNext, uint256 fee)
+        returns (
+            BeforeSwapDelta beforeSwapDelta,
+            uint256 tokenIn,
+            uint256 tokenOut,
+            uint160 sqrtPriceNext,
+            uint256 feeAmount
+        )
     {
+        uint24 swapFee = positionManager.getSwapFees(zeroForOne, amountSpecified);
+
+        int24 nextTick = zeroForOne ? tickLower : tickUpper; //TODO: this should depends on the pool order and such. Also if partial fill then what?
+        sqrtPriceNext = ALMMathLib.getSqrtPriceX96FromTick(nextTick);
+
+        (sqrtPriceNext, tokenIn, tokenOut, feeAmount) = SwapMath.computeSwapStep(
+            sqrtPriceCurrent,
+            SwapMath.getSqrtPriceTarget(zeroForOne, sqrtPriceNext, sqrtPriceLimitX96),
+            liquidity,
+            amountSpecified,
+            swapFee
+        );
+        tokenIn += feeAmount;
+
         if (amountSpecified > 0) {
-            tokenOut = uint256(amountSpecified);
-            sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, false, sqrtPriceCurrent, liquidity, tokenOut);
-
-            tokenIn = zeroForOne
-                ? ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity)
-                : ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = tokenIn.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
-            tokenIn += fee;
-
             beforeSwapDelta = toBeforeSwapDelta(
                 -SafeCast.toInt128(tokenOut), // specified token = zeroForOne ? token1 : token0
                 SafeCast.toInt128(tokenIn) // unspecified token = zeroForOne ? token0 : token1
             );
         } else {
-            unchecked {
-                tokenIn = uint256(-amountSpecified);
-            }
-            sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, true, sqrtPriceCurrent, liquidity, tokenIn);
-
-            tokenOut = zeroForOne
-                ? ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity)
-                : ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = tokenOut.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
-            tokenOut -= fee;
-
             beforeSwapDelta = toBeforeSwapDelta(
                 SafeCast.toInt128(tokenIn), // specified token = zeroForOne ? token0 : token1
                 -SafeCast.toInt128(tokenOut) // unspecified token = zeroForOne ? token1 : token0

@@ -12,6 +12,7 @@
     "**/.git": true
   },
   "search.exclude": {
+    "**/external": true,
     "**/node_modules": true,
     "**/out": true,
     "**/.git": true

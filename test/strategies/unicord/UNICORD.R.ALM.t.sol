@@ -44,7 +44,7 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 weight = 50e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 10e14; //0.1%
-    uint256 fee = 1e14; //0.05%
+    uint24 fee = 100; //0.01%
 
     IERC20 DAI = IERC20(TestLib.DAI);
     IERC20 USDC = IERC20(TestLib.USDC);
@@ -193,7 +193,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("SWAP DOWN OUT");
 
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (uint256 daiToSwapQ, ) = hook.quoteSwap(true, int256(usdcToGetFSwap));
+            (uint256 daiToSwapQ, ) = _quoteSwap(true, int256(usdcToGetFSwap));
             console.log("daiToSwapQ %s", daiToSwapQ);
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
@@ -286,7 +286,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Swap Up out
         {
             uint256 daiToGetFSwap = 1000e18; //1k DAI
-            (, uint256 usdcToSwapQ) = hook.quoteSwap(false, int256(daiToGetFSwap));
+            (, uint256 usdcToSwapQ) = _quoteSwap(false, int256(daiToGetFSwap));
 
             console.log("usdcToSwapQ", usdcToSwapQ);
 

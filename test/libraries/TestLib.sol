@@ -80,6 +80,7 @@ library TestLib {
 
     uint256 constant sqrt_price_10per = 48808848170151600; // (sqrt(1.1)-1) or max 10% price change
     uint256 constant sqrt_price_1per = 4987562112088950; // (sqrt(1.01)-1) or max 1% price change
+    uint256 constant ONE_PERCENT_AND_ONE_BPS = 101e16; // 1.01%
 
     // ** Uniswap math
 

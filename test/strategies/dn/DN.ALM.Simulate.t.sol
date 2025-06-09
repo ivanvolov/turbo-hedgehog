@@ -63,7 +63,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
     function test_swaps_simulation() public {
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e16);
+        IPositionManagerStandard(address(positionManager)).setFees(50000); // 5%
         numberOfSwaps = 10; // Number of blocks with swaps
         resetGenerator();
 

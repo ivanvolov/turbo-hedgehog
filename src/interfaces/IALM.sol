@@ -21,6 +21,7 @@ interface IALM {
     error LiquidityMultiplierNotValid();
     error TickLowerOutOfBounds(int24 tick);
     error TickUpperOutOfBounds(int24 tick);
+    error TickDeltasNotValid();
 
     event StatusSet(uint8 indexed status);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);

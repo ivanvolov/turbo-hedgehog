@@ -20,7 +20,7 @@ contract ETHR2ALMTest is ALMTestBase {
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 15e14; //0.15%
-    uint256 fee = 5e14; //0.05%
+    uint24 fee = 500; //0.05%
 
     IERC20 WETH = IERC20(TestLib.WETH);
     IERC20 USDT = IERC20(TestLib.USDT);
@@ -149,7 +149,7 @@ contract ETHR2ALMTest is ALMTestBase {
         // ** Swap Down Out
         {
             uint256 usdtToGetFSwap = 50000e6; //50k USDT
-            (uint256 wethToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
+            (uint256 wethToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -228,7 +228,7 @@ contract ETHR2ALMTest is ALMTestBase {
         // ** Swap Up out
         {
             uint256 wethToGetFSwap = 5e18;
-            (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(wethToGetFSwap));
+            (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(wethToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
