@@ -12,7 +12,6 @@ import {Currency} from "v4-core/types/Currency.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {CurrencySettler} from "@src/libraries/CurrencySettler.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
@@ -45,9 +44,9 @@ contract ALMControl is BaseHook, ERC20 {
     constructor(IPoolManager _manager, ALM _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
         alm = _alm;
 
-        (int24 tickLower, int24 tickUpper) = alm.activeTicks();
-        tickLower = TestLib.nearestUsableTick(tickLower, 2);
-        tickUpper = TestLib.nearestUsableTick(tickUpper, 2);
+        (int24 _tickLower, int24 _tickUpper) = alm.activeTicks();
+        tickLower = TestLib.nearestUsableTick(_tickLower, 2);
+        tickUpper = TestLib.nearestUsableTick(_tickUpper, 2);
     }
 
     // --- Logic --- //
@@ -71,9 +70,9 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        (int24 tickLower, int24 tickUpper) = alm.activeTicks();
-        tickLower = TestLib.nearestUsableTick(tickLower, 2);
-        tickUpper = TestLib.nearestUsableTick(tickUpper, 2);
+        (int24 _tickLower, int24 _tickUpper) = alm.activeTicks();
+        tickLower = TestLib.nearestUsableTick(_tickLower, 2);
+        tickUpper = TestLib.nearestUsableTick(_tickUpper, 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
 

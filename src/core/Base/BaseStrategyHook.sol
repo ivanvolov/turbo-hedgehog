@@ -10,6 +10,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {SwapMath} from "v4-core/libraries/SwapMath.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -202,7 +203,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     {
         uint24 swapFee = positionManager.getSwapFees(zeroForOne, amountSpecified);
 
-        int24 nextTick = zeroForOne ? tickLower : tickUpper; //TODO: this should depends on the pool order and such. Also if partial fill then what?
+        int24 nextTick = zeroForOne ? activeTicks.lower : activeTicks.upper; //TODO: this should depends on the pool order and such. Also if partial fill then what?
         sqrtPriceNext = ALMMathLib.getSqrtPriceX96FromTick(nextTick);
 
         (sqrtPriceNext, tokenIn, tokenOut, feeAmount) = SwapMath.computeSwapStep(
