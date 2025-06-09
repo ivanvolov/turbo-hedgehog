@@ -86,14 +86,47 @@ library TestLib {
     uint256 constant WAD = 1e18;
     uint256 constant Q192 = 2 ** 192;
 
+    function _getPoolPriceFromOraclePrice(
+        uint256 oraclePrice,
+        bool reversedOrder,
+        int8 decimalsDelta
+    ) internal pure returns (uint256) {
+        if (decimalsDelta < 0) {
+            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
+            if (reversedOrder) return ratio.div(oraclePrice);
+            else return oraclePrice.div(ratio);
+        } else {
+            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
+            if (reversedOrder) return WAD.div(oraclePrice.mul(ratio));
+            else return oraclePrice.mul(ratio);
+        }
+    }
+
+    function _getOraclePriceFromPoolPrice(
+        uint256 price,
+        bool reversedOrder,
+        int8 decimalsDelta
+    ) internal pure returns (uint256) {
+        if (decimalsDelta < 0) {
+            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
+            if (reversedOrder) return ratio.div(price);
+            else return price.mul(ratio);
+        } else {
+            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
+            if (reversedOrder) return WAD.div(price.mul(ratio));
+            else return price.div(ratio);
+        }
+    }
+
     function getOraclePriceFromPoolPrice(
         uint256 price,
         bool reversedOrder,
-        uint8 decimalsDelta
+        int8 decimalsDelta
     ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return ratio.mul(price);
+        require(decimalsDelta >= -18);
+        uint256 ratio = 10 ** uint256(int256(decimalsDelta) + 18);
+        if (reversedOrder) return WAD.div(price.mul(ratio));
+        else return price.div(ratio);
     }
 
     function getVirtualValue(

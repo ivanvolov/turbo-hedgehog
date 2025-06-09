@@ -285,15 +285,15 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5439224791342722064, 1e4, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5439224790608936570, 1e4, "deltaWETH");
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(157249104672336621054, 239418121556, 277892039995, 42755829463679343123);
+        assertEqPositionState(157249104673382265383, 239418121556, 277892039995, 42755829463991201958);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486427985910873144190591580871);
-        assertApproxEqAbs(hook.TVL(), 100030490867261280905, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528486427883066312198646188484613);
+        assertApproxEqAbs(hook.TVL(), 100030490867995066399, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
@@ -319,8 +319,8 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(157249500874890783357, 239418121556, 277892787026, 42755947629353391529);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486817682343993160199836892981);
-        assertApproxEqAbs(hook.TVL(), 100030488086676273144, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528486817578470958619442828402933);
+        assertApproxEqAbs(hook.TVL(), 100030488087428095934, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_not_operator() public {
@@ -371,15 +371,15 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14613746759);
+        assertEq(deltaUSDC, 14613746761);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(172867636362006389246, 239418121556, 307047388936, 47413988037791379250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848484656406112881723444165282);
-        assertApproxEqAbs(hook.TVL(), 100031036098368390523, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848484552533078340966435675234);
+        assertApproxEqAbs(hook.TVL(), 100031036097616567733, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
@@ -387,7 +387,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 usdcToGetFSwap = 14614493789;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 5521431977802295446);
+        assertEq(wethToSwapQ, 5521431977053677204);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -398,10 +398,10 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(172868040568368271007, 239418121556, 307048135966, 47414108590565975565);
+        assertEqPositionState(172868040567301490012, 239418121556, 307048135966, 47414108590247812812);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848882225214831905187600369497);
-        assertApproxEqAbs(hook.TVL(), 100031038934866465706, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848882120292534192541192291578);
+        assertApproxEqAbs(hook.TVL(), 100031038934117847464, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
@@ -415,7 +415,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5436505178947050703, 1e4, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5436505178213632102, 1e4, "deltaWETH");
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
@@ -423,10 +423,10 @@ contract ETHALMTest is MorphoTestBase {
         console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
         console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
-        assertEqPositionState(157252980120000452744, 239418121556, 277892039995, 42756985298947503451);
+        assertEqPositionState(157252980121045574251, 239418121556, 277892039995, 42756985299259206357);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486427985910873144190591580871);
-        assertApproxEqAbs(hook.TVL(), 100033210479656952267, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528486427883066312198646188484613);
+        assertApproxEqAbs(hook.TVL(), 100033210480390370868, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
@@ -436,7 +436,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 wethToGetFSwap = 5438946754462608168;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 14548125579); //prev case + fee (tokenIn + fee)
+        assertEq(usdcToSwapQ, 14548125581); //prev case + fee (tokenIn + fee)
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 
@@ -448,8 +448,8 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(157249500874890783357, 239418121556, 277885516598, 42755947629353391529);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486817682343993160199836892981);
-        assertApproxEqAbs(hook.TVL(), 100033221123406086934, 1e1, "TVL");
+        assertEq(hook.sqrtPriceCurrent(), 1528486817578470958619442828402933);
+        assertApproxEqAbs(hook.TVL(), 100033221124157909723, 1e1, "TVL");
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
@@ -462,15 +462,15 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14606439886); //less usdc to receive
+        assertEq(deltaUSDC, 14606439888); //less usdc to receive
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(172867636362006389246, 239418121556, 307040082063, 47413988037791379250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848484656406112881723444165282);
-        assertApproxEqAbs(hook.TVL(), 100033782835188985496, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848484552533078340966435675234);
+        assertApproxEqAbs(hook.TVL(), 100033782834437162707, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -480,7 +480,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 usdcToGetFSwap = 14614493789;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 5524192693791196594);
+        assertEq(wethToSwapQ, 5524192693042204043);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -491,10 +491,10 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(172871974588652455142, 239418121556, 307048135966, 47415281894861258552);
+        assertEqPositionState(172871974587585140755, 239418121556, 307048135966, 47415281894542936718);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848882225214831905187600369497);
-        assertApproxEqAbs(hook.TVL(), 100033799650855366854, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848882120292534192541192291578);
+        assertApproxEqAbs(hook.TVL(), 100033799650106374301, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
@@ -519,19 +519,19 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5436505178947050703, 1e4, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5436505178213632102, 1e4, "deltaWETH");
 
         console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
         console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
-        assertEqBalanceState(address(hook), 543922479134272, 0);
-        assertEq(hook.accumulatedFeeQ(), 543922479134272);
+        assertEqBalanceState(address(hook), 543922479060894, 0);
+        assertEq(hook.accumulatedFeeQ(), 543922479060894);
 
-        assertEqPositionState(157252205030467686407, 239418121556, 277892039995, 42756754131893871386);
+        assertEqPositionState(157252205031512912477, 239418121556, 277892039995, 42756754132205605477);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486427985910873144190591580871);
-        assertApproxEqAbs(hook.TVL(), 100032666557177817995, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528486427883066312198646188484613);
+        assertApproxEqAbs(hook.TVL(), 100032666557911309974, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_up_out_protocol_fees() public {
@@ -549,7 +549,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 wethToGetFSwap = 5438946754462608168;
         (uint256 usdcToSwapQ, ) = hook.quoteSwap(true, int256(wethToGetFSwap));
-        assertEq(usdcToSwapQ, 14548125579);
+        assertEq(usdcToSwapQ, 14548125581);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
 
@@ -562,8 +562,8 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(157249500874890783357, 239418121556, 277886970684, 42755947629353391529);
 
-        assertEq(hook.sqrtPriceCurrent(), 1528486817682343993160199836892981);
-        assertApproxEqAbs(hook.TVL(), 100032674515909759618, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1528486817578470958619442828402933);
+        assertApproxEqAbs(hook.TVL(), 100032674516661582407, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
@@ -584,7 +584,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
 
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14606439886);
+        assertEq(deltaUSDC, 14606439888);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 1461375);
@@ -592,8 +592,8 @@ contract ETHALMTest is MorphoTestBase {
 
         assertEqPositionState(172867636362006389246, 239418121556, 307041543438, 47413988037791379250);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848484656406112881723444165282);
-        assertApproxEqAbs(hook.TVL(), 100033233487674501944, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848484552533078340966435675234);
+        assertApproxEqAbs(hook.TVL(), 100033233486922679154, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out_protocol_fees() public {
@@ -616,7 +616,7 @@ contract ETHALMTest is MorphoTestBase {
 
         uint256 usdcToGetFSwap = 14614493789;
         (, uint256 wethToSwapQ) = hook.quoteSwap(false, int256(usdcToGetFSwap));
-        assertEq(wethToSwapQ, 5524192693791196594);
+        assertEq(wethToSwapQ, 5524192693042204043);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -625,13 +625,13 @@ contract ETHALMTest is MorphoTestBase {
         assertEq(deltaUSDC, usdcToGetFSwap);
 
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), 552143197780230, 0);
-        assertEq(hook.accumulatedFeeQ(), 552143197780230);
+        assertEqBalanceState(address(hook), 552143197705368, 0);
+        assertEq(hook.accumulatedFeeQ(), 552143197705368);
 
-        assertEqPositionState(172871187784595618314, 239418121556, 307048135966, 47415047234002201955);
+        assertEqPositionState(172871187783528410607, 239418121556, 307048135966, 47415047233683911937);
 
-        assertEq(hook.sqrtPriceCurrent(), 1543848882225214831905187600369497);
-        assertApproxEqAbs(hook.TVL(), 100033247507657586623, 1e1, "tvl");
+        assertEq(hook.sqrtPriceCurrent(), 1543848882120292534192541192291578);
+        assertApproxEqAbs(hook.TVL(), 100033247506908668934, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
@@ -651,8 +651,8 @@ contract ETHALMTest is MorphoTestBase {
             rebalanceAdapter.rebalance(slippage);
 
             assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(165286589149515387341, 242232369118, 295730297289, 45145777918156271025);
-            assertApproxEqAbs(hook.TVL(), 100229449172237808546, 1e1, "tvl");
+            assertEqPositionState(165286589153905645266, 242232369157, 295730297335, 45145777919355410108);
+            assertApproxEqAbs(hook.TVL(), 100229449175503060133, 1e1, "tvl");
         }
     }
 

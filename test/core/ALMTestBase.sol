@@ -172,14 +172,36 @@ abstract contract ALMTestBase is Deployers {
 
     function create_oracle(
         bool _isInvertedPool,
-        AggregatorV3Interface feed0,
-        AggregatorV3Interface feed1,
-        uint256 stalenessThreshold0,
-        uint256 stalenessThreshold1
-    ) internal {
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint256 stalenessThresholdQ,
+        uint256 stalenessThresholdB
+    ) internal returns (IOracle _oracle) {
         isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
-        oracle = new Oracle(_isInvertedPool, bDec, qDec, feed0, feed1, stalenessThreshold0, stalenessThreshold1);
+        _oracle = new Oracle(
+            feedB,
+            feedQ,
+            stalenessThresholdB,
+            stalenessThresholdQ,
+            _isInvertedPool,
+            int8(bDec) - int8(qDec)
+        );
+        oracle = _oracle;
+    }
+
+    function _create_oracle(
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint256 stalenessThresholdQ,
+        uint256 stalenessThresholdB,
+        bool _isInvertedPool,
+        int8 decimalsDelta
+    ) internal returns (IOracle _oracle) {
+        isInvertedPool = _isInvertedPool;
+        vm.prank(deployer.addr);
+        _oracle = new Oracle(feedB, feedQ, stalenessThresholdB, stalenessThresholdQ, _isInvertedPool, decimalsDelta);
+        oracle = _oracle;
     }
 
     function init_hook(
@@ -334,7 +356,7 @@ abstract contract ALMTestBase is Deployers {
             TestLib.getOraclePriceFromPoolPrice(
                 TestLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
                 isInvertedPool,
-                uint8(ALMMathLib.absSub(bDec, qDec))
+                int8(bDec) - int8(qDec)
             );
     }
 
