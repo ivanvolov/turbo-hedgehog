@@ -38,7 +38,7 @@ abstract contract MorphoTestBase is ALMTestBase {
 
     function create_flash_loan_adapter_morpho() internal {
         vm.prank(deployer.addr);
-        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, bDec, qDec, TestLib.MORPHO);
+        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, TestLib.MORPHO);
     }
 
     function create_lending_adapter_morpho() internal {
@@ -48,8 +48,6 @@ abstract contract MorphoTestBase is ALMTestBase {
         lendingAdapter = new MorphoLendingAdapter(
             BASE,
             QUOTE,
-            bDec,
-            qDec,
             TestLib.MORPHO,
             longMId,
             shortMId,
@@ -66,8 +64,6 @@ abstract contract MorphoTestBase is ALMTestBase {
         lendingAdapter = new MorphoLendingAdapter(
             BASE,
             QUOTE,
-            bDec,
-            qDec,
             TestLib.MORPHO,
             Id.wrap(""),
             Id.wrap(""),
@@ -84,8 +80,6 @@ abstract contract MorphoTestBase is ALMTestBase {
         lendingAdapter = new MorphoLendingAdapter(
             BASE,
             QUOTE,
-            bDec,
-            qDec,
             TestLib.MORPHO,
             Id.wrap(""),
             Id.wrap(""),

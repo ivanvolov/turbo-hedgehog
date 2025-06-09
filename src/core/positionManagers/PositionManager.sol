@@ -31,12 +31,7 @@ contract PositionManager is Base, IPositionManager {
     /// @notice The fee taken from the input amount, expressed in hundredths of a bip.
     uint24 fees;
 
-    constructor(
-        IERC20 _base,
-        IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec
-    ) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote, _bDec, _qDec) {
+    constructor(IERC20 _base, IERC20 _quote) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote) {
         // Intentionally empty as all initialization is handled by the parent Base contract
     }
 

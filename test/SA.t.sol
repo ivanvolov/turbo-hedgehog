@@ -463,7 +463,7 @@ contract SwapAdapterTest is ALMTestBase {
     function test_routes_operator() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         vm.prank(deployer.addr);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
 
         uniswapSwapAdapter = IUniswapSwapAdapter(address(swapAdapter));
         _fakeSetComponents(address(swapAdapter), alice.addr);
@@ -560,7 +560,7 @@ contract SwapAdapterTest is ALMTestBase {
 
     function _deployAndApproveAdapter() internal {
         vm.prank(deployer.addr);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
 
         uniswapSwapAdapter = IUniswapSwapAdapter(address(swapAdapter));
         vm.prank(deployer.addr);

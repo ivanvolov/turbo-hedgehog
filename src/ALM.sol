@@ -35,14 +35,12 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         bool _isInvertedPool,
         bool _isInvertedAssets,
         IPoolManager manager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(_base, _quote, _bDec, _qDec, _isInvertedPool, _isInvertedAssets, manager) ERC20(name, symbol) {
+    ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, manager) ERC20(name, symbol) {
         // Intentionally empty as all initialization is handled by the parent BaseStrategyHook contract
     }
 
@@ -289,10 +287,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : feeAmount.mul(protocolFee);
         if (up) {
             accumulatedFeeB += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount).wrap(bDec), tokenOut.wrap(qDec));
+            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut);
         } else {
             accumulatedFeeQ += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceDown(tokenOut.wrap(bDec), (tokenIn - protocolFeeAmount).wrap(qDec));
+            positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount));
         }
     }
 
@@ -329,11 +327,11 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function baseBalance(bool wrap) internal view returns (uint256) {
         uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
-        return wrap ? balance.wrap(bDec) : balance;
+        return wrap ? balance : balance;
     }
 
     function quoteBalance(bool wrap) internal view returns (uint256) {
         uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
-        return wrap ? balance.wrap(qDec) : balance;
+        return wrap ? balance : balance;
     }
 }

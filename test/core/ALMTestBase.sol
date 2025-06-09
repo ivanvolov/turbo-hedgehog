@@ -136,8 +136,6 @@ abstract contract ALMTestBase is Deployers {
         lendingAdapter = new EulerLendingAdapter(
             BASE,
             QUOTE,
-            bDec,
-            qDec,
             TestLib.EULER_VAULT_CONNECT,
             _vault0,
             _vault1,
@@ -155,7 +153,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 deposit1
     ) internal {
         vm.prank(deployer.addr);
-        flashLoanAdapter = new EulerFlashLoanAdapter(BASE, QUOTE, bDec, qDec, _flVault0, _flVault1);
+        flashLoanAdapter = new EulerFlashLoanAdapter(BASE, QUOTE, _flVault0, _flVault1);
         _deposit_to_euler(_flVault0, deposit0);
         _deposit_to_euler(_flVault1, deposit1);
     }
@@ -232,7 +230,7 @@ abstract contract ALMTestBase is Deployers {
         );
         deployCodeTo(
             "ALM.sol",
-            abi.encode(BASE, QUOTE, bDec, qDec, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            abi.encode(BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
             hookAddress
         );
         hook = ALM(hookAddress);
@@ -242,12 +240,12 @@ abstract contract ALMTestBase is Deployers {
 
         // MARK: Deploying modules and setting up parameters
         // @Notice: lendingAdapter should already be created
-        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE, bDec, qDec);
-        else positionManager = new PositionManager(BASE, QUOTE, bDec, qDec);
+        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
+        else positionManager = new PositionManager(BASE, QUOTE);
 
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
         // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, isInvertedPool, _isInvertedAssets, _isNova);
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, isInvertedPool, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(
             _liquidityMultiplier,

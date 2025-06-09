@@ -32,15 +32,13 @@ contract MorphoLendingAdapter is LendingBase {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         IMorpho _morpho,
         Id _longMId,
         Id _shortMId,
         IERC4626 _earnBase,
         IERC4626 _earnQuote,
         IMerklDistributor _merklRewardsDistributor
-    ) LendingBase(_merklRewardsDistributor, _base, _quote, _bDec, _qDec) {
+    ) LendingBase(_merklRewardsDistributor, _base, _quote) {
         morpho = _morpho;
 
         BASE.forceApprove(address(morpho), type(uint256).max);

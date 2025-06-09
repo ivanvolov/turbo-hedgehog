@@ -30,14 +30,12 @@ contract EulerLendingAdapter is LendingBase {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         IEVC _evc,
         IEulerVault _vault0,
         IEulerVault _vault1,
         IMerklDistributor _merklRewardsDistributor,
         IrEUL _rEUL
-    ) LendingBase(_merklRewardsDistributor, _base, _quote, _bDec, _qDec) {
+    ) LendingBase(_merklRewardsDistributor, _base, _quote) {
         evc = _evc;
         vault0 = _vault0;
         vault1 = _vault1;

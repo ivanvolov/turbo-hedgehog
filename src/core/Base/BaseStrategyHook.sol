@@ -18,7 +18,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Base} from "./Base.sol";
@@ -29,7 +28,6 @@ import {IALM} from "../../interfaces/IALM.sol";
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;
-    using TokenWrapperLib for uint256;
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
@@ -60,12 +58,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         bool _isInvertedPool,
         bool _isInvertedAssets,
         IPoolManager _poolManager
-    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote, _bDec, _qDec) {
+    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
     }
@@ -160,7 +156,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 isInvertedPool,
                 _activeTicks.lower,
                 _activeTicks.upper,
-                lendingAdapter.getCollateralLong().unwrap(qDec),
+                lendingAdapter.getCollateralLong(),
                 liquidityMultiplier
             );
     }

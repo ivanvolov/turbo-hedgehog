@@ -19,13 +19,7 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
     // ** Morpho
     IMorpho immutable morpho;
 
-    constructor(
-        IERC20 _base,
-        IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
-        IMorpho _morpho
-    ) FlashLoanBase(true, _base, _quote, _bDec, _qDec) {
+    constructor(IERC20 _base, IERC20 _quote, IMorpho _morpho) FlashLoanBase(true, _base, _quote) {
         morpho = _morpho;
 
         BASE.forceApprove(address(morpho), type(uint256).max);

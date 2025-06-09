@@ -826,8 +826,6 @@ contract ETHALMTest is MorphoTestBase {
             newAdapter = new EulerLendingAdapter(
                 BASE,
                 QUOTE,
-                bDec,
-                qDec,
                 TestLib.EULER_VAULT_CONNECT,
                 TestLib.eulerUSDCVault1,
                 TestLib.eulerWETHVault1,

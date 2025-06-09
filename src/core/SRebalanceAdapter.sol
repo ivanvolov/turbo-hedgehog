@@ -78,12 +78,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova
-    ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;

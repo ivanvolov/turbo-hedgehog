@@ -48,11 +48,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         IUniversalRouter _router,
         IPermit2 _permit2
-    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote) {
         router = _router;
         permit2 = _permit2;
 
