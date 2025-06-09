@@ -11,8 +11,7 @@ import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
-import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
 // ** interfaces
@@ -62,8 +61,8 @@ contract ETHALMTest is MorphoTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        create_oracle(true, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
         assertTicks(194466, 200466);
 
         // ** Setting up strategy params
@@ -160,6 +159,11 @@ contract ETHALMTest is MorphoTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
+        console.log("preRebalanceTVL %s", preRebalanceTVL);
+        console.log("postRebalanceTVL %s", hook.TVL());
+
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         console.log("liquidity %s", hook.liquidity());
@@ -167,10 +171,14 @@ contract ETHALMTest is MorphoTestBase {
         uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
             ALMMathLib.getSqrtPriceX96FromTick(tickLower),
             ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-            TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+            lendingAdapter.getCollateralLong()
         );
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
+    }
+
+    function test_only_rebalance() public {
+        test_deposit_rebalance();
     }
 
     function test_deposit_rebalance_revert_no_rebalance_needed() public {
@@ -269,12 +277,12 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, usdcToSwap);
 
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5439224791342722064, 1e4, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5439224790608936570, 1e4, "deltaWETH");
 
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(157249104672336621054, 239418121556, 277892039995, 42755829463679343123);
+        assertEqPositionState(157249104673382265383, 239418121556, 277892039995, 42755829463991201958);
 
         assertEq(hook.sqrtPriceCurrent(), 1528486427985910860928397360202277);
         assertApproxEqAbs(hook.TVL(), 100030490867261272191, 1e1, "tvl");
@@ -377,7 +385,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(172868040568368271007, 239418121556, 307048135966, 47414108590565975565);
+        assertEqPositionState(172868040567301490012, 239418121556, 307048135966, 47414108590247812812);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848882225214835397928199912822);
         assertApproxEqAbs(hook.TVL(), 100031038934866468198, 1e1, "tvl");
@@ -687,7 +695,7 @@ contract ETHALMTest is MorphoTestBase {
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
                 ALMMathLib.getSqrtPriceX96FromTick(tickLower),
                 ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
 
             assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);

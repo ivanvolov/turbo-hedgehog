@@ -71,8 +71,8 @@ contract UNICORDRALMTest is MorphoTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.DAI, 18, "DAI");
         create_lending_adapter_morpho_earn_dai_usdc();
         create_flash_loan_adapter_morpho();
-        create_oracle(TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(false, true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
+        create_oracle(false, TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
+        init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
         assertTicks(-276420, -276220);
 
         // ** Setting up strategy params
@@ -98,14 +98,14 @@ contract UNICORDRALMTest is MorphoTestBase {
         vm.prank(alice.addr);
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 99999999999000000000000, 1e1);
+        assertApproxEqAbs(shares, 99999999999, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(0, amountToDep - 1, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 99999999999000000000000, 1e1, "tvl");
+        assertApproxEqAbs(hook.TVL(), 99999999999, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 

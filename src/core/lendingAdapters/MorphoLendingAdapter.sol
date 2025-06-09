@@ -12,16 +12,12 @@ import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
 import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 
-// ** libraries
-import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
-
 // ** contracts
 import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 
 contract MorphoLendingAdapter is LendingBase {
     error NotInBorrowMode();
 
-    using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
     // ** Morpho
@@ -89,75 +85,66 @@ contract MorphoLendingAdapter is LendingBase {
 
     function getBorrowedLong() public view override returns (uint256) {
         if (isEarn) return 0;
-        return
-            MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(longMId), address(this)).wrap(bDec);
+        return MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(longMId), address(this));
     }
 
     function getCollateralLong() public view override returns (uint256) {
-        if (isEarn) return earnQuote.convertToAssets(earnQuote.balanceOf(address(this))).wrap(qDec);
+        if (isEarn) return earnQuote.convertToAssets(earnQuote.balanceOf(address(this)));
         Position memory p = morpho.position(longMId, address(this));
-        return uint256(p.collateral).wrap(qDec);
+        return uint256(p.collateral);
     }
 
     function borrowLong(uint256 amount) public override onlyModule onlyActive isBorrowMode {
-        morpho.borrow(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), msg.sender);
+        morpho.borrow(morpho.idToMarketParams(longMId), amount, 0, address(this), msg.sender);
     }
 
     function repayLong(uint256 amount) public override onlyModule notPaused isBorrowMode {
-        BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
-        morpho.repay(morpho.idToMarketParams(longMId), amount.unwrap(bDec), 0, address(this), "");
+        BASE.safeTransferFrom(msg.sender, address(this), amount);
+        morpho.repay(morpho.idToMarketParams(longMId), amount, 0, address(this), "");
     }
 
     function removeCollateralLong(uint256 amount) public override onlyModule notPaused {
-        if (isEarn) earnQuote.withdraw(amount.unwrap(qDec), msg.sender, address(this));
-        else
-            morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), msg.sender);
+        if (isEarn) earnQuote.withdraw(amount, msg.sender, address(this));
+        else morpho.withdrawCollateral(morpho.idToMarketParams(longMId), amount, address(this), msg.sender);
     }
 
     function addCollateralLong(uint256 amount) public override onlyModule onlyActive {
-        QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
-        if (isEarn) earnQuote.deposit(amount.unwrap(qDec), address(this));
-        else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount.unwrap(qDec), address(this), "");
+        QUOTE.safeTransferFrom(msg.sender, address(this), amount);
+        if (isEarn) earnQuote.deposit(amount, address(this));
+        else morpho.supplyCollateral(morpho.idToMarketParams(longMId), amount, address(this), "");
     }
 
     // ** Short market
 
     function getBorrowedShort() public view override returns (uint256) {
         if (isEarn) return 0;
-        return
-            MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(shortMId), address(this)).wrap(qDec);
+        return MorphoBalancesLib.expectedBorrowAssets(morpho, morpho.idToMarketParams(shortMId), address(this));
     }
 
     function getCollateralShort() public view override returns (uint256) {
-        if (isEarn) return earnBase.convertToAssets(earnBase.balanceOf(address(this))).wrap(bDec);
+        if (isEarn) return earnBase.convertToAssets(earnBase.balanceOf(address(this)));
         Position memory p = morpho.position(shortMId, address(this));
-        return uint256(p.collateral).wrap(bDec);
+        return uint256(p.collateral);
     }
 
     function borrowShort(uint256 amount) public override onlyModule onlyActive isBorrowMode {
-        morpho.borrow(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), msg.sender);
+        morpho.borrow(morpho.idToMarketParams(shortMId), amount, 0, address(this), msg.sender);
     }
 
     function repayShort(uint256 amount) public override onlyModule notPaused isBorrowMode {
-        QUOTE.safeTransferFrom(msg.sender, address(this), amount.unwrap(qDec));
-        morpho.repay(morpho.idToMarketParams(shortMId), amount.unwrap(qDec), 0, address(this), "");
+        QUOTE.safeTransferFrom(msg.sender, address(this), amount);
+        morpho.repay(morpho.idToMarketParams(shortMId), amount, 0, address(this), "");
     }
 
     function removeCollateralShort(uint256 amount) public override onlyModule notPaused {
-        if (isEarn) earnBase.withdraw(amount.unwrap(bDec), msg.sender, address(this));
-        else
-            morpho.withdrawCollateral(
-                morpho.idToMarketParams(shortMId),
-                amount.unwrap(bDec),
-                address(this),
-                msg.sender
-            );
+        if (isEarn) earnBase.withdraw(amount, msg.sender, address(this));
+        else morpho.withdrawCollateral(morpho.idToMarketParams(shortMId), amount, address(this), msg.sender);
     }
 
     function addCollateralShort(uint256 amount) public override onlyModule onlyActive {
-        BASE.safeTransferFrom(msg.sender, address(this), amount.unwrap(bDec));
-        if (isEarn) earnBase.deposit(amount.unwrap(bDec), address(this));
-        else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount.unwrap(bDec), address(this), "");
+        BASE.safeTransferFrom(msg.sender, address(this), amount);
+        if (isEarn) earnBase.deposit(amount, address(this));
+        else morpho.supplyCollateral(morpho.idToMarketParams(shortMId), amount, address(this), "");
     }
 
     // ** Helpers

@@ -18,7 +18,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 // ** libraries
 import {ALMMathLib} from "./libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "./libraries/TokenWrapperLib.sol";
 import {CurrencySettler} from "./libraries/CurrencySettler.sol";
 
 // ** contracts
@@ -30,7 +29,6 @@ import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
-    using TokenWrapperLib for uint256;
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
@@ -108,8 +106,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         );
 
         _burn(msg.sender, sharesOut);
-        if (uDS != 0 && uDL != 0)
-            flashLoanAdapter.flashLoanTwoTokens(uDL.unwrap(bDec), uDS.unwrap(qDec), abi.encode(uCL, uCS));
+        if (uDS != 0 && uDL != 0) flashLoanAdapter.flashLoanTwoTokens(uDL, uDS, abi.encode(uCL, uCS));
         else if (uDS == 0 && uDL == 0) {
             if (uCL != 0 && uCS != 0)
                 lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), 0, 0);
@@ -118,7 +115,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
             if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
             else swapAdapter.swapExactInput(true, baseBalance(false));
-        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL.unwrap(bDec), abi.encode(uCL, uCS));
+        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL, abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
@@ -147,8 +144,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         lendingAdapter.updatePosition(
             SafeCast.toInt256(uCL),
             SafeCast.toInt256(uCS),
-            -SafeCast.toInt256(amountBase.wrap(bDec)),
-            -SafeCast.toInt256(amountQuote.wrap(qDec))
+            -SafeCast.toInt256(amountBase),
+            -SafeCast.toInt256(amountQuote)
         );
 
         if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
@@ -163,8 +160,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         (int256 deltaDL, int256 deltaDS) = isBase
-            ? (-SafeCast.toInt256(amount.wrap(bDec)), int256(0))
-            : (int256(0), -SafeCast.toInt256(amount.wrap(qDec)));
+            ? (-SafeCast.toInt256(amount), int256(0))
+            : (int256(0), -SafeCast.toInt256(amount));
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
         if (isBase) {
@@ -311,7 +308,16 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     function TVL() public view returns (uint256) {
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         return
-            ALMMathLib.getTVL(quoteBalance(true), baseBalance(true), CL, CS, DL, DS, oracle.price(), isInvertedAssets);
+            ALMMathLib.getTVL(
+                quoteBalance(true),
+                baseBalance(true),
+                CL,
+                CS,
+                DL,
+                DS,
+                oracle.test_price(),
+                isInvertedAssets
+            );
     }
 
     function sharePrice() external view returns (uint256) {

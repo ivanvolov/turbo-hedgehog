@@ -8,7 +8,6 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
@@ -51,8 +50,8 @@ contract ETHRALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDT, 6, "USDT", TestLib.WETH, 18, "WETH");
         create_lending_adapter_euler(TestLib.eulerUSDTVault1, 3000000 * 1e6, TestLib.eulerWETHVault1, 0);
         create_flash_loan_adapter_euler(TestLib.eulerUSDTVault2, 3000000 * 1e6, TestLib.eulerWETHVault2, 0);
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
-        init_hook(false, false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        create_oracle(false, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
         assertTicks(-200488, -194488);
 
         // ** Setting up strategy params
@@ -155,8 +154,8 @@ contract ETHRALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -196,8 +195,8 @@ contract ETHRALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -237,8 +236,8 @@ contract ETHRALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
             assertEqPositionState(
                 CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDT,
+                CS,
+                DL + deltaUSDT,
                 DS + ((k1 - 1e18) * (deltaWETH - deltaTreasuryFee)) / 1e18
             );
         }
@@ -291,8 +290,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -345,8 +344,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdtToSwap,
+                CS,
+                DL - usdtToSwap,
                 DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
             );
         }
@@ -386,8 +385,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL - ((deltaWETH) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - deltaUSDT + deltaTreasuryFeeB,
+                CS,
+                DL - deltaUSDT + deltaTreasuryFeeB,
                 DS - ((k1 - 1e18) * (deltaWETH)) / 1e18
             );
         }
@@ -435,8 +434,8 @@ contract ETHRALMTest is ALMTestBase {
 
             assertEqPositionState(
                 CL + (deltaWETH * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDT + deltaTreasuryFeeB,
+                CS,
+                DL + deltaUSDT + deltaTreasuryFeeB,
                 DS + ((k1 - 1e18) * (deltaWETH)) / 1e18
             );
         }

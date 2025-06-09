@@ -8,7 +8,6 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
@@ -50,8 +49,8 @@ contract BTCALMTest is ALMTestBase {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
         create_lending_adapter_euler(TestLib.eulerUSDCVault1, 2000000e6, TestLib.eulerCbBTCVault1, 0);
         create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerCbBTCVault2, 100e8);
-        create_oracle(TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(true, false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        create_oracle(true, TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
         assertTicks(-71807, -65807);
 
         // ** Setting up strategy params
@@ -156,10 +155,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdcToSwap,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
+                CL - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL - usdcToSwap,
+                DS - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -198,10 +197,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdcToSwap,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
+                CL - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL - usdcToSwap,
+                DS - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -240,10 +239,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) + ((deltaBTC - deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDC,
-                TW.unwrap(DS, qDec) + ((k1 - 1e18) * (deltaBTC - deltaTreasuryFee)) / 1e18
+                CL + ((deltaBTC - deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL + deltaUSDC,
+                DS + ((k1 - 1e18) * (deltaBTC - deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -304,10 +303,10 @@ contract BTCALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeQ);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - usdcToSwap,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
+                CL - ((deltaBTC + deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL - usdcToSwap,
+                DS - ((k1 - 1e18) * (deltaBTC + deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -339,10 +338,10 @@ contract BTCALMTest is ALMTestBase {
             assertApproxEqAbs(hook.accumulatedFeeB(), deltaTreasuryFeeB, 3, "treasuryFee");
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) - ((deltaBTC) * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) - deltaUSDC + deltaTreasuryFeeB,
-                TW.unwrap(DS, qDec) - ((k1 - 1e18) * (deltaBTC)) / 1e18
+                CL - ((deltaBTC) * k1) / 1e18,
+                CS,
+                DL - deltaUSDC + deltaTreasuryFeeB,
+                DS - ((k1 - 1e18) * (deltaBTC)) / 1e18
             );
         }
 
@@ -383,10 +382,10 @@ contract BTCALMTest is ALMTestBase {
             //console.log("deltaTreasuryFeeQ %s", treasuryFeeB);
 
             assertEqPositionState(
-                TW.unwrap(CL, qDec) + (deltaBTC * k1) / 1e18,
-                TW.unwrap(CS, bDec),
-                TW.unwrap(DL, bDec) + deltaUSDC + deltaTreasuryFeeB,
-                TW.unwrap(DS, qDec) + ((k1 - 1e18) * (deltaBTC)) / 1e18
+                CL + (deltaBTC * k1) / 1e18,
+                CS,
+                DL + deltaUSDC + deltaTreasuryFeeB,
+                DS + ((k1 - 1e18) * (deltaBTC)) / 1e18
             );
         }
 

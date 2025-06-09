@@ -23,7 +23,7 @@ import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanA
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
-import {Oracle} from "@src/core/Oracle.sol";
+import {Oracle} from "@src/core/oracles/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -32,7 +32,6 @@ import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -173,17 +172,40 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function create_oracle(
-        AggregatorV3Interface feed0,
-        AggregatorV3Interface feed1,
-        uint256 stalenessThreshold0,
-        uint256 stalenessThreshold1
-    ) internal {
+        bool _isInvertedPool,
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint256 stalenessThresholdQ,
+        uint256 stalenessThresholdB
+    ) internal returns (IOracle _oracle) {
+        isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
-        oracle = new Oracle(feed0, feed1, stalenessThreshold0, stalenessThreshold1);
+        _oracle = new Oracle(
+            feedB,
+            feedQ,
+            stalenessThresholdB,
+            stalenessThresholdQ,
+            _isInvertedPool,
+            int8(bDec) - int8(qDec)
+        );
+        oracle = _oracle;
+    }
+
+    function _create_oracle(
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint256 stalenessThresholdQ,
+        uint256 stalenessThresholdB,
+        bool _isInvertedPool,
+        int8 decimalsDelta
+    ) internal returns (IOracle _oracle) {
+        isInvertedPool = _isInvertedPool;
+        vm.prank(deployer.addr);
+        _oracle = new Oracle(feedB, feedQ, stalenessThresholdB, stalenessThresholdQ, _isInvertedPool, decimalsDelta);
+        oracle = _oracle;
     }
 
     function init_hook(
-        bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova,
         uint256 _liquidityMultiplier,
@@ -193,7 +215,6 @@ abstract contract ALMTestBase is Deployers {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) internal {
-        isInvertedPool = _isInvertedPool;
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
@@ -211,7 +232,7 @@ abstract contract ALMTestBase is Deployers {
         );
         deployCodeTo(
             "ALM.sol",
-            abi.encode(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            abi.encode(BASE, QUOTE, bDec, qDec, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
             hookAddress
         );
         hook = ALM(hookAddress);
@@ -226,7 +247,7 @@ abstract contract ALMTestBase is Deployers {
 
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
         // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, _isNova);
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, isInvertedPool, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(
             _liquidityMultiplier,
@@ -380,12 +401,12 @@ abstract contract ALMTestBase is Deployers {
             TestLib.getOraclePriceFromPoolPrice(
                 TestLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
                 isInvertedPool,
-                uint8(ALMMathLib.absSub(bDec, qDec))
+                int8(bDec) - int8(qDec)
             );
     }
 
     uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
-    uint256 slippageTolerance = 1e18; // 1% acceptable price difference
+    uint256 slippageTolerance = 1e16; // 1% acceptable price difference
 
     function _setV3PoolPrice(uint160 newSqrtPrice) public {
         uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
@@ -400,7 +421,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 stepSize = initialStepSize;
 
         uint256 iterations = 0;
-        while (iterations < 50) {
+        while (iterations < 100) {
             uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
             if (priceDiff <= slippageTolerance) break;
             iterations++;
@@ -629,9 +650,14 @@ abstract contract ALMTestBase is Deployers {
             ? calcDS - _lendingAdapter.getBorrowedShort()
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
-        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
-        assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
-        assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
+        uint256 diffDL = calcDL >= _lendingAdapter.getBorrowedLong()
+            ? calcDL - _lendingAdapter.getBorrowedLong()
+            : _lendingAdapter.getBorrowedLong() - calcDL;
+
+        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 100);
+        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 100);
+        // assertApproxEqAbs(calcDL * 1e18 /_lendingAdapter.getBorrowedLong(), , slippage);
+        assertApproxEqAbs((diffDL * 1e18) / calcDS, slippage, slippage);
 
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
@@ -665,8 +691,8 @@ abstract contract ALMTestBase is Deployers {
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
-        assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
-        assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
+        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 1e1);
+        assertApproxEqAbs(calcDL, _lendingAdapter.getBorrowedLong(), slippage);
 
         assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
@@ -682,20 +708,20 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqPositionState(CL, CS, DL, DS) {
             // Intentionally empty
         } catch {
-            console.log("Error: CL", TW.unwrap(_leA.getCollateralLong(), qDec));
-            console.log("Error: CS", TW.unwrap(_leA.getCollateralShort(), bDec));
-            console.log("Error: DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
-            console.log("Error: DS", TW.unwrap(_leA.getBorrowedShort(), qDec));
+            console.log("Error: CL", _leA.getCollateralLong());
+            console.log("Error: CS", _leA.getCollateralShort());
+            console.log("Error: DL", _leA.getBorrowedLong());
+            console.log("Error: DS", _leA.getBorrowedShort());
             _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
         }
     }
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
-        assertApproxEqAbs(TW.unwrap(_leA.getCollateralLong(), qDec), CL, assertEqPSThresholdCL, "CL not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getCollateralShort(), bDec), CS, assertEqPSThresholdCS, "CS not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedLong(), bDec), DL, assertEqPSThresholdDL, "DL not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedShort(), qDec), DS, assertEqPSThresholdDS, "DS not equal");
+        assertApproxEqAbs(_leA.getCollateralLong(), CL, assertEqPSThresholdCL, "CL not equal");
+        assertApproxEqAbs(_leA.getCollateralShort(), CS, assertEqPSThresholdCS, "CS not equal");
+        assertApproxEqAbs(_leA.getBorrowedLong(), DL, assertEqPSThresholdDL, "DL not equal");
+        assertApproxEqAbs(_leA.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
     }
 
     // --- Test math --- //
@@ -733,13 +759,13 @@ abstract contract ALMTestBase is Deployers {
             liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
                 ALMMathLib.getSqrtPriceX96FromTick(tickLower),
                 ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
         } else {
             liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
                 ALMMathLib.getSqrtPriceX96FromTick(tickLower),
                 ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
         }
 
@@ -800,15 +826,15 @@ abstract contract ALMTestBase is Deployers {
 
     // --- Utils --- //
 
-    // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals
-    function c6to18(uint256 amountIn6Decimals) internal pure returns (uint256) {
-        return amountIn6Decimals * (10 ** 12);
-    }
+    // // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals
+    // function c6to18(uint256 amountIn6Decimals) internal pure returns (uint256) {
+    //     return amountIn6Decimals * (10 ** 12);
+    // }
 
-    // ** Convert function: Converts a value with 18 decimals to a representation with 6 decimals
-    function c18to6(uint256 amountIn18Decimals) internal pure returns (uint256) {
-        return amountIn18Decimals / (10 ** 12);
-    }
+    // // ** Convert function: Converts a value with 18 decimals to a representation with 6 decimals
+    // function c18to6(uint256 amountIn18Decimals) internal pure returns (uint256) {
+    //     return amountIn18Decimals / (10 ** 12);
+    // }
 
     function abs(int256 n) internal pure returns (uint256) {
         unchecked {

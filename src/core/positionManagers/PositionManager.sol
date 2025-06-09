@@ -8,9 +8,6 @@ import {ProtocolFeeLibrary} from "v4-core/libraries/ProtocolFeeLibrary.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// ** libraries
-import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
-
 // ** contracts
 import {Base} from "../Base/Base.sol";
 
@@ -25,7 +22,6 @@ contract PositionManager is Base, IPositionManager {
     event FeesSet(uint24 newFees);
 
     using PRBMathUD60x18 for uint256;
-    using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
     using ProtocolFeeLibrary for uint24;
 
@@ -58,7 +54,7 @@ contract PositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
-        BASE.safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
+        BASE.safeTransferFrom(address(alm), address(this), deltaBase);
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;
@@ -68,11 +64,11 @@ contract PositionManager is Base, IPositionManager {
         lendingAdapter.updatePosition(SafeCast.toInt256(k.mul(deltaQuote)), 0, -SafeCast.toInt256(deltaBase), 0);
         if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaQuote));
 
-        QUOTE.safeTransfer(address(alm), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransfer(address(alm), deltaQuote);
     }
 
     function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
-        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
+        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
 
         uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Add k1 * dETH to long as collateral;
@@ -86,7 +82,7 @@ contract PositionManager is Base, IPositionManager {
         }
         lendingAdapter.borrowLong(deltaBase);
 
-        BASE.safeTransfer(address(alm), deltaBase.unwrap(bDec));
+        BASE.safeTransfer(address(alm), deltaBase);
     }
 
     function getSwapFees(bool, int256) external view returns (uint24) {
