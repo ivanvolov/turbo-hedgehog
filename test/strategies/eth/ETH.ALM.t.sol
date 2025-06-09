@@ -669,6 +669,14 @@ contract ETHALMTest is MorphoTestBase {
         IPositionManagerStandard(address(positionManager)).setFees(fee);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
 
+        hook.setProtocolParams(
+            20 * 1e16, // 20% from fees
+            hook.tvlCap(),
+            hook.tickUpperDelta(),
+            hook.tickLowerDelta(),
+            hook.swapPriceThreshold()
+        );
+
         vm.stopPrank();
         test_deposit_rebalance();
 
@@ -699,6 +707,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Swap Up In
@@ -725,6 +736,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Swap Down Out
@@ -752,6 +766,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(usdcToGetFSwap, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Make oracle change with swap price
@@ -798,6 +815,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Make oracle change with swap price
@@ -835,6 +855,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Swap Up out
@@ -861,6 +884,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Swap Down In
@@ -886,6 +912,9 @@ contract ETHALMTest is MorphoTestBase {
 
             assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
+
+            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
         }
 
         // ** Make oracle change with swap price
