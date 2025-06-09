@@ -12,13 +12,13 @@ import {Currency} from "v4-core/types/Currency.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {CurrencySettlerSafe} from "@src/libraries/CurrencySettlerSafe.sol";
 import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts

@@ -181,7 +181,27 @@ contract ALM is BaseStrategyHook, ERC20 {
         }
     }
 
+    function transferFees() external onlyRebalanceAdapter {
+        accumulatedFeeB = 0;
+        base.safeTransfer(treasury, accumulatedFeeB);
+        accumulatedFeeQ = 0;
+        quote.safeTransfer(treasury, accumulatedFeeQ);
+    }
+
+    function refreshReserves() external notPaused {
+        lendingAdapter.syncPositions();
+    }
+
     // ** Swapping logic
+
+    function quoteSwap(
+        bool zeroForOne,
+        int256 amountSpecified,
+        uint160 sqrtPriceLimitX96
+    ) public view returns (uint256 token0, uint256 token1) {
+        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(zeroForOne, amountSpecified, sqrtPriceLimitX96);
+        (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
+    }
 
     function beforeSwap(
         address swapper,
@@ -216,56 +236,27 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token0In,
                 uint256 token1Out,
                 uint160 sqrtPriceNext,
-                uint256 fee
-            ) = getDeltas(params.amountSpecified, params.zeroForOne);
+                uint256 feeAmount
+            ) = getDeltas(params.zeroForOne, params.amountSpecified, params.sqrtPriceLimitX96);
             checkSwapDeviations(sqrtPriceNext);
 
             // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
             // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
             key.currency0.take(poolManager, address(this), token0In, false);
 
-            uint256 protocolFeeAmount = fee.mul(protocolFee);
-            if (params.amountSpecified > 0) {
-                if (isInvertedPool) {
-                    accumulatedFeeB += protocolFeeAmount; //cut protocol fee from the calculated swap fee
-                    positionManager.positionAdjustmentPriceUp(
-                        (token0In - protocolFeeAmount).wrap(bDec),
-                        token1Out.wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token1Out.wrap(bDec),
-                        (token0In - protocolFeeAmount).wrap(qDec)
-                    );
-                }
-            } else {
-                if (isInvertedPool) {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        token0In.wrap(bDec),
-                        (token1Out + protocolFeeAmount).wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        (token1Out + protocolFeeAmount).wrap(bDec),
-                        (token0In).wrap(qDec)
-                    );
-                }
-            }
+            updatePosition(feeAmount, token0In, token1Out, isInvertedPool);
 
             // We also need to create a debit so user could take it back from the PM.
             key.currency1.settle(poolManager, address(this), token1Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
 
-            emit HookFee(authorizedPool, swapper, SafeCast.toUint128(fee), 0);
+            emit HookFee(authorizedPool, swapper, SafeCast.toUint128(feeAmount), 0);
             emit HookSwap(
                 authorizedPool,
                 swapper,
                 SafeCast.toInt128(token0In),
                 SafeCast.toInt128(token1Out),
-                SafeCast.toUint128(fee),
+                SafeCast.toUint128(feeAmount),
                 0
             );
             return beforeSwapDelta;
@@ -276,78 +267,45 @@ contract ALM is BaseStrategyHook, ERC20 {
                 uint256 token1In,
                 uint256 token0Out,
                 uint160 sqrtPriceNext,
-                uint256 fee
-            ) = getDeltas(params.amountSpecified, params.zeroForOne);
+                uint256 feeAmount
+            ) = getDeltas(params.zeroForOne, params.amountSpecified, params.sqrtPriceLimitX96);
             checkSwapDeviations(sqrtPriceNext);
 
             key.currency1.take(poolManager, address(this), token1In, false);
 
-            uint256 protocolFeeAmount = fee.mul(protocolFee);
-            if (params.amountSpecified > 0) {
-                if (isInvertedPool) {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        token0Out.wrap(bDec),
-                        (token1In - protocolFeeAmount).wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        (token1In - protocolFeeAmount).wrap(bDec),
-                        token0Out.wrap(qDec)
-                    );
-                }
-            } else {
-                if (isInvertedPool) {
-                    accumulatedFeeB += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceDown(
-                        (token0Out + protocolFeeAmount).wrap(bDec),
-                        token1In.wrap(qDec)
-                    );
-                } else {
-                    accumulatedFeeQ += protocolFeeAmount;
-                    positionManager.positionAdjustmentPriceUp(
-                        token1In.wrap(bDec),
-                        (token0Out + protocolFeeAmount).wrap(qDec)
-                    );
-                }
-            }
+            updatePosition(feeAmount, token1In, token0Out, !isInvertedPool);
 
             key.currency0.settle(poolManager, address(this), token0Out, false);
             sqrtPriceCurrent = sqrtPriceNext;
 
-            emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(fee));
+            emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(feeAmount));
             emit HookSwap(
                 authorizedPool,
                 swapper,
                 SafeCast.toInt128(token0Out),
                 SafeCast.toInt128(token1In),
                 0,
-                SafeCast.toUint128(fee)
+                SafeCast.toUint128(feeAmount)
             );
             return beforeSwapDelta;
         }
     }
 
-    function quoteSwap(bool zeroForOne, int256 amountSpecified) public view returns (uint256 token0, uint256 token1) {
-        (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(amountSpecified, zeroForOne);
-        (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
-    }
-
-    function transferFees() external onlyRebalanceAdapter {
-        accumulatedFeeB = 0;
-        base.safeTransfer(treasury, accumulatedFeeB);
-        accumulatedFeeQ = 0;
-        quote.safeTransfer(treasury, accumulatedFeeQ);
-    }
-
-    function refreshReserves() external notPaused {
-        lendingAdapter.syncPositions();
+    function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
+        uint256 protocolFeeAmount = protocolFee == 0 ? 0 : feeAmount.mul(protocolFee);
+        if (up) {
+            accumulatedFeeB += protocolFeeAmount;
+            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount).wrap(bDec), tokenOut.wrap(qDec));
+        } else {
+            accumulatedFeeQ += protocolFeeAmount;
+            positionManager.positionAdjustmentPriceDown(tokenOut.wrap(bDec), (tokenIn - protocolFeeAmount).wrap(qDec));
+        }
     }
 
     function checkSwapDeviations(uint160 sqrtPriceNext) internal view {
-        uint256 ratio = uint256(sqrtPriceNext).div(rebalanceAdapter.sqrtPriceAtLastRebalance());
-        uint256 priceThreshold = ratio > 1e18 ? ratio - 1e18 : 1e18 - ratio;
+        uint256 sqrtPriceAtLastRebalance = rebalanceAdapter.sqrtPriceAtLastRebalance();
+        uint256 priceThreshold = uint256(sqrtPriceNext).div(sqrtPriceAtLastRebalance);
+        if (priceThreshold < ALMMathLib.WAD) priceThreshold = sqrtPriceAtLastRebalance.div(sqrtPriceNext);
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 

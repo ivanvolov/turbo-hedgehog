@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
+import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
@@ -13,29 +14,6 @@ library ALMMathLib {
 
     uint256 constant WAD = 1e18;
     uint256 constant Q96 = 2 ** 96;
-
-    function getSqrtPriceNextX96(
-        bool zeroForOne,
-        bool exactInput,
-        uint160 sqrtPriceCurrentX96,
-        uint128 liquidity,
-        uint256 amount
-    ) internal pure returns (uint160) {
-        if (zeroForOne != exactInput) {
-            uint160 sqrtPriceDeltaX96 = SafeCast.toUint160(PRBMath.mulDiv(amount, Q96, liquidity));
-            return zeroForOne ? sqrtPriceCurrentX96 - sqrtPriceDeltaX96 : sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
-        } else {
-            uint256 liquidityDelta = PRBMath.mulDiv(amount, sqrtPriceCurrentX96, Q96);
-            return
-                SafeCast.toUint160(
-                    PRBMath.mulDiv(
-                        liquidity,
-                        sqrtPriceCurrentX96,
-                        zeroForOne ? liquidity + liquidityDelta : liquidity - liquidityDelta
-                    )
-                );
-        }
-    }
 
     function getLiquidity(
         bool isInvertedPool,

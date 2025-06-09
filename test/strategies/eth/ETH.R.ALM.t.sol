@@ -3,14 +3,12 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
+// ** contracts
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-
-// ** contracts
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
@@ -25,7 +23,7 @@ contract ETHRALMTest is ALMTestBase {
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 2e18;
     uint256 slippage = 15e14; //0.15%
-    uint256 fee = 5e14; //0.05%
+    uint24 fee = 500; //0.05%
 
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
@@ -65,7 +63,7 @@ contract ETHRALMTest is ALMTestBase {
             IPositionManagerStandard(address(positionManager)).setFees(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2);
             rebalanceAdapter.setRebalanceParams(weight, liquidityMultiplier, longLeverage, shortLeverage);
-            rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
+            rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
 
@@ -117,7 +115,7 @@ contract ETHRALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(5 * 1e14);
+        IPositionManagerStandard(address(positionManager)).setFees(500);
         hook.setProtocolParams(
             20 * 1e16, // 20% from fees
             hook.tvlCap(),
@@ -221,7 +219,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 usdtToGetFSwap = 20000e6; //20k USDT
-            (uint256 wethToSwapQ, ) = hook.quoteSwap(true, int256(usdtToGetFSwap));
+            (uint256 wethToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -370,7 +368,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 wethToGetFSwap = 1e18;
-            (, uint256 usdtToSwapQ) = hook.quoteSwap(false, int256(wethToGetFSwap));
+            (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(wethToGetFSwap));
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
