@@ -11,6 +11,9 @@ import {Base} from "../base/Base.sol";
 // ** interfaces
 import {IFlashLoanAdapter, IFlashLoanReceiver} from "../../interfaces/IFlashLoanAdapter.sol";
 
+/// @title Flash Loan Base
+/// @notice Abstract contract that serves as the base for all flash loan adapters.
+/// @dev Implements the flash loan of two tokens using the flash loan of one token function.
 abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
     error NotAllowedLoanType(uint8 loanType);
 

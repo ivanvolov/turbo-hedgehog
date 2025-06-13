@@ -17,6 +17,8 @@ import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
 // ** contracts
 import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 
+/// @title Euler Lending Adapter
+/// @notice Implementation of the lending adapter using Euler V2.
 contract EulerLendingAdapter is LendingBase {
     using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;

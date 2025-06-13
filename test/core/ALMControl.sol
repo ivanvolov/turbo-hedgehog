@@ -25,9 +25,6 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 import {ALM} from "@src/ALM.sol";
 
-/// @title ALM Control hook for simulation
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
 contract ALMControl is BaseHook, ERC20 {
     using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;

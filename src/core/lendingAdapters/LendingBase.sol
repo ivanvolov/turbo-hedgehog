@@ -12,6 +12,9 @@ import {Base} from "../base/Base.sol";
 // ** interfaces
 import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
 
+/// @title Lending Base
+/// @notice Abstract contract that serves as the base for all lending adapters.
+/// @dev Implements the claim rewards functionality using Merkl and updatePosition flow.
 abstract contract LendingBase is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
@@ -90,20 +93,26 @@ abstract contract LendingBase is Base, ILendingAdapter {
     // ** Long and short markets unimplemented functions
 
     function addCollateralLong(uint256 amount) public virtual;
+
     function addCollateralShort(uint256 amount) public virtual;
 
     function repayLong(uint256 amount) public virtual;
+
     function repayShort(uint256 amount) public virtual;
 
     function removeCollateralLong(uint256 amount) public virtual;
+
     function removeCollateralShort(uint256 amount) public virtual;
 
     function borrowLong(uint256 amount) public virtual;
+
     function borrowShort(uint256 amount) public virtual;
 
     function getCollateralLong() public view virtual returns (uint256);
+
     function getCollateralShort() public view virtual returns (uint256);
 
     function getBorrowedLong() public view virtual returns (uint256);
+
     function getBorrowedShort() public view virtual returns (uint256);
 }

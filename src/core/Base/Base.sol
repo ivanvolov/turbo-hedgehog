@@ -18,6 +18,8 @@ import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
 import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
 import {IBase} from "../../interfaces/IBase.sol";
 
+/// @title Base
+/// @notice Abstract contract that serves as the base for all modules and adapters.
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 

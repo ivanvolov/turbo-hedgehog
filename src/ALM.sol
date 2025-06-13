@@ -24,9 +24,10 @@ import {CurrencySettler} from "./libraries/CurrencySettler.sol";
 // ** contracts
 import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 
-/// @title ALM
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
+/// @title Automated Liquidity Manager
+/// @author Ivan Volovyk <https://github.com/ivanvolov>
+/// @custom:contact ivan@lumis.fi
+/// @notice The main hook contract handling liquidity management and swap flow.
 contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;

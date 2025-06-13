@@ -25,6 +25,8 @@ import {Base} from "./Base.sol";
 // ** interfaces
 import {IALM} from "../../interfaces/IALM.sol";
 
+/// @title Base Strategy Hook
+/// @notice Abstract contract that serves as a base for ALM and holds storage and hook configuration.
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;

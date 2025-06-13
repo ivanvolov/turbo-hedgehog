@@ -11,6 +11,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // ** contracts
 import {FlashLoanBase} from "./FlashLoanBase.sol";
 
+/// @title Morpho Flash Loan Adapter
+/// @notice Implementation of the flash loan adapter using Morpho.
 contract MorphoFlashLoanAdapter is FlashLoanBase {
     error NotMorpho(address account);
 

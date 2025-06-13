@@ -8,6 +8,8 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 // ** interfaces
 import {IOracle} from "../interfaces/IOracle.sol";
 
+/// @title Chainlink Oracle
+/// @notice Implementation of the Chainlink based oracle.
 contract Oracle is IOracle {
     AggregatorV3Interface internal immutable feedBase;
     AggregatorV3Interface internal immutable feedQuote;

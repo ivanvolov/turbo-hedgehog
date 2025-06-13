@@ -21,6 +21,8 @@ import {Base} from "../base/Base.sol";
 // ** interfaces
 import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
 
+/// @title Uniswap Swap Adapter
+/// @notice Provides swap functionality for Uniswap V2, V3, and V4 using Uniswap UniversalRouterV2.
 contract UniswapSwapAdapter is Base, ISwapAdapter {
     error InvalidSwapRoute();
     error InvalidProtocolType();

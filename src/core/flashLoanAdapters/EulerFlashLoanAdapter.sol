@@ -8,6 +8,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // ** contracts
 import {FlashLoanBase} from "./FlashLoanBase.sol";
 
+/// @title Euler Flash Loan Adapter
+/// @notice Implementation of the flash loan adapter using Euler V2.
 contract EulerFlashLoanAdapter is FlashLoanBase {
     error NotAllowedEulerVault(address account);
     error FlashLoanAssetNotAllowed(address asset);
