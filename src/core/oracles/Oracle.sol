@@ -10,32 +10,34 @@ import {OracleBase} from "./OracleBase.sol";
 contract Oracle is OracleBase {
     AggregatorV3Interface internal immutable feedBase;
     AggregatorV3Interface internal immutable feedQuote;
-    uint256 public immutable stalenessThresholdB;
     uint256 public immutable stalenessThresholdQ;
+    uint256 public immutable stalenessThresholdB;
 
     constructor(
-        AggregatorV3Interface _feedBase,
-        AggregatorV3Interface _feedQuote,
-        uint256 _stalenessThresholdB,
-        uint256 _stalenessThresholdQ,
         bool _isInvertedPool,
-        int8 _decimalsDelta
-    ) OracleBase(_isInvertedPool, _decimalsDelta, _feedBase.decimals(), _feedQuote.decimals()) {
-        feedBase = _feedBase;
+        uint8 _bDec,
+        uint8 _qDec,
+        AggregatorV3Interface _feedQuote,
+        AggregatorV3Interface _feedBase,
+        uint256 _stalenessThresholdQ,
+        uint256 _stalenessThresholdB
+    ) OracleBase(_isInvertedPool, _bDec, _qDec) {
         feedQuote = _feedQuote;
-
-        stalenessThresholdB = _stalenessThresholdB;
+        feedBase = _feedBase;
         stalenessThresholdQ = _stalenessThresholdQ;
+        stalenessThresholdB = _stalenessThresholdB;
+        decimalsQuote = feedQuote.decimals();
+        decimalsBase = feedBase.decimals();
     }
 
     function _fetchAssetsPrices() internal view override returns (uint256, uint256) {
-        (, int256 _priceBase, , uint256 updatedAtBase, ) = feedBase.latestRoundData();
-        require(block.timestamp - updatedAtBase <= stalenessThresholdB, "O4");
-
         (, int256 _priceQuote, , uint256 updatedAtQuote, ) = feedQuote.latestRoundData();
-        require(block.timestamp - updatedAtQuote <= stalenessThresholdQ, "O5");
+        require(block.timestamp - updatedAtQuote <= stalenessThresholdQ, "O1");
 
-        require(_priceBase > 0 && _priceQuote > 0, "O6");
-        return (uint256(_priceBase), uint256(_priceQuote));
+        (, int256 _priceBase, , uint256 updatedAtBase, ) = feedBase.latestRoundData();
+        require(block.timestamp - updatedAtBase <= stalenessThresholdB, "O2");
+
+        require(_priceQuote > 0 && _priceBase > 0, "O3");
+        return (uint256(_priceQuote), uint256(_priceBase));
     }
 }

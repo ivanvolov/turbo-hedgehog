@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 
+// ** libraries
+import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
+
 // ** interfaces
 import {IOracle} from "../../interfaces/IOracle.sol";
 
@@ -11,32 +14,25 @@ abstract contract OracleBase is IOracle {
     using PRBMathUD60x18 for uint256;
 
     bool public immutable isInvertedPool;
-    uint256 public immutable ratio;
-    uint256 public immutable scaleFactor;
+    uint8 public immutable decimalsQuote;
+    uint8 public immutable decimalsBase;
 
-    constructor(bool _isInvertedPool, int8 _decimalsDelta, uint256 _decimalsBase, uint256 _decimalsQuote) {
+    uint8 public immutable bDec;
+    uint8 public immutable qDec;
+
+    constructor(bool _isInvertedPool, uint8 _bDec, uint8 _qDec) {
         isInvertedPool = _isInvertedPool;
-        if (_decimalsDelta < -18) revert("O1");
-
-        scaleFactor = 10 ** (18 + _decimalsBase - _decimalsQuote);
-        ratio = 10 ** uint256(int256(_decimalsDelta) + 18);
+        bDec = _bDec;
+        qDec = _qDec;
     }
 
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
     function price() external view returns (uint256 _price) {
-        (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
+        (uint256 _priceQuote, uint256 _priceBase) = _fetchAssetsPrices();
 
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
-        require(_price > 0, "O2");
-    }
-
-    //TODO: only use test_price in the future
-    /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
-    function test_price() external view returns (uint256 _price) {
-        (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
-
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
-        _price = _price.mul(ratio); // TODO: it either always this or depends on isInvertPool
+        uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
+        _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
+        require(_price > 0, "O4");
     }
 
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
@@ -55,16 +51,21 @@ abstract contract OracleBase is IOracle {
     }
 
     uint256 constant WAD = 1e18;
-    //TODO: add comment here
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
-        (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
+        (uint256 _priceQuote, uint256 _priceBase) = _fetchAssetsPrices();
 
-        //TODO: jum this functions into one if possible
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
-        _poolPrice = isInvertedPool ? WAD.div(_price.mul(ratio)) : _price.mul(ratio);
+        uint256 scaleFactor = 18 + decimalsBase - decimalsQuote;
+        _price = PRBMath.mulDiv(uint256(_priceQuote), 10 ** scaleFactor, uint256(_priceBase));
 
-        require(_price > 0, "O2");
-        require(_poolPrice > 0, "O3");
+        {
+            uint256 decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
+            uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
+            if (isInvertedPool) _poolPrice = ratio.div(_price);
+            else _poolPrice = _price.div(ratio);
+        }
+
+        require(_price > 0, "O4");
+        require(_poolPrice > 0, "O5");
     }
 
     function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {}

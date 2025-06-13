@@ -64,10 +64,6 @@ tsa:
 	clear && forge test -vv --match-contract SwapAdapterTest --match-test "test_"
 tsal:
 	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
-to:
-	clear && forge test -vv --match-contract OracleTest --match-test "test_"
-tol:
-	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
@@ -75,9 +71,9 @@ format_write:
 	npx prettier --write "src/**/*.sol" "test/**/*.sol"
 
 gas_r:
-	clear && forge test -vv --match-contract "ETHALMTest\b" --match-test "test_lifecycle\b"
-gas_s:
-	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
+gas_rl:
+	clear && forge test -vvvv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
 
 merkl_data:
 	clear && npm run merkl
