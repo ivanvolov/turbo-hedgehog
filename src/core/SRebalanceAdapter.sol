@@ -26,6 +26,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     error WeightNotValid();
     error LeverageValuesNotValid();
     error MaxDeviationNotValid();
+    error DeviationLongExceeded();
+    error DeviationShortExceeded();
 
     /// @notice Emitted when the rebalance is triggered.
     /// @param slippage                The execution slippage, as a UD60x18 value.
@@ -124,9 +126,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
-        if (_weight > 1e18) revert WeightNotValid();
-        if (_longLeverage > 5e18) revert LeverageValuesNotValid();
-        if (_shortLeverage > 5e18) revert LeverageValuesNotValid();
+        if (_weight > WAD) revert WeightNotValid();
+        if (_longLeverage > 5 * WAD) revert LeverageValuesNotValid();
+        if (_shortLeverage > 5 * WAD) revert LeverageValuesNotValid();
         if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
 
         weight = _weight;
@@ -177,7 +179,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();
 
-        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
+        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(WAD + slippage);
 
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
@@ -250,6 +252,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Math functions
 
+    uint256 constant WAD = 1e18;
+
     // @Notice: this function is mainly for removing stack too deep error
     function _rebalanceCalculations(
         uint256 k
@@ -269,19 +273,19 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             console.log("TVL %s", TVL);
             if (isInvertedAssets) {
                 targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
-                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage);
+                targetCS = TVL.mul(WAD - weight).mul(shortLeverage);
             } else {
                 targetCL = TVL.mul(weight).mul(longLeverage);
-                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage).mul(price);
+                targetCS = TVL.mul(WAD - weight).mul(shortLeverage).mul(price);
             }
 
-            targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
-            targetDS = PRBMath.mulDiv(targetCS, 1e18 - uint256(1e18).div(shortLeverage), price);
+            targetDL = targetCL.mul(price).mul(WAD - WAD.div(longLeverage));
+            targetDS = PRBMath.mulDiv(targetCS, WAD - WAD.div(shortLeverage), price);
 
             if (isNova) {
                 // @Notice: discount to cover slippage
-                targetCL = targetCL.mul(2e18 - k);
-                targetCS = targetCS.mul(2e18 - k);
+                targetCL = targetCL.mul(2 * WAD - k);
+                targetCS = targetCS.mul(2 * WAD - k);
 
                 // @Notice: no debt operations in unicord
                 targetDL = 0;
@@ -326,8 +330,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             DS
         );
 
-        require(ALMMathLib.absSub(lLeverage, longLeverage) <= maxDeviationLong, "D1");
-        require(ALMMathLib.absSub(sLeverage, shortLeverage) <= maxDeviationShort, "D2");
+        if (ALMMathLib.absSub(lLeverage, longLeverage) > maxDeviationLong) revert DeviationLongExceeded();
+        if (ALMMathLib.absSub(sLeverage, shortLeverage) > maxDeviationShort) revert DeviationShortExceeded();
     }
 
     // ** Modifiers

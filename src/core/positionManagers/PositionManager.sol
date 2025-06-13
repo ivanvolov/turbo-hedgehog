@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
-import {ProtocolFeeLibrary} from "v4-core/libraries/ProtocolFeeLibrary.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -22,7 +21,6 @@ contract PositionManager is Base, IPositionManager {
 
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
-    using ProtocolFeeLibrary for uint24;
 
     uint256 public k1;
     uint256 public k2;
@@ -41,8 +39,12 @@ contract PositionManager is Base, IPositionManager {
         emit KParamsSet(_k1, _k2);
     }
 
+    /// @notice the swap fee is represented in hundredths of a bip, so the max is 100%
+    uint24 internal constant MAX_SWAP_FEE = 1e6;
+    uint256 constant WAD = 1e18;
+
     function setFees(uint24 _fees) external onlyOwner {
-        if (!_fees.isValidProtocolFee()) revert ProtocolFeeTooLarge(_fees);
+        if (_fees > MAX_SWAP_FEE) revert ProtocolFeeTooLarge(_fees);
         fees = _fees;
         emit FeesSet(_fees);
     }
@@ -56,7 +58,7 @@ contract PositionManager is Base, IPositionManager {
         // Repay (k-1) * dETH to short debt;
 
         lendingAdapter.updatePosition(SafeCast.toInt256(k.mul(deltaQuote)), 0, -SafeCast.toInt256(deltaBase), 0);
-        if (k != 1e18) lendingAdapter.repayShort((k - 1e18).mul(deltaQuote));
+        if (k != WAD) lendingAdapter.repayShort((k - WAD).mul(deltaQuote));
 
         QUOTE.safeTransfer(address(alm), deltaQuote);
     }
@@ -70,9 +72,9 @@ contract PositionManager is Base, IPositionManager {
         // Borrow dUSD from long by increasing debt;
 
         lendingAdapter.addCollateralLong(deltaQuote);
-        if (k != 1e18) {
-            lendingAdapter.borrowShort((k - 1e18).mul(deltaQuote));
-            lendingAdapter.addCollateralLong((k - 1e18).mul(deltaQuote));
+        if (k != WAD) {
+            lendingAdapter.borrowShort((k - WAD).mul(deltaQuote));
+            lendingAdapter.addCollateralLong((k - WAD).mul(deltaQuote));
         }
         lendingAdapter.borrowLong(deltaBase);
 

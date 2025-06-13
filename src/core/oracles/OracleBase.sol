@@ -18,7 +18,7 @@ abstract contract OracleBase is IOracle {
 
     constructor(bool _isInvertedPool, int8 _decimalsDelta, uint256 _decimalsBase, uint256 _decimalsQuote) {
         isInvertedPool = _isInvertedPool;
-        if (_decimalsDelta < -18) revert("O1");
+        if (_decimalsDelta < -18) revert DecimalsDeltaNotValid();
 
         scaleFactor = 10 ** (18 + _decimalsBase - _decimalsQuote);
         ratio = 10 ** uint256(int256(_decimalsDelta) + 18);
@@ -29,7 +29,7 @@ abstract contract OracleBase is IOracle {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
 
         _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
-        require(_price > 0, "O2");
+        if (_price == 0) revert PriceZero();
     }
 
     //TODO: only use test_price in the future
@@ -51,8 +51,7 @@ abstract contract OracleBase is IOracle {
         _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
         _poolPrice = isInvertedPool ? WAD.div(_price.mul(ratio)) : _price.mul(ratio);
 
-        require(_price > 0, "O2");
-        require(_poolPrice > 0, "O3");
+        if (_price == 0 || _poolPrice == 0) revert PriceZero();
     }
 
     function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {}

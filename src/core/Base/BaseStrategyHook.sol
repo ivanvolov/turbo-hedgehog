@@ -92,8 +92,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
-        if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
-        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
+        if (_protocolFee > ALMMathLib.WAD) revert ProtocolFeeNotValid();
+        if (_liquidityMultiplier > 10 * ALMMathLib.WAD) revert LiquidityMultiplierNotValid();
         if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
 
         liquidityMultiplier = _liquidityMultiplier;
