@@ -222,7 +222,7 @@ contract ETHALMTest is MorphoTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
     }
 
-    // @Notice: this is needed for composability testing
+    /// @dev This is needed for composability testing.
     function part_withdraw() public {
         assertEqBalanceStateZero(alice.addr);
 
@@ -264,7 +264,7 @@ contract ETHALMTest is MorphoTestBase {
         part_swap_price_up_in();
     }
 
-    // @Notice: this is needed for composability testing
+    /// @dev This is needed for composability testing.
     function part_swap_price_up_in() public {
         uint256 usdcToSwap = 14541602182;
 
@@ -856,7 +856,7 @@ contract ETHALMTest is MorphoTestBase {
             );
             vm.stopPrank();
 
-            // @Notice: This is like zero interest FL
+            /// @dev This is like zero interest FL.
             deal(address(USDC), migrationContract.addr, DLbefore);
             deal(address(WETH), migrationContract.addr, DSbefore);
 
@@ -881,7 +881,7 @@ contract ETHALMTest is MorphoTestBase {
             newAdapter.borrowLong(DLbefore);
             newAdapter.borrowShort(DSbefore);
 
-            // @Notice: Here we repay our FL
+            /// @dev Here we repay our FL.
             USDC.safeTransfer(zero.addr, DLbefore);
             WETH.safeTransfer(zero.addr, DSbefore);
             vm.stopPrank();

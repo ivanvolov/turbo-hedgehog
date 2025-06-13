@@ -38,22 +38,6 @@ library ALMMathLib {
         return SafeCast.toUint128(PRBMath.mulDiv(_liquidity, multiplier, WAD));
     }
 
-    function getSwapAmount0(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceNextX96,
-        uint128 liquidity
-    ) internal pure returns (uint256) {
-        return LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
-    }
-
-    function getSwapAmount1(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceNextX96,
-        uint128 liquidity
-    ) internal pure returns (uint256) {
-        return LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
-    }
-
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
         if (TVL1 == 0) return TVL2;
         else return PRBMath.mulDiv(ts, TVL2 - TVL1, TVL1);

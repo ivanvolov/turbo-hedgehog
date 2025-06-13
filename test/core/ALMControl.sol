@@ -50,7 +50,7 @@ contract ALMControl is BaseHook, ERC20 {
 
     // --- Logic --- //
 
-    // @Notice: This should be called after the target hook is rebalanced
+    /// @dev This should be called after the target hook is rebalanced.
     function rebalance() external {
         poke();
         (uint128 totalLiquidity, , ) = getPositionInfo();

@@ -239,12 +239,12 @@ abstract contract ALMTestBase is Deployers {
         // MARK END
 
         // MARK: Deploying modules and setting up parameters
-        // @Notice: lendingAdapter should already be created
+        /// @dev lendingAdapter should already be created.
         if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
         else positionManager = new PositionManager(BASE, QUOTE);
 
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
-        // @Notice: oracle should already be created
+        /// @dev oracle should already be created.
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, isInvertedPool, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(
@@ -600,7 +600,7 @@ abstract contract ALMTestBase is Deployers {
         } catch {
             console.log("Error: QUOTE Balance", QUOTE.balanceOf(owner));
             console.log("Error: BASE Balance", BASE.balanceOf(owner));
-            _assertEqBalanceState(owner, _balanceQ, _balanceB); // @Notice: this is to throw the error
+            _assertEqBalanceState(owner, _balanceQ, _balanceB); /// @dev this is to throw the error.
         }
     }
 
@@ -702,7 +702,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
+        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); /// @dev The LA can change in tests.
         try this._assertEqPositionState(CL, CS, DL, DS) {
             // Intentionally empty
         } catch {
@@ -710,12 +710,12 @@ abstract contract ALMTestBase is Deployers {
             console.log("Error: CS", _leA.getCollateralShort());
             console.log("Error: DL", _leA.getBorrowedLong());
             console.log("Error: DS", _leA.getBorrowedShort());
-            _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
+            _assertEqPositionState(CL, CS, DL, DS); /// @dev this is to throw the error.
         }
     }
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
+        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); /// @dev The LA can change in tests.
         assertApproxEqAbs(_leA.getCollateralLong(), CL, assertEqPSThresholdCL, "CL not equal");
         assertApproxEqAbs(_leA.getCollateralShort(), CS, assertEqPSThresholdCS, "CS not equal");
         assertApproxEqAbs(_leA.getBorrowedLong(), DL, assertEqPSThresholdDL, "DL not equal");

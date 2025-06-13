@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
@@ -235,18 +233,12 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         }
     }
 
-    // @Notice: this function is mainly for removing stack too deep error
+    /// @dev This function is mainly for removing stack too deep error.
     function _managePositionDeltas(bytes calldata data) internal {
         (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi.decode(
             data,
             (int256, int256, int256, int256)
         );
-        console.log("deltaCL %s", deltaCL);
-        console.log("deltaCS %s", deltaCS);
-        console.log("deltaDL %s", deltaDL);
-        console.log("deltaDS %s", deltaDS);
-        console.log("balanceBase", baseBalanceUnwr());
-        console.log("balanceQuote", quoteBalanceUnwr());
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
@@ -254,7 +246,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     uint256 constant WAD = 1e18;
 
-    // @Notice: this function is mainly for removing stack too deep error
+    /// @dev This function is mainly for removing stack too deep error.
     function _rebalanceCalculations(
         uint256 k
     ) internal view returns (uint256 baseToFl, uint256 quoteToFl, bytes memory data) {
@@ -268,9 +260,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             uint256 targetCL;
             uint256 targetCS;
             uint256 price = oracle.test_price();
-            console.log("> price %s", price);
             uint256 TVL = alm.TVL();
-            console.log("TVL %s", TVL);
             if (isInvertedAssets) {
                 targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
                 targetCS = TVL.mul(WAD - weight).mul(shortLeverage);
@@ -283,33 +273,24 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             targetDS = PRBMath.mulDiv(targetCS, WAD - WAD.div(shortLeverage), price);
 
             if (isNova) {
-                // @Notice: discount to cover slippage
+                /// @dev Discount to cover slippage.
                 targetCL = targetCL.mul(2 * WAD - k);
                 targetCS = targetCS.mul(2 * WAD - k);
 
-                // @Notice: no debt operations in unicord
+                /// @dev No debt operations in unicord.
                 targetDL = 0;
                 targetDS = 0;
             } else {
-                // @Notice: borrow additional funds to cover slippage
+                /// @dev Borrow additional funds to cover slippage.
                 targetDL = targetDL.mul(k);
                 targetDS = targetDS.mul(k);
             }
-
-            console.log("targetCL %s", targetCL);
-            console.log("targetCS %s", targetCS);
-            console.log("targetDL %s", targetDL);
-            console.log("targetDS %s", targetDS);
 
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
             deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(CL);
             deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
             deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(DL);
             deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(DS);
-            console.log("deltaCL %s", deltaCL);
-            console.log("deltaCS %s", deltaCS);
-            console.log("deltaDL %s", deltaDL);
-            console.log("deltaDS %s", deltaDS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);

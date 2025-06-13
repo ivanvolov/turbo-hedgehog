@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -77,26 +75,17 @@ abstract contract LendingBase is Base, ILendingAdapter {
         int256 deltaDL,
         int256 deltaDS
     ) external onlyModule notPaused {
-        console.log("!");
         if (deltaCL < 0) addCollateralLong(uint256(-deltaCL));
         if (deltaCS < 0) addCollateralShort(uint256(-deltaCS));
-
-        console.log("!");
 
         if (deltaDL < 0) repayLong(uint256(-deltaDL));
         if (deltaDS < 0) repayShort(uint256(-deltaDS));
 
-        console.log("!");
-
         if (deltaCL > 0) removeCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) removeCollateralShort(uint256(deltaCS));
 
-        console.log("!");
-
         if (deltaDL > 0) borrowLong(uint256(deltaDL));
         if (deltaDS > 0) borrowShort(uint256(deltaDS));
-
-        console.log("!");
     }
 
     // ** Long and short markets unimplemented functions
