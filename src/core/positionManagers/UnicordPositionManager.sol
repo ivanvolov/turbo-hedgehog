@@ -13,9 +13,8 @@ import {Base} from "../base/Base.sol";
 // ** interfaces
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 
-/// @title UnicordPositionManager
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
+/// @title Unicord Position Manager
+/// @notice Holds rehypothecation flow for position adjustment, then price moves up or down. Calculates swap fees.
 contract UnicordPositionManager is Base, IPositionManager {
     event FeesSet(uint24 newFees);
 

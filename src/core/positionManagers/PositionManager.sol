@@ -14,9 +14,8 @@ import {Base} from "../Base/Base.sol";
 // ** interfaces
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 
-/// @title PositionManager
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
+/// @title Position Manager
+/// @notice Holds flow for position adjustment, then the price moves up or down. Calculates swap fees.
 contract PositionManager is Base, IPositionManager {
     event KParamsSet(uint256 newK1, uint256 newK2);
     event FeesSet(uint24 newFees);

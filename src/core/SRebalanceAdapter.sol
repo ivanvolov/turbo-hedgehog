@@ -18,6 +18,8 @@ import {Base} from "./base/Base.sol";
 // ** interfaces
 import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
 
+/// @title Simple Rebalance Adapter
+/// @notice Default Rebalance adapter using flash loan and swap adapter to rebalance the position.
 contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();

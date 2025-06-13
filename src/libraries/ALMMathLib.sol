@@ -9,6 +9,8 @@ import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
+/// @title ALM Math Library
+/// @notice Library for all math operations used in the ALM hook.
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
 

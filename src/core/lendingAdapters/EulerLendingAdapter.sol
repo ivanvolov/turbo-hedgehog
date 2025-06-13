@@ -16,6 +16,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // ** contracts
 import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 
+/// @title Euler Lending Adapter
+/// @notice Implementation of the lending adapter using Euler V2.
 contract EulerLendingAdapter is LendingBase {
     using SafeERC20 for IERC20;
 

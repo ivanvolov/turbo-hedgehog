@@ -15,6 +15,8 @@ import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniv
 // ** contracts
 import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 
+/// @title Morpho Lending Adapter
+/// @notice Implementation of the lending adapter using Morpho.
 contract MorphoLendingAdapter is LendingBase {
     error NotInBorrowMode();
 

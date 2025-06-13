@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/// @notice Defines the interface for an Automated Liquidity Manager.
 interface IALM {
     error ZeroLiquidity();
     error ZeroDebt();

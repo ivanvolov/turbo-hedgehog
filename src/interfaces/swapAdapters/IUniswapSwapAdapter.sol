@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 // ** interfaces
 import {ISwapAdapter} from "./ISwapAdapter.sol";
 
+/// @notice Interface for all routes and swap path related functions.
 interface IUniswapSwapAdapter is ISwapAdapter {
     function setRoutesOperator(address _routesOperator) external;
 

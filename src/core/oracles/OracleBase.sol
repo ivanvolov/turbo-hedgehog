@@ -7,6 +7,8 @@ import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 // ** interfaces
 import {IOracle} from "../../interfaces/IOracle.sol";
 
+/// @title Oracle Base
+/// @notice Abstract contract that serves as a base for all oracles. Holds functions to calculate price in different formats.
 abstract contract OracleBase is IOracle {
     using PRBMathUD60x18 for uint256;
 
@@ -40,6 +42,7 @@ abstract contract OracleBase is IOracle {
     }
 
     uint256 constant WAD = 1e18;
+
     //TODO: add comment here
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
