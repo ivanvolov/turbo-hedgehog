@@ -6,8 +6,10 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -45,17 +47,17 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         // Intentionally empty as all initialization is handled by the parent BaseStrategyHook contract
     }
 
-    function afterInitialize(
+    function _afterInitialize(
         address creator,
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager onlyActive returns (bytes4) {
+    ) internal override onlyActive returns (bytes4) {
         if (creator != owner) revert OwnableUnauthorizedAccount(creator);
         if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
         authorizedPool = PoolId.unwrap(key.toId());
         _updatePriceAndBoundaries(sqrtPrice);
-        return ALM.afterInitialize.selector;
+        return IHooks.afterInitialize.selector;
     }
 
     function deposit(
@@ -197,27 +199,19 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
 
-    function beforeSwap(
+    function _beforeSwap(
         address swapper,
         PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
+        SwapParams calldata params,
         bytes calldata
-    )
-        external
-        override
-        onlyActive
-        onlyAuthorizedPool(key)
-        onlyPoolManager
-        nonReentrant
-        returns (bytes4, BeforeSwapDelta, uint24)
-    {
+    ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
-        return (this.beforeSwap.selector, _beforeSwap(params, key, swapper), 0);
+        return (IHooks.beforeSwap.selector, __beforeSwap(params, key, swapper), 0);
     }
 
-    // @Notice: this function is mainly for removing stack too deep error
-    function _beforeSwap(
-        IPoolManager.SwapParams calldata params,
+    /// @dev This function is mainly for removing stack too deep error.
+    function __beforeSwap(
+        SwapParams calldata params,
         PoolKey calldata key,
         address swapper
     ) internal returns (BeforeSwapDelta) {
@@ -284,6 +278,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             return beforeSwapDelta;
         }
     }
+
     function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : feeAmount.mul(protocolFee);
         if (up) {

@@ -5,9 +5,10 @@ pragma solidity ^0.8.0;
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {SwapMath} from "v4-core/libraries/SwapMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -133,12 +134,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     /// @notice  Disable adding liquidity through the PM
-    function beforeAddLiquidity(
+    function _beforeAddLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        ModifyLiquidityParams calldata,
         bytes calldata
-    ) external view override onlyPoolManager onlyAuthorizedPool(key) returns (bytes4) {
+    ) internal view override onlyAuthorizedPool(key) returns (bytes4) {
         revert AddLiquidityThroughHook();
     }
 

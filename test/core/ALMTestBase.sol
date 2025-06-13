@@ -7,13 +7,13 @@ import "forge-std/console.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -561,7 +561,7 @@ abstract contract ALMTestBase is Deployers {
         vm.startPrank(swapper.addr);
         BalanceDelta delta = swapRouter.swap(
             _key,
-            IPoolManager.SwapParams(
+            SwapParams(
                 zeroForOne,
                 amount,
                 zeroForOne == true ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1

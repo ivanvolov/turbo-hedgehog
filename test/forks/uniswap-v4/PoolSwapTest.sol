@@ -9,6 +9,7 @@ import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolTestBase} from "v4-core/test/PoolTestBase.sol";
 import {CurrencySettler} from "@src/libraries/CurrencySettler.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 
 contract PoolSwapTest is PoolTestBase {
     using CurrencySettler for Currency;
@@ -22,7 +23,7 @@ contract PoolSwapTest is PoolTestBase {
         address sender;
         TestSettings testSettings;
         PoolKey key;
-        IPoolManager.SwapParams params;
+        SwapParams params;
         bytes hookData;
     }
 
@@ -33,7 +34,7 @@ contract PoolSwapTest is PoolTestBase {
 
     function swap(
         PoolKey memory key,
-        IPoolManager.SwapParams memory params,
+        SwapParams memory params,
         TestSettings memory testSettings,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
