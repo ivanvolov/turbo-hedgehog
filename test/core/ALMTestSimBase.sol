@@ -104,7 +104,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         // Make oracle change with swap price
         vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
 
-        /// @dev doing save swap data here to remove stack too deep error.
+        // Doing save swap data here to remove stack too deep error
         {
             string[] memory inputs = new string[](3);
             inputs[0] = "node";

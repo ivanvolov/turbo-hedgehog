@@ -302,16 +302,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     function TVL() public view returns (uint256) {
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         return
-            ALMMathLib.getTVL(
-                quoteBalance(true),
-                baseBalance(true),
-                CL,
-                CS,
-                DL,
-                DS,
-                oracle.test_price(),
-                isInvertedAssets
-            );
+            ALMMathLib.getTVL(quoteBalance(true), baseBalance(true), CL, CS, DL, DS, oracle.price(), isInvertedAssets);
     }
 
     function sharePrice() external view returns (uint256) {

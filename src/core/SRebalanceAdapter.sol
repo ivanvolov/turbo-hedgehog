@@ -195,10 +195,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         }
 
         // ** Check max deviation
-        checkDeviations();
+        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
+        checkDeviations(currentPrice);
 
         // ** Update state
-        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
         uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(currentPoolPrice);
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
@@ -259,7 +259,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         {
             uint256 targetCL;
             uint256 targetCS;
-            uint256 price = oracle.test_price();
+            uint256 price = oracle.price();
             uint256 TVL = alm.TVL();
             if (isInvertedAssets) {
                 targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
@@ -273,15 +273,15 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             targetDS = PRBMath.mulDiv(targetCS, WAD - WAD.div(shortLeverage), price);
 
             if (isNova) {
-                /// @dev Discount to cover slippage.
+                // Discount to cover slippage
                 targetCL = targetCL.mul(2 * WAD - k);
                 targetCS = targetCS.mul(2 * WAD - k);
 
-                /// @dev No debt operations in unicord.
+                // No debt operations in unicord
                 targetDL = 0;
                 targetDS = 0;
             } else {
-                /// @dev Borrow additional funds to cover slippage.
+                // Borrow additional funds to cover slippage
                 targetDL = targetDL.mul(k);
                 targetDS = targetDS.mul(k);
             }
@@ -301,15 +301,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
-    function checkDeviations() internal view {
+    function checkDeviations(uint256 price) internal view {
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(
-            oracle.test_price(),
-            currentCL,
-            currentCS,
-            DL,
-            DS
-        );
+        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(price, currentCL, currentCS, DL, DS);
 
         if (ALMMathLib.absSub(lLeverage, longLeverage) > maxDeviationLong) revert DeviationLongExceeded();
         if (ALMMathLib.absSub(sLeverage, shortLeverage) > maxDeviationShort) revert DeviationShortExceeded();

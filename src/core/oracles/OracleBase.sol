@@ -24,24 +24,15 @@ abstract contract OracleBase is IOracle {
         ratio = 10 ** uint256(int256(_decimalsDelta) + 18);
     }
 
+    uint256 constant WAD = 1e18;
+
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
     function price() external view returns (uint256 _price) {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
 
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
+        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase)).mul(ratio);
         if (_price == 0) revert PriceZero();
     }
-
-    //TODO: only use test_price in the future
-    /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
-    function test_price() external view returns (uint256 _price) {
-        (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
-
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
-        _price = _price.mul(ratio); // TODO: it either always this or depends on isInvertPool
-    }
-
-    uint256 constant WAD = 1e18;
 
     //TODO: add comment here
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
@@ -50,6 +41,7 @@ abstract contract OracleBase is IOracle {
         //TODO: jum this functions into one if possible
         _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
         _poolPrice = isInvertedPool ? WAD.div(_price.mul(ratio)) : _price.mul(ratio);
+        _price = _price.mul(ratio);
 
         if (_price == 0 || _poolPrice == 0) revert PriceZero();
     }

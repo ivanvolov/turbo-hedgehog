@@ -229,7 +229,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     // ** Modifiers
 
-    /// @dev Only allows execution for the authorized pool
+    /// @dev Only allows execution for the authorized pool.
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {
         if (PoolId.unwrap(poolKey.toId()) != authorizedPool) {
             revert UnauthorizedPool();
