@@ -281,7 +281,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
                 targetCL = targetCL.mul(2e18 - k);
                 targetCS = targetCS.mul(2e18 - k);
 
-                // @Notice: no debt operations in unicord
+                // @Notice: no debt operations in Nova
                 targetDL = 0;
                 targetDS = 0;
             } else {
