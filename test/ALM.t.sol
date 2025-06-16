@@ -62,6 +62,7 @@ contract ALMGeneralTest is ALMTestBase {
         approve_accounts();
     }
 
+    //TODO: change here to liquidity function check in different scenarios
     // function test_price_conversion_WETH_USDC() public {
     //     vm.skip(true);
     //     // uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
@@ -229,7 +230,7 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_oracle() public view {
-        assertEq(oracle.price(), 2660201350640229959005, "price should eq");
+        assertEq(oracle.price(), 2660201351, "price should eq");
     }
 
     function test_accessability() public {

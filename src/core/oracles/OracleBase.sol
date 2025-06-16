@@ -16,6 +16,7 @@ abstract contract OracleBase is IOracle {
     uint256 public immutable ratio;
     uint256 public immutable scaleFactor;
 
+    //TODO: WTF is these double decimals"????????
     constructor(bool _isInvertedPool, int8 _decimalsDelta, uint256 _decimalsBase, uint256 _decimalsQuote) {
         isInvertedPool = _isInvertedPool;
         if (_decimalsDelta < -18) revert DecimalsDeltaNotValid();

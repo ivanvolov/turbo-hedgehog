@@ -87,23 +87,7 @@ library TestLib {
     uint256 constant WAD = 1e18;
     uint256 constant Q192 = 2 ** 192;
 
-    function _getPoolPriceFromOraclePrice(
-        uint256 oraclePrice,
-        bool reversedOrder,
-        int8 decimalsDelta
-    ) internal pure returns (uint256) {
-        if (decimalsDelta < 0) {
-            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
-            if (reversedOrder) return ratio.div(oraclePrice);
-            else return oraclePrice.div(ratio);
-        } else {
-            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
-            if (reversedOrder) return WAD.div(oraclePrice.mul(ratio));
-            else return oraclePrice.mul(ratio);
-        }
-    }
-
-    function _getOraclePriceFromPoolPrice(
+    function getOraclePriceFromPoolPrice(
         uint256 price,
         bool reversedOrder,
         int8 decimalsDelta
@@ -117,35 +101,6 @@ library TestLib {
             if (reversedOrder) return WAD.div(price.mul(ratio));
             else return price.div(ratio);
         }
-    }
-
-    function getOraclePriceFromPoolPrice(
-        uint256 price,
-        bool reversedOrder,
-        int8 decimalsDelta
-    ) internal pure returns (uint256) {
-        require(decimalsDelta >= -18);
-        uint256 ratio = 10 ** uint256(int256(decimalsDelta) + 18);
-        if (reversedOrder) return WAD.div(price.mul(ratio));
-        else return price.div(ratio);
-    }
-
-    function getVirtualValue(
-        uint256 value,
-        uint256 weight,
-        uint256 longLeverage,
-        uint256 shortLeverage
-    ) internal pure returns (uint256) {
-        return (weight.mul(longLeverage - shortLeverage) + shortLeverage).mul(value);
-    }
-
-    function getVirtualLiquidity(
-        uint256 virtualValue,
-        uint256 price,
-        uint256 priceUpper,
-        uint256 priceLower
-    ) internal pure returns (uint256) {
-        return virtualValue.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
     }
 
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
