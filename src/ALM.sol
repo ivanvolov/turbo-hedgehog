@@ -6,8 +6,10 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
@@ -23,9 +25,10 @@ import {CurrencySettler} from "./libraries/CurrencySettler.sol";
 // ** contracts
 import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 
-/// @title ALM
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
+/// @title Automated Liquidity Manager
+/// @author Ivan Volovyk <https://github.com/ivanvolov>
+/// @custom:contact ivan@lumis.fi
+/// @notice The main hook contract handling liquidity management and swap flow.
 contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
@@ -44,17 +47,17 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         // Intentionally empty as all initialization is handled by the parent BaseStrategyHook contract
     }
 
-    function afterInitialize(
+    function _afterInitialize(
         address creator,
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) external override onlyPoolManager onlyActive returns (bytes4) {
+    ) internal override onlyActive returns (bytes4) {
         if (creator != owner) revert OwnableUnauthorizedAccount(creator);
         if (authorizedPool != bytes32("")) revert OnlyOnePoolPerHook();
         authorizedPool = PoolId.unwrap(key.toId());
         _updatePriceAndBoundaries(sqrtPrice);
-        return ALM.afterInitialize.selector;
+        return IHooks.afterInitialize.selector;
     }
 
     function deposit(
@@ -65,7 +68,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         lendingAdapter.syncPositions();
-        uint256 TVL1 = TVL();
+        uint256 price = oracle.price();
+        uint256 tvlBefore = TVL(price);
 
         if (isInvertedAssets) {
             BASE.safeTransferFrom(msg.sender, address(this), amountIn);
@@ -74,13 +78,13 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             QUOTE.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }
-        uint256 TVL2 = TVL();
-        if (TVL2 > tvlCap) revert TVLCapExceeded();
+        uint256 tvlAfter = TVL(price);
+        if (tvlAfter > tvlCap) revert TVLCapExceeded();
 
-        sharesMinted = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
+        sharesMinted = ALMMathLib.getSharesToMint(tvlBefore, tvlAfter, totalSupply());
         if (sharesMinted < minShares) revert NotMinShares();
         _mint(to, sharesMinted);
-        emit Deposit(to, amountIn, sharesMinted, TVL2, totalSupply());
+        emit Deposit(to, amountIn, sharesMinted, tvlAfter, totalSupply());
     }
 
     function withdraw(
@@ -130,7 +134,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         uint128 newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
-        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), newLiquidity);
+        emit Withdraw(to, sharesOut, baseOut, quoteOut, totalSupply(), newLiquidity);
     }
 
     function onFlashLoanTwoTokens(
@@ -179,10 +183,14 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
         lendingAdapter.syncPositions();
+
+        uint256 _accumulatedFee = accumulatedFeeB;
         accumulatedFeeB = 0;
-        BASE.safeTransfer(treasury, accumulatedFeeB);
+        BASE.safeTransfer(treasury, _accumulatedFee);
+
+        _accumulatedFee = accumulatedFeeQ;
         accumulatedFeeQ = 0;
-        QUOTE.safeTransfer(treasury, accumulatedFeeQ);
+        QUOTE.safeTransfer(treasury, _accumulatedFee);
     }
 
     // ** Swapping logic
@@ -196,27 +204,19 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
     }
 
-    function beforeSwap(
+    function _beforeSwap(
         address swapper,
         PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
+        SwapParams calldata params,
         bytes calldata
-    )
-        external
-        override
-        onlyActive
-        onlyAuthorizedPool(key)
-        onlyPoolManager
-        nonReentrant
-        returns (bytes4, BeforeSwapDelta, uint24)
-    {
+    ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
-        return (this.beforeSwap.selector, _beforeSwap(params, key, swapper), 0);
+        return (IHooks.beforeSwap.selector, __beforeSwap(params, key, swapper), 0);
     }
 
-    // @Notice: this function is mainly for removing stack too deep error
-    function _beforeSwap(
-        IPoolManager.SwapParams calldata params,
+    /// @dev This function is mainly for removing stack too deep error.
+    function __beforeSwap(
+        SwapParams calldata params,
         PoolKey calldata key,
         address swapper
     ) internal returns (BeforeSwapDelta) {
@@ -283,6 +283,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             return beforeSwapDelta;
         }
     }
+
     function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : feeAmount.mul(protocolFee);
         if (up) {
@@ -303,24 +304,9 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     // ** Math functions
 
-    function TVL() public view returns (uint256) {
+    function TVL(uint256 price) public view returns (uint256) {
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        return
-            ALMMathLib.getTVL(
-                quoteBalance(true),
-                baseBalance(true),
-                CL,
-                CS,
-                DL,
-                DS,
-                oracle.test_price(),
-                isInvertedAssets
-            );
-    }
-
-    function sharePrice() external view returns (uint256) {
-        if (totalSupply() == 0) return 0;
-        return TVL().div(totalSupply());
+        return ALMMathLib.getTVL(quoteBalance(true), baseBalance(true), CL, CS, DL, DS, price, isInvertedAssets);
     }
 
     // ** Helpers

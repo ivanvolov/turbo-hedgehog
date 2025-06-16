@@ -9,6 +9,8 @@ import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
+/// @title ALM Math Library
+/// @notice Library for all math operations used in the ALM hook.
 library ALMMathLib {
     using PRBMathUD60x18 for uint256;
 
@@ -34,22 +36,6 @@ library ALMMathLib {
                 amount
             );
         return SafeCast.toUint128(PRBMath.mulDiv(_liquidity, multiplier, WAD));
-    }
-
-    function getSwapAmount0(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceNextX96,
-        uint128 liquidity
-    ) internal pure returns (uint256) {
-        return LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
-    }
-
-    function getSwapAmount1(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceNextX96,
-        uint128 liquidity
-    ) internal pure returns (uint256) {
-        return LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
     }
 
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {

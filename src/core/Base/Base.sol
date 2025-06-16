@@ -18,6 +18,8 @@ import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
 import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
 import {IBase} from "../../interfaces/IBase.sol";
 
+/// @title Base
+/// @notice Abstract contract that serves as the base for all modules and adapters.
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 
@@ -110,25 +112,25 @@ abstract contract Base is IBase {
         _;
     }
 
-    /// @dev Only the ALM may call this function
+    /// @dev Only the ALM may call this function.
     modifier onlyALM() {
         if (msg.sender != address(alm)) revert NotALM(msg.sender);
         _;
     }
 
-    /// @dev Only the rebalance adapter may call this function
+    /// @dev Only the rebalance adapter may call this function.
     modifier onlyRebalanceAdapter() {
         if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter(msg.sender);
         _;
     }
 
-    /// @dev Only the flash loan adapter may call this function
+    /// @dev Only the flash loan adapter may call this function.
     modifier onlyFlashLoanAdapter() {
         if (msg.sender != address(flashLoanAdapter)) revert NotFlashLoanAdapter(msg.sender);
         _;
     }
 
-    /// @dev Only modules may call this function
+    /// @dev Only modules may call this function.
     modifier onlyModule() {
         if (
             msg.sender != address(alm) &&

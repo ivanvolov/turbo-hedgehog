@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+/// @notice Defines the interface for a Position Manager.
 interface IPositionManager {
     error ProtocolFeeTooLarge(uint24 fee);
 
@@ -11,6 +12,7 @@ interface IPositionManager {
     function getSwapFees(bool zeroForOne, int256 amountSpecified) external view returns (uint24);
 }
 
+/// @notice Interface for all standard position manager setters.
 interface IPositionManagerStandard is IPositionManager {
     function setKParams(uint256 _k1, uint256 _k2) external;
 

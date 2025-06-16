@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,6 +12,9 @@ import {Base} from "../base/Base.sol";
 // ** interfaces
 import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
 
+/// @title Lending Base
+/// @notice Abstract contract that serves as the base for all lending adapters.
+/// @dev Implements the claim rewards functionality using Merkl and updatePosition flow.
 abstract contract LendingBase is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
@@ -74,45 +75,42 @@ abstract contract LendingBase is Base, ILendingAdapter {
         int256 deltaDL,
         int256 deltaDS
     ) external onlyModule notPaused {
-        console.log("!");
         if (deltaCL < 0) addCollateralLong(uint256(-deltaCL));
         if (deltaCS < 0) addCollateralShort(uint256(-deltaCS));
-
-        console.log("!");
 
         if (deltaDL < 0) repayLong(uint256(-deltaDL));
         if (deltaDS < 0) repayShort(uint256(-deltaDS));
 
-        console.log("!");
-
         if (deltaCL > 0) removeCollateralLong(uint256(deltaCL));
         if (deltaCS > 0) removeCollateralShort(uint256(deltaCS));
 
-        console.log("!");
-
         if (deltaDL > 0) borrowLong(uint256(deltaDL));
         if (deltaDS > 0) borrowShort(uint256(deltaDS));
-
-        console.log("!");
     }
 
     // ** Long and short markets unimplemented functions
 
     function addCollateralLong(uint256 amount) public virtual;
+
     function addCollateralShort(uint256 amount) public virtual;
 
     function repayLong(uint256 amount) public virtual;
+
     function repayShort(uint256 amount) public virtual;
 
     function removeCollateralLong(uint256 amount) public virtual;
+
     function removeCollateralShort(uint256 amount) public virtual;
 
     function borrowLong(uint256 amount) public virtual;
+
     function borrowShort(uint256 amount) public virtual;
 
     function getCollateralLong() public view virtual returns (uint256);
+
     function getCollateralShort() public view virtual returns (uint256);
 
     function getBorrowedLong() public view virtual returns (uint256);
+
     function getBorrowedShort() public view virtual returns (uint256);
 }

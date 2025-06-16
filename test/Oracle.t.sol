@@ -42,7 +42,7 @@ contract OracleTest is ALMTestBase {
         );
     }
 
-    //!/ @dev was uncovered
+    /// @dev Was uncovered.
     function test_oracle_pool_price_USDC_WETH_R() public {
         __test_currencies_order(TestLib.USDC, TestLib.WETH); // quote, base
         part_test_oracle_pool_price(
@@ -65,7 +65,7 @@ contract OracleTest is ALMTestBase {
         );
     }
 
-    //!/ @dev was uncovered
+    /// @dev Was uncovered.
     function test_oracle_pool_price_WETH_USDT_R() public {
         __test_currencies_order(TestLib.WETH, TestLib.USDT); // quote, base
         part_test_oracle_pool_price(
@@ -99,7 +99,7 @@ contract OracleTest is ALMTestBase {
         );
     }
 
-    //!/ @dev was uncovered
+    /// @dev Was uncovered.
     function test_oracle_pool_price_DAI_USDC() public {
         __test_currencies_order(TestLib.DAI, TestLib.USDC); // quote, base
         part_test_oracle_pool_price(
@@ -122,7 +122,7 @@ contract OracleTest is ALMTestBase {
         );
     }
 
-    //!/ @dev was uncovered
+    /// @dev Was uncovered.
     function test_oracle_pool_price_USDC_cbBTC() public {
         __test_currencies_order(TestLib.USDC, TestLib.cbBTC); // quote, base
         part_test_oracle_pool_price(
@@ -177,7 +177,8 @@ contract OracleTest is ALMTestBase {
         );
         (uint256 price, uint256 poolPrice) = oracle1.poolPrice();
         console.log("> DN/ETHALM");
-        assertEq(price, 1817030479873254341041);
+        // oraclePrice: 1817030479873254341041
+        assertEq(price, 1817030480);
         assertEq(poolPrice, 550348500483051885843984301);
 
         IOracle oracle2 = _create_oracle(
@@ -190,7 +191,8 @@ contract OracleTest is ALMTestBase {
         );
         (uint256 price2, uint256 poolPrice2) = oracle2.poolPrice();
         console.log("> ETH-R-ALM/ETH-R2-ALM");
-        assertEq(price2, 1816422855463561861669);
+        // oraclePrice: 1816422855463561861669
+        assertEq(price2, 1816422855);
         assertEq(poolPrice2, 1816422855);
 
         IOracle oracle3 = _create_oracle(
@@ -203,7 +205,8 @@ contract OracleTest is ALMTestBase {
         );
         (uint256 price3, uint256 poolPrice3) = oracle3.poolPrice();
         console.log("> BTCALMTest");
-        assertEq(price3, 95041476087981443534362);
+        // oraclePrice: 95041476087981443534362
+        assertEq(price3, 950414760879814435344);
         assertEq(poolPrice3, 1052172210661252);
 
         // IOracle oracle4 = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 50 hours, 50 hours);
@@ -239,7 +242,7 @@ contract OracleTest is ALMTestBase {
     // ** Helpers
 
     function test_oracle_constraints() public {
-        /// @dev: normal oracle price
+        // Normal oracle price
         {
             uint256 priceQuote = 1816937883999999885312;
             uint256 decimalsQuote = 18;
@@ -248,7 +251,7 @@ contract OracleTest is ALMTestBase {
             console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
         }
 
-        /// @dev: this is illustration of overflow if decimalsBase - decimalsQuote < -18
+        // This is illustration of overflow if decimalsBase - decimalsQuote < -18
         {
             uint256 decimals_to_overflow = 10;
             uint256 priceQuote = 1816937883999999885312 * (10 ** decimals_to_overflow);
@@ -259,7 +262,7 @@ contract OracleTest is ALMTestBase {
             console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
         }
 
-        /// @dev: no overflow if decimalsBase - decimalsQuote > 18
+        // No overflow if decimalsBase - decimalsQuote > 18
         {
             uint256 priceQuote = 1816000000;
             uint256 decimalsQuote = 6;

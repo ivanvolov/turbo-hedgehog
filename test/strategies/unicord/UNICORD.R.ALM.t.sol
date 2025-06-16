@@ -91,7 +91,7 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 amountToDep = 100000e6;
 
     function test_deposit() public {
-        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(calcTVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(USDC), address(alice.addr), amountToDep);
@@ -105,7 +105,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         assertEqPositionState(0, amountToDep - 1, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 99999999999, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), 99999999999, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -119,13 +119,13 @@ contract UNICORDRALMTest is MorphoTestBase {
 
     function test_deposit_rebalance() public {
         test_deposit();
-        uint256 preRebalanceTVL = hook.TVL();
+        // uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
-        console.log("tvl %s", hook.TVL());
+        console.log("tvl %s", calcTVL());
 
         console.log("liquidity %s", hook.liquidity());
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
@@ -150,9 +150,9 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 usdcToSwap = 1000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, ) = swapUSDC_DAI_In(usdcToSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
             console.log("deltaDAI", deltaDAI);
             console.log("usdcToSwap", usdcToSwap);
 
@@ -172,10 +172,10 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 usdcToSwap = 5000e6; // 5k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, ) = swapUSDC_DAI_In(usdcToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             console.log("deltaDAI", deltaDAI);
 
@@ -198,7 +198,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap);
 
             console.log("deltaDAI", deltaDAI);
@@ -219,7 +219,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Withdraw
         {
-            // console.log("preTVL %s", hook.TVL());
+            // console.log("preTVL %s", calcTVL());
             // console.log("preBalance %s", DAI.balanceOf(alice.addr));
             // console.log("preBalance %s", USDC.balanceOf(alice.addr));
 
@@ -227,7 +227,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
-            // console.log("postTVL %s", hook.TVL());
+            // console.log("postTVL %s", calcTVL());
             // console.log("postBalance %s", DAI.balanceOf(alice.addr));
             // console.log("postBalance %s", USDC.balanceOf(alice.addr));
         }
@@ -236,10 +236,10 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             console.log("deltaDAI", deltaDAI);
             console.log("deltaUSDC", deltaUSDC);
@@ -269,10 +269,10 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             // (uint256 deltaX, uint256 deltaY) = _checkSwap(
             //     uint256(hook.liquidity()) / 1e12,
@@ -292,9 +292,9 @@ contract UNICORDRALMTest is MorphoTestBase {
 
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_Out(daiToGetFSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             console.log("deltaDAI", deltaDAI);
             console.log("deltaUSDC", deltaUSDC);
@@ -313,9 +313,9 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 daiToSwap = 2000e18;
             deal(address(DAI), address(swapper.addr), daiToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_In(daiToSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             console.log("deltaDAI", deltaDAI);
             console.log("deltaUSDC", deltaUSDC);
@@ -333,7 +333,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = hook.TVL();
+        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);

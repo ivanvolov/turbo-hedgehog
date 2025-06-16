@@ -7,8 +7,9 @@ import "forge-std/Test.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Currency} from "v4-core/types/Currency.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
+import {ImmutableState} from "v4-periphery/src/base/ImmutableState.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -61,6 +62,7 @@ contract ALMGeneralTest is ALMTestBase {
         approve_accounts();
     }
 
+    //TODO: change here to liquidity function check in different scenarios
     // function test_price_conversion_WETH_USDC() public {
     //     vm.skip(true);
     //     // uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
@@ -228,29 +230,35 @@ contract ALMGeneralTest is ALMTestBase {
     }
 
     function test_oracle() public view {
-        assertEq(oracle.price(), 2660201350640229959005, "price should eq");
+        assertEq(oracle.price(), 2660201351, "price should eq");
     }
 
     function test_accessability() public {
-        vm.expectRevert(SafeCallback.NotPoolManager.selector);
+        // ** not manager revert
+        vm.expectRevert(ImmutableState.NotPoolManager.selector);
         hook.afterInitialize(address(0), key, 0, 0);
 
+        // ** not manager revert
+        vm.expectRevert(ImmutableState.NotPoolManager.selector);
+        hook.beforeSwap(address(0), key, SwapParams(true, 0, 0), "");
+
+        // ** this always revert even with correct manager and pool key
         vm.prank(address(manager));
         vm.expectRevert(IALM.AddLiquidityThroughHook.selector);
-        hook.beforeAddLiquidity(address(0), key, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");
+        hook.beforeAddLiquidity(address(0), key, ModifyLiquidityParams(0, 0, 0, ""), "");
 
         PoolKey memory failedKey = key;
         failedKey.tickSpacing = 3;
 
+        // ** reverts on failed key
         vm.prank(address(manager));
         vm.expectRevert(IALM.UnauthorizedPool.selector);
-        hook.beforeAddLiquidity(address(0), failedKey, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");
+        hook.beforeAddLiquidity(address(0), failedKey, ModifyLiquidityParams(0, 0, 0, ""), "");
 
-        vm.expectRevert(SafeCallback.NotPoolManager.selector);
-        hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
-
+        // ** reverts on failed key
+        vm.prank(address(manager));
         vm.expectRevert(IALM.UnauthorizedPool.selector);
-        hook.beforeSwap(address(0), failedKey, IPoolManager.SwapParams(true, 0, 0), "");
+        hook.beforeSwap(address(0), failedKey, SwapParams(true, 0, 0), "");
     }
 
     function test_hook_pause() public {
@@ -265,7 +273,7 @@ contract ALMGeneralTest is ALMTestBase {
 
         vm.prank(address(manager));
         vm.expectRevert(IBase.ContractNotActive.selector);
-        hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+        hook.beforeSwap(address(0), key, SwapParams(true, 0, 0), "");
     }
 
     function test_hook_shutdown_allows_withdraw() public {
@@ -277,7 +285,7 @@ contract ALMGeneralTest is ALMTestBase {
 
         vm.prank(address(manager));
         vm.expectRevert(IBase.ContractNotActive.selector);
-        hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+        hook.beforeSwap(address(0), key, SwapParams(true, 0, 0), "");
 
         // This is not ContractsNotActive, so it works
         vm.expectRevert(IALM.NotZeroShares.selector);

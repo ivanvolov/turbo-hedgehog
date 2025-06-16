@@ -10,10 +10,12 @@ import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
 import {CurrencySettler} from "@src/libraries/CurrencySettler.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -25,9 +27,6 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 import {ALM} from "@src/ALM.sol";
 
-/// @title ALM Control hook for simulation
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
 contract ALMControl is BaseHook, ERC20 {
     using CurrencySettler for Currency;
     using PoolIdLibrary for PoolKey;
@@ -51,7 +50,7 @@ contract ALMControl is BaseHook, ERC20 {
 
     // --- Logic --- //
 
-    // @Notice: This should be called after the target hook is rebalanced
+    /// @dev This should be called after the target hook is rebalanced.
     function rebalance() external {
         poke();
         (uint128 totalLiquidity, , ) = getPositionInfo();
@@ -137,10 +136,10 @@ contract ALMControl is BaseHook, ERC20 {
         int24 _tickLower,
         int24 _tickUpper,
         address sender
-    ) external selfOnly returns (bytes memory) {
+    ) external returns (bytes memory) {
         (BalanceDelta delta, ) = poolManager.modifyLiquidity(
             key,
-            IPoolManager.ModifyLiquidityParams({
+            ModifyLiquidityParams({
                 tickLower: _tickLower,
                 tickUpper: _tickUpper,
                 liquidityDelta: liquidity,
@@ -189,9 +188,9 @@ contract ALMControl is BaseHook, ERC20 {
             });
     }
 
-    function afterInitialize(address, PoolKey calldata _key, uint160, int24) external override returns (bytes4) {
+    function _afterInitialize(address, PoolKey calldata _key, uint160, int24) internal override returns (bytes4) {
         key = _key;
-        return ALMControl.afterInitialize.selector;
+        return IHooks.afterInitialize.selector;
     }
 
     function sharePrice() public view returns (uint256) {

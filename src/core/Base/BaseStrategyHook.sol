@@ -5,9 +5,10 @@ pragma solidity ^0.8.0;
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {SwapMath} from "v4-core/libraries/SwapMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -25,6 +26,8 @@ import {Base} from "./Base.sol";
 // ** interfaces
 import {IALM} from "../../interfaces/IALM.sol";
 
+/// @title Base Strategy Hook
+/// @notice Abstract contract that serves as a base for ALM and holds storage and hook configuration.
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;
@@ -90,8 +93,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
-        if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
-        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
+        if (_protocolFee > ALMMathLib.WAD) revert ProtocolFeeNotValid();
+        if (_liquidityMultiplier > 10 * ALMMathLib.WAD) revert LiquidityMultiplierNotValid();
         if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
 
         liquidityMultiplier = _liquidityMultiplier;
@@ -131,12 +134,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     /// @notice  Disable adding liquidity through the PM
-    function beforeAddLiquidity(
+    function _beforeAddLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        ModifyLiquidityParams calldata,
         bytes calldata
-    ) external view override onlyPoolManager onlyAuthorizedPool(key) returns (bytes4) {
+    ) internal view override onlyAuthorizedPool(key) returns (bytes4) {
         revert AddLiquidityThroughHook();
     }
 
@@ -226,7 +229,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     // ** Modifiers
 
-    /// @dev Only allows execution for the authorized pool
+    /// @dev Only allows execution for the authorized pool.
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {
         if (PoolId.unwrap(poolKey.toId()) != authorizedPool) {
             revert UnauthorizedPool();

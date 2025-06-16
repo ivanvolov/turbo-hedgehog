@@ -7,6 +7,8 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 // ** contracts
 import {OracleBase} from "./OracleBase.sol";
 
+/// @title Oracle
+/// @notice Implementation of the Chainlink based oracle.
 contract Oracle is OracleBase {
     AggregatorV3Interface internal immutable feedBase;
     AggregatorV3Interface internal immutable feedQuote;
@@ -30,12 +32,12 @@ contract Oracle is OracleBase {
 
     function _fetchAssetsPrices() internal view override returns (uint256, uint256) {
         (, int256 _priceBase, , uint256 updatedAtBase, ) = feedBase.latestRoundData();
-        require(block.timestamp - updatedAtBase <= stalenessThresholdB, "O4");
+        if (block.timestamp - updatedAtBase > stalenessThresholdB) revert StalenessThresholdExceeded();
 
         (, int256 _priceQuote, , uint256 updatedAtQuote, ) = feedQuote.latestRoundData();
-        require(block.timestamp - updatedAtQuote <= stalenessThresholdQ, "O5");
+        if (block.timestamp - updatedAtQuote > stalenessThresholdQ) revert StalenessThresholdExceeded();
 
-        require(_priceBase > 0 && _priceQuote > 0, "O6");
+        if (_priceBase <= 0 || _priceQuote <= 0) revert PriceNotValid();
         return (uint256(_priceBase), uint256(_priceQuote));
     }
 }

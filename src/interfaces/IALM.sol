@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/// @notice Defines the interface for an Automated Liquidity Manager.
 interface IALM {
     error ZeroLiquidity();
     error ZeroDebt();
@@ -43,7 +44,6 @@ interface IALM {
         uint256 delShares,
         uint256 baseOut,
         uint256 quoteOut,
-        uint256 TVL,
         uint256 totalSupply,
         uint256 liquidity
     );
@@ -76,7 +76,7 @@ interface IALM {
 
     function isInvertedPool() external view returns (bool);
 
-    function TVL() external view returns (uint256);
+    function TVL(uint256 price) external view returns (uint256);
 
     function protocolFee() external view returns (uint256);
 }

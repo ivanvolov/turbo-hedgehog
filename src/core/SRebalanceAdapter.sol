@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeCast} from "v4-core/libraries/SafeCast.sol";
@@ -18,12 +16,16 @@ import {Base} from "./base/Base.sol";
 // ** interfaces
 import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
 
+/// @title Simple Rebalance Adapter
+/// @notice Default Rebalance adapter using flash loan and swap adapter to rebalance the position.
 contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     error RebalanceConditionNotMet();
     error NotRebalanceOperator();
     error WeightNotValid();
     error LeverageValuesNotValid();
     error MaxDeviationNotValid();
+    error DeviationLongExceeded();
+    error DeviationShortExceeded();
 
     /// @notice Emitted when the rebalance is triggered.
     /// @param slippage                The execution slippage, as a UD60x18 value.
@@ -122,9 +124,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
-        if (_weight > 1e18) revert WeightNotValid();
-        if (_longLeverage > 5e18) revert LeverageValuesNotValid();
-        if (_shortLeverage > 5e18) revert LeverageValuesNotValid();
+        if (_weight > WAD) revert WeightNotValid();
+        if (_longLeverage > 5 * WAD) revert LeverageValuesNotValid();
+        if (_shortLeverage > 5 * WAD) revert LeverageValuesNotValid();
         if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
 
         weight = _weight;
@@ -145,8 +147,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     /// @return needRebalance   True if rebalance is allowed, false otherwise
     /// @return priceThreshold  The current price threshold for the price based rebalance
     /// @return triggerTime     The exact timestamp when a time-based rebalance is allowed
-    function isRebalanceNeeded() public view returns (bool, uint256, uint256) {
-        (bool _isPriceRebalance, uint256 _priceThreshold) = isPriceRebalance();
+    function isRebalanceNeeded(uint256 oraclePrice) public view returns (bool, uint256, uint256) {
+        (bool _isPriceRebalance, uint256 _priceThreshold) = isPriceRebalance(oraclePrice);
         (bool _isTimeRebalance, uint256 _triggerTime) = isTimeRebalance();
         return (_isPriceRebalance || _isTimeRebalance, _priceThreshold, _triggerTime);
     }
@@ -154,8 +156,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     /// @notice Computes when the next price‐based rebalance can be triggered
     /// @return needRebalance   True if rebalance is allowed, false otherwise
     /// @return priceThreshold  The current price threshold for the price based rebalance
-    function isPriceRebalance() public view returns (bool needRebalance, uint256 priceThreshold) {
-        uint256 oraclePrice = oracle.price();
+    function isPriceRebalance(uint256 oraclePrice) public view returns (bool needRebalance, uint256 priceThreshold) {
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance
             ? oraclePrice.div(oraclePriceAtLastRebalance)
             : oraclePriceAtLastRebalance.div(oraclePrice);
@@ -171,11 +172,12 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator nonReentrant {
-        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded();
+        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
+        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded(currentPrice);
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();
 
-        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(1e18 + slippage);
+        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(WAD + slippage, currentPrice);
 
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
@@ -193,10 +195,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         }
 
         // ** Check max deviation
-        checkDeviations();
+        checkDeviations(currentPrice);
 
         // ** Update state
-        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
         uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(currentPoolPrice);
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
@@ -231,26 +232,23 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         }
     }
 
-    // @Notice: this function is mainly for removing stack too deep error
+    /// @dev This function is mainly for removing stack too deep error.
     function _managePositionDeltas(bytes calldata data) internal {
         (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi.decode(
             data,
             (int256, int256, int256, int256)
         );
-        console.log("deltaCL %s", deltaCL);
-        console.log("deltaCS %s", deltaCS);
-        console.log("deltaDL %s", deltaDL);
-        console.log("deltaDS %s", deltaDS);
-        console.log("balanceBase", baseBalanceUnwr());
-        console.log("balanceQuote", quoteBalanceUnwr());
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
     // ** Math functions
 
-    // @Notice: this function is mainly for removing stack too deep error
+    uint256 constant WAD = 1e18;
+
+    /// @dev This function is mainly for removing stack too deep error.
     function _rebalanceCalculations(
-        uint256 k
+        uint256 k,
+        uint256 price
     ) internal view returns (uint256 baseToFl, uint256 quoteToFl, bytes memory data) {
         uint256 targetDL;
         uint256 targetDS;
@@ -261,49 +259,37 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         {
             uint256 targetCL;
             uint256 targetCS;
-            uint256 price = oracle.test_price();
-            console.log("> price %s", price);
-            uint256 TVL = alm.TVL();
-            console.log("TVL %s", TVL);
+            uint256 TVL = alm.TVL(price);
             if (isInvertedAssets) {
                 targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
-                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage);
+                targetCS = TVL.mul(WAD - weight).mul(shortLeverage);
             } else {
                 targetCL = TVL.mul(weight).mul(longLeverage);
-                targetCS = TVL.mul(1e18 - weight).mul(shortLeverage).mul(price);
+                targetCS = TVL.mul(WAD - weight).mul(shortLeverage).mul(price);
             }
 
-            targetDL = targetCL.mul(price).mul(1e18 - uint256(1e18).div(longLeverage));
-            targetDS = PRBMath.mulDiv(targetCS, 1e18 - uint256(1e18).div(shortLeverage), price);
+            targetDL = targetCL.mul(price).mul(WAD - WAD.div(longLeverage));
+            targetDS = PRBMath.mulDiv(targetCS, WAD - WAD.div(shortLeverage), price);
 
             if (isNova) {
-                // @Notice: discount to cover slippage
-                targetCL = targetCL.mul(2e18 - k);
-                targetCS = targetCS.mul(2e18 - k);
+                // Discount to cover slippage
+                targetCL = targetCL.mul(2 * WAD - k);
+                targetCS = targetCS.mul(2 * WAD - k);
 
-                // @Notice: no debt operations in Nova
+                // No debt operations in unicord
                 targetDL = 0;
                 targetDS = 0;
             } else {
-                // @Notice: borrow additional funds to cover slippage
+                // Borrow additional funds to cover slippage
                 targetDL = targetDL.mul(k);
                 targetDS = targetDS.mul(k);
             }
-
-            console.log("targetCL %s", targetCL);
-            console.log("targetCS %s", targetCS);
-            console.log("targetDL %s", targetDL);
-            console.log("targetDS %s", targetDS);
 
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
             deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(CL);
             deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
             deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(DL);
             deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(DS);
-            console.log("deltaCL %s", deltaCL);
-            console.log("deltaCS %s", deltaCS);
-            console.log("deltaDL %s", deltaDL);
-            console.log("deltaDS %s", deltaDS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -314,18 +300,12 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
-    function checkDeviations() internal view {
+    function checkDeviations(uint256 price) internal view {
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(
-            oracle.test_price(),
-            currentCL,
-            currentCS,
-            DL,
-            DS
-        );
+        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(price, currentCL, currentCS, DL, DS);
 
-        require(ALMMathLib.absSub(lLeverage, longLeverage) <= maxDeviationLong, "D1");
-        require(ALMMathLib.absSub(sLeverage, shortLeverage) <= maxDeviationShort, "D2");
+        if (ALMMathLib.absSub(lLeverage, longLeverage) > maxDeviationLong) revert DeviationLongExceeded();
+        if (ALMMathLib.absSub(sLeverage, shortLeverage) > maxDeviationShort) revert DeviationShortExceeded();
     }
 
     // ** Modifiers

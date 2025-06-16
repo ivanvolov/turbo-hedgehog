@@ -13,6 +13,7 @@ import {IOracle} from "./IOracle.sol";
 import {IRebalanceAdapter} from "./IRebalanceAdapter.sol";
 import {ISwapAdapter} from "./swapAdapters/ISwapAdapter.sol";
 
+/// @notice Defines the interface for a Base contract.
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
     error NotALM(address account);

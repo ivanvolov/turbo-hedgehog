@@ -246,7 +246,9 @@ contract ETHALMSimulationTest is ALMTestSimBase {
     }
 
     function try_rebalance() internal {
-        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
+        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded(
+            oracle.price()
+        );
 
         if (isRebalance) {
             {
