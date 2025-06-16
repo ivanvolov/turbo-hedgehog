@@ -373,7 +373,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqPositionState(172867636362006389246, 239418121589, 307047388971, 47413988037791379250);
 
         assertEq(hook.sqrtPriceCurrent(), 1543848484552533078340966435675234);
-        assertApproxEqAbs(hook.TVL(), 100031036101054763958, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), 100031036101054763958, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
@@ -394,7 +394,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqPositionState(172867636362006389246, 239418121589, 307040118704, 47413988037791379250);
 
         assertEq(hook.sqrtPriceCurrent(), 1543844615332363812012452971628599);
-        assertApproxEqAbs(hook.TVL(), 100033769077262473583, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), 100033769077262473583, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
@@ -419,7 +419,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqPositionState(172866849598370188606, 239418121589, 307040118704, 47413753388987600112);
 
         assertEq(hook.sqrtPriceCurrent(), 1543844615332363812012452971628599);
-        assertApproxEqAbs(hook.TVL(), 100033216962430052081, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), 100033216962430052081, 1e1, "tvl");
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
