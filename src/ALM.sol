@@ -68,7 +68,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (amountIn == 0) revert ZeroLiquidity();
         lendingAdapter.syncPositions();
-        uint256 TVL1 = TVL();
+        uint256 price = oracle.price();
+        uint256 tvlBefore = TVL(price);
 
         if (isInvertedAssets) {
             BASE.safeTransferFrom(msg.sender, address(this), amountIn);
@@ -77,13 +78,13 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             QUOTE.safeTransferFrom(msg.sender, address(this), amountIn);
             lendingAdapter.addCollateralLong(quoteBalance(true));
         }
-        uint256 TVL2 = TVL();
-        if (TVL2 > tvlCap) revert TVLCapExceeded();
+        uint256 tvlAfter = TVL(price);
+        if (tvlAfter > tvlCap) revert TVLCapExceeded();
 
-        sharesMinted = ALMMathLib.getSharesToMint(TVL1, TVL2, totalSupply());
+        sharesMinted = ALMMathLib.getSharesToMint(tvlBefore, tvlAfter, totalSupply());
         if (sharesMinted < minShares) revert NotMinShares();
         _mint(to, sharesMinted);
-        emit Deposit(to, amountIn, sharesMinted, TVL2, totalSupply());
+        emit Deposit(to, amountIn, sharesMinted, tvlAfter, totalSupply());
     }
 
     function withdraw(
@@ -133,7 +134,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         uint128 newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
-        emit Withdraw(to, sharesOut, baseOut, quoteOut, TVL(), totalSupply(), newLiquidity);
+        emit Withdraw(to, sharesOut, baseOut, quoteOut, totalSupply(), newLiquidity);
     }
 
     function onFlashLoanTwoTokens(
@@ -182,10 +183,14 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
         lendingAdapter.syncPositions();
+
+        uint256 _accumulatedFee = accumulatedFeeB;
         accumulatedFeeB = 0;
-        BASE.safeTransfer(treasury, accumulatedFeeB);
+        BASE.safeTransfer(treasury, _accumulatedFee);
+
+        _accumulatedFee = accumulatedFeeQ;
         accumulatedFeeQ = 0;
-        QUOTE.safeTransfer(treasury, accumulatedFeeQ);
+        QUOTE.safeTransfer(treasury, _accumulatedFee);
     }
 
     // ** Swapping logic
@@ -299,24 +304,9 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     // ** Math functions
 
-    function TVL() public view returns (uint256) {
+    function TVL(uint256 price) public view returns (uint256) {
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        return
-            ALMMathLib.getTVL(
-                quoteBalance(true),
-                baseBalance(true),
-                CL,
-                CS,
-                DL,
-                DS,
-                oracle.test_price(),
-                isInvertedAssets
-            );
-    }
-
-    function sharePrice() external view returns (uint256) {
-        if (totalSupply() == 0) return 0;
-        return TVL().div(totalSupply());
+        return ALMMathLib.getTVL(quoteBalance(true), baseBalance(true), CL, CS, DL, DS, price, isInvertedAssets);
     }
 
     // ** Helpers

@@ -104,7 +104,9 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
     }
 
     function try_rebalance(bool rebalanceControl) internal {
-        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded();
+        (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = rebalanceAdapter.isRebalanceNeeded(
+            oracle.price()
+        );
         if (isRebalance) {
             {
                 vm.startPrank(rebalanceAdapter.owner());

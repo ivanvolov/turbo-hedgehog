@@ -71,7 +71,7 @@ contract ETHRALMTest is ALMTestBase {
     uint256 amountToDep = 100 ether;
 
     function test_deposit() public {
-        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(calcTVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(WETH), address(alice.addr), amountToDep);
@@ -85,13 +85,13 @@ contract ETHRALMTest is ALMTestBase {
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
     function test_deposit_rebalance() public {
         test_deposit();
-        uint256 preRebalanceTVL = hook.TVL();
+        uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -117,7 +117,7 @@ contract ETHRALMTest is ALMTestBase {
         updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
 
-        uint256 treasuryFeeB;
+        // uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
 
         // ** Swap Up In
@@ -444,7 +444,7 @@ contract ETHRALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = hook.TVL();
+        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);

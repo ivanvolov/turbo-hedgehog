@@ -66,7 +66,7 @@ contract ETHR2ALMTest is ALMTestBase {
     uint256 amountToDep = 100 ether;
 
     function test_deposit() public {
-        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(calcTVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(WETH), address(alice.addr), amountToDep);
@@ -80,14 +80,14 @@ contract ETHR2ALMTest is ALMTestBase {
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), amountToDep, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
     function test_deposit_rebalance() public {
         test_deposit();
 
-        uint256 preRebalanceTVL = hook.TVL();
+        uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -267,7 +267,7 @@ contract ETHR2ALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = hook.TVL();
+        uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);

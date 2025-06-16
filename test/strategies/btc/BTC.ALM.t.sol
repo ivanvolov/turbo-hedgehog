@@ -69,7 +69,7 @@ contract BTCALMTest is ALMTestBase {
     uint256 amountToDep = 1 * 1e8;
 
     function test_deposit() public {
-        assertEq(hook.TVL(), 0, "TVL");
+        assertEq(calcTVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(BTC), address(alice.addr), amountToDep);
@@ -84,14 +84,14 @@ contract BTCALMTest is ALMTestBase {
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(hook.TVL(), 999999990000000000, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), 999999990000000000, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
     function test_deposit_rebalance() public {
         test_deposit();
 
-        uint256 preRebalanceTVL = hook.TVL();
+        // uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -110,7 +110,7 @@ contract BTCALMTest is ALMTestBase {
         vm.stopPrank();
         test_deposit_rebalance();
 
-        uint256 treasuryFeeB;
+        // uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
 
         // ** Make oracle change with swap price
@@ -393,7 +393,7 @@ contract BTCALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = hook.TVL();
+        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
