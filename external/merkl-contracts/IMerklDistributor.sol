@@ -15,10 +15,13 @@ interface IMerklDistributor {
         bytes32[][] calldata proofs
     ) external;
 
+    /// @notice Returns the Merkle root that is currently live for the contract
     function getMerkleRoot() external view returns (bytes32);
 
+    /// @notice Updates the Merkle tree
     function updateTree(MerkleTree calldata _tree) external;
 
+    /// @notice When the current tree becomes valid
     function endOfDisputePeriod() external view returns (uint48);
 }
 
