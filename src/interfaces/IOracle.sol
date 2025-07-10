@@ -3,10 +3,9 @@ pragma solidity ^0.8.0;
 
 /// @notice Defines the interface for an Oracle.
 interface IOracle {
-    error DecimalsDeltaNotValid();
+    error TokenDecimalsDeltaNotValid();
+    error FeedDecimalsDeltaNotValid();
     error PriceZero();
-    error StalenessThresholdExceeded();
-    error PriceNotValid();
 
     function price() external view returns (uint256);
 

@@ -239,8 +239,6 @@ contract OracleTest is ALMTestBase {
         assertEq(poolPrice6, 999665594817245518);
     }
 
-    // ** Helpers
-
     function test_oracle_constraints() public {
         // Normal oracle price
         {
@@ -271,6 +269,8 @@ contract OracleTest is ALMTestBase {
             console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
         }
     }
+
+    // ** Helpers
 
     function mock_calc_price(
         uint256 priceQuote,

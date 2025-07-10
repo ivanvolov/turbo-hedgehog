@@ -10,6 +10,9 @@ import {OracleBase} from "./OracleBase.sol";
 /// @title Oracle
 /// @notice Implementation of the Chainlink based oracle.
 contract Oracle is OracleBase {
+    error StalenessThresholdExceeded();
+    error PriceNotValid();
+
     AggregatorV3Interface internal immutable feedBase;
     AggregatorV3Interface internal immutable feedQuote;
     uint256 public immutable stalenessThresholdB;
@@ -21,8 +24,8 @@ contract Oracle is OracleBase {
         uint256 _stalenessThresholdB,
         uint256 _stalenessThresholdQ,
         bool _isInvertedPool,
-        int8 _decimalsDelta
-    ) OracleBase(_isInvertedPool, _decimalsDelta, _feedBase.decimals(), _feedQuote.decimals()) {
+        int8 _tokenDecimalsDelta
+    ) OracleBase(_isInvertedPool, _tokenDecimalsDelta, int8(_feedBase.decimals()) - int8(_feedQuote.decimals())) {
         feedBase = _feedBase;
         feedQuote = _feedQuote;
 

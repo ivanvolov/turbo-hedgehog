@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
 
@@ -16,35 +18,35 @@ abstract contract OracleBase is IOracle {
     uint256 public immutable ratio;
     uint256 public immutable scaleFactor;
 
-    //TODO: WTF is these double decimals"????????
-    constructor(bool _isInvertedPool, int8 _decimalsDelta, uint256 _decimalsBase, uint256 _decimalsQuote) {
+    constructor(bool _isInvertedPool, int8 tokenDecimalsDelta, int8 feedDecimalsDelta) {
         isInvertedPool = _isInvertedPool;
-        if (_decimalsDelta < -18) revert DecimalsDeltaNotValid();
+        if (tokenDecimalsDelta < -18) revert TokenDecimalsDeltaNotValid();
+        if (feedDecimalsDelta < -18) revert FeedDecimalsDeltaNotValid();
 
-        scaleFactor = 10 ** (18 + _decimalsBase - _decimalsQuote);
-        ratio = 10 ** uint256(int256(_decimalsDelta) + 18);
+        ratio = 10 ** uint256(int256(tokenDecimalsDelta) + 18);
+        scaleFactor = 10 ** uint256(int256(feedDecimalsDelta) + 18);
     }
 
     uint256 constant WAD = 1e18;
 
-    /// @notice Returns the price as a 1e18 fixed-point number (UD60x18)
-    function price() external view returns (uint256 _price) {
+    /// @notice Returns the price as a 1e18 fixed-point number (UD60x18).
+    /// Calculates quote token price in terms of base token, adjusted for token decimals.
+    /// @return _price The price of quote token denominated in base token units.
+    function price() public view returns (uint256 _price) {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
 
         _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase)).mul(ratio);
         if (_price == 0) revert PriceZero();
     }
 
-    //TODO: add comment here
+    /// @notice Returns both standard price and Uniswap V3 style pool price.
+    /// Pool price is inverted (1/price) if token0 eq base and token1 eq quote.
+    /// @return _price The standard price (quote in terms of base).
+    /// @return _poolPrice The pool-compatible price.
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
-        (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
-
-        //TODO: jum this functions into one if possible
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase));
-        _poolPrice = isInvertedPool ? WAD.div(_price.mul(ratio)) : _price.mul(ratio);
-        _price = _price.mul(ratio);
-
-        if (_price == 0 || _poolPrice == 0) revert PriceZero();
+        _price = price();
+        _poolPrice = isInvertedPool ? WAD.div(_price) : _price;
+        if (_poolPrice == 0) revert PriceZero();
     }
 
     function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {}
