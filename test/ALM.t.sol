@@ -222,11 +222,11 @@ contract ALMGeneralTest is ALMTestBase {
     function test_pool_deploy_twice_revert() public {
         (address _token0, address _token1) = getTokensInOrder();
         vm.expectRevert();
-        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, 100, initialSQRTPrice);
 
         vm.prank(deployer.addr);
         vm.expectRevert();
-        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, 100, initialSQRTPrice);
     }
 
     function test_oracle() public view {

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 // ** libraries
 import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
@@ -110,6 +111,26 @@ library ALMMathLib {
 
     function getTickFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (int24) {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+    }
+
+    function nearestUsableTick(int24 tick_, uint24 tickSpacing) internal pure returns (int24 result) {
+        result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);
+
+        if (result < TickMath.MIN_TICK) {
+            result += int24(tickSpacing);
+        } else if (result > TickMath.MAX_TICK) {
+            result -= int24(tickSpacing);
+        }
+    }
+
+    function divRound(int128 x, int128 y) internal pure returns (int128 result) {
+        int128 quot = ABDKMath64x64.div(x, y);
+        result = quot >> 64;
+
+        // Check if remainder is greater than 0.5
+        if (quot % 2 ** 64 >= 0x8000000000000000) {
+            result += 1;
+        }
     }
 
     // ** Math functions

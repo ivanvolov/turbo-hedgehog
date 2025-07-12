@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
-import {SwapMath} from "v4-core/libraries/SwapMath.sol";
+import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
@@ -31,10 +31,12 @@ import {IALM} from "../../interfaces/IALM.sol";
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using PRBMathUD60x18 for uint256;
+    using StateLibrary for IPoolManager;
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
-    bytes32 public authorizedPool;
+    bytes32 public immutable authorizedPool;
+    PoolKey public authorizedPoolKey; //TODO: only remain poolKey everythere if it will make sense. No sense in making it immutable, check.
 
     /// @notice Current operational status of the contract.
     /// @dev 0 = active, 1 = paused, 2 = shutdown.
@@ -55,6 +57,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     address public swapOperator;
     address public treasury;
     uint256 public protocolFee;
+    uint24 public nextLPFee;
     uint256 public accumulatedFeeB;
     uint256 public accumulatedFeeQ;
 
@@ -83,6 +86,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
         emit TreasurySet(_treasury);
+    }
+
+    /// @notice the swap fee is represented in hundredths of a bip, so the max is 100%
+    function setNextLPFee(uint24 _nextLPFee) external onlyOwner {
+        if (_nextLPFee > 1e6) revert LPFeeTooLarge(_nextLPFee);
+        nextLPFee = _nextLPFee;
     }
 
     function setProtocolParams(
@@ -123,10 +132,10 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 beforeRemoveLiquidity: false,
                 afterRemoveLiquidity: false,
                 beforeSwap: true,
-                afterSwap: false,
+                afterSwap: true,
                 beforeDonate: false,
                 afterDonate: false,
-                beforeSwapReturnDelta: true,
+                beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
                 afterAddLiquidityReturnDelta: false,
                 afterRemoveLiquidityReturnDelta: false
@@ -143,6 +152,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
+    //TODO: Think about making it the separate function on fee change.
     function updateLiquidityAndBoundaries(
         uint160 _sqrtPrice
     ) external override onlyRebalanceAdapter returns (uint128 newLiquidity) {
@@ -168,9 +178,18 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         sqrtPriceCurrent = _sqrtPrice;
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
 
+        (, , , uint24 lpFee) = poolManager.getSlot0(PoolId.wrap(authorizedPool));
+        if (lpFee != nextLPFee) {
+            poolManager.updateDynamicLPFee(authorizedPoolKey, nextLPFee);
+            emit LPFeeSet(nextLPFee);
+        }
+
+        uint24 tickSpacing = uint24((nextLPFee / 100) * 2); //TODO: why the fuck is tick spacing negative? int24??
+        if (tickSpacing == 0) tickSpacing = 1;
+
         Ticks memory deltas = tickDeltas;
-        int24 newTickLower = tick - deltas.lower;
-        int24 newTickUpper = tick + deltas.upper;
+        int24 newTickLower = ALMMathLib.nearestUsableTick(tick - deltas.lower, tickSpacing);
+        int24 newTickUpper = ALMMathLib.nearestUsableTick(tick + deltas.upper, tickSpacing);
 
         if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
             revert TickLowerOutOfBounds(newTickLower);
@@ -181,50 +200,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
         emit SqrtPriceUpdated(_sqrtPrice);
         emit BoundariesUpdated(newTickLower, newTickUpper);
-    }
-
-    // ** Deltas calculation
-
-    function getDeltas(
-        bool zeroForOne,
-        int256 amountSpecified,
-        uint160 sqrtPriceLimitX96
-    )
-        internal
-        view
-        returns (
-            BeforeSwapDelta beforeSwapDelta,
-            uint256 tokenIn,
-            uint256 tokenOut,
-            uint160 sqrtPriceNext,
-            uint256 feeAmount
-        )
-    {
-        uint24 swapFee = positionManager.getSwapFees(zeroForOne, amountSpecified);
-
-        int24 nextTick = zeroForOne ? activeTicks.lower : activeTicks.upper; //TODO: this should depends on the pool order and such. Also if partial fill then what?
-        sqrtPriceNext = ALMMathLib.getSqrtPriceX96FromTick(nextTick);
-
-        (sqrtPriceNext, tokenIn, tokenOut, feeAmount) = SwapMath.computeSwapStep(
-            sqrtPriceCurrent,
-            SwapMath.getSqrtPriceTarget(zeroForOne, sqrtPriceNext, sqrtPriceLimitX96),
-            liquidity,
-            amountSpecified,
-            swapFee
-        );
-        tokenIn += feeAmount;
-
-        if (amountSpecified > 0) {
-            beforeSwapDelta = toBeforeSwapDelta(
-                -SafeCast.toInt128(tokenOut), // specified token = zeroForOne ? token1 : token0
-                SafeCast.toInt128(tokenIn) // unspecified token = zeroForOne ? token0 : token1
-            );
-        } else {
-            beforeSwapDelta = toBeforeSwapDelta(
-                SafeCast.toInt128(tokenIn), // specified token = zeroForOne ? token0 : token1
-                -SafeCast.toInt128(tokenOut) // unspecified token = zeroForOne ? token1 : token0
-            );
-        }
     }
 
     // ** Modifiers

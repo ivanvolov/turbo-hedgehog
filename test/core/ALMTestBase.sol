@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 // ** V4 imports
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
@@ -14,6 +15,7 @@ import {Deployers} from "v4-core-test/utils/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
+import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -57,7 +59,6 @@ abstract contract ALMTestBase is Deployers {
 
     uint160 initialSQRTPrice;
     ALM hook;
-    uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts.
     SRebalanceAdapter rebalanceAdapter;
 
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
@@ -219,24 +220,7 @@ abstract contract ALMTestBase is Deployers {
         console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
 
-        // MARK: UniV4 hook deployment process
-        address hookAddress = address(
-            uint160(
-                Hooks.BEFORE_SWAP_FLAG |
-                    Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG |
-                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
-                    Hooks.AFTER_INITIALIZE_FLAG
-            )
-        );
-        deployCodeTo(
-            "ALM.sol",
-            abi.encode(BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
-            hookAddress
-        );
-        hook = ALM(hookAddress);
-        vm.label(address(hook), "hook");
-        assertEq(hook.owner(), deployer.addr);
-        // MARK END
+        deploy_hook_contract(_isInvertedAssets);
 
         // MARK: Deploying modules and setting up parameters
         // LendingAdapter should already be created
@@ -269,13 +253,41 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
         // MARK END
 
-        (address _token0, address _token1) = getTokensInOrder();
-        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
         // This is needed in order to simulate proper accounting
         deal(address(BASE), address(manager), 1000 ether);
         deal(address(QUOTE), address(manager), 1000 ether);
         vm.stopPrank();
+    }
+
+    function deploy_hook_contract(bool _isInvertedAssets) internal {
+        address hookAddress = address(
+            uint160(
+                Hooks.BEFORE_SWAP_FLAG |
+                    Hooks.AFTER_SWAP_FLAG |
+                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
+                    Hooks.AFTER_INITIALIZE_FLAG
+            )
+        );
+
+        (address currency0, address currency1) = getTokensInOrder();
+
+        key = PoolKey(
+            Currency.wrap(currency0),
+            Currency.wrap(currency1),
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            1, // The value of tickSpacing doesn't matter because it will change to the dynamic fee on afterInitialize
+            IHooks(hookAddress)
+        );
+        deployCodeTo(
+            "ALM.sol",
+            abi.encode(key, BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            hookAddress
+        );
+        hook = ALM(hookAddress);
+        vm.label(address(hook), "hook");
+        assertEq(hook.owner(), deployer.addr);
     }
 
     function updateProtocolFees(uint256 _protocolFee) internal {
@@ -598,6 +610,19 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqBalanceBaseThreshold = 1e1;
     uint256 public assertEqSqrtThreshold;
 
+    mapping(address => uint256) public balanceB;
+    mapping(address => uint256) public balanceQ;
+
+    function saveBalance(address owner) public {
+        balanceB[owner] = BASE.balanceOf(owner);
+        balanceQ[owner] = QUOTE.balanceOf(owner);
+    }
+
+    function assertBalanceNotChanged(address owner) public {
+        assertEq(BASE.balanceOf(owner), balanceB[owner]);
+        assertEq(QUOTE.balanceOf(owner), balanceQ[owner]);
+    }
+
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
     }
@@ -730,6 +755,21 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(_leA.getCollateralShort(), CS, assertEqPSThresholdCS, "CS not equal");
         assertApproxEqAbs(_leA.getBorrowedLong(), DL, assertEqPSThresholdDL, "DL not equal");
         assertApproxEqAbs(_leA.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
+    }
+
+    function assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {
+        try this._assertEqProtocolState(sqrtPriceCurrent, tvl) {
+            // Intentionally empty
+        } catch {
+            console.log("Error: sqrtPriceCurrent", hook.sqrtPriceCurrent());
+            console.log("Error: tvl", calcTVL());
+            _assertEqProtocolState(sqrtPriceCurrent, tvl); // This is to throw the error
+        }
+    }
+
+    function _assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), sqrtPriceCurrent, 0, "sqrtPrice not equal");
+        assertApproxEqAbs(calcTVL(), tvl, 0, "TVL not equal");
     }
 
     // --- Test math --- //

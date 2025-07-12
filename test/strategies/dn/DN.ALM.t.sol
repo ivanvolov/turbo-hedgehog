@@ -61,7 +61,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            IPositionManagerStandard(address(positionManager)).setFees(0);
+            hook.setNextLPFee(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2);
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
@@ -237,7 +237,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_in_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
         uint256 usdcToSwap = 14171775946;
 
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -258,7 +258,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_up_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         uint256 wethToGetFSwap = 5295866784427776090;
         (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(wethToGetFSwap));
@@ -282,7 +282,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         uint256 wethToSwap = 5436304955762950000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         deal(address(WETH), address(swapper.addr), wethToSwap);
         assertEqBalanceState(swapper.addr, wethToSwap, 0);
@@ -302,7 +302,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_deposit_rebalance_swap_price_down_out_fees() public {
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         uint256 usdcToGetFSwap = 14374512916;
         (, uint256 wethToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
@@ -347,7 +347,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
         updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
 

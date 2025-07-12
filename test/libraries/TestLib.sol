@@ -134,8 +134,4 @@ library TestLib {
             result += 1;
         }
     }
-
-    function getTickSpacingFromFee(uint24 fee) internal pure returns (int24) {
-        return int24((fee / 100) * 2);
-    }
 }

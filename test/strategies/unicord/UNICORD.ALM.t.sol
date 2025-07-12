@@ -237,7 +237,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         uint256 usdcToSwap = 17897776432;
 
@@ -260,7 +260,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         uint256 usdtToGetFSwap = 4626903915919660000;
         (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
@@ -285,7 +285,7 @@ contract UNICORDALMTest is MorphoTestBase {
         uint256 usdtToSwap = 4696832668752530000;
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         deal(address(USDT), address(swapper.addr), usdtToSwap);
         assertEqBalanceState(swapper.addr, usdtToSwap, 0);
@@ -306,7 +306,7 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
+        hook.setNextLPFee(500);
 
         uint256 usdcToGetFSwap = 17987491283;
         (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
@@ -331,7 +331,7 @@ contract UNICORDALMTest is MorphoTestBase {
         test_deposit_rebalance();
 
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
+        hook.setNextLPFee(fee);
         //rebalanceAdapter.setRebalancePriceThreshold(1e15);
         //rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
         vm.stopPrank();

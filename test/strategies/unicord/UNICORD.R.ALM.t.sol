@@ -137,7 +137,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         test_deposit_rebalance();
 
         vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
+        hook.setNextLPFee(fee);
         vm.stopPrank();
 
         // ** Make oracle change with swap price
