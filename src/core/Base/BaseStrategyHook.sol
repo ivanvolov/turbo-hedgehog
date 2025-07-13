@@ -49,7 +49,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     Ticks public activeTicks;
     Ticks public tickDeltas;
-    uint160 public sqrtPriceCurrent;
     uint256 public swapPriceThreshold;
     uint256 public tvlCap;
 
@@ -152,6 +151,11 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
+    //TODO: move to position Manager later
+    function sqrtPriceCurrent() public view returns (uint160 sqrtPriceX96) {
+        (sqrtPriceX96, , , ) = poolManager.getSlot0(PoolId.wrap(authorizedPool));
+    }
+
     //TODO: Think about making it the separate function on fee change.
     function updateLiquidityAndBoundaries(
         uint160 _sqrtPrice
@@ -175,7 +179,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     function _updatePriceAndBoundaries(uint160 _sqrtPrice) internal {
-        sqrtPriceCurrent = _sqrtPrice;
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
 
         (, , , uint24 lpFee) = poolManager.getSlot0(PoolId.wrap(authorizedPool));
