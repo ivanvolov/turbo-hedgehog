@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -21,13 +21,13 @@ contract UnicordPositionManager is Base, IPositionManager {
         // Intentionally empty as all initialization is handled by the parent Base contract
     }
 
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
         BASE.safeTransferFrom(address(alm), address(this), deltaBase);
         lendingAdapter.updatePosition(SafeCast.toInt256(deltaQuote), -SafeCast.toInt256(deltaBase), 0, 0);
         QUOTE.safeTransfer(address(alm), deltaQuote);
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
         lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
         BASE.safeTransfer(address(alm), deltaBase);

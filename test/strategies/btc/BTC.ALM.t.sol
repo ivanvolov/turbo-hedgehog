@@ -214,7 +214,7 @@ contract BTCALMTest is ALMTestBase {
             );
 
             uint256 usdcToGetFSwap = 10e9; //10k USDC
-            (, uint256 btcToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
+            (, uint256 btcToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
             deal(address(BTC), address(swapper.addr), btcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -320,7 +320,7 @@ contract BTCALMTest is ALMTestBase {
             );
 
             uint256 btcToGetFSwap = 5e6;
-            (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(btcToGetFSwap));
+            (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, btcToGetFSwap);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();

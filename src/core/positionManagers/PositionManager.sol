@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -37,10 +37,14 @@ contract PositionManager is Base, IPositionManager {
 
     uint256 constant WAD = 1e18;
 
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+    function positionAdjustmentPriceUp(
+        uint256 deltaBase,
+        uint256 deltaQuote,
+        uint160 sqrtPrice
+    ) external onlyALM onlyActive {
         BASE.safeTransferFrom(address(alm), address(this), deltaBase);
 
-        uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
+        uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
@@ -51,10 +55,14 @@ contract PositionManager is Base, IPositionManager {
         QUOTE.safeTransfer(address(alm), deltaQuote);
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+    function positionAdjustmentPriceDown(
+        uint256 deltaBase,
+        uint256 deltaQuote,
+        uint160 sqrtPrice
+    ) external onlyALM onlyActive {
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
 
-        uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
+        uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Add k1 * dETH to long as collateral;
         // Borrow (k1-1) * dETH from short by increasing debt;
         // Borrow dUSD from long by increasing debt;

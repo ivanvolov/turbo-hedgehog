@@ -16,6 +16,7 @@ import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
+import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -26,11 +27,13 @@ import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {Oracle} from "@src/core/oracles/Oracle.sol";
+import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
@@ -57,6 +60,7 @@ abstract contract ALMTestBase is Deployers {
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
+    V4Quoter quoter;
     uint160 initialSQRTPrice;
     ALM hook;
     SRebalanceAdapter rebalanceAdapter;
@@ -258,6 +262,8 @@ abstract contract ALMTestBase is Deployers {
         // This is needed in order to simulate proper accounting
         deal(address(BASE), address(manager), 1000 ether);
         deal(address(QUOTE), address(manager), 1000 ether);
+
+        quoter = new V4Quoter(manager);
         vm.stopPrank();
     }
 
@@ -272,7 +278,6 @@ abstract contract ALMTestBase is Deployers {
         );
 
         (address currency0, address currency1) = getTokensInOrder();
-
         key = PoolKey(
             Currency.wrap(currency0),
             Currency.wrap(currency1),
@@ -563,9 +568,16 @@ abstract contract ALMTestBase is Deployers {
 
     // --- Uniswap V4 --- //
 
-    function _quoteSwap(bool zeroForOne, int256 amount) internal view returns (uint256, uint256) {
-        uint160 sqrtPriceLimitX96 = zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1;
-        return hook.quoteSwap(zeroForOne, amount, sqrtPriceLimitX96);
+    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256, uint256) {
+        return
+            quoter.quoteExactOutputSingle(
+                IV4Quoter.QuoteExactSingleParams({
+                    poolKey: key,
+                    zeroForOne: zeroForOne,
+                    exactAmount: SafeCast.toUint128(amount),
+                    hookData: ""
+                })
+            );
     }
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
@@ -618,9 +630,9 @@ abstract contract ALMTestBase is Deployers {
         balanceQ[owner] = QUOTE.balanceOf(owner);
     }
 
-    function assertBalanceNotChanged(address owner) public {
-        assertEq(BASE.balanceOf(owner), balanceB[owner]);
-        assertEq(QUOTE.balanceOf(owner), balanceQ[owner]);
+    function assertBalanceNotChanged(address owner, uint256 precision) public view {
+        assertApproxEqAbs(BASE.balanceOf(owner), balanceB[owner], precision, "BASE balance");
+        assertApproxEqAbs(QUOTE.balanceOf(owner), balanceQ[owner], precision, "QUOTE balance");
     }
 
     function assertEqBalanceStateZero(address owner) public view {

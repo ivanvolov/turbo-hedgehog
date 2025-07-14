@@ -9,7 +9,6 @@ import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/types/BeforeSwapDelta.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
@@ -22,6 +21,7 @@ import {IHooks} from "v4-core/interfaces/IHooks.sol";
 // ** External imports
 import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -56,8 +56,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         string memory name,
         string memory symbol
     ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
-        authorizedPool = PoolId.unwrap(_key.toId());
         authorizedPoolKey = _key;
+        authorizedPoolId = PoolId.unwrap(_key.toId());
     }
 
     function _afterInitialize(
@@ -208,15 +208,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     // ** Swapping logic
 
-    function quoteSwap(
-        bool zeroForOne,
-        int256 amountSpecified,
-        uint160 sqrtPriceLimitX96
-    ) public view returns (uint256 token0, uint256 token1) {
-        // (, uint256 tokenIn, uint256 tokenOut, , ) = getDeltas(zeroForOne, amountSpecified, sqrtPriceLimitX96);
-        // (token0, token1) = zeroForOne ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
-    }
-
     function _beforeSwap(
         address swapper,
         PoolKey calldata key,
@@ -241,7 +232,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     }
 
     function _afterSwap(
-        address,
+        address swapper,
         PoolKey calldata key,
         SwapParams calldata params,
         BalanceDelta,
@@ -254,120 +245,54 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             ModifyLiquidityParams({
                 tickLower: _activeTicks.lower,
                 tickUpper: _activeTicks.upper,
-                liquidityDelta: -SafeCast.toInt256(poolManager.getLiquidity(PoolId.wrap(authorizedPool))),
+                liquidityDelta: -SafeCast.toInt256(poolManager.getLiquidity(PoolId.wrap(authorizedPoolId))),
                 salt: bytes32(0)
             }),
             ""
         );
+        uint160 sqrtPrice = sqrtPriceCurrent();
+
+        checkSwapDeviations(sqrtPrice);
 
         _settleDeltas(
+            key,
             params.zeroForOne,
-            uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1())))
+            uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
+            sqrtPrice
         ); //?? Check, but one of them is always zero. Also check wtf is returned buy swap function, and modify liq function.
+
+        emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
 
         return (IHooks.afterSwap.selector, 0);
     }
 
-    function _settleDeltas(bool zeroForOne, uint256 feeAmount) internal {
+    function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
         //? We did Sause have here >=. Does he expect to have a zero swap?
         if (zeroForOne) {
-            uint256 token0In = uint256(poolManager.currencyDelta(address(this), authorizedPoolKey.currency0));
-            uint256 token1Out = uint256(-poolManager.currencyDelta(address(this), authorizedPoolKey.currency1)); //? maybe unsigned here?
+            uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
+            uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
-            authorizedPoolKey.currency0.take(poolManager, address(this), token0In, false);
-            updatePosition(feeAmount, token0In, token1Out, isInvertedPool);
-            authorizedPoolKey.currency1.settle(poolManager, address(this), token1Out, false);
+            key.currency0.take(poolManager, address(this), token0, false);
+            updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
+            key.currency1.settle(poolManager, address(this), token1, false);
         } else {
-            uint256 token0Out = uint256(-poolManager.currencyDelta(address(this), authorizedPoolKey.currency0));
-            uint256 token1In = uint256(poolManager.currencyDelta(address(this), authorizedPoolKey.currency1));
+            uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
+            uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
 
-            authorizedPoolKey.currency1.take(poolManager, address(this), token1In, false);
-            updatePosition(feeAmount, token1In, token0Out, !isInvertedPool);
-            authorizedPoolKey.currency0.settle(poolManager, address(this), token0Out, false);
+            key.currency1.take(poolManager, address(this), token1, false);
+            updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
+            key.currency0.settle(poolManager, address(this), token0, false);
         }
     }
 
-    // /// @dev This function is mainly for removing stack too deep error.
-    // function __beforeSwap(
-    //     SwapParams calldata params,
-    //     PoolKey calldata key,
-    //     address swapper
-    // ) internal returns (BeforeSwapDelta) {
-    //     lendingAdapter.syncPositions();
-
-    //     if (params.zeroForOne) {
-    //         // If user is selling Token 0 and buying Token 1 (TOKEN0 => TOKEN1)
-    //         (
-    //             BeforeSwapDelta beforeSwapDelta,
-    //             uint256 token0In,
-    //             uint256 token1Out,
-    //             uint160 sqrtPriceNext,
-    //             uint256 feeAmount
-    //         ) = getDeltas(params.zeroForOne, params.amountSpecified, params.sqrtPriceLimitX96);
-    //         checkSwapDeviations(sqrtPriceNext);
-
-    //         // They will be sending Token 0 to the PM, creating a debit of Token 0 in the PM
-    //         // We will take actual ERC20 Token 0 from the PM and keep it in the hook and create an equivalent credit for that Token 0 since it is ours!
-    //         key.currency0.take(poolManager, address(this), token0In, false);
-
-    //         updatePosition(feeAmount, token0In, token1Out, isInvertedPool);
-
-    //         // We also need to create a debit so user could take it back from the PM.
-    //         key.currency1.settle(poolManager, address(this), token1Out, false);
-    //         sqrtPriceCurrent = sqrtPriceNext;
-
-    //         emit HookFee(authorizedPool, swapper, SafeCast.toUint128(feeAmount), 0);
-    //         emit HookSwap(
-    //             authorizedPool,
-    //             swapper,
-    //             SafeCast.toInt128(token0In),
-    //             SafeCast.toInt128(token1Out),
-    //             SafeCast.toUint128(feeAmount),
-    //             0
-    //         );
-    //         return beforeSwapDelta;
-    //     } else {
-    //         // If user is selling Token 1 and buying Token 0 (TOKEN1 => TOKEN0)
-    //         (
-    //             BeforeSwapDelta beforeSwapDelta,
-    //             uint256 token1In,
-    //             uint256 token0Out,
-    //             uint160 sqrtPriceNext,
-    //             uint256 feeAmount
-    //         ) = getDeltas(params.zeroForOne, params.amountSpecified, params.sqrtPriceLimitX96);
-    //         checkSwapDeviations(sqrtPriceNext);
-
-    //         key.currency1.take(poolManager, address(this), token1In, false);
-
-    //         updatePosition(feeAmount, token1In, token0Out, !isInvertedPool);
-
-    //         key.currency0.settle(poolManager, address(this), token0Out, false);
-    //         sqrtPriceCurrent = sqrtPriceNext;
-
-    //         emit HookFee(authorizedPool, swapper, 0, SafeCast.toUint128(feeAmount));
-    //         emit HookSwap(
-    //             authorizedPool,
-    //             swapper,
-    //             SafeCast.toInt128(token0Out),
-    //             SafeCast.toInt128(token1In),
-    //             0,
-    //             SafeCast.toUint128(feeAmount)
-    //         );
-    //         return beforeSwapDelta;
-    //     }
-    // }
-
-    function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up) internal {
+    function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up, uint160 sqrtPrice) internal {
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : feeAmount.mul(protocolFee);
-        console.log("protocolFeeAmount %s", protocolFeeAmount);
-        console.log("feeAmount %s", feeAmount);
-        console.log("protocolFee %s", protocolFee);
         if (up) {
             accumulatedFeeB += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut);
+            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut, sqrtPrice);
         } else {
             accumulatedFeeQ += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount));
+            positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount), sqrtPrice);
         }
     }
 

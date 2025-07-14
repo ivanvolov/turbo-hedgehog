@@ -149,7 +149,7 @@ contract ETHR2ALMTest is ALMTestBase {
         // ** Swap Down Out
         {
             uint256 usdtToGetFSwap = 50000e6; //50k USDT
-            (uint256 wethToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
+            (uint256 wethToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -228,7 +228,7 @@ contract ETHR2ALMTest is ALMTestBase {
         // ** Swap Up out
         {
             uint256 wethToGetFSwap = 5e18;
-            (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(wethToGetFSwap));
+            (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, wethToGetFSwap);
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();

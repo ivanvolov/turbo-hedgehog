@@ -35,8 +35,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
-    bytes32 public immutable authorizedPool;
-    PoolKey public authorizedPoolKey; //TODO: only remain poolKey everythere if it will make sense. No sense in making it immutable, check.
+    bytes32 public immutable authorizedPoolId;
+    PoolKey public authorizedPoolKey;
 
     /// @notice Current operational status of the contract.
     /// @dev 0 = active, 1 = paused, 2 = shutdown.
@@ -141,7 +141,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             });
     }
 
-    /// @notice  Disable adding liquidity through the PM
+    /// @dev  Disable adding liquidity through the PM
     function _beforeAddLiquidity(
         address,
         PoolKey calldata key,
@@ -151,15 +151,21 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    //TODO: move to position Manager later
-    function sqrtPriceCurrent() public view returns (uint160 sqrtPriceX96) {
-        (sqrtPriceX96, , , ) = poolManager.getSlot0(PoolId.wrap(authorizedPool));
+    /// @notice Updates liquidity and sets new boundaries around the current oracle price.
+    function updateLiquidityAndBoundariesToOracle() external override onlyOwner {
+        (, uint256 oraclePoolPrice) = oracle.poolPrice();
+        uint160 oracleSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(oraclePoolPrice);
+        _updateLiquidityAndBoundaries(oracleSqrtPrice);
     }
 
-    //TODO: Think about making it the separate function on fee change.
-    function updateLiquidityAndBoundaries(
-        uint160 _sqrtPrice
-    ) external override onlyRebalanceAdapter returns (uint128 newLiquidity) {
+    /// @notice Updates liquidity and sets new boundaries around the specified sqrt price.
+    /// @param _sqrtPrice The square root price around which the new liquidity boundaries are set.
+    /// @return newLiquidity The updated liquidity after recalculation.
+    function updateLiquidityAndBoundaries(uint160 _sqrtPrice) external override onlyRebalanceAdapter returns (uint128) {
+        return _updateLiquidityAndBoundaries(_sqrtPrice);
+    }
+
+    function _updateLiquidityAndBoundaries(uint160 _sqrtPrice) internal returns (uint128 newLiquidity) {
         _updatePriceAndBoundaries(_sqrtPrice);
         newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
@@ -181,17 +187,18 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     function _updatePriceAndBoundaries(uint160 _sqrtPrice) internal {
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
 
-        (, , , uint24 lpFee) = poolManager.getSlot0(PoolId.wrap(authorizedPool));
+        (, , , uint24 lpFee) = poolManager.getSlot0(PoolId.wrap(authorizedPoolId));
         if (lpFee != nextLPFee) {
+            lpFee = nextLPFee;
             poolManager.updateDynamicLPFee(authorizedPoolKey, nextLPFee);
             emit LPFeeSet(nextLPFee);
         }
 
-        uint24 tickSpacing = uint24((nextLPFee / 100) * 2); //TODO: why the fuck is tick spacing negative? int24??
+        uint24 tickSpacing = uint24((lpFee / 100) * 2); //TODO: fin the formula for tick spacing
         if (tickSpacing == 0) tickSpacing = 1;
 
         Ticks memory deltas = tickDeltas;
-        int24 newTickLower = ALMMathLib.nearestUsableTick(tick - deltas.lower, tickSpacing);
+        int24 newTickLower = ALMMathLib.nearestUsableTick(tick - deltas.lower, tickSpacing); //TODO: find the nearest usable tick implementation
         int24 newTickUpper = ALMMathLib.nearestUsableTick(tick + deltas.upper, tickSpacing);
 
         if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
@@ -205,11 +212,15 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit BoundariesUpdated(newTickLower, newTickUpper);
     }
 
+    function sqrtPriceCurrent() public view returns (uint160 sqrtPriceX96) {
+        (sqrtPriceX96, , , ) = poolManager.getSlot0(PoolId.wrap(authorizedPoolId));
+    }
+
     // ** Modifiers
 
     /// @dev Only allows execution for the authorized pool.
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {
-        if (PoolId.unwrap(poolKey.toId()) != authorizedPool) {
+        if (PoolId.unwrap(poolKey.toId()) != authorizedPoolId) {
             revert UnauthorizedPool();
         }
         _;

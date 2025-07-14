@@ -193,7 +193,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("SWAP DOWN OUT");
 
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (uint256 daiToSwapQ, ) = _quoteSwap(true, int256(usdcToGetFSwap));
+            (uint256 daiToSwapQ, ) = _quoteOutputSwap(true, usdcToGetFSwap);
             console.log("daiToSwapQ %s", daiToSwapQ);
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
@@ -286,7 +286,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Swap Up out
         {
             uint256 daiToGetFSwap = 1000e18; //1k DAI
-            (, uint256 usdcToSwapQ) = _quoteSwap(false, int256(daiToGetFSwap));
+            (, uint256 usdcToSwapQ) = _quoteOutputSwap(false, daiToGetFSwap);
 
             console.log("usdcToSwapQ", usdcToSwapQ);
 
