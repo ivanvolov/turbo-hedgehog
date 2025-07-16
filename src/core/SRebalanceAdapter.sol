@@ -157,8 +157,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     /// @return priceThreshold  The current price threshold for the price based rebalance
     function isPriceRebalance(uint256 oraclePrice) public view returns (bool needRebalance, uint256 priceThreshold) {
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance
-            ? uw(ud(oraclePrice).div(ud(oraclePriceAtLastRebalance)))
-            : uw(ud(oraclePriceAtLastRebalance).div(ud(oraclePrice)));
+            ? ud(oraclePrice).div(ud(oraclePriceAtLastRebalance)).unwrap()
+            : ud(oraclePriceAtLastRebalance).div(ud(oraclePrice)).unwrap();
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 
@@ -272,10 +272,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             }
 
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-            deltaCL = SafeCast.toInt256(uw(targetCL)) - SafeCast.toInt256(CL);
-            deltaCS = SafeCast.toInt256(uw(targetCS)) - SafeCast.toInt256(CS);
-            deltaDL = SafeCast.toInt256(uw(targetDL)) - SafeCast.toInt256(DL);
-            deltaDS = SafeCast.toInt256(uw(targetDS)) - SafeCast.toInt256(DS);
+            deltaCL = SafeCast.toInt256(targetCL.unwrap()) - SafeCast.toInt256(CL);
+            deltaCS = SafeCast.toInt256(targetCS.unwrap()) - SafeCast.toInt256(CS);
+            deltaDL = SafeCast.toInt256(targetDL.unwrap()) - SafeCast.toInt256(DL);
+            deltaDS = SafeCast.toInt256(targetDS.unwrap()) - SafeCast.toInt256(DS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -292,7 +292,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     ) internal view returns (UD60x18 targetCL, UD60x18 targetCS, UD60x18 targetDL, UD60x18 targetDS) {
         UD60x18 TVL = ud(alm.TVL(price));
         if (isInvertedAssets) {
-            targetCL = ud(mulDiv(uw(TVL.mul(ud(weight))), longLeverage, price));
+            targetCL = ud(mulDiv(TVL.mul(ud(weight)).unwrap(), longLeverage, price));
             targetCS = TVL.mul(ALMMathLib.udWAD - ud(weight)).mul(ud(shortLeverage));
         } else {
             targetCL = TVL.mul(ud(weight)).mul(ud(longLeverage));

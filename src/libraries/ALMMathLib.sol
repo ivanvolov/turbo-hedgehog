@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** libraries
-import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
+import {UD60x18, ud} from "@prb-math/UD60x18.sol";
 import {mulDiv} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
@@ -94,14 +94,14 @@ library ALMMathLib {
         uint256 DL,
         uint256 DS
     ) internal pure returns (uint256 longLeverage, uint256 shortLeverage) {
-        longLeverage = mulDiv(currentCL, price, uw(ud(currentCL).mul(ud(price))) - DL);
-        shortLeverage = uw(ud(currentCS).div(ud(currentCS) - ud(DS).mul(ud(price))));
+        longLeverage = mulDiv(currentCL, price, ud(currentCL).mul(ud(price)).unwrap() - DL);
+        shortLeverage = ud(currentCS).div(ud(currentCS) - ud(DS).mul(ud(price))).unwrap();
     }
 
     // ** Helpers
 
     function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
-        return SafeCast.toUint160(mulDiv(uw(ud(price).sqrt()), Q96, WAD));
+        return SafeCast.toUint160(mulDiv(ud(price).sqrt().unwrap(), Q96, WAD));
     }
 
     function getSqrtPriceX96FromTick(int24 tick) internal pure returns (uint160) {
@@ -116,7 +116,7 @@ library ALMMathLib {
     ///         Always rounds down.
     /// @param tick The tick to align
     /// @param tickSpacing The tick spacing of the pool
-    function alignComputedTickWithTickSpacing(int24 tick, int24 tickSpacing) internal view returns (int24) {
+    function alignComputedTickWithTickSpacing(int24 tick, int24 tickSpacing) internal pure returns (int24) {
         if (tick < 0) {
             // If the tick is negative, we round up (negatively) the negative result to round down
             return ((tick - tickSpacing + 1) / tickSpacing) * tickSpacing;

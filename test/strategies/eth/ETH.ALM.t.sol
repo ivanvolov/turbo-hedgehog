@@ -166,12 +166,12 @@ contract ETHALMTest is MorphoTestBase {
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         console.log("liquidity %s", hook.liquidity());
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
-            ALMMathLib.getSqrtPriceX96FromTick(tickLower),
-            ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-            lendingAdapter.getCollateralLong()
-        );
+        // (int24 tickLower, int24 tickUpper) = hook.activeTicks();
+        // uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
+        //     ALMMathLib.getSqrtPriceX96FromTick(tickLower),
+        //     ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
+        //     lendingAdapter.getCollateralLong()
+        // );
 
         // assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
     }

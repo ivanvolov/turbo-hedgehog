@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** External imports
-import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
+import {UD60x18, ud} from "@prb-math/UD60x18.sol";
 import {mulDiv} from "@prb-math/Common.sol";
 
 // ** interfaces
@@ -34,7 +34,7 @@ abstract contract OracleBase is IOracle {
     function price() public view returns (uint256 _price) {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
 
-        _price = uw(ud(mulDiv(_priceQuote, scaleFactor, _priceBase)).mul(ratio));
+        _price = ud(mulDiv(_priceQuote, scaleFactor, _priceBase)).mul(ratio).unwrap();
         if (_price == 0) revert PriceZero();
     }
 
@@ -44,7 +44,7 @@ abstract contract OracleBase is IOracle {
     /// @return _poolPrice The pool-compatible price.
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
         _price = price();
-        _poolPrice = isInvertedPool ? uw(WAD.div(ud(_price))) : _price;
+        _poolPrice = isInvertedPool ? WAD.div(ud(_price)).unwrap() : _price;
         if (_poolPrice == 0) revert PriceZero();
     }
 
