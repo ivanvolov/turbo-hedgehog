@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
+import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 
 // ** contracts
 import {ALMTestBase} from "./ALMTestBase.sol";
@@ -68,7 +69,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
             Currency.wrap(_token0),
             Currency.wrap(_token1),
             hookControl,
-            poolFee,
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
             initialSQRTPrice
         );
 

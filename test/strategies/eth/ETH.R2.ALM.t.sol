@@ -20,7 +20,7 @@ contract ETHR2ALMTest is ALMTestBase {
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 15e14; //0.15%
-    uint24 fee = 500; //0.05%
+    uint24 feeLP = 500; //0.05%
 
     IERC20 WETH = IERC20(TestLib.WETH);
     IERC20 USDT = IERC20(TestLib.USDT);
@@ -53,7 +53,7 @@ contract ETHR2ALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            IPositionManagerStandard(address(positionManager)).setFees(0);
+            hook.setNextLPFee(0);
             IPositionManagerStandard(address(positionManager)).setKParams(1e18, 1e18);
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(1e15, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
@@ -98,7 +98,7 @@ contract ETHR2ALMTest is ALMTestBase {
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
 
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
+        hook.setNextLPFee(feeLP);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
 
         vm.stopPrank();
@@ -124,7 +124,7 @@ contract ETHR2ALMTest is ALMTestBase {
             );
 
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Swap Up In
@@ -143,13 +143,13 @@ contract ETHR2ALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Swap Down Out
         {
             uint256 usdtToGetFSwap = 50000e6; //50k USDT
-            (uint256 wethToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
+            (uint256 wethToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -163,7 +163,7 @@ contract ETHR2ALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + fee)) / 1e18, 7e14);
+            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + feeLP)) / 1e18, 7e14);
             assertApproxEqAbs(deltaUSDT, deltaY, 2e6);
         }
 
@@ -192,7 +192,7 @@ contract ETHR2ALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Make oracle change with swap price
@@ -222,13 +222,13 @@ contract ETHR2ALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Swap Up out
         {
             uint256 wethToGetFSwap = 5e18;
-            (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(wethToGetFSwap));
+            (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, wethToGetFSwap);
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -259,7 +259,7 @@ contract ETHR2ALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs((deltaWETH * (1e18 - fee)) / 1e18, deltaX, 43e13);
+            assertApproxEqAbs((deltaWETH * (1e18 - feeLP)) / 1e18, deltaX, 43e13);
             assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
         }
 

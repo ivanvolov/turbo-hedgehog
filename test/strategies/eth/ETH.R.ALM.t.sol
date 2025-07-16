@@ -22,7 +22,7 @@ contract ETHRALMTest is ALMTestBase {
     uint256 weight = 55e16; //50%
     uint256 liquidityMultiplier = 2e18;
     uint256 slippage = 15e14; //0.15%
-    uint24 fee = 500; //0.05%
+    uint24 feeLP = 500; //0.05%
 
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
@@ -58,7 +58,7 @@ contract ETHRALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            IPositionManagerStandard(address(positionManager)).setFees(0);
+            hook.setNextLPFee(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2);
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
@@ -84,8 +84,7 @@ contract ETHRALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
-        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(calcTVL(), amountToDep, 1e1, "tvl");
+        assertEqProtocolState(initialSQRTPrice, amountToDep);
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -102,20 +101,16 @@ contract ETHRALMTest is ALMTestBase {
 
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
+        hook.setNextLPFee(feeLP);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
-
+        updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
+
         test_deposit_rebalance();
+        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
-
-        vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(500);
-        updateProtocolFees(20 * 1e16); // 20% from fees
-        vm.stopPrank();
 
         // uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -143,10 +138,10 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - feeLP)) / 1e18, 1);
             assertApproxEqAbs(usdtToSwap, deltaX, 1);
 
-            uint256 deltaTreasuryFee = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
@@ -184,9 +179,9 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             assertApproxEqAbs(usdtToSwap, deltaX, 1);
-            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - feeLP)) / 1e18, 1);
 
-            uint256 deltaTreasuryFee = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
@@ -211,7 +206,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 usdtToGetFSwap = 20000e6; //20k USDT
-            (uint256 wethToSwapQ, ) = _quoteSwap(true, int256(usdtToGetFSwap));
+            (uint256 wethToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -225,9 +220,9 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
             assertApproxEqAbs(deltaUSDT, deltaX, 1);
-            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 + fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 + feeLP)) / 1e18, 1);
 
-            uint256 deltaTreasuryFee = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
@@ -278,9 +273,9 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             assertApproxEqAbs(usdtToSwap, deltaX, 1);
-            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - feeLP)) / 1e18, 1);
 
-            uint256 deltaTreasuryFee = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
@@ -332,9 +327,9 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             assertApproxEqAbs(usdtToSwap, deltaX, 1);
-            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - feeLP)) / 1e18, 1);
 
-            uint256 deltaTreasuryFee = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
@@ -360,7 +355,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 wethToGetFSwap = 1e18;
-            (, uint256 usdtToSwapQ) = _quoteSwap(false, int256(wethToGetFSwap));
+            (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, wethToGetFSwap);
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -372,9 +367,9 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(hook.sqrtPriceCurrent())
             );
 
-            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 + fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 + feeLP)) / 1e18, 1);
             assertApproxEqAbs(deltaWETH, deltaY, 1e5); //rounding direction
-            uint256 deltaTreasuryFeeB = (deltaX * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFeeB = (deltaX * feeLP * hook.protocolFee()) / 1e36;
 
             // treasuryFeeB += deltaTreasuryFee;
 
@@ -416,12 +411,12 @@ contract ETHRALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - feeLP)) / 1e18, 1);
             assertApproxEqAbs(deltaWETH, deltaY, 1e5); //rounding direction
             console.log("deltaWETH %s", deltaWETH);
             console.log("deltaY %s", deltaY);
 
-            uint256 deltaTreasuryFeeB = (deltaX * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFeeB = (deltaX * feeLP * hook.protocolFee()) / 1e36;
 
             // treasuryFeeB += deltaTreasuryFeeB;
             console.log("treasuryFeeB %s", hook.accumulatedFeeB());
@@ -460,6 +455,8 @@ contract ETHRALMTest is ALMTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
+
+        assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

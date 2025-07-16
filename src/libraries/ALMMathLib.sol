@@ -112,6 +112,20 @@ library ALMMathLib {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
+    /// @notice Aligns a given tick with the tickSpacing of the pool.
+    ///         Always rounds down.
+    /// @param tick The tick to align
+    /// @param tickSpacing The tick spacing of the pool
+    function alignComputedTickWithTickSpacing(int24 tick, int24 tickSpacing) internal view returns (int24) {
+        if (tick < 0) {
+            // If the tick is negative, we round up (negatively) the negative result to round down
+            return ((tick - tickSpacing + 1) / tickSpacing) * tickSpacing;
+        } else {
+            // Else if positive, we simply round down
+            return (tick / tickSpacing) * tickSpacing;
+        }
+    }
+
     // ** Math functions
 
     /// @notice Calculates floor(x*y÷denominator) with full precision for signed x and unsigned y and denominator.

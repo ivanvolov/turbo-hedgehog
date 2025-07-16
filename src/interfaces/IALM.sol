@@ -14,7 +14,7 @@ interface IALM {
     error SwapPriceChangeTooHigh();
     error NotALiquidityOperator();
     error NotASwapOperator();
-    error OnlyOnePoolPerHook();
+    error MustUseDynamicFee();
     error TVLCapExceeded();
     error NotAValidPositionState();
     error NotMinShares();
@@ -23,6 +23,7 @@ interface IALM {
     error TickLowerOutOfBounds(int24 tick);
     error TickUpperOutOfBounds(int24 tick);
     error TickDeltasNotValid();
+    error LPFeeTooLarge(uint24 fee);
 
     event StatusSet(uint8 indexed status);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);
@@ -47,14 +48,7 @@ interface IALM {
         uint256 totalSupply,
         uint256 liquidity
     );
-    event HookSwap(
-        bytes32 indexed id,
-        address indexed sender,
-        int128 amount0,
-        int128 amount1,
-        uint128 hookLPfeeAmount0,
-        uint128 hookLPfeeAmount1
-    );
+    event LPFeeSet(uint24 fee);
     event HookFee(bytes32 indexed id, address indexed sender, uint128 feeAmount0, uint128 feeAmount1);
 
     struct Ticks {
@@ -70,9 +64,9 @@ interface IALM {
 
     function refreshReservesAndTransferFees() external;
 
-    function updateLiquidityAndBoundaries(uint160 _sqrtPrice) external returns (uint128 newLiquidity);
+    function updateLiquidityAndBoundariesToOracle() external;
 
-    function sqrtPriceCurrent() external view returns (uint160);
+    function updateLiquidityAndBoundaries(uint160 _sqrtPrice) external returns (uint128 newLiquidity);
 
     function isInvertedPool() external view returns (bool);
 

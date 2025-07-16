@@ -44,7 +44,7 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 weight = 50e16; //50%
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 10e14; //0.1%
-    uint24 fee = 100; //0.01%
+    uint24 feeLP = 100; //0.01%
 
     IERC20 DAI = IERC20(TestLib.DAI);
     IERC20 USDC = IERC20(TestLib.USDC);
@@ -134,11 +134,11 @@ contract UNICORDRALMTest is MorphoTestBase {
     }
 
     function test_lifecycle() public {
-        test_deposit_rebalance();
+        vm.prank(deployer.addr);
+        hook.setNextLPFee(feeLP);
 
-        vm.startPrank(deployer.addr);
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
-        vm.stopPrank();
+        test_deposit_rebalance();
+        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
@@ -162,7 +162,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(postSqrtPrice)
             // );
             // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Swap Up In
@@ -185,7 +185,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(postSqrtPrice)
             // );
             // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Swap Down Out
@@ -193,7 +193,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("SWAP DOWN OUT");
 
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (uint256 daiToSwapQ, ) = _quoteSwap(true, int256(usdcToGetFSwap));
+            (uint256 daiToSwapQ, ) = _quoteOutputSwap(true, usdcToGetFSwap);
             console.log("daiToSwapQ %s", daiToSwapQ);
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
@@ -210,7 +210,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(preSqrtPrice),
             //     uint160(postSqrtPrice)
             // );
-            // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + fee)) / 1e18, 9e14);
+            // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + feeLP)) / 1e18, 9e14);
             // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
         }
 
@@ -250,7 +250,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(postSqrtPrice)
             // );
             // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Make oracle change with swap price
@@ -280,13 +280,13 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(postSqrtPrice)
             // );
             // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - fee)) / 1e18, deltaY, 1e7);
+            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
         }
 
         // ** Swap Up out
         {
             uint256 daiToGetFSwap = 1000e18; //1k DAI
-            (, uint256 usdcToSwapQ) = _quoteSwap(false, int256(daiToGetFSwap));
+            (, uint256 usdcToSwapQ) = _quoteOutputSwap(false, daiToGetFSwap);
 
             console.log("usdcToSwapQ", usdcToSwapQ);
 
@@ -305,7 +305,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(postSqrtPrice)
             // );
             // assertApproxEqAbs(deltaDAI, deltaX, 3e14);
-            // assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1e7);
+            // assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + feeLP)) / 1e18, 1e7);
         }
 
         // ** Swap Down In
@@ -325,7 +325,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             //     uint160(preSqrtPrice),
             //     uint160(postSqrtPrice)
             // );
-            // assertApproxEqAbs((deltaDAI * (1e18 - fee)) / 1e18, deltaX, 42e13);
+            // assertApproxEqAbs((deltaDAI * (1e18 - feeLP)) / 1e18, deltaX, 42e13);
             // assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
         }
 
@@ -347,6 +347,8 @@ contract UNICORDRALMTest is MorphoTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
+
+        assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

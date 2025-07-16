@@ -21,7 +21,7 @@ contract BTCALMTest is ALMTestBase {
     uint256 weight = 55e16;
     uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 7e15;
-    uint24 fee = 500; //0.05%
+    uint24 feeLP = 500; //0.05%
 
     IERC20 BTC = IERC20(TestLib.cbBTC);
     IERC20 USDC = IERC20(TestLib.USDC);
@@ -57,7 +57,7 @@ contract BTCALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            IPositionManagerStandard(address(positionManager)).setFees(0);
+            hook.setNextLPFee(0);
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 2e17, 2e17); // 0.2 (2%), 0.2 (2%)
@@ -83,8 +83,7 @@ contract BTCALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
-        assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(calcTVL(), 999999990000000000, 1e1, "tvl");
+        assertEqProtocolState(initialSQRTPrice, 999999990000000000);
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -102,13 +101,13 @@ contract BTCALMTest is ALMTestBase {
 
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-
         updateProtocolFees(20 * 1e16); // 20% from fees
-        IPositionManagerStandard(address(positionManager)).setFees(fee);
+        hook.setNextLPFee(feeLP);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
-
         vm.stopPrank();
+
         test_deposit_rebalance();
+        saveBalance(address(manager));
 
         // uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -140,14 +139,14 @@ contract BTCALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
             console.log("deltaBTC %s", deltaBTC);
-            console.log("deltaX - fee %s", (deltaX * (1e18 - fee)) / 1e18);
+            console.log("deltaX - fee %s", (deltaX * (1e18 - feeLP)) / 1e18);
 
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 - feeLP)) / 1e18, 1);
             assertApproxEqAbs(usdcToSwap, deltaY, 1e4); //rounding
 
-            uint256 deltaTreasuryFee = (deltaX * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaX * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
@@ -186,10 +185,10 @@ contract BTCALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 - feeLP)) / 1e18, 1);
             assertApproxEqAbs(usdcToSwap, deltaY, 1e4); //rounding
 
-            uint256 deltaTreasuryFee = (deltaX * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaX * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
@@ -214,7 +213,7 @@ contract BTCALMTest is ALMTestBase {
             );
 
             uint256 usdcToGetFSwap = 10e9; //10k USDC
-            (, uint256 btcToSwapQ) = _quoteSwap(false, int256(usdcToGetFSwap));
+            (, uint256 btcToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
             deal(address(BTC), address(swapper.addr), btcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -227,10 +226,10 @@ contract BTCALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 + feeLP)) / 1e18, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1e4);
 
-            uint256 deltaTreasuryFee = (deltaX * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaX * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
@@ -292,10 +291,10 @@ contract BTCALMTest is ALMTestBase {
                 uint160(postSqrtPrice)
             );
 
-            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaBTC, (deltaX * (1e18 - feeLP)) / 1e18, 1);
             assertApproxEqAbs(usdcToSwap, deltaY, 1e4); //rounding
 
-            uint256 deltaTreasuryFee = (deltaX * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaX * feeLP * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
             assertEqBalanceState(address(hook), treasuryFeeQ, 0);
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 10, "treasuryFee");
@@ -320,7 +319,7 @@ contract BTCALMTest is ALMTestBase {
             );
 
             uint256 btcToGetFSwap = 5e6;
-            (uint256 usdcToSwapQ, ) = _quoteSwap(true, int256(btcToGetFSwap));
+            (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, btcToGetFSwap);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -332,9 +331,9 @@ contract BTCALMTest is ALMTestBase {
                 uint160(hook.sqrtPriceCurrent())
             );
             assertApproxEqAbs(deltaBTC, deltaX, 1);
-            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + feeLP)) / 1e18, 1);
 
-            uint256 deltaTreasuryFeeB = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFeeB = (deltaY * feeLP * hook.protocolFee()) / 1e36;
             assertApproxEqAbs(hook.accumulatedFeeB(), deltaTreasuryFeeB, 3, "treasuryFee");
 
             assertEqPositionState(
@@ -368,9 +367,9 @@ contract BTCALMTest is ALMTestBase {
             );
             console.log("deltaX %s", deltaX);
             assertApproxEqAbs(deltaBTC, deltaX, 1);
-            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 - fee)) / 1e18, 1);
+            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 - feeLP)) / 1e18, 1);
 
-            uint256 deltaTreasuryFeeB = (deltaY * fee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFeeB = (deltaY * feeLP * hook.protocolFee()) / 1e36;
 
             //treasuryFeeB += deltaTreasuryFeeB;
             console.log("treasuryFeeB %s", hook.accumulatedFeeB());
@@ -409,6 +408,8 @@ contract BTCALMTest is ALMTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
+
+        assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
