@@ -7,7 +7,7 @@ import "forge-std/console.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMath} from "@prb-math/PRBMath.sol";
+import {PRBMath} from "@test/libraries/PRBMath.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";

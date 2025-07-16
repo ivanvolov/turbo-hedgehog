@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
+import {mulDiv} from "@prb-math/Common.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -47,8 +48,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     );
     event RebalanceParamsSet(uint256 weight, uint256 longLeverage, uint256 shortLeverage);
     event RebalanceOperatorSet(address indexed operator);
-
-    using PRBMathUD60x18 for uint256;
 
     // ** Last rebalance snapshot
     uint160 public sqrtPriceAtLastRebalance;
@@ -124,9 +123,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
-        if (_weight > WAD) revert WeightNotValid();
-        if (_longLeverage > 5 * WAD) revert LeverageValuesNotValid();
-        if (_shortLeverage > 5 * WAD) revert LeverageValuesNotValid();
+        if (_weight > ALMMathLib.WAD) revert WeightNotValid();
+        if (_longLeverage > 5 * ALMMathLib.WAD) revert LeverageValuesNotValid();
+        if (_shortLeverage > 5 * ALMMathLib.WAD) revert LeverageValuesNotValid();
         if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
 
         weight = _weight;
@@ -158,8 +157,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     /// @return priceThreshold  The current price threshold for the price based rebalance
     function isPriceRebalance(uint256 oraclePrice) public view returns (bool needRebalance, uint256 priceThreshold) {
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance
-            ? oraclePrice.div(oraclePriceAtLastRebalance)
-            : oraclePriceAtLastRebalance.div(oraclePrice);
+            ? uw(ud(oraclePrice).div(ud(oraclePriceAtLastRebalance)))
+            : uw(ud(oraclePriceAtLastRebalance).div(ud(oraclePrice)));
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 
@@ -177,7 +176,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();
 
-        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(WAD + slippage, currentPrice);
+        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(
+            ALMMathLib.WAD + slippage,
+            currentPrice
+        );
 
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
@@ -244,53 +246,36 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Math functions
 
-    uint256 constant WAD = 1e18;
-
     /// @dev This function is mainly for removing stack too deep error.
     function _rebalanceCalculations(
         uint256 k,
         uint256 price
     ) internal view returns (uint256 baseToFl, uint256 quoteToFl, bytes memory data) {
-        uint256 targetDL;
-        uint256 targetDS;
         int256 deltaCL;
         int256 deltaCS;
         int256 deltaDL;
         int256 deltaDS;
         {
-            uint256 targetCL;
-            uint256 targetCS;
-            uint256 TVL = alm.TVL(price);
-            if (isInvertedAssets) {
-                targetCL = PRBMath.mulDiv(TVL.mul(weight), longLeverage, price);
-                targetCS = TVL.mul(WAD - weight).mul(shortLeverage);
-            } else {
-                targetCL = TVL.mul(weight).mul(longLeverage);
-                targetCS = TVL.mul(WAD - weight).mul(shortLeverage).mul(price);
-            }
-
-            targetDL = targetCL.mul(price).mul(WAD - WAD.div(longLeverage));
-            targetDS = PRBMath.mulDiv(targetCS, WAD - WAD.div(shortLeverage), price);
-
+            (UD60x18 targetCL, UD60x18 targetCS, UD60x18 targetDL, UD60x18 targetDS) = _calculateTargets(price);
             if (isNova) {
                 // Discount to cover slippage
-                targetCL = targetCL.mul(2 * WAD - k);
-                targetCS = targetCS.mul(2 * WAD - k);
+                targetCL = targetCL.mul(ud(2 * ALMMathLib.WAD - k));
+                targetCS = targetCS.mul(ud(2 * ALMMathLib.WAD - k));
 
                 // No debt operations in unicord
-                targetDL = 0;
-                targetDS = 0;
+                targetDL = UD60x18.wrap(0);
+                targetDS = UD60x18.wrap(0);
             } else {
                 // Borrow additional funds to cover slippage
-                targetDL = targetDL.mul(k);
-                targetDS = targetDS.mul(k);
+                targetDL = targetDL.mul(ud(k));
+                targetDS = targetDS.mul(ud(k));
             }
 
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-            deltaCL = SafeCast.toInt256(targetCL) - SafeCast.toInt256(CL);
-            deltaCS = SafeCast.toInt256(targetCS) - SafeCast.toInt256(CS);
-            deltaDL = SafeCast.toInt256(targetDL) - SafeCast.toInt256(DL);
-            deltaDS = SafeCast.toInt256(targetDS) - SafeCast.toInt256(DS);
+            deltaCL = SafeCast.toInt256(uw(targetCL)) - SafeCast.toInt256(CL);
+            deltaCS = SafeCast.toInt256(uw(targetCS)) - SafeCast.toInt256(CS);
+            deltaDL = SafeCast.toInt256(uw(targetDL)) - SafeCast.toInt256(DL);
+            deltaDS = SafeCast.toInt256(uw(targetDS)) - SafeCast.toInt256(DS);
         }
 
         if (deltaCL > 0) quoteToFl += uint256(deltaCL);
@@ -299,6 +284,23 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         if (deltaDS < 0) quoteToFl += uint256(-deltaDS);
 
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
+    }
+
+    /// @dev This function is mainly for removing stack too deep error.
+    function _calculateTargets(
+        uint256 price
+    ) internal view returns (UD60x18 targetCL, UD60x18 targetCS, UD60x18 targetDL, UD60x18 targetDS) {
+        UD60x18 TVL = ud(alm.TVL(price));
+        if (isInvertedAssets) {
+            targetCL = ud(mulDiv(uw(TVL.mul(ud(weight))), longLeverage, price));
+            targetCS = TVL.mul(ALMMathLib.udWAD - ud(weight)).mul(ud(shortLeverage));
+        } else {
+            targetCL = TVL.mul(ud(weight)).mul(ud(longLeverage));
+            targetCS = TVL.mul(ALMMathLib.udWAD - ud(weight)).mul(ud(shortLeverage)).mul(ud(price));
+        }
+
+        targetDL = targetCL.mul(ud(price)).mul(ALMMathLib.udWAD - ALMMathLib.udWAD.div(ud(longLeverage)));
+        targetDS = ud(mulDiv(uw(targetCS), uw(ALMMathLib.udWAD - ALMMathLib.udWAD.div(ud(shortLeverage))), price));
     }
 
     function checkDeviations(uint256 price) internal view {

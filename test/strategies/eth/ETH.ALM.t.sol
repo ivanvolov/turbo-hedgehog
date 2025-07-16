@@ -284,8 +284,8 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(157242743894411101852, 239418121589, 277892040029, 42753932389561205817);
-        assertEqProtocolState(1529111915641384899944586211344528, 100014128722828673450);
+        assertEqPositionState(157242743894411101852, 239418121498, 277892039938, 42753932389372968185);
+        assertEqProtocolState(1529111915641384899944586211344528, 100014128723016911082);
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {

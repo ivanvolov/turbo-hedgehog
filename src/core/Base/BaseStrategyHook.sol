@@ -12,8 +12,6 @@ import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
@@ -29,7 +27,6 @@ import {IALM} from "../../interfaces/IALM.sol";
 /// @notice Abstract contract that serves as a base for ALM and holds storage and hook configuration.
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
-    using PRBMathUD60x18 for uint256;
     using StateLibrary for IPoolManager;
 
     bool public immutable isInvertedAssets;

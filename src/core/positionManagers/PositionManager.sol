@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {ud, unwrap as uw} from "@prb-math/UD60x18.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -18,7 +18,6 @@ import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 contract PositionManager is Base, IPositionManager {
     event KParamsSet(uint256 newK1, uint256 newK2);
 
-    using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
     uint256 public k1;
@@ -49,8 +48,9 @@ contract PositionManager is Base, IPositionManager {
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
 
-        lendingAdapter.updatePosition(SafeCast.toInt256(k.mul(deltaQuote)), 0, -SafeCast.toInt256(deltaBase), 0);
-        if (k != WAD) lendingAdapter.repayShort((k - WAD).mul(deltaQuote));
+        uint256 updateAmount = uw(ud(k).mul(ud(deltaQuote)));
+        lendingAdapter.updatePosition(SafeCast.toInt256(updateAmount), 0, -SafeCast.toInt256(deltaBase), 0);
+        if (k != WAD) lendingAdapter.repayShort(updateAmount - deltaQuote);
 
         QUOTE.safeTransfer(address(alm), deltaQuote);
     }
@@ -69,8 +69,9 @@ contract PositionManager is Base, IPositionManager {
 
         lendingAdapter.addCollateralLong(deltaQuote);
         if (k != WAD) {
-            lendingAdapter.borrowShort((k - WAD).mul(deltaQuote));
-            lendingAdapter.addCollateralLong((k - WAD).mul(deltaQuote));
+            uint256 updateAmount = uw(ud(k - WAD).mul(ud(deltaQuote)));
+            lendingAdapter.borrowShort(updateAmount);
+            lendingAdapter.addCollateralLong(updateAmount);
         }
         lendingAdapter.borrowLong(deltaBase);
 

@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 // ** libraries
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
+import {mulDiv} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
@@ -12,9 +13,8 @@ import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 /// @title ALM Math Library
 /// @notice Library for all math operations used in the ALM hook.
 library ALMMathLib {
-    using PRBMathUD60x18 for uint256;
-
     uint256 constant WAD = 1e18;
+    UD60x18 constant udWAD = UD60x18.wrap(1e18);
     uint256 constant Q96 = 2 ** 96;
 
     function getLiquidity(
@@ -35,12 +35,12 @@ library ALMMathLib {
                 getSqrtPriceX96FromTick(tickUpper),
                 amount
             );
-        return SafeCast.toUint128(PRBMath.mulDiv(_liquidity, multiplier, WAD));
+        return SafeCast.toUint128(mulDiv(_liquidity, multiplier, WAD));
     }
 
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
         if (TVL1 == 0) return TVL2;
-        else return PRBMath.mulDiv(ts, TVL2 - TVL1, TVL1);
+        else return mulDiv(ts, TVL2 - TVL1, TVL1);
     }
 
     /**
@@ -67,8 +67,8 @@ library ALMMathLib {
 
         return
             isStable
-                ? SafeCast.toUint256(mulDiv(baseValue, price, WAD) + variableValue)
-                : SafeCast.toUint256(mulDiv(variableValue, WAD, price) + baseValue);
+                ? SafeCast.toUint256(_mulDiv(baseValue, price, WAD) + variableValue)
+                : SafeCast.toUint256(_mulDiv(variableValue, WAD, price) + baseValue);
     }
 
     function getUserAmounts(
@@ -80,10 +80,10 @@ library ALMMathLib {
         uint256 debtShort
     ) internal pure returns (uint256, uint256, uint256, uint256) {
         return (
-            PRBMath.mulDiv(collateralLong, sharesOut, totalSupply),
-            PRBMath.mulDiv(collateralShort, sharesOut, totalSupply),
-            PRBMath.mulDiv(debtLong, sharesOut, totalSupply),
-            PRBMath.mulDiv(debtShort, sharesOut, totalSupply)
+            mulDiv(collateralLong, sharesOut, totalSupply),
+            mulDiv(collateralShort, sharesOut, totalSupply),
+            mulDiv(debtLong, sharesOut, totalSupply),
+            mulDiv(debtShort, sharesOut, totalSupply)
         );
     }
 
@@ -94,14 +94,14 @@ library ALMMathLib {
         uint256 DL,
         uint256 DS
     ) internal pure returns (uint256 longLeverage, uint256 shortLeverage) {
-        longLeverage = PRBMath.mulDiv(currentCL, price, currentCL.mul(price) - DL);
-        shortLeverage = currentCS.div(currentCS - DS.mul(price));
+        longLeverage = mulDiv(currentCL, price, uw(ud(currentCL).mul(ud(price))) - DL);
+        shortLeverage = uw(ud(currentCS).div(ud(currentCS) - ud(DS).mul(ud(price))));
     }
 
     // ** Helpers
 
     function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
-        return SafeCast.toUint160(PRBMath.mulDiv(PRBMathUD60x18.sqrt(price), Q96, WAD));
+        return SafeCast.toUint160(mulDiv(uw(ud(price).sqrt()), Q96, WAD));
     }
 
     function getSqrtPriceX96FromTick(int24 tick) internal pure returns (uint160) {
@@ -129,8 +129,8 @@ library ALMMathLib {
     // ** Math functions
 
     /// @notice Calculates floor(x*y÷denominator) with full precision for signed x and unsigned y and denominator.
-    function mulDiv(int256 a, uint256 b, uint256 denominator) internal pure returns (int256) {
-        uint256 result = PRBMath.mulDiv(SignedMath.abs(a), b, denominator);
+    function _mulDiv(int256 a, uint256 b, uint256 denominator) internal pure returns (int256) {
+        uint256 result = mulDiv(SignedMath.abs(a), b, denominator);
         return a < 0 ? -SafeCast.toInt256(result) : SafeCast.toInt256(result);
     }
 

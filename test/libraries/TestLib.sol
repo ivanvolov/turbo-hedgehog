@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18, PRBMath} from "@test/libraries/PRBMathUD60x18.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces

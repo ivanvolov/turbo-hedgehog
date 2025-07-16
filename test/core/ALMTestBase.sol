@@ -31,7 +31,7 @@ import {Oracle} from "@src/core/oracles/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@test/libraries/PRBMathUD60x18.sol";
 import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
