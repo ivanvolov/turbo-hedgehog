@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** External imports
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
+import {mulDiv} from "@prb-math/Common.sol";
 
 // ** interfaces
 import {IOracle} from "../../interfaces/IOracle.sol";
@@ -12,10 +13,8 @@ import {IOracle} from "../../interfaces/IOracle.sol";
 /// @title Oracle Base
 /// @notice Abstract contract that serves as a base for all oracles. Holds functions to calculate price in different formats.
 abstract contract OracleBase is IOracle {
-    using PRBMathUD60x18 for uint256;
-
     bool public immutable isInvertedPool;
-    uint256 public immutable ratio;
+    UD60x18 public immutable ratio;
     uint256 public immutable scaleFactor;
 
     constructor(bool _isInvertedPool, int8 tokenDecimalsDelta, int8 feedDecimalsDelta) {
@@ -23,11 +22,11 @@ abstract contract OracleBase is IOracle {
         if (tokenDecimalsDelta < -18) revert TokenDecimalsDeltaNotValid();
         if (feedDecimalsDelta < -18) revert FeedDecimalsDeltaNotValid();
 
-        ratio = 10 ** uint256(int256(tokenDecimalsDelta) + 18);
+        ratio = ud(10 ** uint256(int256(tokenDecimalsDelta) + 18));
         scaleFactor = 10 ** uint256(int256(feedDecimalsDelta) + 18);
     }
 
-    uint256 constant WAD = 1e18;
+    UD60x18 constant WAD = UD60x18.wrap(1e18);
 
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18).
     /// Calculates quote token price in terms of base token, adjusted for token decimals.
@@ -35,7 +34,7 @@ abstract contract OracleBase is IOracle {
     function price() public view returns (uint256 _price) {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
 
-        _price = PRBMath.mulDiv(uint256(_priceQuote), scaleFactor, uint256(_priceBase)).mul(ratio);
+        _price = uw(ud(mulDiv(_priceQuote, scaleFactor, _priceBase)).mul(ratio));
         if (_price == 0) revert PriceZero();
     }
 
@@ -45,7 +44,7 @@ abstract contract OracleBase is IOracle {
     /// @return _poolPrice The pool-compatible price.
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
         _price = price();
-        _poolPrice = isInvertedPool ? WAD.div(_price) : _price;
+        _poolPrice = isInvertedPool ? uw(WAD.div(ud(_price))) : _price;
         if (_poolPrice == 0) revert PriceZero();
     }
 
