@@ -257,6 +257,7 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
         // MARK END
 
+        //TODO: check max/min ticks reverts. Create a separate test for rebalance in different directions.
         initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
         // This is needed in order to simulate proper accounting

@@ -57,7 +57,7 @@ contract BTCALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            hook.setNextLPFee(0);
+            // hook.setNextLPFee(0); // Fees are set on afterInitialize and set to 0, to change - call rebalance.
             IPositionManagerStandard(address(positionManager)).setKParams(k1, k2); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 2e17, 2e17); // 0.2 (2%), 0.2 (2%)
@@ -97,6 +97,8 @@ contract BTCALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        assertTicks(3, 3); // Update this, it's a new assert placeholder
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 3, 1e1, "sqrtPrice"); // Update this, it's a new assert placeholder
     }
 
     function test_lifecycle() public {

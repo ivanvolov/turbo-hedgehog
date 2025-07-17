@@ -205,7 +205,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
 
-        //TODO: update sqrt price
         uint128 liquidity = alm.updateLiquidityAndBoundaries(currentSqrtPrice);
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);
     }
