@@ -124,6 +124,8 @@ contract UNICORDALMTest is MorphoTestBase {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        assertTicks(3, 3); // Update this, it's a new assert placeholder
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 3, 1e1, "sqrtPrice"); // Update this, it's a new assert placeholder
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {

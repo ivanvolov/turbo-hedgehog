@@ -6,6 +6,7 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
@@ -148,7 +149,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     /// @notice Updates liquidity and sets new boundaries around the current oracle price.
-    function updateLiquidityAndBoundariesToOracle() external override onlyOwner {
+    function updateLiquidityAndBoundariesToOracle() external override onlyOwner onlyActive {
         (, uint256 oraclePoolPrice) = oracle.poolPrice();
         uint160 oracleSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(oraclePoolPrice);
         _updateLiquidityAndBoundaries(oracleSqrtPrice);
@@ -157,15 +158,31 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     /// @notice Updates liquidity and sets new boundaries around the specified sqrt price.
     /// @param _sqrtPrice The square root price around which the new liquidity boundaries are set.
     /// @return newLiquidity The updated liquidity after recalculation.
-    function updateLiquidityAndBoundaries(uint160 _sqrtPrice) external override onlyRebalanceAdapter returns (uint128) {
+    function updateLiquidityAndBoundaries(
+        uint160 _sqrtPrice
+    ) external override onlyRebalanceAdapter onlyActive returns (uint128) {
         return _updateLiquidityAndBoundaries(_sqrtPrice);
     }
 
     function _updateLiquidityAndBoundaries(uint160 _sqrtPrice) internal returns (uint128 newLiquidity) {
+        // Unlocks to enable the swap, which updates the pool's sqrt price to the target.
+        poolManager.unlock(abi.encode(_sqrtPrice));
         _updatePriceAndBoundaries(_sqrtPrice);
         newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
         emit LiquidityUpdated(newLiquidity);
+    }
+
+    /// @dev You don't need to reentrancy guard here because PoolManager does it already.
+    function unlockCallback(bytes calldata data) external onlyPoolManager onlyActive returns (bytes memory) {
+        (uint160 sqrtPriceTarget) = abi.decode(data, (uint160));
+        uint160 sqrtPrice = sqrtPriceCurrent();
+        if (sqrtPriceTarget < sqrtPrice) {
+            poolManager.swap(authorizedPoolKey, SwapParams(true, type(int256).min, sqrtPriceTarget), "");
+        } else if (sqrtPriceTarget > sqrtPrice) {
+            poolManager.swap(authorizedPoolKey, SwapParams(false, type(int128).max, sqrtPriceTarget), "");
+        }
+        return "";
     }
 
     function _calcLiquidity() internal view returns (uint128) {

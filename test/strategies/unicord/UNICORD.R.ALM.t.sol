@@ -131,6 +131,8 @@ contract UNICORDRALMTest is MorphoTestBase {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         console.log("tickLower %s", tickLower);
         console.log("tickUpper %s", tickUpper);
+        assertTicks(3, 3); // Update this, it's a new assert placeholder
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 3, 1e1, "sqrtPrice"); // Update this, it's a new assert placeholder
     }
 
     function test_lifecycle() public {
