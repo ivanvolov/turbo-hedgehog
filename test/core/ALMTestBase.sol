@@ -283,7 +283,7 @@ abstract contract ALMTestBase is Deployers {
             Currency.wrap(currency0),
             Currency.wrap(currency1),
             LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            1, // The value of tickSpacing doesn't matter because it will change to the dynamic fee on afterInitialize
+            1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
         deployCodeTo(

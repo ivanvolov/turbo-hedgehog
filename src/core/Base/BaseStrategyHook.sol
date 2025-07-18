@@ -207,12 +207,15 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             emit LPFeeSet(nextLPFee);
         }
 
-        int24 tickSpacing = int24((lpFee / 100) * 2); //TODO: fin the formula for tick spacing. And do some safe cast here.
-        if (tickSpacing == 0) tickSpacing = 1;
-
         Ticks memory deltas = tickDeltas;
-        int24 newTickLower = ALMMathLib.alignComputedTickWithTickSpacing(tick - deltas.lower, tickSpacing);
-        int24 newTickUpper = ALMMathLib.alignComputedTickWithTickSpacing(tick + deltas.upper, tickSpacing);
+        int24 newTickLower = ALMMathLib.alignComputedTickWithTickSpacing(
+            tick - deltas.lower,
+            authorizedPoolKey.tickSpacing
+        );
+        int24 newTickUpper = ALMMathLib.alignComputedTickWithTickSpacing(
+            tick + deltas.upper,
+            authorizedPoolKey.tickSpacing
+        );
 
         if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
             revert TickLowerOutOfBounds(newTickLower);

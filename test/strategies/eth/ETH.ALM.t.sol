@@ -69,7 +69,7 @@ contract ETHALMTest is MorphoTestBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            // hook.setNextLPFee(0); // Fees are set on afterInitialize and set to 0, to change - call rebalance.
+            // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
@@ -161,7 +161,7 @@ contract ETHALMTest is MorphoTestBase {
         assertEqBalanceStateZero(address(hook));
         console.log("postRebalanceTVL %s", calcTVL());
 
-        assertTicks(194450, 200450);
+        assertTicks(194458, 200458);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
 
         alignOraclesAndPools(hook.sqrtPriceCurrent());
@@ -417,15 +417,15 @@ contract ETHALMTest is MorphoTestBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5436529454650320569, 1e4, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5436518670095357451, 1e4, "deltaWETH");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(157252945527123293183, 239418121498, 277892039940, 42756974981585376126);
-        assertEqProtocolState(1528493253127691782036693014210964, 100033186199533431344);
+        assertEqPositionState(157252960895114115625, 239418121498, 277892039939, 42756979565021235451);
+        assertEqProtocolState(1528490221069733804430825542634794, 100033196984464305856);
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {

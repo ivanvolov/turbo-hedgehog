@@ -49,7 +49,7 @@ contract ETHALMSimulationTest is ALMTestSimBase {
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            // hook.setNextLPFee(0); // Fees are set on afterInitialize and set to 0, to change - call rebalance.
+            // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
             IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(6 * 1e17, 3 * 1e18, 2 * 1e18);
             rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
