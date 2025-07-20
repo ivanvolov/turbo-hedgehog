@@ -157,7 +157,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 4626903915919660000;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         assertEq(usdcToSwapQ, 12371660056);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -186,7 +186,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 4626903915919660000;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
         // ** Swap
@@ -228,7 +228,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
-        (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
         assertEq(usdtToSwapQ, 4696732800805156176);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
@@ -281,7 +281,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 4626903915919660000;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         assertEq(usdcToSwapQ, 17907106368);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -334,7 +334,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
-        (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
         assertEq(usdtToSwapQ, 4699081167205558754);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
@@ -401,7 +401,7 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Swap Down Out
         {
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+            uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -466,7 +466,7 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Swap Up Out
         {
             uint256 usdtToGetFSwap = 10000e6; //10k USDT
-            (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+            uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -507,12 +507,20 @@ contract UNICORDALMTest is MorphoTestBase {
         return _swap(false, int256(amount), key);
     }
 
+    function quoteUSDT_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
+    }
+
     function swapUSDT_USDC_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, -int256(amount), key);
     }
 
     function swapUSDC_USDT_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteUSDC_USDT_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_USDT_In(uint256 amount) public returns (uint256, uint256) {

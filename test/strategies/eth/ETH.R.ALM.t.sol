@@ -208,7 +208,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 usdtToGetFSwap = 20000e6; //20k USDT
-            (uint256 wethToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+            uint256 wethToSwapQ = quoteWETH_USDT_Out(usdtToGetFSwap);
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -357,7 +357,7 @@ contract ETHRALMTest is ALMTestBase {
             );
 
             uint256 wethToGetFSwap = 1e18;
-            (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, wethToGetFSwap);
+            uint256 usdtToSwapQ = quoteUSDT_WETH_Out(wethToGetFSwap);
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -462,8 +462,13 @@ contract ETHRALMTest is ALMTestBase {
     }
 
     // ** Helpers
+
     function swapWETH_USDT_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteWETH_USDT_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapWETH_USDT_In(uint256 amount) public returns (uint256, uint256) {
@@ -472,6 +477,10 @@ contract ETHRALMTest is ALMTestBase {
 
     function swapUSDT_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, int256(amount), key);
+    }
+
+    function quoteUSDT_WETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
     }
 
     function swapUSDT_WETH_In(uint256 amount) public returns (uint256, uint256) {
