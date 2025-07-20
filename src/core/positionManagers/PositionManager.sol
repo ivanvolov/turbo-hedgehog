@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {ud} from "@prb-math/UD60x18.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -41,6 +43,8 @@ contract PositionManager is Base, IPositionManager {
         uint256 deltaQuote,
         uint160 sqrtPrice
     ) external onlyALM onlyActive {
+        console.log("positionAdjustmentPriceUp");
+
         BASE.safeTransferFrom(address(alm), address(this), deltaBase);
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
@@ -60,6 +64,8 @@ contract PositionManager is Base, IPositionManager {
         uint256 deltaQuote,
         uint160 sqrtPrice
     ) external onlyALM onlyActive {
+        console.log("positionAdjustmentPriceDown");
+
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;

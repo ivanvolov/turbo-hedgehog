@@ -384,6 +384,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     uint256 constant WAD = 1e18;
+
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
         uint256 _poolPrice = TestLib.getPriceFromSqrtPriceX96(newSqrtPrice);
 
@@ -791,7 +792,7 @@ abstract contract ALMTestBase is Deployers {
         uint128 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
+    ) public view returns (uint256 deltaX, uint256 deltaY) {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
             preSqrtPrice,
@@ -807,10 +808,11 @@ abstract contract ALMTestBase is Deployers {
             liquidity
         );
 
-        return (
-            amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post,
-            amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post
-        );
+        deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
+        deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+
+        // require(deltaX == SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
+        // require(deltaY == SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
     }
 
     function _liquidityCheck(bool _isInvertedPool, uint256 liquidityMultiplier) public view {

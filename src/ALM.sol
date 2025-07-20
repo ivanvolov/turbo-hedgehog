@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -255,6 +257,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
             sqrtPrice
         ); //TODO: check if one of them is always zero
+        console.log("_settleDeltas");
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
         return (IHooks.afterSwap.selector, 0);
