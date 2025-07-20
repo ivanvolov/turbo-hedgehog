@@ -362,7 +362,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 wethToGetFSwap = 5439086117469532134;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         assertApproxEqAbs(usdcToSwapQ, 14541229590, 1e4, "deltaUSDCQuote");
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -398,7 +398,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 wethToGetFSwap = 5439086117469532134;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         assertEq(usdcToSwapQ, 14548503843); //prev case + feeLP (tokenIn + feeLP)
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -428,7 +428,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 wethToGetFSwap = 5439086117469532134;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         assertEq(usdcToSwapQ, 14548503843);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -454,7 +454,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 wethToGetFSwap = 5438946754462608168;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         assertApproxEqAbs(usdcToSwapQ, 14540855151, 1e4, "deltaUSDCQuote");
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
@@ -473,7 +473,7 @@ contract ETHALMTest is MorphoTestBase {
         test_deposit_rebalance();
 
         uint256 wethToGetFSwap = 100e18;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
         part_swap_USDC_WETH_OUT_revert(wethToGetFSwap);
@@ -578,7 +578,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
-        (uint256 wethToSwapQ, ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
 
         console.log("wethToSwapQ %s", wethToSwapQ);
 
@@ -619,7 +619,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
-        (uint256 wethToSwapQ, ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
         assertEq(wethToSwapQ, 5521565871772441659); // prev * (1 + fee)
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -649,7 +649,7 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
-        (uint256 wethToSwapQ, ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
         assertEq(wethToSwapQ, 5521565871772441659);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -767,7 +767,7 @@ contract ETHALMTest is MorphoTestBase {
         // ** Swap Down Out
         {
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (uint256 wethToSwapQ, ) = _quoteOutputSwap(false, usdcToGetFSwap);
+            uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
 
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
@@ -865,7 +865,7 @@ contract ETHALMTest is MorphoTestBase {
         // ** Swap Up out
         {
             uint256 wethToGetFSwap = 1e17;
-            (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+            uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
             console.log("usdcToSwapQ %s", usdcToSwapQ);
 
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -1070,8 +1070,13 @@ contract ETHALMTest is MorphoTestBase {
     }
 
     // ** Helpers
+
     function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, int256(amount), key);
+    }
+
+    function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
     }
 
     function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -1080,6 +1085,10 @@ contract ETHALMTest is MorphoTestBase {
 
     function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {

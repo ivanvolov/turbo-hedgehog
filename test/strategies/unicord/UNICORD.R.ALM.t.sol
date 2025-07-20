@@ -195,7 +195,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("SWAP DOWN OUT");
 
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (uint256 daiToSwapQ, ) = _quoteOutputSwap(true, usdcToGetFSwap);
+            uint256 daiToSwapQ = quoteDAI_USDC_Out(usdcToGetFSwap);
             console.log("daiToSwapQ %s", daiToSwapQ);
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
@@ -288,7 +288,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         // ** Swap Up out
         {
             uint256 daiToGetFSwap = 1000e18; //1k DAI
-            (, uint256 usdcToSwapQ) = _quoteOutputSwap(false, daiToGetFSwap);
+            uint256 usdcToSwapQ = quoteUSDC_DAI_Out(daiToGetFSwap);
 
             console.log("usdcToSwapQ", usdcToSwapQ);
 
@@ -354,8 +354,13 @@ contract UNICORDRALMTest is MorphoTestBase {
     }
 
     // ** Helpers
+
     function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteDAI_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -364,6 +369,10 @@ contract UNICORDRALMTest is MorphoTestBase {
 
     function swapUSDC_DAI_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, int256(amount), key);
+    }
+
+    function quoteUSDC_DAI_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
     }
 
     function swapUSDC_DAI_In(uint256 amount) public returns (uint256, uint256) {

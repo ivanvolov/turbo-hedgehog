@@ -215,7 +215,7 @@ contract BTCALMTest is ALMTestBase {
             );
 
             uint256 usdcToGetFSwap = 10e9; //10k USDC
-            (, uint256 btcToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+            uint256 btcToSwapQ = quoteBTC_USDC_Out(usdcToGetFSwap);
             deal(address(BTC), address(swapper.addr), btcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -321,7 +321,7 @@ contract BTCALMTest is ALMTestBase {
             );
 
             uint256 btcToGetFSwap = 5e6;
-            (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, btcToGetFSwap);
+            uint256 usdcToSwapQ = quoteUSDC_BTC_Out(btcToGetFSwap);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -415,8 +415,13 @@ contract BTCALMTest is ALMTestBase {
     }
 
     // ** Helpers
+
     function swapBTC_USDC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, int256(amount), key);
+    }
+
+    function quoteBTC_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
     }
 
     function swapBTC_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -425,6 +430,10 @@ contract BTCALMTest is ALMTestBase {
 
     function swapUSDC_BTC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteUSDC_BTC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_BTC_In(uint256 amount) public returns (uint256, uint256) {

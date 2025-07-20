@@ -181,7 +181,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 wethToGetFSwap = 5295866784427776090;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         assertApproxEqAbs(usdcToSwapQ, 14171775946, 1);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -228,7 +228,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14374512916;
-        (, uint256 wethToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
         assertEq(wethToSwapQ, 5436304955762642991);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -279,7 +279,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 wethToGetFSwap = 5295866784427776090;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         assertEq(usdcToSwapQ, 14178861833); //more
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -330,7 +330,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14374512916;
-        (, uint256 wethToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
         assertEq(wethToSwapQ, 5439023108240524312); //more
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
@@ -486,7 +486,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             console.log("DS %s", DS);
 
             uint256 usdcToGetFSwap = 10000e6; //20k USDC
-            (, uint256 wethToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+            uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
             deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -588,7 +588,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         //     );
 
         //     uint256 wethToGetFSwap = 5e18;
-        //     (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, wethToGetFSwap);
+        //     uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
         //     deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
         //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -682,8 +682,13 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     }
 
     // ** Helpers
+
     function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, int256(amount), key);
+    }
+
+    function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
     }
 
     function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -692,6 +697,10 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
     function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {

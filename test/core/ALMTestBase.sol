@@ -570,16 +570,15 @@ abstract contract ALMTestBase is Deployers {
 
     // --- Uniswap V4 --- //
 
-    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256, uint256) {
-        return
-            quoter.quoteExactOutputSingle(
-                IV4Quoter.QuoteExactSingleParams({
-                    poolKey: key,
-                    zeroForOne: zeroForOne,
-                    exactAmount: SafeCast.toUint128(amount),
-                    hookData: ""
-                })
-            );
+    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256 amountIn) {
+        (amountIn, ) = quoter.quoteExactOutputSingle(
+            IV4Quoter.QuoteExactSingleParams({
+                poolKey: key,
+                zeroForOne: zeroForOne,
+                exactAmount: SafeCast.toUint128(amount),
+                hookData: ""
+            })
+        );
     }
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
