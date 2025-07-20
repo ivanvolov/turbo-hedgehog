@@ -43,8 +43,6 @@ contract PositionManager is Base, IPositionManager {
         uint256 deltaQuote,
         uint160 sqrtPrice
     ) external onlyALM onlyActive {
-        console.log("positionAdjustmentPriceUp");
-
         BASE.safeTransferFrom(address(alm), address(this), deltaBase);
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
@@ -64,8 +62,6 @@ contract PositionManager is Base, IPositionManager {
         uint256 deltaQuote,
         uint160 sqrtPrice
     ) external onlyALM onlyActive {
-        console.log("positionAdjustmentPriceDown");
-
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;

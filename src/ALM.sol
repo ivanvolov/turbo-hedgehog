@@ -257,7 +257,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
             sqrtPrice
         ); //TODO: check if one of them is always zero
-        console.log("_settleDeltas");
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
         return (IHooks.afterSwap.selector, 0);

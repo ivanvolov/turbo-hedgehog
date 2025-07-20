@@ -75,7 +75,6 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function borrowLong(uint256 amount) public override onlyModule onlyActive {
-        console.log("borrowLong %s");
         EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
 
         items[0] = EVCLib.BatchItem({
@@ -88,15 +87,11 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function repayLong(uint256 amount) public override onlyModule notPaused {
-        console.log("repayLong %s");
-
         BASE.safeTransferFrom(msg.sender, address(this), amount);
         vault0.repay(amount, subAccount0);
     }
 
     function removeCollateralLong(uint256 amount) public override onlyModule notPaused {
-        console.log("removeCollateralLong %s");
-
         EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
         items[0] = EVCLib.BatchItem({
             targetContract: address(vault1),
@@ -108,8 +103,6 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function addCollateralLong(uint256 amount) public override onlyModule onlyActive {
-        console.log("addCollateralLong %s");
-
         QUOTE.safeTransferFrom(msg.sender, address(this), amount);
         vault1.mint(vault1.convertToShares(amount), subAccount0);
     }
@@ -125,8 +118,6 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function borrowShort(uint256 amount) public override onlyModule onlyActive {
-        console.log("borrowShort %s");
-
         EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
 
         items[0] = EVCLib.BatchItem({
@@ -139,15 +130,11 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function repayShort(uint256 amount) public override onlyModule notPaused {
-        console.log("repayShort %s");
-
         QUOTE.safeTransferFrom(msg.sender, address(this), amount);
         vault1.repay(amount, subAccount1);
     }
 
     function removeCollateralShort(uint256 amount) public override onlyModule notPaused {
-        console.log("removeCollateralShort %s");
-
         EVCLib.BatchItem[] memory items = new EVCLib.BatchItem[](1);
         items[0] = EVCLib.BatchItem({
             targetContract: address(vault0),
@@ -159,8 +146,6 @@ contract EulerLendingAdapter is LendingBase {
     }
 
     function addCollateralShort(uint256 amount) public override onlyModule onlyActive {
-        console.log("addCollateralShort %s");
-
         BASE.safeTransferFrom(msg.sender, address(this), amount);
         vault0.mint(vault0.convertToShares(amount), subAccount1);
     }

@@ -486,28 +486,25 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             console.log("DS %s", DS);
 
             uint256 usdcToGetFSwap = 10000e6; //20k USDC
-            uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
-            deal(address(WETH), address(swapper.addr), wethToSwapQ);
+            deal(address(WETH), address(swapper.addr), quoteWETH_USDC_Out(usdcToGetFSwap));
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_Out(usdcToGetFSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
                 hook.liquidity(),
                 uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
+                hook.sqrtPriceCurrent()
             );
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + feeLP)) / 1e18, 1);
+            assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
-            uint256 deltaTreasuryFee = (deltaX * feeLP * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
-            assertEqBalanceState(address(hook), treasuryFeeQ, 0);
-            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
-
             console.log("treasuryFee %s", treasuryFeeQ);
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
 
             assertEqPositionState(
                 CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
@@ -518,165 +515,157 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Withdraw
-        // {
-        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //     vm.prank(alice.addr);
-        //     hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+        {
+            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            vm.prank(alice.addr);
+            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
-        //     _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // }
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        }
 
         // ** Deposit
-        // {
-        //     uint256 _amountToDep = 200 * 2485 * 1e6; //200 ETH in USDC
-        //     deal(address(USDC), address(alice.addr), _amountToDep);
-        //     vm.prank(alice.addr);
-        //     hook.deposit(alice.addr, _amountToDep, 0);
-        // }
+        {
+            uint256 _amountToDep = 200 * 2485 * 1e6; //200 ETH in USDC
+            deal(address(USDC), address(alice.addr), _amountToDep);
+            vm.prank(alice.addr);
+            hook.deposit(alice.addr, _amountToDep, 0);
+        }
 
         // ** Swap Up In
-        // {
-        //     (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
-        //         lendingAdapter.getCollateralLong(),
-        //         lendingAdapter.getCollateralShort(),
-        //         lendingAdapter.getBorrowedLong(),
-        //         lendingAdapter.getBorrowedShort()
-        //     );
+        {
+            (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
+                lendingAdapter.getCollateralLong(),
+                lendingAdapter.getCollateralShort(),
+                lendingAdapter.getBorrowedLong(),
+                lendingAdapter.getBorrowedShort()
+            );
 
-        //     uint256 usdcToSwap = 10000e6; // 5k USDC
-        //     deal(address(USDC), address(swapper.addr), usdcToSwap);
+            uint256 usdcToSwap = 10000e6; // 5k USDC
+            deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //     (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
 
-        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-        //     (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //         hook.liquidity(),
-        //         uint160(preSqrtPrice),
-        //         uint160(postSqrtPrice)
-        //     );
+            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
 
-        //     assertApproxEqAbs(deltaWETH, (deltaX * (1e18 - feeLP)) / 1e18, 1);
-        //     assertApproxEqAbs(usdcToSwap, deltaY, 1);
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            treasuryFeeB += deltaTreasuryFee;
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
 
-        //     uint256 deltaTreasuryFee = (deltaX * feeLP * hook.protocolFee()) / 1e36;
-        //     treasuryFeeQ += deltaTreasuryFee;
-        //     assertEqBalanceState(address(hook), treasuryFeeQ, 0);
-        //     assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
+            console.log("treasuryFee %s", treasuryFeeB);
 
-        //     console.log("treasuryFee %s", treasuryFeeQ);
-
-        //     assertEqPositionState(
-        //         CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-        //         CS,
-        //         DL - usdcToSwap,
-        //         DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
-        //     );
-        // }
+            assertEqPositionState(
+                CL - (deltaWETH * k1) / 1e18,
+                CS,
+                DL - usdcToSwap + deltaTreasuryFee,
+                DS - ((k1 - 1e18) * deltaWETH) / 1e18
+            );
+        }
 
         // ** Swap Up Out
-        // {
-        //     (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
-        //         lendingAdapter.getCollateralLong(),
-        //         lendingAdapter.getCollateralShort(),
-        //         lendingAdapter.getBorrowedLong(),
-        //         lendingAdapter.getBorrowedShort()
-        //     );
+        {
+            (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
+                lendingAdapter.getCollateralLong(),
+                lendingAdapter.getCollateralShort(),
+                lendingAdapter.getBorrowedLong(),
+                lendingAdapter.getBorrowedShort()
+            );
 
-        //     uint256 wethToGetFSwap = 5e18;
-        //     uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
-        //     deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+            uint256 wethToGetFSwap = 5e18;
+            deal(address(USDC), address(swapper.addr), quoteUSDC_WETH_Out(wethToGetFSwap));
 
-        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //     (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
 
-        //     (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //         hook.liquidity(),
-        //         uint160(preSqrtPrice),
-        //         uint160(hook.sqrtPriceCurrent())
-        //     );
-        //     assertApproxEqAbs(deltaWETH, deltaX, 1);
-        //     assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + feeLP)) / 1e18, 1);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-        //     uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
-        //     // treasuryFeeB += deltaTreasuryFee;
-        //     // assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-        //     // assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
+            console.log("deltaUSDC %s", deltaUSDC);
+            console.log("deltaWETH %s", deltaWETH);
 
-        //     // console.log("treasuryFee %s", treasuryFeeB);
+            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
 
-        //     assertEqPositionState(
-        //         CL - ((deltaWETH) * k1) / 1e18,
-        //         CS,
-        //         DL - usdcToSwapQ + deltaTreasuryFee,
-        //         DS - ((k1 - 1e18) * (deltaWETH)) / 1e18
-        //     );
-        // }
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeB += deltaTreasuryFee;
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
+
+            console.log("treasuryFee %s", treasuryFeeB);
+
+            assertEqPositionState(
+                CL - ((deltaWETH) * k1) / 1e18,
+                CS,
+                DL - deltaUSDC + deltaTreasuryFee,
+                DS - ((k1 - 1e18) * (deltaWETH)) / 1e18
+            );
+        }
 
         // ** Swap Down In
-        // {
-        //     (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
-        //         lendingAdapter.getCollateralLong(),
-        //         lendingAdapter.getCollateralShort(),
-        //         lendingAdapter.getBorrowedLong(),
-        //         lendingAdapter.getBorrowedShort()
-        //     );
+        {
+            (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
+                lendingAdapter.getCollateralLong(),
+                lendingAdapter.getCollateralShort(),
+                lendingAdapter.getBorrowedLong(),
+                lendingAdapter.getBorrowedShort()
+            );
 
-        //     uint256 wethToSwap = 10e18;
-        //     deal(address(WETH), address(swapper.addr), wethToSwap);
+            uint256 wethToSwap = 10e18;
+            deal(address(WETH), address(swapper.addr), wethToSwap);
 
-        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-        //     (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
-        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
 
-        //     (uint256 deltaX, uint256 deltaY) = _checkSwap(
-        //         hook.liquidity(),
-        //         uint160(preSqrtPrice),
-        //         uint160(postSqrtPrice)
-        //     );
-        //     assertApproxEqAbs(deltaWETH, deltaX, 1);
-        //     assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 - feeLP)) / 1e18, 1);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 3);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
-        //     uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
-        //     // treasuryFeeB += deltaTreasuryFee;
-        //     // assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-        //     // assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
+            uint256 deltaTreasuryFee = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
+            treasuryFeeQ += deltaTreasuryFee;
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
 
-        //     // console.log("treasuryFee %s", treasuryFeeB);
+            console.log("treasuryFee %s", treasuryFeeB);
 
-        //     assertEqPositionState(
-        //         CL + ((deltaWETH) * k1) / 1e18,
-        //         CS,
-        //         DL + deltaUSDC + deltaTreasuryFee,
-        //         DS + ((k1 - 1e18) * (deltaWETH)) / 1e18
-        //     );
-        // }
+            assertEqPositionState(
+                CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
+                CS,
+                DL + deltaUSDC,
+                DS + ((k1 - 1e18) * (deltaWETH - deltaTreasuryFee)) / 1e18
+            );
+        }
 
         // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
-        // vm.prank(deployer.addr);
-        // rebalanceAdapter.rebalance(slippage);
-        // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        uint256 preRebalanceTVL = calcTVL();
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(slippage);
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         //assertEqHookPositionStateDN(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
-        // {
-        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        //     vm.prank(alice.addr);
-        //     hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        {
+            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            vm.prank(alice.addr);
+            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
 
-        //     _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // }
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        }
 
         // assertBalanceNotChanged(address(manager), 1e1);
     }
