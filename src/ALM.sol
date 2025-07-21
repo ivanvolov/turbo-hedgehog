@@ -84,10 +84,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         if (isInvertedAssets) {
             BASE.safeTransferFrom(msg.sender, address(this), amountIn);
-            lendingAdapter.addCollateralShort(baseBalance(true));
+            lendingAdapter.addCollateralShort(baseBalance());
         } else {
             QUOTE.safeTransferFrom(msg.sender, address(this), amountIn);
-            lendingAdapter.addCollateralLong(quoteBalance(true));
+            lendingAdapter.addCollateralLong(quoteBalance());
         }
         uint256 tvlAfter = TVL(price);
         if (tvlAfter > tvlCap) revert TVLCapExceeded();
@@ -126,19 +126,19 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             else if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             else if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
 
-            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
-            else swapAdapter.swapExactInput(true, baseBalance(false));
+            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance());
+            else swapAdapter.swapExactInput(true, baseBalance());
         } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL, abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
         uint256 quoteOut;
         if (isInvertedAssets) {
-            baseOut = baseBalance(false);
+            baseOut = baseBalance();
             if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
             BASE.safeTransfer(to, baseOut);
         } else {
-            quoteOut = quoteBalance(false);
+            quoteOut = quoteBalance();
             if (quoteOut < minAmountOutQ) revert NotMinOutWithdrawQuote();
             QUOTE.safeTransfer(to, quoteOut);
         }
@@ -178,16 +178,16 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
         if (isBase) {
-            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance(false));
+            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance());
             else _ensureEnoughBalance(amount, BASE);
         } else {
             if (isInvertedAssets) _ensureEnoughBalance(amount, QUOTE);
-            else swapAdapter.swapExactInput(true, baseBalance(false));
+            else swapAdapter.swapExactInput(true, baseBalance());
         }
     }
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
-        uint256 _balance = token == BASE ? baseBalance(false) : quoteBalance(false);
+        uint256 _balance = token == BASE ? baseBalance() : quoteBalance();
         if (balance >= _balance) swapAdapter.swapExactOutput(token == QUOTE, balance - _balance);
         else swapAdapter.swapExactInput(token == BASE, _balance - balance);
     }
@@ -284,20 +284,20 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("token0 %s", token0);
             console.log("token1 %s", token1);
 
-            console.log("PRE baseBalance %s", baseBalance(true));
-            console.log("PRE quoteBalance %s", quoteBalance(true));
+            console.log("PRE baseBalance %s", baseBalance());
+            console.log("PRE quoteBalance %s", quoteBalance());
 
             key.currency0.take(poolManager, address(this), token0, false);
-            console.log("TAKE baseBalance %s", baseBalance(true));
-            console.log("TAKE quoteBalance %s", quoteBalance(true));
+            console.log("TAKE baseBalance %s", baseBalance());
+            console.log("TAKE quoteBalance %s", quoteBalance());
 
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
-            console.log("UPDATE baseBalance %s", baseBalance(true));
-            console.log("UPDATE quoteBalance %s", quoteBalance(true));
+            console.log("UPDATE baseBalance %s", baseBalance());
+            console.log("UPDATE quoteBalance %s", quoteBalance());
 
             key.currency1.settle(poolManager, address(this), token1, false);
-            console.log("SETTLE baseBalance %s", baseBalance(true));
-            console.log("SETTLE quoteBalance %s", quoteBalance(true));
+            console.log("SETTLE baseBalance %s", baseBalance());
+            console.log("SETTLE quoteBalance %s", quoteBalance());
         } else {
             console.log("_settleDeltas 2");
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
@@ -327,12 +327,12 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("token0 %s", token0);
             console.log("token1 %s", token1);
 
-            console.log("PRE baseBalance %s", baseBalance(true));
-            console.log("PRE quoteBalance %s", quoteBalance(true));
+            console.log("PRE baseBalance %s", baseBalance());
+            console.log("PRE quoteBalance %s", quoteBalance());
 
             key.currency1.take(poolManager, address(this), token1, false);
-            console.log("TAKE baseBalance %s", baseBalance(true));
-            console.log("TAKE quoteBalance %s", quoteBalance(true));
+            console.log("TAKE baseBalance %s", baseBalance());
+            console.log("TAKE quoteBalance %s", quoteBalance());
 
             updatePosition(feeAmount, token0, token1, zeroForOne, sqrtPrice);
 
@@ -389,18 +389,16 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function TVL(uint256 price) public view returns (uint256) {
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        return ALMMathLib.getTVL(quoteBalance(true), baseBalance(true), CL, CS, DL, DS, price, isInvertedAssets);
+        return ALMMathLib.getTVL(quoteBalance(), baseBalance(), CL, CS, DL, DS, price, isInvertedAssets);
     }
 
     // ** Helpers
 
-    function baseBalance(bool wrap) internal view returns (uint256) {
-        uint256 balance = BASE.balanceOf(address(this)) - accumulatedFeeB;
-        return wrap ? balance : balance;
+    function baseBalance() internal view returns (uint256) {
+        return BASE.balanceOf(address(this)) - accumulatedFeeB;
     }
 
-    function quoteBalance(bool wrap) internal view returns (uint256) {
-        uint256 balance = QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
-        return wrap ? balance : balance;
+    function quoteBalance() internal view returns (uint256) {
+        return QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
     }
 }
