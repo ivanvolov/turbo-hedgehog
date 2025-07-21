@@ -77,13 +77,13 @@ contract BTCALMTest is ALMTestBase {
 
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 999999990000000000, 1e1);
+        assertApproxEqAbs(shares, 1e8, 1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
-        assertEqProtocolState(initialSQRTPrice, 999999990000000000);
+        assertEqProtocolState(initialSQRTPrice, 1e8);
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 

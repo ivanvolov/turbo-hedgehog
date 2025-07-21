@@ -43,7 +43,18 @@ contract PositionManager is Base, IPositionManager {
         uint256 deltaQuote,
         uint160 sqrtPrice
     ) external onlyALM onlyActive {
+        console.log("deltaBase %s", deltaBase);
+        console.log("deltaQuote %s", deltaQuote);
+
+        if (!alm.isInvertedPool()) {
+            (deltaBase, deltaQuote) = (deltaQuote, deltaBase);
+        }
+
+        console.log("deltaBase %s", deltaBase);
+        console.log("deltaQuote %s", deltaQuote);
+
         BASE.safeTransferFrom(address(alm), address(this), deltaBase);
+        console.log("BASE BALANCE %s", BASE.balanceOf(address(this)));
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;

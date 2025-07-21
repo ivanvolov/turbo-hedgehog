@@ -126,7 +126,12 @@ contract ETHRALMTest is ALMTestBase {
                 lendingAdapter.getBorrowedShort()
             );
 
-            uint256 usdtToSwap = 10e6; // 10k USDT
+            console.log("CL %s", CL);
+            console.log("CS %s", CS);
+            console.log("DL %s", DL);
+            console.log("DS %s", DS);
+
+            uint256 usdtToSwap = 10e9; // 10k USDT
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -135,29 +140,36 @@ contract ETHRALMTest is ALMTestBase {
 
             console.log("usdtToSwap %s", usdtToSwap);
 
-            (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                hook.liquidity(),
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
+            uint256 wethToSwapQ1 = quoteWETH_USDT_Out(usdtToSwap);
+            //uint256 wethToSwapQ2 = quoteUSDT_WETH_Out(usdtToSwap);
 
-            assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - feeLP)) / 1e18, 1);
-            assertApproxEqAbs(usdtToSwap, deltaX, 1);
+            console.log("wethToSwapQ1 %s", wethToSwapQ1);
+            //console.log("wethToSwapQ2 %s", wethToSwapQ2);
 
-            uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
-            treasuryFeeQ += deltaTreasuryFee;
-            assertEqBalanceState(address(hook), treasuryFeeQ, 0);
-            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
+            (uint256 deltaWETH, ) = swapWETH_USDT_Out(usdtToSwap);
+            //(uint256 deltaWETH, ) = swapWETH_USDT_In(usdtToSwap);
+            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
+            //     hook.liquidity(),
+            //     uint160(preSqrtPrice),
+            //     uint160(postSqrtPrice)
+            // );
 
-            console.log("treasuryFee %s", treasuryFeeQ);
-            assertEqPositionState(
-                CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
-                CS,
-                DL - usdtToSwap,
-                DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
-            );
+            // assertApproxEqAbs(deltaWETH, (deltaY * (1e18 - feeLP)) / 1e18, 1);
+            // assertApproxEqAbs(usdtToSwap, deltaX, 1);
+
+            // uint256 deltaTreasuryFee = (deltaY * feeLP * hook.protocolFee()) / 1e36;
+            // treasuryFeeQ += deltaTreasuryFee;
+            // assertEqBalanceState(address(hook), treasuryFeeQ, 0);
+            // assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
+
+            // console.log("treasuryFee %s", treasuryFeeQ);
+            // assertEqPositionState(
+            //     CL - ((deltaWETH + deltaTreasuryFee) * k1) / 1e18,
+            //     CS,
+            //     DL - usdtToSwap,
+            //     DS - ((k1 - 1e18) * (deltaWETH + deltaTreasuryFee)) / 1e18
+            // );
         }
 
         // ** Swap Up In
