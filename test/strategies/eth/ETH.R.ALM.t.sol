@@ -103,9 +103,9 @@ contract ETHRALMTest is ALMTestBase {
 
     function test_lifecycle() public {
         vm.startPrank(deployer.addr);
-        hook.setNextLPFee(feeLP);
+        hook.setNextLPFee(0);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
-        updateProtocolFees(20 * 1e16); // 20% from fees
+        //updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
 
         test_deposit_rebalance();
@@ -138,15 +138,7 @@ contract ETHRALMTest is ALMTestBase {
             console.log("preSqrtPrice %s", preSqrtPrice);
             console.log("liquidity %s", hook.liquidity());
 
-            console.log("usdtToSwap %s", usdtToSwap);
-
-            uint256 wethToSwapQ1 = quoteWETH_USDT_Out(usdtToSwap);
-            //uint256 wethToSwapQ2 = quoteUSDT_WETH_Out(usdtToSwap);
-
-            console.log("wethToSwapQ1 %s", wethToSwapQ1);
-            //console.log("wethToSwapQ2 %s", wethToSwapQ2);
-
-            (uint256 deltaWETH, ) = swapWETH_USDT_Out(usdtToSwap);
+            (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
             //(uint256 deltaWETH, ) = swapWETH_USDT_In(usdtToSwap);
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
             // (uint256 deltaX, uint256 deltaY) = _checkSwap(

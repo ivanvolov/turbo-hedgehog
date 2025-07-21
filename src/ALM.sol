@@ -335,12 +335,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("TAKE quoteBalance %s", quoteBalance(true));
 
             updatePosition(feeAmount, token0, token1, zeroForOne, sqrtPrice);
-            console.log("FINISH 3");
-
-            console.log("UPDATE baseBalance %s", BASE.balanceOf(address(this)));
-            console.log("UPDATE quoteBalance %s", QUOTE.balanceOf(address(this)));
-
-            console.log("token0 %s", token0);
 
             key.currency0.settle(poolManager, address(this), token0, false);
             console.log("SETTLE baseBalance %s", BASE.balanceOf(address(this)));
@@ -362,6 +356,9 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         console.log("feeAmount %s", feeAmount);
 
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : uw(ud(feeAmount).mul(ud(protocolFee)));
+
+        console.log("protocolFeeAmount %s", protocolFeeAmount);
+
         if (up) {
             console.log("positionAdjustmentPriceUp");
             accumulatedFeeB += protocolFeeAmount;
@@ -374,6 +371,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             accumulatedFeeQ += protocolFeeAmount;
             positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount), sqrtPrice);
         }
+
+        console.log("UPDATE baseBalance %s", BASE.balanceOf(address(this)));
+        console.log("UPDATE quoteBalance %s", QUOTE.balanceOf(address(this)));
+
         console.log("FINISH HERE");
     }
 

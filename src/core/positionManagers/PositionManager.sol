@@ -46,9 +46,9 @@ contract PositionManager is Base, IPositionManager {
         console.log("deltaBase %s", deltaBase);
         console.log("deltaQuote %s", deltaQuote);
 
-        if (!alm.isInvertedPool()) {
-            (deltaBase, deltaQuote) = (deltaQuote, deltaBase);
-        }
+        // if (!alm.isInvertedPool()) {
+        //     (deltaBase, deltaQuote) = (deltaQuote, deltaBase);
+        // }
 
         console.log("deltaBase %s", deltaBase);
         console.log("deltaQuote %s", deltaQuote);
@@ -64,6 +64,8 @@ contract PositionManager is Base, IPositionManager {
         uint256 updateAmount = ud(k).mul(ud(deltaQuote)).unwrap();
         lendingAdapter.updatePosition(SafeCast.toInt256(updateAmount), 0, -SafeCast.toInt256(deltaBase), 0);
         if (k != WAD) lendingAdapter.repayShort(updateAmount - deltaQuote);
+
+        console.log("QUOTE BALANCE %s", QUOTE.balanceOf(address(this)));
 
         QUOTE.safeTransfer(address(alm), deltaQuote);
     }
