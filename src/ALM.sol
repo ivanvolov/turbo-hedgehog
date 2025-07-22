@@ -251,21 +251,12 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint160 sqrtPrice = sqrtPriceCurrent();
         checkSwapDeviations(ud(uint256(sqrtPrice)));
 
-        if (isInvertedPool) {
-            _settleDeltas(
-                key,
-                params.zeroForOne,
-                uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
-                sqrtPrice
-            ); //TODO: check if one of them is always zero
-        } else {
-            _settleDeltasInverse(
-                key,
-                params.zeroForOne,
-                uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
-                sqrtPrice
-            );
-        }
+        _settleDeltas(
+            key,
+            params.zeroForOne,
+            uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
+            sqrtPrice
+        ); //TODO: check if one of them is always zero
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
         return (IHooks.afterSwap.selector, 0);
@@ -303,46 +294,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
 
-            key.currency1.take(poolManager, address(this), token1, false);
-            updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
-            key.currency0.settle(poolManager, address(this), token0, false);
-        }
-    }
-
-    function _settleDeltasInverse(
-        PoolKey calldata key,
-        bool zeroForOne,
-        uint256 feeAmount,
-        uint160 sqrtPrice
-    ) internal {
-        if (zeroForOne) {
-            console.log("_settleDeltasInverse 1");
-            console.log(isInvertedPool);
-            console.log(address(BASE));
-            console.log(address(QUOTE));
-
-            uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0)); //USDT
-            uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1)); //WETH
-
             console.log("token0 %s", token0);
             console.log("token1 %s", token1);
-
-            console.log("PRE baseBalance %s", baseBalance());
-            console.log("PRE quoteBalance %s", quoteBalance());
-
-            key.currency1.take(poolManager, address(this), token1, false);
-            console.log("TAKE baseBalance %s", baseBalance());
-            console.log("TAKE quoteBalance %s", quoteBalance());
-
-            updatePosition(feeAmount, token0, token1, zeroForOne, sqrtPrice);
-
-            key.currency0.settle(poolManager, address(this), token0, false);
-            console.log("SETTLE baseBalance %s", BASE.balanceOf(address(this)));
-            console.log("SETTLE quoteBalance %s", QUOTE.balanceOf(address(this)));
-        } else {
-            console.log("_settleDeltasInverse 2");
-            uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
-            uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
 
             key.currency1.take(poolManager, address(this), token1, false);
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
@@ -353,6 +306,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up, uint160 sqrtPrice) internal {
         console.log("tokenIn %s", tokenIn);
         console.log("tokenOut %s", tokenOut);
+
         console.log("feeAmount %s", feeAmount);
 
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : uw(ud(feeAmount).mul(ud(protocolFee)));
@@ -360,22 +314,12 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         console.log("protocolFeeAmount %s", protocolFeeAmount);
 
         if (up) {
-            console.log("positionAdjustmentPriceUp");
             accumulatedFeeB += protocolFeeAmount;
-            console.log("accumulatedFeeB");
             positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut, sqrtPrice);
-            console.log("FINISH");
         } else {
-            console.log("positionAdjustmentPriceDown");
-
             accumulatedFeeQ += protocolFeeAmount;
             positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount), sqrtPrice);
         }
-
-        console.log("UPDATE baseBalance %s", BASE.balanceOf(address(this)));
-        console.log("UPDATE quoteBalance %s", QUOTE.balanceOf(address(this)));
-
-        console.log("FINISH HERE");
     }
 
     function checkSwapDeviations(UD60x18 sqrtPriceNext) internal view {

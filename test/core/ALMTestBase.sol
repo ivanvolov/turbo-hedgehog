@@ -807,8 +807,11 @@ abstract contract ALMTestBase is Deployers {
             liquidity
         );
 
-        deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
-        deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+        // deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
+        // deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+
+        deltaX = SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true);
+        deltaY = SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, false);
 
         // require(deltaX == SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
         // require(deltaY == SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));

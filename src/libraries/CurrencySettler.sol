@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.24;
 
+import "forge-std/console.sol";
+
 import {Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
