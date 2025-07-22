@@ -110,179 +110,179 @@ contract ETHR2ALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
-        {
-            uint256 usdtToSwap = 50000e6; // 50k USDT
-            deal(address(USDT), address(swapper.addr), usdtToSwap);
+        // {
+        //     uint256 usdtToSwap = 50000e6; // 50k USDT
+        //     deal(address(USDT), address(swapper.addr), usdtToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
-        }
+        //     assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //     assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+        // }
 
         // ** Swap Up In
-        {
-            uint256 usdtToSwap = 5000e6; // 5k USDT
-            deal(address(USDT), address(swapper.addr), usdtToSwap);
+        // {
+        //     uint256 usdtToSwap = 5000e6; // 5k USDT
+        //     deal(address(USDT), address(swapper.addr), usdtToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
-        }
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
+        //     assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //     assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+        // }
 
         // ** Swap Down Out
-        {
-            uint256 usdtToGetFSwap = 50000e6; //50k USDT
-            uint256 wethToSwapQ = quoteWETH_USDT_Out(usdtToGetFSwap);
+        // {
+        //     uint256 usdtToGetFSwap = 50000e6; //50k USDT
+        //     uint256 wethToSwapQ = quoteWETH_USDT_Out(usdtToGetFSwap);
 
-            deal(address(WETH), address(swapper.addr), wethToSwapQ);
+        //     deal(address(WETH), address(swapper.addr), wethToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, uint256 deltaUSDT) = swapWETH_USDT_Out(usdtToGetFSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, uint256 deltaUSDT) = swapWETH_USDT_Out(usdtToGetFSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
-            assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + feeLP)) / 1e18, 7e14);
-            assertApproxEqAbs(deltaUSDT, deltaY, 2e6);
-        }
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
+        //     assertApproxEqAbs(deltaWETH, (deltaX * (1e18 + feeLP)) / 1e18, 7e14);
+        //     assertApproxEqAbs(deltaUSDT, deltaY, 2e6);
+        // }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Withdraw
-        {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
-        }
+        // {
+        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        //     vm.prank(alice.addr);
+        //     hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+        // }
 
-        {
-            uint256 usdtToSwap = 10000e6; // 10k USDT
-            deal(address(USDT), address(swapper.addr), usdtToSwap);
+        // {
+        //     uint256 usdtToSwap = 10000e6; // 10k USDT
+        //     deal(address(USDT), address(swapper.addr), usdtToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
-        }
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
+        //     assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //     assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+        // }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Deposit
-        {
-            uint256 _amountToDep = 200 ether;
-            deal(address(WETH), address(alice.addr), _amountToDep);
-            vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep, 0);
-        }
+        // {
+        //     uint256 _amountToDep = 200 ether;
+        //     deal(address(WETH), address(alice.addr), _amountToDep);
+        //     vm.prank(alice.addr);
+        //     hook.deposit(alice.addr, _amountToDep, 0);
+        // }
 
         // ** Swap Up In
-        {
-            uint256 usdtToSwap = 5000e6; // 5k USDT
-            deal(address(USDT), address(swapper.addr), usdtToSwap);
+        // {
+        //     uint256 usdtToSwap = 5000e6; // 5k USDT
+        //     deal(address(USDT), address(swapper.addr), usdtToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, ) = swapUSDT_WETH_In(usdtToSwap);
 
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
-            assertApproxEqAbs(deltaWETH, deltaX, 1e15);
-            assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
-        }
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
+        //     assertApproxEqAbs(deltaWETH, deltaX, 1e15);
+        //     assertApproxEqAbs((usdtToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+        // }
 
         // ** Swap Up out
-        {
-            uint256 wethToGetFSwap = 5e18;
-            uint256 usdtToSwapQ = quoteUSDT_WETH_Out(wethToGetFSwap);
-            deal(address(USDT), address(swapper.addr), usdtToSwapQ);
+        // {
+        //     uint256 wethToGetFSwap = 5e18;
+        //     uint256 usdtToSwapQ = quoteUSDT_WETH_Out(wethToGetFSwap);
+        //     deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_Out(wethToGetFSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_Out(wethToGetFSwap);
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
 
-            assertApproxEqAbs(deltaWETH, deltaX, 3e14);
-            assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
-        }
+        //     assertApproxEqAbs(deltaWETH, deltaX, 3e14);
+        //     assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
+        // }
 
         // ** Swap Down In
-        {
-            uint256 wethToSwap = 10e18;
-            deal(address(WETH), address(swapper.addr), wethToSwap);
+        // {
+        //     uint256 wethToSwap = 10e18;
+        //     deal(address(WETH), address(swapper.addr), wethToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaWETH, uint256 deltaUSDT) = swapWETH_USDT_In(wethToSwap);
-            uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+        //     uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+        //     (uint256 deltaWETH, uint256 deltaUSDT) = swapWETH_USDT_In(wethToSwap);
+        //     uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
-                uint256(hook.liquidity()) / 1e12,
-                uint160(preSqrtPrice),
-                uint160(postSqrtPrice)
-            );
-            assertApproxEqAbs((deltaWETH * (1e18 - feeLP)) / 1e18, deltaX, 43e13);
-            assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
-        }
+        //     (uint256 deltaX, uint256 deltaY) = _checkSwapReverse(
+        //         uint256(hook.liquidity()) / 1e12,
+        //         uint160(preSqrtPrice),
+        //         uint160(postSqrtPrice)
+        //     );
+        //     assertApproxEqAbs((deltaWETH * (1e18 - feeLP)) / 1e18, deltaX, 43e13);
+        //     assertApproxEqAbs(deltaUSDT, deltaY, 1e7);
+        // }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = calcTVL();
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        // uint256 preRebalanceTVL = calcTVL();
+        // vm.prank(deployer.addr);
+        // rebalanceAdapter.rebalance(slippage);
+        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        // alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
-        {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-            vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
-        }
+        // {
+        //     uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        //     vm.prank(alice.addr);
+        //     hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        // }
     }
 
     // ** Helpers

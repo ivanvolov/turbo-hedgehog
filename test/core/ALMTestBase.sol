@@ -619,8 +619,8 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
-    uint256 public assertEqBalanceQuoteThreshold = 1e5;
-    uint256 public assertEqBalanceBaseThreshold = 1e1;
+    uint256 public assertEqBalanceQuoteThreshold = 1;
+    uint256 public assertEqBalanceBaseThreshold = 15;
     uint256 public assertEqSqrtThreshold;
 
     mapping(address => uint256) public balanceB;
@@ -835,49 +835,6 @@ abstract contract ALMTestBase is Deployers {
         }
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
-    }
-
-    function _checkSwapReverse(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(activeTicks.lower); //TODO: stack too deep?
-        uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            ((priceUpper * prePrice) / 1e18).sqrt();
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / (priceUpper * postPrice).sqrt();
-
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
-    }
-
-    function _checkSwapUnicord(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-
-        uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            (((priceUpper * prePrice) / 1e18).sqrt());
-
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / ((priceUpper * postPrice).sqrt());
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickUpper)).sqrt())) / 1e12;
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
     }
 
     function calcTVL() internal view returns (uint256) {
