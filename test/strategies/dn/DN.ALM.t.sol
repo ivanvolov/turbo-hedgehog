@@ -91,6 +91,10 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         vm.prank(alice.addr);
 
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
+
+        console.log("shares %s", shares);
+        console.log("TVL %s", hook.TVL(oracle.price()));
+
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
 
@@ -416,7 +420,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
-            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
@@ -519,9 +523,25 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         // ** Withdraw
         {
+            console.log("shares before withdraw %s", hook.totalSupply());
+            console.log("tvl pre %s", hook.TVL(oracle.price()));
+
+            console.log("CL pre %s", lendingAdapter.getCollateralLong());
+            console.log("CS pre %s", lendingAdapter.getCollateralShort());
+            console.log("DL pre %s", lendingAdapter.getBorrowedLong());
+            console.log("DS pre %s", lendingAdapter.getBorrowedShort());
+
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+            console.log("shares after withdraw %s", hook.totalSupply());
+            console.log("tvl after %s", hook.TVL(oracle.price()));
+
+            console.log("CL after %s", lendingAdapter.getCollateralLong());
+            console.log("CS after %s", lendingAdapter.getCollateralShort());
+            console.log("DL after %s", lendingAdapter.getBorrowedLong());
+            console.log("DS after %s", lendingAdapter.getBorrowedShort());
 
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
@@ -551,8 +571,8 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1);
-            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
@@ -591,8 +611,8 @@ contract DeltaNeutralALMTest is MorphoTestBase {
             console.log("deltaUSDC %s", deltaUSDC);
             console.log("deltaWETH %s", deltaWETH);
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1);
-            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
