@@ -355,15 +355,16 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function test_lifecycle() public {
-        vm.startPrank(deployer.addr);
+        vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
 
         test_deposit_rebalance();
         saveBalance(address(manager));
 
-        //rebalanceAdapter.setRebalancePriceThreshold(1e15);
-        //rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
-        vm.stopPrank();
+        // vm.prank(deployer.addr);
+        // rebalanceAdapter.setRebalancePriceThreshold(1e15);
+        // rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
+        // vm.stopPrank();
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
