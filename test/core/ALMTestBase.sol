@@ -796,14 +796,16 @@ abstract contract ALMTestBase is Deployers {
         uint160 postSqrtPrice
     ) public view returns (uint256 deltaX, uint256 deltaY) {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
+        // (uint256 amt0Pre, uint256 amt1Pre) =
+        LiquidityAmounts.getAmountsForLiquidity(
             preSqrtPrice,
             TickMath.getSqrtPriceAtTick(tickLower),
             TickMath.getSqrtPriceAtTick(tickUpper),
             liquidity
         );
 
-        (uint256 amt0Post, uint256 amt1Post) = LiquidityAmounts.getAmountsForLiquidity(
+        // (uint256 amt0Post, uint256 amt1Post) =
+        LiquidityAmounts.getAmountsForLiquidity(
             postSqrtPrice,
             TickMath.getSqrtPriceAtTick(tickLower),
             TickMath.getSqrtPriceAtTick(tickUpper),

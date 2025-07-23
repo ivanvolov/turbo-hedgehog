@@ -418,7 +418,7 @@ contract BTCALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = calcTVL();
+        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);

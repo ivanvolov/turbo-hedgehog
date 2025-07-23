@@ -90,7 +90,7 @@ contract ETHRALMTest is ALMTestBase {
 
     function test_deposit_rebalance() public {
         test_deposit();
-        uint256 preRebalanceTVL = calcTVL();
+        // uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
@@ -449,7 +449,7 @@ contract ETHRALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = calcTVL();
+        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
