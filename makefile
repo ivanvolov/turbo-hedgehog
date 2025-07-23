@@ -20,14 +20,18 @@ tssl:
 	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
 
 te:
-	clear && forge test -vv --match-contract ETHALMTest --match-test "test_deposit_rebalance_swap_price_up_in_fees\b"
+	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
 tel:
-	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_deposit_rebalance_swap_price_up_in_fees\b"
+	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
 ter:
 	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"
 terl:
 	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_"
 
+ter2:
+	clear && forge test -vv --match-contract ETHR2ALMTest --match-test "test_lifecycle"
+ter2l:
+	clear && forge test -vvvv --match-contract ETHR2ALMTest --match-test "test_lifecycle"
 
 tu:
 	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_"
@@ -44,9 +48,9 @@ tb:
 tbl:
 	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_deposit_rebalance\b"
+	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_deposit_rebalance\b"
+	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
 
 tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
@@ -75,7 +79,7 @@ format_write:
 	npx prettier --write "src/**/*.sol" "test/**/*.sol"
 
 gas_r:
-	clear && forge test -vv --match-contract "ETHALMTest\b" --match-test "test_lifecycle\b"
+	clear && forge test -vv --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
 gas_s:
 	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
 
