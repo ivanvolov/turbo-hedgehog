@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {UD60x18, ud} from "@prb-math/UD60x18.sol";
 import {mulDiv} from "@prb-math/Common.sol";
 
@@ -12,18 +11,24 @@ import {IOracle} from "../../interfaces/IOracle.sol";
 
 /// @title Oracle Base
 /// @notice Abstract contract that serves as a base for all oracles. Holds functions to calculate price in different formats.
-abstract contract OracleBase is IOracle {
+abstract contract OracleBase is Ownable, IOracle {
     bool public immutable isInvertedPool;
     UD60x18 public immutable ratio;
     uint256 public immutable scaleFactor;
+    StalenessThresholds public stalenessThresholds;
 
-    constructor(bool _isInvertedPool, int8 tokenDecimalsDelta, int8 feedDecimalsDelta) {
+    constructor(bool _isInvertedPool, int8 tokenDecimalsDelta, int8 feedDecimalsDelta) Ownable(msg.sender) {
         isInvertedPool = _isInvertedPool;
         if (tokenDecimalsDelta < -18) revert TokenDecimalsDeltaNotValid();
         if (feedDecimalsDelta < -18) revert FeedDecimalsDeltaNotValid();
 
         ratio = ud(10 ** uint256(int256(tokenDecimalsDelta) + 18));
         scaleFactor = 10 ** uint256(int256(feedDecimalsDelta) + 18);
+    }
+
+    function setStalenessThresholds(uint128 thresholdBase, uint128 thresholdQuote) external override onlyOwner {
+        stalenessThresholds = StalenessThresholds(thresholdBase, thresholdQuote);
+        emit StalenessThresholdsSet(thresholdBase, thresholdQuote);
     }
 
     UD60x18 constant WAD = UD60x18.wrap(1e18);

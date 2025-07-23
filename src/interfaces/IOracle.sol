@@ -7,6 +7,15 @@ interface IOracle {
     error FeedDecimalsDeltaNotValid();
     error PriceZero();
 
+    event StalenessThresholdsSet(uint256 stalenessThresholdB, uint256 stalenessThresholdQ);
+
+    struct StalenessThresholds {
+        uint128 base;
+        uint128 quote;
+    }
+
+    function setStalenessThresholds(uint128, uint128) external;
+
     function price() external view returns (uint256);
 
     function poolPrice() external view returns (uint256, uint256);

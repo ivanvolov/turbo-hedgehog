@@ -114,6 +114,10 @@ abstract contract ALMTestBase is Deployers {
         bDec = _bDec;
         qDec = _qDec;
 
+        _create_accounts();
+    }
+
+    function _create_accounts() internal {
         deployer = TestAccountLib.createTestAccount("deployer");
         alice = TestAccountLib.createTestAccount("alice");
         migrationContract = TestAccountLib.createTestAccount("migrationContract");
@@ -178,34 +182,34 @@ abstract contract ALMTestBase is Deployers {
         bool _isInvertedPool,
         AggregatorV3Interface feedQ,
         AggregatorV3Interface feedB,
-        uint256 stalenessThresholdQ,
-        uint256 stalenessThresholdB
-    ) internal returns (IOracle _oracle) {
-        isInvertedPool = _isInvertedPool;
-        vm.prank(deployer.addr);
-        _oracle = new Oracle(
-            feedB,
-            feedQ,
-            stalenessThresholdB,
-            stalenessThresholdQ,
-            _isInvertedPool,
-            int8(bDec) - int8(qDec)
-        );
-        oracle = _oracle;
+        uint128 stalenessThresholdQ,
+        uint128 stalenessThresholdB
+    ) internal returns (IOracle) {
+        return
+            _create_oracle(
+                feedQ,
+                feedB,
+                stalenessThresholdQ,
+                stalenessThresholdB,
+                _isInvertedPool,
+                int8(bDec) - int8(qDec)
+            );
     }
 
     function _create_oracle(
         AggregatorV3Interface feedQ,
         AggregatorV3Interface feedB,
-        uint256 stalenessThresholdQ,
-        uint256 stalenessThresholdB,
+        uint128 stalenessThresholdQ,
+        uint128 stalenessThresholdB,
         bool _isInvertedPool,
         int8 decimalsDelta
     ) internal returns (IOracle _oracle) {
         isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
-        _oracle = new Oracle(feedB, feedQ, stalenessThresholdB, stalenessThresholdQ, _isInvertedPool, decimalsDelta);
+        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
         oracle = _oracle;
+        vm.prank(deployer.addr);
+        oracle.setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
     function init_hook(
