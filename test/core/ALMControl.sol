@@ -10,15 +10,17 @@ import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {FixedPoint128} from "v4-core/libraries/FixedPoint128.sol";
 import {FullMath} from "v4-core/libraries/FullMath.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
 import {CurrencySettler} from "@src/libraries/CurrencySettler.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@test/libraries/PRBMathUD60x18.sol";
+import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
@@ -41,14 +43,14 @@ contract ALMControl is BaseHook, ERC20 {
     constructor(IPoolManager _manager, ALM _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
         alm = _alm;
 
-        (int24 tickLower, int24 tickUpper) = alm.activeTicks();
-        tickLower = TestLib.nearestUsableTick(tickLower, 2);
-        tickUpper = TestLib.nearestUsableTick(tickUpper, 2);
+        (int24 _tickLower, int24 _tickUpper) = alm.activeTicks();
+        tickLower = TestLib.nearestUsableTick(_tickLower, 2);
+        tickUpper = TestLib.nearestUsableTick(_tickUpper, 2);
     }
 
     // --- Logic --- //
 
-    // @Notice: This should be called after the target hook is rebalanced
+    /// @dev This should be called after the target hook is rebalanced.
     function rebalance() external {
         poke();
         (uint128 totalLiquidity, , ) = getPositionInfo();
@@ -67,9 +69,9 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        (int24 tickLower, int24 tickUpper) = alm.activeTicks();
-        tickLower = TestLib.nearestUsableTick(tickLower, 2);
-        tickUpper = TestLib.nearestUsableTick(tickUpper, 2);
+        (int24 _tickLower, int24 _tickUpper) = alm.activeTicks();
+        tickLower = TestLib.nearestUsableTick(_tickLower, 2);
+        tickUpper = TestLib.nearestUsableTick(_tickUpper, 2);
 
         uint128 newLiquidity = getLiquidityForValue(_TVL);
 
@@ -134,10 +136,10 @@ contract ALMControl is BaseHook, ERC20 {
         int24 _tickLower,
         int24 _tickUpper,
         address sender
-    ) external selfOnly returns (bytes memory) {
+    ) external returns (bytes memory) {
         (BalanceDelta delta, ) = poolManager.modifyLiquidity(
             key,
-            IPoolManager.ModifyLiquidityParams({
+            ModifyLiquidityParams({
                 tickLower: _tickLower,
                 tickUpper: _tickUpper,
                 liquidityDelta: liquidity,
@@ -186,9 +188,9 @@ contract ALMControl is BaseHook, ERC20 {
             });
     }
 
-    function afterInitialize(address, PoolKey calldata _key, uint160, int24) external override returns (bytes4) {
+    function _afterInitialize(address, PoolKey calldata _key, uint160, int24) internal override returns (bytes4) {
         key = _key;
-        return ALMControl.afterInitialize.selector;
+        return IHooks.afterInitialize.selector;
     }
 
     function sharePrice() public view returns (uint256) {

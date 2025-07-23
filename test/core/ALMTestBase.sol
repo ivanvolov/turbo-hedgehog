@@ -6,14 +6,18 @@ import "forge-std/console.sol";
 // ** V4 imports
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {PoolSwapTest} from "@forks/uniswap-v4/PoolSwapTest.sol";
+import {PoolSwapTest} from "@test/libraries/v4-forks/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {Deployers} from "@forks/uniswap-v4/Deployers.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {Deployers} from "@test/libraries/v4-forks/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
+import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
+import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
+import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -23,15 +27,16 @@ import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanA
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
-import {Oracle} from "@src/core/Oracle.sol";
+import {Oracle} from "@src/core/oracles/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@test/libraries/PRBMathUD60x18.sol";
+import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -55,9 +60,9 @@ abstract contract ALMTestBase is Deployers {
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
+    V4Quoter quoter;
     uint160 initialSQRTPrice;
     ALM hook;
-    uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts.
     SRebalanceAdapter rebalanceAdapter;
 
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
@@ -109,6 +114,10 @@ abstract contract ALMTestBase is Deployers {
         bDec = _bDec;
         qDec = _qDec;
 
+        _create_accounts();
+    }
+
+    function _create_accounts() internal {
         deployer = TestAccountLib.createTestAccount("deployer");
         alice = TestAccountLib.createTestAccount("alice");
         migrationContract = TestAccountLib.createTestAccount("migrationContract");
@@ -136,8 +145,6 @@ abstract contract ALMTestBase is Deployers {
         lendingAdapter = new EulerLendingAdapter(
             BASE,
             QUOTE,
-            bDec,
-            qDec,
             TestLib.EULER_VAULT_CONNECT,
             _vault0,
             _vault1,
@@ -155,7 +162,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 deposit1
     ) internal {
         vm.prank(deployer.addr);
-        flashLoanAdapter = new EulerFlashLoanAdapter(BASE, QUOTE, bDec, qDec, _flVault0, _flVault1);
+        flashLoanAdapter = new EulerFlashLoanAdapter(BASE, QUOTE, _flVault0, _flVault1);
         _deposit_to_euler(_flVault0, deposit0);
         _deposit_to_euler(_flVault1, deposit1);
     }
@@ -172,17 +179,40 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function create_oracle(
-        AggregatorV3Interface feed0,
-        AggregatorV3Interface feed1,
-        uint256 stalenessThreshold0,
-        uint256 stalenessThreshold1
-    ) internal {
+        bool _isInvertedPool,
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint128 stalenessThresholdQ,
+        uint128 stalenessThresholdB
+    ) internal returns (IOracle) {
+        return
+            _create_oracle(
+                feedQ,
+                feedB,
+                stalenessThresholdQ,
+                stalenessThresholdB,
+                _isInvertedPool,
+                int8(bDec) - int8(qDec)
+            );
+    }
+
+    function _create_oracle(
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint128 stalenessThresholdQ,
+        uint128 stalenessThresholdB,
+        bool _isInvertedPool,
+        int8 decimalsDelta
+    ) internal returns (IOracle _oracle) {
+        isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
-        oracle = new Oracle(feed0, feed1, stalenessThreshold0, stalenessThreshold1);
+        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
+        oracle = _oracle;
+        vm.prank(deployer.addr);
+        oracle.setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
     function init_hook(
-        bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova,
         uint256 _liquidityMultiplier,
@@ -192,40 +222,22 @@ abstract contract ALMTestBase is Deployers {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) internal {
-        isInvertedPool = _isInvertedPool;
         console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
         console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
         console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
-        console.log("oracle: initialPrice %s", oracle.price());
+        console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
 
-        // MARK: UniV4 hook deployment process
-        address hookAddress = address(
-            uint160(
-                Hooks.BEFORE_SWAP_FLAG |
-                    Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG |
-                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
-                    Hooks.AFTER_INITIALIZE_FLAG
-            )
-        );
-        deployCodeTo(
-            "ALM.sol",
-            abi.encode(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
-            hookAddress
-        );
-        hook = ALM(hookAddress);
-        vm.label(address(hook), "hook");
-        assertEq(hook.owner(), deployer.addr);
-        // MARK END
+        deploy_hook_contract(_isInvertedAssets);
 
         // MARK: Deploying modules and setting up parameters
-        // @Notice: lendingAdapter should already be created
-        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE, bDec, qDec);
-        else positionManager = new PositionManager(BASE, QUOTE, bDec, qDec);
+        // LendingAdapter should already be created
+        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
+        else positionManager = new PositionManager(BASE, QUOTE);
 
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
-        // @Notice: oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, bDec, qDec, _isInvertedPool, _isInvertedAssets, _isNova);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        // Oracle should already be created
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(
             _liquidityMultiplier,
@@ -249,13 +261,42 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
         // MARK END
 
-        (address _token0, address _token1) = getTokensInOrder();
-        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
         // This is needed in order to simulate proper accounting
         deal(address(BASE), address(manager), 1000 ether);
         deal(address(QUOTE), address(manager), 1000 ether);
+
+        quoter = new V4Quoter(manager);
         vm.stopPrank();
+    }
+
+    function deploy_hook_contract(bool _isInvertedAssets) internal {
+        address hookAddress = address(
+            uint160(
+                Hooks.BEFORE_SWAP_FLAG |
+                    Hooks.AFTER_SWAP_FLAG |
+                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
+                    Hooks.AFTER_INITIALIZE_FLAG
+            )
+        );
+
+        (address currency0, address currency1) = getTokensInOrder();
+        key = PoolKey(
+            Currency.wrap(currency0),
+            Currency.wrap(currency1),
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
+            IHooks(hookAddress)
+        );
+        deployCodeTo(
+            "ALM.sol",
+            abi.encode(key, BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            hookAddress
+        );
+        hook = ALM(hookAddress);
+        vm.label(address(hook), "hook");
+        assertEq(hook.owner(), deployer.addr);
     }
 
     function updateProtocolFees(uint256 _protocolFee) internal {
@@ -345,11 +386,20 @@ abstract contract ALMTestBase is Deployers {
         vm.stopPrank();
     }
 
+    uint256 constant WAD = 1e18;
+
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
+        uint256 _poolPrice = TestLib.getPriceFromSqrtPriceX96(newSqrtPrice);
+
+        uint256 _oraclePrice = TestLib.getOraclePriceFromPoolPrice(_poolPrice, isInvertedPool, int8(bDec) - int8(qDec));
+        uint256 ratio = 10 ** uint256(int256(int8(bDec) - int8(qDec)) + 18);
+        uint256 _price = _oraclePrice.mul(ratio);
+
+        vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.price.selector), abi.encode(_price));
         vm.mockCall(
             address(oracle),
-            abi.encodeWithSelector(IOracle.price.selector),
-            abi.encode(_sqrtPriceToOraclePrice(newSqrtPrice))
+            abi.encodeWithSelector(IOracle.poolPrice.selector),
+            abi.encode(_price, _poolPrice)
         );
         setV3PoolPrice(newSqrtPrice);
     }
@@ -379,12 +429,12 @@ abstract contract ALMTestBase is Deployers {
             TestLib.getOraclePriceFromPoolPrice(
                 TestLib.getPriceFromSqrtPriceX96(sqrtPriceX96),
                 isInvertedPool,
-                uint8(ALMMathLib.absSub(bDec, qDec))
+                int8(bDec) - int8(qDec)
             );
     }
 
     uint256 minStepSize = 10 ether; // Minimum swap amount to prevent tiny swaps
-    uint256 slippageTolerance = 1e18; // 1% acceptable price difference
+    uint256 slippageTolerance = 1e16; // 1% acceptable price difference
 
     function _setV3PoolPrice(uint160 newSqrtPrice) public {
         uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
@@ -399,7 +449,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 stepSize = initialStepSize;
 
         uint256 iterations = 0;
-        while (iterations < 50) {
+        while (iterations < 100) {
             uint256 priceDiff = ALMMathLib.absSub(currentPrice, targetPrice);
             if (priceDiff <= slippageTolerance) break;
             iterations++;
@@ -523,6 +573,17 @@ abstract contract ALMTestBase is Deployers {
 
     // --- Uniswap V4 --- //
 
+    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256 amountIn) {
+        (amountIn, ) = quoter.quoteExactOutputSingle(
+            IV4Quoter.QuoteExactSingleParams({
+                poolKey: key,
+                zeroForOne: zeroForOne,
+                exactAmount: SafeCast.toUint128(amount),
+                hookData: ""
+            })
+        );
+    }
+
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
         (int256 delta0, int256 delta1) = __swap(zeroForOne, amount, _key);
         return (abs(delta0), abs(delta1));
@@ -536,7 +597,7 @@ abstract contract ALMTestBase is Deployers {
         vm.startPrank(swapper.addr);
         BalanceDelta delta = swapRouter.swap(
             _key,
-            IPoolManager.SwapParams(
+            SwapParams(
                 zeroForOne,
                 amount,
                 zeroForOne == true ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
@@ -561,9 +622,22 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
-    uint256 public assertEqBalanceQuoteThreshold = 1e5;
-    uint256 public assertEqBalanceBaseThreshold = 1e1;
+    uint256 public assertEqBalanceQuoteThreshold = 1;
+    uint256 public assertEqBalanceBaseThreshold = 15;
     uint256 public assertEqSqrtThreshold;
+
+    mapping(address => uint256) public balanceB;
+    mapping(address => uint256) public balanceQ;
+
+    function saveBalance(address owner) public {
+        balanceB[owner] = BASE.balanceOf(owner);
+        balanceQ[owner] = QUOTE.balanceOf(owner);
+    }
+
+    function assertBalanceNotChanged(address owner, uint256 precision) public view {
+        assertApproxEqAbs(BASE.balanceOf(owner), balanceB[owner], precision, "BASE balance");
+        assertApproxEqAbs(QUOTE.balanceOf(owner), balanceQ[owner], precision, "QUOTE balance");
+    }
 
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
@@ -575,7 +649,7 @@ abstract contract ALMTestBase is Deployers {
         } catch {
             console.log("Error: QUOTE Balance", QUOTE.balanceOf(owner));
             console.log("Error: BASE Balance", BASE.balanceOf(owner));
-            _assertEqBalanceState(owner, _balanceQ, _balanceB); // @Notice: this is to throw the error
+            _assertEqBalanceState(owner, _balanceQ, _balanceB); // This is to throw the error
         }
     }
 
@@ -612,26 +686,33 @@ abstract contract ALMTestBase is Deployers {
         uint256 calcDS;
 
         uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / 1e36;
-        uint256 calcCS = (((preRebalanceTVL * oracle.price()) / 1e18) * (((1e18 - weight) * shortLeverage) / 1e18)) /
+
+        uint256 calcCS = (((preRebalanceTVL * oraclePriceW()) / 1e18) * (((1e18 - weight) * shortLeverage) / 1e18)) /
             1e30;
-        uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
+
+        uint256 calcDL = (((calcCL * oraclePriceW() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
             1e30;
         if (shortLeverage != 1e18)
-            calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) / 1e24;
+            calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oraclePriceW()) * (1e18 + slippage)) / 1e24;
 
         uint256 diffDS = calcDS >= _lendingAdapter.getBorrowedShort()
             ? calcDS - _lendingAdapter.getBorrowedShort()
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
-        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
-        assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
-        assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
+        uint256 diffDL = calcDL >= _lendingAdapter.getBorrowedLong()
+            ? calcDL - _lendingAdapter.getBorrowedLong()
+            : _lendingAdapter.getBorrowedLong() - calcDL;
+
+        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 100);
+        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 100);
+        // assertApproxEqAbs(calcDL * 1e18 /_lendingAdapter.getBorrowedLong(), , slippage);
+        assertApproxEqAbs((diffDL * 1e18) / calcDS, slippage, slippage);
 
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
-        uint256 tvlRatio = hook.TVL() > preRebalanceTVL
-            ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
-            : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
+        uint256 tvlRatio = calcTVL() > preRebalanceTVL
+            ? (calcTVL() * 1e18) / preRebalanceTVL - 1e18
+            : 1e18 - (calcTVL() * 1e18) / preRebalanceTVL;
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
@@ -645,13 +726,13 @@ abstract contract ALMTestBase is Deployers {
     ) public view {
         ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());
 
-        uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / oracle.price() / 1e18;
+        uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / oraclePriceW() / 1e18;
 
         uint256 calcCS = ((preRebalanceTVL * (1e18 - weight) * shortLeverage) / 1e48);
 
-        uint256 calcDL = (((calcCL * oracle.price() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
+        uint256 calcDL = (((calcCL * oraclePriceW() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
             1e30;
-        uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oracle.price()) * (1e18 + slippage)) /
+        uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oraclePriceW()) * (1e18 + slippage)) /
             1e24;
 
         uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort()
@@ -659,37 +740,52 @@ abstract contract ALMTestBase is Deployers {
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
-        assertApproxEqAbs(calcCS, c18to6(_lendingAdapter.getCollateralShort()), 1e1);
-        assertApproxEqAbs(calcDL, c18to6(_lendingAdapter.getBorrowedLong()), slippage);
+        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 1e1);
+        assertApproxEqAbs(calcDL, _lendingAdapter.getBorrowedLong(), slippage);
 
         assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
-        uint256 tvlRatio = hook.TVL() > preRebalanceTVL
-            ? (hook.TVL() * 1e18) / preRebalanceTVL - 1e18
-            : 1e18 - (hook.TVL() * 1e18) / preRebalanceTVL;
+        uint256 tvlRatio = calcTVL() > preRebalanceTVL
+            ? (calcTVL() * 1e18) / preRebalanceTVL - 1e18
+            : 1e18 - (calcTVL() * 1e18) / preRebalanceTVL;
 
         assertApproxEqAbs(tvlRatio, slippage, slippage);
     }
 
     function assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
+        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // The LA can change in tests
         try this._assertEqPositionState(CL, CS, DL, DS) {
             // Intentionally empty
         } catch {
-            console.log("Error: CL", TW.unwrap(_leA.getCollateralLong(), qDec));
-            console.log("Error: CS", TW.unwrap(_leA.getCollateralShort(), bDec));
-            console.log("Error: DL", TW.unwrap(_leA.getBorrowedLong(), bDec));
-            console.log("Error: DS", TW.unwrap(_leA.getBorrowedShort(), qDec));
-            _assertEqPositionState(CL, CS, DL, DS); // @Notice: this is to throw the error
+            console.log("Error: CL", _leA.getCollateralLong());
+            console.log("Error: CS", _leA.getCollateralShort());
+            console.log("Error: DL", _leA.getBorrowedLong());
+            console.log("Error: DS", _leA.getBorrowedShort());
+            _assertEqPositionState(CL, CS, DL, DS); // This is to throw the error
         }
     }
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
-        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // @Notice: The LA can change in tests
-        assertApproxEqAbs(TW.unwrap(_leA.getCollateralLong(), qDec), CL, assertEqPSThresholdCL, "CL not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getCollateralShort(), bDec), CS, assertEqPSThresholdCS, "CS not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedLong(), bDec), DL, assertEqPSThresholdDL, "DL not equal");
-        assertApproxEqAbs(TW.unwrap(_leA.getBorrowedShort(), qDec), DS, assertEqPSThresholdDS, "DS not equal");
+        ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // The LA can change in tests
+        assertApproxEqAbs(_leA.getCollateralLong(), CL, assertEqPSThresholdCL, "CL not equal");
+        assertApproxEqAbs(_leA.getCollateralShort(), CS, assertEqPSThresholdCS, "CS not equal");
+        assertApproxEqAbs(_leA.getBorrowedLong(), DL, assertEqPSThresholdDL, "DL not equal");
+        assertApproxEqAbs(_leA.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
+    }
+
+    function assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {
+        try this._assertEqProtocolState(sqrtPriceCurrent, tvl) {
+            // Intentionally empty
+        } catch {
+            console.log("Error: sqrtPriceCurrent", hook.sqrtPriceCurrent());
+            console.log("Error: tvl", calcTVL());
+            _assertEqProtocolState(sqrtPriceCurrent, tvl); // This is to throw the error
+        }
+    }
+
+    function _assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), sqrtPriceCurrent, 1e1, "sqrtPrice not equal");
+        assertApproxEqAbs(calcTVL(), tvl, 1e1, "TVL not equal");
     }
 
     // --- Test math --- //
@@ -698,7 +794,7 @@ abstract contract ALMTestBase is Deployers {
         uint128 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
+    ) public view returns (uint256 deltaX, uint256 deltaY) {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
             preSqrtPrice,
@@ -714,10 +810,14 @@ abstract contract ALMTestBase is Deployers {
             liquidity
         );
 
-        return (
-            amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post,
-            amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post
-        );
+        // deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
+        // deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+
+        deltaX = SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true);
+        deltaY = SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, false);
+
+        // require(deltaX == SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
+        // require(deltaY == SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
     }
 
     function _liquidityCheck(bool _isInvertedPool, uint256 liquidityMultiplier) public view {
@@ -727,60 +827,26 @@ abstract contract ALMTestBase is Deployers {
             liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
                 ALMMathLib.getSqrtPriceX96FromTick(tickLower),
                 ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
         } else {
             liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
                 ALMMathLib.getSqrtPriceX96FromTick(tickLower),
                 ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
-                TW.unwrap(lendingAdapter.getCollateralLong(), qDec)
+                lendingAdapter.getCollateralLong()
             );
         }
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
     }
 
-    function _checkSwapReverse(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(activeTicks.lower); //TODO: stack too deep?
-        uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            ((priceUpper * prePrice) / 1e18).sqrt();
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / (priceUpper * postPrice).sqrt();
-
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
+    function calcTVL() internal view returns (uint256) {
+        return hook.TVL(oracle.price());
     }
 
-    function _checkSwapUnicord(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-
-        uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            (((priceUpper * prePrice) / 1e18).sqrt());
-
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / ((priceUpper * postPrice).sqrt());
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickUpper)).sqrt())) / 1e12;
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
+    function calcSharePrice(uint256 tS, uint256 TVL) internal pure returns (uint256) {
+        if (tS == 0) return 0;
+        return TVL.div(tS);
     }
 
     function recordGas() internal {
@@ -793,16 +859,6 @@ abstract contract ALMTestBase is Deployers {
     }
 
     // --- Utils --- //
-
-    // ** Convert function: Converts a value with 6 decimals to a representation with 18 decimals
-    function c6to18(uint256 amountIn6Decimals) internal pure returns (uint256) {
-        return amountIn6Decimals * (10 ** 12);
-    }
-
-    // ** Convert function: Converts a value with 18 decimals to a representation with 6 decimals
-    function c18to6(uint256 amountIn18Decimals) internal pure returns (uint256) {
-        return amountIn18Decimals / (10 ** 12);
-    }
 
     function abs(int256 n) internal pure returns (uint256) {
         unchecked {
@@ -829,5 +885,18 @@ abstract contract ALMTestBase is Deployers {
         if (token == BASE) return QUOTE;
         if (token == QUOTE) return BASE;
         revert("Token not allowed");
+    }
+
+    function poolPrice() internal view returns (uint256 _poolPrice) {
+        (, _poolPrice) = oracle.poolPrice();
+    }
+
+    function oraclePriceW() internal view returns (uint256) {
+        uint256 ratio = 10 ** uint256(int256(int8(bDec) - int8(qDec)) + 18);
+        return oracle.price().div(ratio);
+    }
+
+    function oraclePrice() internal view returns (uint256) {
+        return oracle.price();
     }
 }

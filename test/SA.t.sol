@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Currency, CurrencyLibrary} from "v4-core/types/Currency.sol";
@@ -24,7 +23,6 @@ import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
 contract SwapAdapterTest is ALMTestBase {
     using SafeERC20 for IERC20;
-    using TokenWrapperLib for uint256;
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
 
@@ -465,7 +463,7 @@ contract SwapAdapterTest is ALMTestBase {
     function test_routes_operator() public {
         create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         vm.prank(deployer.addr);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
 
         uniswapSwapAdapter = IUniswapSwapAdapter(address(swapAdapter));
         _fakeSetComponents(address(swapAdapter), alice.addr);
@@ -562,7 +560,7 @@ contract SwapAdapterTest is ALMTestBase {
 
     function _deployAndApproveAdapter() internal {
         vm.prank(deployer.addr);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, bDec, qDec, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
 
         uniswapSwapAdapter = IUniswapSwapAdapter(address(swapAdapter));
         vm.prank(deployer.addr);

@@ -28,6 +28,10 @@ ter:
 terl:
 	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_"
 
+ter2:
+	clear && forge test -vv --match-contract ETHR2ALMTest --match-test "test_lifecycle"
+ter2l:
+	clear && forge test -vvvv --match-contract ETHR2ALMTest --match-test "test_lifecycle"
 
 tu:
 	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_"
@@ -35,18 +39,18 @@ tul:
 	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_"
 
 tur:
-	clear && forge test -vv --match-contract UNICORDRALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract UNICORDRALMTest --match-test "test_"
 turl:
-	clear && forge test -vvvv --match-contract UNICORDRALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract UNICORDRALMTest --match-test "test_"
 
 tb:
 	clear && forge test -vv --match-contract BTCALMTest --match-test "test_"
 tbl:
 	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
+	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
 
 tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
@@ -64,6 +68,10 @@ tsa:
 	clear && forge test -vv --match-contract SwapAdapterTest --match-test "test_"
 tsal:
 	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
+to:
+	clear && forge test -vv --match-contract OracleTest --match-test "test_"
+tol:
+	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
@@ -71,9 +79,9 @@ format_write:
 	npx prettier --write "src/**/*.sol" "test/**/*.sol"
 
 gas_r:
-	clear && forge test -vv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
-gas_rl:
-	clear && forge test -vvvv --match-contract "LendingAdaptersTest\b" --match-test "test_function_calls\b"
+	clear && forge test -vv --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
+gas_s:
+	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
 
 merkl_data:
 	clear && npm run merkl

@@ -5,6 +5,7 @@ import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolTestBase} from "v4-core/test/PoolTestBase.sol";
@@ -14,15 +15,15 @@ contract PoolSwapTest is PoolTestBase {
     using CurrencySettler for Currency;
     using Hooks for IHooks;
 
-    constructor(IPoolManager _manager) PoolTestBase(_manager) {
-        // Intentionally empty as all initialization is handled by the parent PoolTestBase contract
-    }
+    constructor(IPoolManager _manager) PoolTestBase(_manager) {}
+
+    error NoSwapOccurred();
 
     struct CallbackData {
         address sender;
         TestSettings testSettings;
         PoolKey key;
-        IPoolManager.SwapParams params;
+        SwapParams params;
         bytes hookData;
     }
 
@@ -33,7 +34,7 @@ contract PoolSwapTest is PoolTestBase {
 
     function swap(
         PoolKey memory key,
-        IPoolManager.SwapParams memory params,
+        SwapParams memory params,
         TestSettings memory testSettings,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {

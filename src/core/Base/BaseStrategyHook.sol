@@ -5,19 +5,18 @@ pragma solidity ^0.8.0;
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
+import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
-import {TokenWrapperLib} from "../../libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {Base} from "./Base.sol";
@@ -29,12 +28,12 @@ import {IALM} from "../../interfaces/IALM.sol";
 /// @notice Abstract contract that serves as a base for ALM and holds storage and hook configuration.
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
-    using PRBMathUD60x18 for uint256;
-    using TokenWrapperLib for uint256;
+    using StateLibrary for IPoolManager;
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
-    bytes32 public authorizedPool;
+    bytes32 public immutable authorizedPoolId;
+    PoolKey public authorizedPoolKey;
 
     /// @notice Current operational status of the contract.
     /// @dev 0 = active, 1 = paused, 2 = shutdown.
@@ -47,7 +46,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     Ticks public activeTicks;
     Ticks public tickDeltas;
-    uint160 public sqrtPriceCurrent;
     uint256 public swapPriceThreshold;
     uint256 public tvlCap;
 
@@ -55,18 +53,17 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     address public swapOperator;
     address public treasury;
     uint256 public protocolFee;
+    uint24 public nextLPFee;
     uint256 public accumulatedFeeB;
     uint256 public accumulatedFeeQ;
 
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         bool _isInvertedPool,
         bool _isInvertedAssets,
         IPoolManager _poolManager
-    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote, _bDec, _qDec) {
+    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
     }
@@ -87,6 +84,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit TreasurySet(_treasury);
     }
 
+    /// @notice The swap fee is represented in hundredths of a bip, so the max is 100%.
+    function setNextLPFee(uint24 _nextLPFee) external onlyOwner {
+        if (_nextLPFee > 1e6) revert LPFeeTooLarge(_nextLPFee);
+        nextLPFee = _nextLPFee;
+    }
+
     function setProtocolParams(
         uint256 _liquidityMultiplier,
         uint256 _protocolFee,
@@ -95,8 +98,9 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
-        if (_protocolFee > 1e18) revert ProtocolFeeNotValid();
-        if (_liquidityMultiplier > 10e18) revert LiquidityMultiplierNotValid();
+        if (_protocolFee > ALMMathLib.WAD) revert ProtocolFeeNotValid();
+        if (_liquidityMultiplier > 10 * ALMMathLib.WAD) revert LiquidityMultiplierNotValid();
+        if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
 
         liquidityMultiplier = _liquidityMultiplier;
         protocolFee = _protocolFee;
@@ -124,33 +128,61 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 beforeRemoveLiquidity: false,
                 afterRemoveLiquidity: false,
                 beforeSwap: true,
-                afterSwap: false,
+                afterSwap: true,
                 beforeDonate: false,
                 afterDonate: false,
-                beforeSwapReturnDelta: true,
+                beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
                 afterAddLiquidityReturnDelta: false,
                 afterRemoveLiquidityReturnDelta: false
             });
     }
 
-    /// @notice  Disable adding liquidity through the PM
-    function beforeAddLiquidity(
+    /// @dev Disable adding liquidity through the PM.
+    function _beforeAddLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        ModifyLiquidityParams calldata,
         bytes calldata
-    ) external view override onlyPoolManager onlyAuthorizedPool(key) returns (bytes4) {
+    ) internal view override onlyAuthorizedPool(key) returns (bytes4) {
         revert AddLiquidityThroughHook();
     }
 
+    /// @notice Updates liquidity and sets new boundaries around the current oracle price.
+    function updateLiquidityAndBoundariesToOracle() external override onlyOwner onlyActive {
+        (, uint256 oraclePoolPrice) = oracle.poolPrice();
+        uint160 oracleSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(oraclePoolPrice);
+        _updateLiquidityAndBoundaries(oracleSqrtPrice);
+    }
+
+    /// @notice Updates liquidity and sets new boundaries around the specified sqrt price.
+    /// @param _sqrtPrice The square root price around which the new liquidity boundaries are set.
+    /// @return newLiquidity The updated liquidity after recalculation.
     function updateLiquidityAndBoundaries(
         uint160 _sqrtPrice
-    ) external override onlyRebalanceAdapter returns (uint128 newLiquidity) {
+    ) external override onlyRebalanceAdapter onlyActive returns (uint128) {
+        return _updateLiquidityAndBoundaries(_sqrtPrice);
+    }
+
+    function _updateLiquidityAndBoundaries(uint160 _sqrtPrice) internal returns (uint128 newLiquidity) {
+        // Unlocks to enable the swap, which updates the pool's sqrt price to the target.
+        poolManager.unlock(abi.encode(_sqrtPrice));
         _updatePriceAndBoundaries(_sqrtPrice);
         newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
         emit LiquidityUpdated(newLiquidity);
+    }
+
+    /// @dev You don't need to reentrancy guard here because PoolManager does it already.
+    function unlockCallback(bytes calldata data) external onlyPoolManager onlyActive returns (bytes memory) {
+        (uint160 sqrtPriceTarget) = abi.decode(data, (uint160));
+        uint160 sqrtPrice = sqrtPriceCurrent();
+        if (sqrtPriceTarget < sqrtPrice) {
+            poolManager.swap(authorizedPoolKey, SwapParams(true, type(int256).min, sqrtPriceTarget), "");
+        } else if (sqrtPriceTarget > sqrtPrice) {
+            poolManager.swap(authorizedPoolKey, SwapParams(false, type(int128).max, sqrtPriceTarget), "");
+        }
+        return "";
     }
 
     function _calcLiquidity() internal view returns (uint128) {
@@ -160,19 +192,32 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 isInvertedPool,
                 _activeTicks.lower,
                 _activeTicks.upper,
-                lendingAdapter.getCollateralLong().unwrap(qDec),
+                lendingAdapter.getCollateralLong(),
                 liquidityMultiplier
             );
     }
 
     function _updatePriceAndBoundaries(uint160 _sqrtPrice) internal {
-        sqrtPriceCurrent = _sqrtPrice;
         int24 tick = ALMMathLib.getTickFromSqrtPriceX96(_sqrtPrice);
+
+        (, , , uint24 lpFee) = poolManager.getSlot0(PoolId.wrap(authorizedPoolId));
+        if (lpFee != nextLPFee) {
+            lpFee = nextLPFee;
+            poolManager.updateDynamicLPFee(authorizedPoolKey, nextLPFee);
+            emit LPFeeSet(nextLPFee);
+        }
+
         Ticks memory deltas = tickDeltas;
+        int24 newTickLower = ALMMathLib.alignComputedTickWithTickSpacing(
+            tick - deltas.lower,
+            authorizedPoolKey.tickSpacing
+        );
+        int24 newTickUpper = ALMMathLib.alignComputedTickWithTickSpacing(
+            tick + deltas.upper,
+            authorizedPoolKey.tickSpacing
+        );
 
-        int24 newTickLower = isInvertedPool ? tick + deltas.lower : tick - deltas.lower;
-        int24 newTickUpper = isInvertedPool ? tick - deltas.upper : tick + deltas.upper;
-
+        if (newTickLower >= newTickUpper) revert TicksMisordered(newTickLower, newTickUpper);
         if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
             revert TickLowerOutOfBounds(newTickLower);
         if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK)
@@ -184,54 +229,15 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit BoundariesUpdated(newTickLower, newTickUpper);
     }
 
-    // ** Deltas calculation
-
-    function getDeltas(
-        int256 amountSpecified,
-        bool zeroForOne
-    )
-        internal
-        view
-        returns (BeforeSwapDelta beforeSwapDelta, uint256 tokenIn, uint256 tokenOut, uint160 sqrtPriceNext, uint256 fee)
-    {
-        if (amountSpecified > 0) {
-            tokenOut = uint256(amountSpecified);
-            sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, false, sqrtPriceCurrent, liquidity, tokenOut);
-
-            tokenIn = zeroForOne
-                ? ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity)
-                : ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = tokenIn.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
-            tokenIn += fee;
-
-            beforeSwapDelta = toBeforeSwapDelta(
-                -SafeCast.toInt128(tokenOut), // specified token = zeroForOne ? token1 : token0
-                SafeCast.toInt128(tokenIn) // unspecified token = zeroForOne ? token0 : token1
-            );
-        } else {
-            unchecked {
-                tokenIn = uint256(-amountSpecified);
-            }
-            sqrtPriceNext = ALMMathLib.getSqrtPriceNextX96(zeroForOne, true, sqrtPriceCurrent, liquidity, tokenIn);
-
-            tokenOut = zeroForOne
-                ? ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity)
-                : ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = tokenOut.mul(positionManager.getSwapFees(zeroForOne, amountSpecified));
-            tokenOut -= fee;
-
-            beforeSwapDelta = toBeforeSwapDelta(
-                SafeCast.toInt128(tokenIn), // specified token = zeroForOne ? token0 : token1
-                -SafeCast.toInt128(tokenOut) // unspecified token = zeroForOne ? token1 : token0
-            );
-        }
+    function sqrtPriceCurrent() public view returns (uint160 sqrtPriceX96) {
+        (sqrtPriceX96, , , ) = poolManager.getSlot0(PoolId.wrap(authorizedPoolId));
     }
 
     // ** Modifiers
 
-    /// @dev Only allows execution for the authorized pool
+    /// @dev Only allows execution for the authorized pool.
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {
-        if (PoolId.unwrap(poolKey.toId()) != authorizedPool) {
+        if (PoolId.unwrap(poolKey.toId()) != authorizedPoolId) {
             revert UnauthorizedPool();
         }
         _;

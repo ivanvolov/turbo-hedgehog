@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
 
 // ** contracts
 import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
@@ -15,7 +14,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract LendingAdaptersTest is MorphoTestBase {
     using SafeERC20 for IERC20;
-    using TokenWrapperLib for uint256;
 
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
@@ -66,6 +64,7 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     bytes test_payload;
+
     function part_lending_adapter_flash_loan_single() public {
         address testAddress = address(this);
         _fakeSetComponents(address(flashLoanAdapter), testAddress);
@@ -77,13 +76,13 @@ contract LendingAdaptersTest is MorphoTestBase {
         test_payload = "0x2";
         _extraQuoteBefore = QUOTE.balanceOf(testAddress);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
-        flashLoanAdapter.flashLoanSingle(true, uint256(1000e18).unwrap(bDec), test_payload);
+        flashLoanAdapter.flashLoanSingle(true, uint256(1000e18), test_payload);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
     }
 
     function onFlashLoanSingle(bool isBase, uint256 amount, bytes calldata data) public view {
         assertEq(isBase, true, string.concat("token should be ", baseName));
-        assertEq(amount, uint256(1000e18).unwrap(bDec), string.concat("amount should be 1000 ", baseName));
+        assertEq(amount, uint256(1000e18), string.concat("amount should be 1000 ", baseName));
         assertEq(data, test_payload, "data should eq");
         assertEqBalanceState(address(this), _extraQuoteBefore, amount);
     }
@@ -124,13 +123,13 @@ contract LendingAdaptersTest is MorphoTestBase {
         _extraQuoteBefore = QUOTE.balanceOf(testAddress);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
         test_payload = "0x3";
-        flashLoanAdapter.flashLoanTwoTokens(uint256(1000e18).unwrap(bDec), uint256(100e18).unwrap(qDec), test_payload);
+        flashLoanAdapter.flashLoanTwoTokens(uint256(1000e18), uint256(100e18), test_payload);
         assertEqBalanceState(testAddress, _extraQuoteBefore, 0);
     }
 
     function onFlashLoanTwoTokens(uint256 amount0, uint256 amount1, bytes calldata data) public view {
-        assertEq(amount0, uint256(1000e18).unwrap(bDec), string.concat("amount should be 1000 ", baseName));
-        assertEq(amount1, uint256(100e18).unwrap(qDec), string.concat("amount should be 100 ", quoteName));
+        assertEq(amount0, uint256(1000e18), string.concat("amount should be 1000 ", baseName));
+        assertEq(amount1, uint256(100e18), string.concat("amount should be 100 ", quoteName));
         assertEq(data, test_payload, "data should eq");
         assertEqBalanceState(address(this), _extraQuoteBefore + amount1, amount0);
     }
@@ -168,14 +167,14 @@ contract LendingAdaptersTest is MorphoTestBase {
 
         // ** Borrow
         uint256 usdcToBorrow = ((wethToSupply * expectedPrice) / 1e12) / 2;
-        lendingAdapter.borrowLong(c6to18(usdcToBorrow));
+        lendingAdapter.borrowLong(usdcToBorrow);
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), c6to18(usdcToBorrow), 1e1);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), usdcToBorrow, 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToBorrow);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         // ** Repay
-        lendingAdapter.repayLong(c6to18(usdcToBorrow));
+        lendingAdapter.repayLong(usdcToBorrow);
         assertApproxEqAbs(lendingAdapter.getCollateralLong(), wethToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
@@ -215,8 +214,8 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Add collateral
         uint256 usdcToSupply = expectedPrice * 1e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        lendingAdapter.addCollateralShort(usdcToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(lendingAdapter));
@@ -224,21 +223,21 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Borrow
         uint256 wethToBorrow = ((usdcToSupply * 1e12) / expectedPrice) / 4;
         lendingAdapter.borrowShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), wethToBorrow, 1e1);
         assertEqBalanceState(alice.addr, wethToBorrow, 0);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         // ** Repay
         lendingAdapter.repayShort(wethToBorrow);
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         // ** Remove collateral
         lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, c6to18(1e1));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToSupply);
         assertEqBalanceStateZero(address(lendingAdapter));
@@ -278,15 +277,15 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Add Collateral for Short (USDC)
         uint256 usdcToSupply = expectedPrice * 1e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        lendingAdapter.addCollateralShort(usdcToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
         assertApproxEqAbs(lendingAdapter.getBorrowedShort(), 0, 1e1);
         assertEqBalanceStateZero(alice.addr);
 
         // ** Borrow USDC (against WETH)
         uint256 usdcToBorrow = ((wethToSupply * expectedPrice) / 1e12) / 2;
-        lendingAdapter.borrowLong(c6to18(usdcToBorrow));
-        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), c6to18(usdcToBorrow), 1e1);
+        lendingAdapter.borrowLong(usdcToBorrow);
+        assertApproxEqAbs(lendingAdapter.getBorrowedLong(), usdcToBorrow, 1e1);
         assertEqBalanceState(alice.addr, 0, usdcToBorrow);
 
         // ** Borrow WETH (against USDC)
@@ -296,7 +295,7 @@ contract LendingAdaptersTest is MorphoTestBase {
         assertEqBalanceState(alice.addr, wethToBorrow, usdcToBorrow);
 
         // ** Repay USDC Loan
-        lendingAdapter.repayLong(c6to18(usdcToBorrow));
+        lendingAdapter.repayLong(usdcToBorrow);
         assertApproxEqAbs(lendingAdapter.getBorrowedLong(), 0, 1e1);
         assertEqBalanceState(alice.addr, wethToBorrow, 0);
 
@@ -312,7 +311,7 @@ contract LendingAdaptersTest is MorphoTestBase {
 
         // ** Remove USDC Collateral
         lendingAdapter.removeCollateralShort(lendingAdapter.getCollateralShort());
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, c6to18(1e1));
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), 0, 1e1);
         assertEqBalanceState(alice.addr, wethToSupply, usdcToSupply);
 
         vm.stopPrank();
@@ -365,16 +364,16 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Add Collateral for Long (USDT)
         uint256 usdtToSupply = 1000e6;
         deal(address(USDT), address(alice.addr), usdtToSupply);
-        lendingAdapter.addCollateralLong(c6to18(usdtToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralLong(), c6to18(usdtToSupply), c6to18(1e1));
+        lendingAdapter.addCollateralLong(usdtToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralLong(), usdtToSupply, 1e1);
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(lendingAdapter));
 
         // ** Add Collateral for Short (USDC)
         uint256 usdcToSupply = 1000e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        lendingAdapter.addCollateralShort(usdcToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(lendingAdapter));
 
@@ -418,8 +417,8 @@ contract LendingAdaptersTest is MorphoTestBase {
         // ** Add Collateral for Short (USDC)
         uint256 usdcToSupply = 1000e6;
         deal(address(USDC), address(alice.addr), usdcToSupply);
-        lendingAdapter.addCollateralShort(c6to18(usdcToSupply));
-        assertApproxEqAbs(lendingAdapter.getCollateralShort(), c6to18(usdcToSupply), c6to18(1e1));
+        lendingAdapter.addCollateralShort(usdcToSupply);
+        assertApproxEqAbs(lendingAdapter.getCollateralShort(), usdcToSupply, 1e1);
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(lendingAdapter));
 

@@ -1,43 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** libraries
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+// ** External imports
+import {UD60x18, ud} from "@prb-math/UD60x18.sol";
+import {mulDiv} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 /// @title ALM Math Library
 /// @notice Library for all math operations used in the ALM hook.
 library ALMMathLib {
-    using PRBMathUD60x18 for uint256;
-
     uint256 constant WAD = 1e18;
+    UD60x18 constant udWAD = UD60x18.wrap(1e18);
     uint256 constant Q96 = 2 ** 96;
-
-    function getSqrtPriceNextX96(
-        bool zeroForOne,
-        bool exactInput,
-        uint160 sqrtPriceCurrentX96,
-        uint128 liquidity,
-        uint256 amount
-    ) internal pure returns (uint160) {
-        if (zeroForOne != exactInput) {
-            uint160 sqrtPriceDeltaX96 = SafeCast.toUint160(PRBMath.mulDiv(amount, Q96, liquidity));
-            return zeroForOne ? sqrtPriceCurrentX96 - sqrtPriceDeltaX96 : sqrtPriceCurrentX96 + sqrtPriceDeltaX96;
-        } else {
-            uint256 liquidityDelta = PRBMath.mulDiv(amount, sqrtPriceCurrentX96, Q96);
-            return
-                SafeCast.toUint160(
-                    PRBMath.mulDiv(
-                        liquidity,
-                        sqrtPriceCurrentX96,
-                        zeroForOne ? liquidity + liquidityDelta : liquidity - liquidityDelta
-                    )
-                );
-        }
-    }
 
     function getLiquidity(
         bool isInvertedPool,
@@ -57,28 +34,12 @@ library ALMMathLib {
                 getSqrtPriceX96FromTick(tickUpper),
                 amount
             );
-        return SafeCast.toUint128(PRBMath.mulDiv(_liquidity, multiplier, WAD));
-    }
-
-    function getSwapAmount0(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceNextX96,
-        uint128 liquidity
-    ) internal pure returns (uint256) {
-        return LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
-    }
-
-    function getSwapAmount1(
-        uint160 sqrtPriceCurrentX96,
-        uint160 sqrtPriceNextX96,
-        uint128 liquidity
-    ) internal pure returns (uint256) {
-        return LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity);
+        return SafeCast.toUint128(mulDiv(_liquidity, multiplier, WAD));
     }
 
     function getSharesToMint(uint256 TVL1, uint256 TVL2, uint256 ts) internal pure returns (uint256) {
         if (TVL1 == 0) return TVL2;
-        else return PRBMath.mulDiv(ts, TVL2 - TVL1, TVL1);
+        else return mulDiv(ts, TVL2 - TVL1, TVL1);
     }
 
     /**
@@ -105,8 +66,8 @@ library ALMMathLib {
 
         return
             isStable
-                ? SafeCast.toUint256(mulDiv(baseValue, price, WAD) + variableValue)
-                : SafeCast.toUint256(mulDiv(variableValue, WAD, price) + baseValue);
+                ? SafeCast.toUint256(_mulDiv(baseValue, price, WAD) + variableValue)
+                : SafeCast.toUint256(_mulDiv(variableValue, WAD, price) + baseValue);
     }
 
     function getUserAmounts(
@@ -118,10 +79,10 @@ library ALMMathLib {
         uint256 debtShort
     ) internal pure returns (uint256, uint256, uint256, uint256) {
         return (
-            PRBMath.mulDiv(collateralLong, sharesOut, totalSupply),
-            PRBMath.mulDiv(collateralShort, sharesOut, totalSupply),
-            PRBMath.mulDiv(debtLong, sharesOut, totalSupply),
-            PRBMath.mulDiv(debtShort, sharesOut, totalSupply)
+            mulDiv(collateralLong, sharesOut, totalSupply),
+            mulDiv(collateralShort, sharesOut, totalSupply),
+            mulDiv(debtLong, sharesOut, totalSupply),
+            mulDiv(debtShort, sharesOut, totalSupply)
         );
     }
 
@@ -132,14 +93,14 @@ library ALMMathLib {
         uint256 DL,
         uint256 DS
     ) internal pure returns (uint256 longLeverage, uint256 shortLeverage) {
-        longLeverage = PRBMath.mulDiv(currentCL, price, currentCL.mul(price) - DL);
-        shortLeverage = currentCS.div(currentCS - DS.mul(price));
+        longLeverage = mulDiv(currentCL, price, ud(currentCL).mul(ud(price)).unwrap() - DL);
+        shortLeverage = ud(currentCS).div(ud(currentCS) - ud(DS).mul(ud(price))).unwrap();
     }
 
     // ** Helpers
 
     function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
-        return SafeCast.toUint160(PRBMath.mulDiv(PRBMathUD60x18.sqrt(price), Q96, WAD));
+        return SafeCast.toUint160(mulDiv(ud(price).sqrt().unwrap(), Q96, WAD));
     }
 
     function getSqrtPriceX96FromTick(int24 tick) internal pure returns (uint160) {
@@ -150,21 +111,25 @@ library ALMMathLib {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    function getPoolPriceFromOraclePrice(
-        uint256 price,
-        bool reversedOrder,
-        uint8 decimalsDelta
-    ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return price.div(ratio);
+    /// @notice Aligns a given tick with the tickSpacing of the pool.
+    ///         Always rounds down.
+    /// @param tick The tick to align
+    /// @param tickSpacing The tick spacing of the pool
+    function alignComputedTickWithTickSpacing(int24 tick, int24 tickSpacing) internal pure returns (int24) {
+        if (tick < 0) {
+            // If the tick is negative, we round up (negatively) the negative result to round down
+            return ((tick - tickSpacing + 1) / tickSpacing) * tickSpacing;
+        } else {
+            // Else if positive, we simply round down
+            return (tick / tickSpacing) * tickSpacing;
+        }
     }
 
     // ** Math functions
 
     /// @notice Calculates floor(x*y÷denominator) with full precision for signed x and unsigned y and denominator.
-    function mulDiv(int256 a, uint256 b, uint256 denominator) internal pure returns (int256) {
-        uint256 result = PRBMath.mulDiv(SignedMath.abs(a), b, denominator);
+    function _mulDiv(int256 a, uint256 b, uint256 denominator) internal pure returns (int256) {
+        uint256 result = mulDiv(SignedMath.abs(a), b, denominator);
         return a < 0 ? -SafeCast.toInt256(result) : SafeCast.toInt256(result);
     }
 

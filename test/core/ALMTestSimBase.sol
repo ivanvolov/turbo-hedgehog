@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
+import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 
 // ** contracts
 import {ALMTestBase} from "./ALMTestBase.sol";
@@ -68,7 +69,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
             Currency.wrap(_token0),
             Currency.wrap(_token1),
             hookControl,
-            poolFee,
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
             initialSQRTPrice
         );
 
@@ -104,7 +105,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         // Make oracle change with swap price
         vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.price.selector), abi.encode(getHookPrice()));
 
-        // @Notice: doing save swap data here to remove stack too deep error
+        // Doing save swap data here to remove stack too deep error
         {
             string[] memory inputs = new string[](3);
             inputs[0] = "node";
@@ -153,9 +154,9 @@ abstract contract ALMTestSimBase is ALMTestBase {
         uint256 DL = lendingAdapter.getBorrowedLong();
         uint256 DS = lendingAdapter.getBorrowedShort();
 
-        uint256 tvl = hook.TVL();
+        uint256 tvl = calcTVL();
         uint256 tvlControl = hookControl.TVL();
-        uint256 sharePrice = hook.sharePrice();
+        uint256 sharePrice = calcSharePrice(hook.totalSupply(), tvl);
         uint256 sharePriceControl = hookControl.sharePrice();
         (uint160 sqrtPriceX96Control, ) = hookControl.getTick();
         bytes memory packedData = abi.encodePacked(

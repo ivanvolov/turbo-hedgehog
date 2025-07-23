@@ -12,6 +12,7 @@
     "**/.git": true
   },
   "search.exclude": {
+    "**/external": true,
     "**/node_modules": true,
     "**/out": true,
     "**/.git": true
@@ -21,7 +22,9 @@
     "https://github.com/Uniswap/v4-periphery",
     "https://github.com/smartcontractkit/chainlink-brownie-contracts",
     "https://github.com/morpho-org/morpho-blue",
+    "https://github.com/PaulRBerg/prb-math",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/forge-std",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/prb-math",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/v4-periphery",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/chainlink-brownie-contracts",
     "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/morpho-blue"

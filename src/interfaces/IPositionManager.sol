@@ -3,16 +3,12 @@ pragma solidity ^0.8.0;
 
 /// @notice Defines the interface for a Position Manager.
 interface IPositionManager {
-    function positionAdjustmentPriceUp(uint256 deltaUSDC, uint256 deltaWETH) external;
+    function positionAdjustmentPriceUp(uint256 deltaUSDC, uint256 deltaWETH, uint160 sqrtPrice) external;
 
-    function positionAdjustmentPriceDown(uint256 deltaUSDC, uint256 deltaWETH) external;
-
-    function getSwapFees(bool zeroForOne, int256 amountSpecified) external view returns (uint256);
+    function positionAdjustmentPriceDown(uint256 deltaUSDC, uint256 deltaWETH, uint160 sqrtPrice) external;
 }
 
 /// @notice Interface for all standard position manager setters.
 interface IPositionManagerStandard is IPositionManager {
     function setKParams(uint256 _k1, uint256 _k2) external;
-
-    function setFees(uint256 _fees) external;
 }

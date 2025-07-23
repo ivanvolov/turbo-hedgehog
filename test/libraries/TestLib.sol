@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18, PRBMath} from "@test/libraries/PRBMathUD60x18.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
@@ -78,8 +78,9 @@ library TestLib {
     AggregatorV3Interface constant chainlink_feed_USDE =
         AggregatorV3Interface(0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961);
 
-    uint256 constant sqrt_price_10per = 48808848170151600; // (sqrt(1.1)-1) or max 10% price change
-    uint256 constant sqrt_price_1per = 4987562112088950; // (sqrt(1.01)-1) or max 1% price change
+    uint256 constant sqrt_price_10per = 1048808848170150000; // (sqrt(1.1) or max 10% price change
+    uint256 constant sqrt_price_1per = 1004987562112090000; // (sqrt(1.01) or max 1% price change
+    uint256 constant ONE_PERCENT_AND_ONE_BPS = 101e16; // 1.01%
 
     // ** Uniswap math
 
@@ -89,29 +90,17 @@ library TestLib {
     function getOraclePriceFromPoolPrice(
         uint256 price,
         bool reversedOrder,
-        uint8 decimalsDelta
+        int8 decimalsDelta
     ) internal pure returns (uint256) {
-        uint256 ratio = WAD * (10 ** decimalsDelta); // @Notice: 1e12/p, 1e30 is 1e12 with 18 decimals
-        if (reversedOrder) return ratio.div(price);
-        return ratio.mul(price);
-    }
-
-    function getVirtualValue(
-        uint256 value,
-        uint256 weight,
-        uint256 longLeverage,
-        uint256 shortLeverage
-    ) internal pure returns (uint256) {
-        return (weight.mul(longLeverage - shortLeverage) + shortLeverage).mul(value);
-    }
-
-    function getVirtualLiquidity(
-        uint256 virtualValue,
-        uint256 price,
-        uint256 priceUpper,
-        uint256 priceLower
-    ) internal pure returns (uint256) {
-        return virtualValue.div((2 * WAD).mul(price.sqrt()) - priceLower.sqrt() - price.div(priceUpper.sqrt())) / 1e6;
+        if (decimalsDelta < 0) {
+            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
+            if (reversedOrder) return ratio.div(price);
+            else return price.mul(ratio);
+        } else {
+            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
+            if (reversedOrder) return WAD.div(price.mul(ratio));
+            else return price.div(ratio);
+        }
     }
 
     function getTickFromPrice(uint256 price) internal pure returns (int24) {
@@ -144,9 +133,5 @@ library TestLib {
         if (quot % 2 ** 64 >= 0x8000000000000000) {
             result += 1;
         }
-    }
-
-    function getTickSpacingFromFee(uint24 fee) internal pure returns (int24) {
-        return int24((fee / 100) * 2);
     }
 }

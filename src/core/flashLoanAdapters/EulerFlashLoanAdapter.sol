@@ -21,11 +21,9 @@ contract EulerFlashLoanAdapter is FlashLoanBase {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         IEulerVault _flVaultBase,
         IEulerVault _flVaultQuote
-    ) FlashLoanBase(false, _base, _quote, _bDec, _qDec) {
+    ) FlashLoanBase(false, _base, _quote) {
         flVaultBase = _flVaultBase;
         flVaultQuote = _flVaultQuote;
     }

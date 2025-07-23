@@ -35,9 +35,6 @@ abstract contract Base is IBase {
 
     IERC20 public immutable BASE;
     IERC20 public immutable QUOTE;
-    uint8 public immutable bDec;
-    uint8 public immutable qDec;
-    uint8 public immutable decimalsDelta;
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
@@ -47,20 +44,10 @@ abstract contract Base is IBase {
     IRebalanceAdapter public rebalanceAdapter;
     ISwapAdapter public swapAdapter;
 
-    constructor(
-        ComponentType _componentType,
-        address initialOwner,
-        IERC20 _base,
-        IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec
-    ) {
+    constructor(ComponentType _componentType, address initialOwner, IERC20 _base, IERC20 _quote) {
         componentType = _componentType;
         BASE = _base;
         QUOTE = _quote;
-        bDec = _bDec;
-        qDec = _qDec;
-        decimalsDelta = uint8(ALMMathLib.absSub(bDec, qDec));
 
         owner = initialOwner;
         emit OwnershipTransferred(address(0), initialOwner);
@@ -125,25 +112,25 @@ abstract contract Base is IBase {
         _;
     }
 
-    /// @dev Only the ALM may call this function
+    /// @dev Only the ALM may call this function.
     modifier onlyALM() {
         if (msg.sender != address(alm)) revert NotALM(msg.sender);
         _;
     }
 
-    /// @dev Only the rebalance adapter may call this function
+    /// @dev Only the rebalance adapter may call this function.
     modifier onlyRebalanceAdapter() {
         if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter(msg.sender);
         _;
     }
 
-    /// @dev Only the flash loan adapter may call this function
+    /// @dev Only the flash loan adapter may call this function.
     modifier onlyFlashLoanAdapter() {
         if (msg.sender != address(flashLoanAdapter)) revert NotFlashLoanAdapter(msg.sender);
         _;
     }
 
-    /// @dev Only modules may call this function
+    /// @dev Only modules may call this function.
     modifier onlyModule() {
         if (
             msg.sender != address(alm) &&

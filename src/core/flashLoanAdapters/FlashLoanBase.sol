@@ -24,10 +24,8 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
     constructor(
         bool _assetReturnSelf,
         IERC20 _base,
-        IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec
-    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
+        IERC20 _quote
+    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote) {
         assetReturnSelf = _assetReturnSelf;
     }
 

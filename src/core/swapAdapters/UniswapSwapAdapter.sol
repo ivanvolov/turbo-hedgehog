@@ -9,7 +9,7 @@ import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {ud} from "@prb-math/UD60x18.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Commands} from "@universal-router/Commands.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -33,7 +33,6 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     event SwapRouteSet(uint8 indexed swapKey, uint256[] swapRoute);
 
     using SafeERC20 for IERC20;
-    using PRBMathUD60x18 for uint256;
 
     IUniversalRouter public immutable router;
     IPermit2 public immutable permit2;
@@ -50,11 +49,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        uint8 _bDec,
-        uint8 _qDec,
         IUniversalRouter _router,
         IPermit2 _permit2
-    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote, _bDec, _qDec) {
+    ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote) {
         router = _router;
         permit2 = _permit2;
 
@@ -141,7 +138,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         uint256 amountInLeft = amountIn;
         for (uint256 i = 0; i < (route.length + 1); i += 2) {
             SwapPath memory path = swapPaths[route[i]];
-            uint256 nextAmount = route.length == i + 1 ? amountInLeft : amountIn.mul(route[i + 1]);
+            uint256 nextAmount = route.length == i + 1 ? amountInLeft : ud(amountIn).mul(ud(route[i + 1])).unwrap();
 
             uint8 nextCommand;
             if (path.protocolType == 0) {
