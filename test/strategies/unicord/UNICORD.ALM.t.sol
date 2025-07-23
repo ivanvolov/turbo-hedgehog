@@ -360,6 +360,7 @@ contract UNICORDALMTest is MorphoTestBase {
     function test_lifecycle() public {
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
+        updateProtocolFees(20 * 1e16); // 20% from fees
 
         test_deposit_rebalance();
         saveBalance(address(manager));
