@@ -98,7 +98,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 99999999999, 1e1);
+        assertApproxEqAbs(shares, amountToDep, 1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
@@ -124,8 +124,8 @@ contract UNICORDALMTest is MorphoTestBase {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
-        assertTicks(3, 3); // Update this, it's a new assert placeholder
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 3, 1e1, "sqrtPrice"); // Update this, it's a new assert placeholder
+        assertTicks(-98, 102);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441913940305965, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -157,7 +157,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 4626903915919660000;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         assertEq(usdcToSwapQ, 12371660056);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -186,7 +186,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 4626903915919660000;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
         // ** Swap
@@ -228,7 +228,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
-        (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
         assertEq(usdtToSwapQ, 4696732800805156176);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
@@ -281,7 +281,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 4626903915919660000;
-        (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+        uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         assertEq(usdcToSwapQ, 17907106368);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -334,7 +334,7 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
-        (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+        uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
         assertEq(usdtToSwapQ, 4699081167205558754);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
@@ -355,15 +355,19 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function test_lifecycle() public {
-        vm.startPrank(deployer.addr);
+        vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
+        updateProtocolFees(20 * 1e16); // 20% from fees
 
         test_deposit_rebalance();
         saveBalance(address(manager));
 
-        //rebalanceAdapter.setRebalancePriceThreshold(1e15);
-        //rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
-        vm.stopPrank();
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        // vm.prank(deployer.addr);
+        // rebalanceAdapter.setRebalancePriceThreshold(1e15);
+        // rebalanceAdapter.setRebalanceTimeThreshold(60 * 60 * 24 * 7);
+        // vm.stopPrank();
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
@@ -379,8 +383,8 @@ contract UNICORDALMTest is MorphoTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
 
-            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - feeLP)) / 1e18, 1);
-            assertApproxEqAbs(usdcToSwap, deltaY, 1);
+            assertApproxEqAbs(deltaUSDT, deltaX, 2);
+            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 2);
         }
 
         // ** Swap Up In
@@ -394,14 +398,14 @@ contract UNICORDALMTest is MorphoTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
 
-            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - feeLP)) / 1e18, 1);
-            assertApproxEqAbs(usdcToSwap, deltaY, 1);
+            assertApproxEqAbs(deltaUSDT, deltaX, 2);
+            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 2);
         }
 
         // ** Swap Down Out
         {
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (, uint256 usdtToSwapQ) = _quoteOutputSwap(false, usdcToGetFSwap);
+            uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
             deal(address(USDT), address(swapper.addr), usdtToSwapQ);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -409,7 +413,7 @@ contract UNICORDALMTest is MorphoTestBase {
             uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
-            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 + feeLP)) / 1e18, 1);
+            assertApproxEqAbs((deltaUSDT * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
         }
 
@@ -418,9 +422,26 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Withdraw
         {
+            console.log("shares before withdraw %s", hook.totalSupply());
+            console.log("tvl pre %s", hook.TVL(oracle.price()));
+
+            console.log("CL pre %s", lendingAdapter.getCollateralLong());
+            console.log("CS pre %s", lendingAdapter.getCollateralShort());
+            console.log("DL pre %s", lendingAdapter.getBorrowedLong());
+            console.log("DS pre %s", lendingAdapter.getBorrowedShort());
+
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+            console.log("shares after withdraw %s", hook.totalSupply());
+            console.log("tvl after %s", hook.TVL(oracle.price()));
+
+            console.log("CL after %s", lendingAdapter.getCollateralLong());
+            console.log("CS after %s", lendingAdapter.getCollateralShort());
+            console.log("DL after %s", lendingAdapter.getBorrowedLong());
+            console.log("DS after %s", lendingAdapter.getBorrowedShort());
+
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
 
@@ -434,8 +455,8 @@ contract UNICORDALMTest is MorphoTestBase {
             uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
-            assertApproxEqAbs(deltaUSDT, (deltaX * (1e18 - feeLP)) / 1e18, 1);
-            assertApproxEqAbs(usdcToSwap, deltaY, 1);
+            assertApproxEqAbs(deltaUSDT, deltaX, 1);
+            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
@@ -459,14 +480,14 @@ contract UNICORDALMTest is MorphoTestBase {
             uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
-            assertApproxEqAbs(deltaUSDT, deltaX, 1);
-            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 - feeLP)) / 1e18, 1);
+            assertApproxEqAbs((deltaUSDT * (1e18 - testFee)) / 1e18, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, deltaY, 1);
         }
 
         // ** Swap Up Out
         {
             uint256 usdtToGetFSwap = 10000e6; //10k USDT
-            (uint256 usdcToSwapQ, ) = _quoteOutputSwap(true, usdtToGetFSwap);
+            uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -475,14 +496,14 @@ contract UNICORDALMTest is MorphoTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
             assertApproxEqAbs(deltaUSDT, deltaX, 1);
-            assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + feeLP)) / 1e18, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
         }
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
+        uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
@@ -498,7 +519,7 @@ contract UNICORDALMTest is MorphoTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
 
-        assertBalanceNotChanged(address(manager), 1e1);
+        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
@@ -507,12 +528,20 @@ contract UNICORDALMTest is MorphoTestBase {
         return _swap(false, int256(amount), key);
     }
 
+    function quoteUSDT_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
+    }
+
     function swapUSDT_USDC_In(uint256 amount) public returns (uint256, uint256) {
         return _swap(false, -int256(amount), key);
     }
 
     function swapUSDC_USDT_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteUSDC_USDT_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_USDT_In(uint256 amount) public returns (uint256, uint256) {

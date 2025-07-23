@@ -8,10 +8,10 @@ import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
+import {PoolSwapTest} from "@test/libraries/v4-forks/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {Deployers} from "v4-core-test/utils/Deployers.sol";
+import {Deployers} from "@test/libraries/v4-forks/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
@@ -384,6 +384,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     uint256 constant WAD = 1e18;
+
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
         uint256 _poolPrice = TestLib.getPriceFromSqrtPriceX96(newSqrtPrice);
 
@@ -569,16 +570,15 @@ abstract contract ALMTestBase is Deployers {
 
     // --- Uniswap V4 --- //
 
-    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256, uint256) {
-        return
-            quoter.quoteExactOutputSingle(
-                IV4Quoter.QuoteExactSingleParams({
-                    poolKey: key,
-                    zeroForOne: zeroForOne,
-                    exactAmount: SafeCast.toUint128(amount),
-                    hookData: ""
-                })
-            );
+    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256 amountIn) {
+        (amountIn, ) = quoter.quoteExactOutputSingle(
+            IV4Quoter.QuoteExactSingleParams({
+                poolKey: key,
+                zeroForOne: zeroForOne,
+                exactAmount: SafeCast.toUint128(amount),
+                hookData: ""
+            })
+        );
     }
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
@@ -619,8 +619,8 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
-    uint256 public assertEqBalanceQuoteThreshold = 1e5;
-    uint256 public assertEqBalanceBaseThreshold = 1e1;
+    uint256 public assertEqBalanceQuoteThreshold = 1;
+    uint256 public assertEqBalanceBaseThreshold = 15;
     uint256 public assertEqSqrtThreshold;
 
     mapping(address => uint256) public balanceB;
@@ -791,7 +791,7 @@ abstract contract ALMTestBase is Deployers {
         uint128 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
+    ) public view returns (uint256 deltaX, uint256 deltaY) {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
             preSqrtPrice,
@@ -807,10 +807,14 @@ abstract contract ALMTestBase is Deployers {
             liquidity
         );
 
-        return (
-            amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post,
-            amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post
-        );
+        // deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
+        // deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+
+        deltaX = SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true);
+        deltaY = SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, false);
+
+        // require(deltaX == SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
+        // require(deltaY == SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
     }
 
     function _liquidityCheck(bool _isInvertedPool, uint256 liquidityMultiplier) public view {
@@ -831,49 +835,6 @@ abstract contract ALMTestBase is Deployers {
         }
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
-    }
-
-    function _checkSwapReverse(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(activeTicks.lower); //TODO: stack too deep?
-        uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            ((priceUpper * prePrice) / 1e18).sqrt();
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / (priceUpper * postPrice).sqrt();
-
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
-    }
-
-    function _checkSwapUnicord(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-
-        uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            (((priceUpper * prePrice) / 1e18).sqrt());
-
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / ((priceUpper * postPrice).sqrt());
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickUpper)).sqrt())) / 1e12;
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
     }
 
     function calcTVL() internal view returns (uint256) {

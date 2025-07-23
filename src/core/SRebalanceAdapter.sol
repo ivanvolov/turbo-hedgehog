@@ -124,8 +124,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     function setRebalanceParams(uint256 _weight, uint256 _longLeverage, uint256 _shortLeverage) external onlyOwner {
         if (_weight > ALMMathLib.WAD) revert WeightNotValid();
-        if (_longLeverage > 5 * ALMMathLib.WAD) revert LeverageValuesNotValid();
-        if (_shortLeverage > 5 * ALMMathLib.WAD) revert LeverageValuesNotValid();
+        if (_longLeverage > 5 * ALMMathLib.WAD || _longLeverage < ALMMathLib.WAD) revert LeverageValuesNotValid();
+        if (_shortLeverage > 5 * ALMMathLib.WAD || _shortLeverage < ALMMathLib.WAD) revert LeverageValuesNotValid();
         if (_longLeverage < _shortLeverage) revert LeverageValuesNotValid();
 
         weight = _weight;

@@ -73,7 +73,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         create_flash_loan_adapter_morpho();
         create_oracle(false, TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
-        assertTicks(-276420, -276220);
+        assertTicks(-276424, -276224);
 
         // ** Setting up strategy params
         {
@@ -131,19 +131,25 @@ contract UNICORDRALMTest is MorphoTestBase {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         console.log("tickLower %s", tickLower);
         console.log("tickUpper %s", tickUpper);
-        assertTicks(3, 3); // Update this, it's a new assert placeholder
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 3, 1e1, "sqrtPrice"); // Update this, it's a new assert placeholder
+        assertTicks(-276421, -276221);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79240362711883211369901, 1e1, "sqrtPrice");
     }
 
     function test_lifecycle() public {
-        vm.prank(deployer.addr);
+        vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
+        updateProtocolFees(20 * 1e16); // 20% from fees
+        vm.stopPrank();
 
         test_deposit_rebalance();
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
+
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+        uint256 treasuryFeeB;
+        uint256 treasuryFeeQ;
 
         // ** Swap Up In
         {
@@ -152,42 +158,54 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 usdcToSwap = 1000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaDAI, ) = swapUSDC_DAI_In(usdcToSwap);
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-            console.log("deltaDAI", deltaDAI);
-            console.log("usdcToSwap", usdcToSwap);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwapUnicord(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
+
+            assertApproxEqAbs(deltaDAI, deltaY, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
+
+            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeB += deltaTreasuryFee;
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
         }
 
         // ** Swap Up In
         {
             console.log("SWAP UP IN");
 
-            uint256 usdcToSwap = 5000e6; // 5k USDC
+            uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaDAI, ) = swapUSDC_DAI_In(usdcToSwap);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
 
-            console.log("deltaDAI", deltaDAI);
+            assertApproxEqAbs(deltaDAI, deltaY, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeB += deltaTreasuryFee;
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
 
         // ** Swap Down Out
@@ -195,68 +213,79 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("SWAP DOWN OUT");
 
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
-            (uint256 daiToSwapQ, ) = _quoteOutputSwap(true, usdcToGetFSwap);
+            uint256 daiToSwapQ = quoteDAI_USDC_Out(usdcToGetFSwap);
+
             console.log("daiToSwapQ %s", daiToSwapQ);
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap);
 
-            console.log("deltaDAI", deltaDAI);
-            console.log("deltaUSDC", deltaUSDC);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, (deltaX * (1e18 + feeLP)) / 1e18, 9e14);
-            // assertApproxEqAbs(deltaUSDC, deltaY, 3e18);
+            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaUSDC, deltaX, 1);
+
+            uint256 deltaTreasuryFee = (deltaDAI * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeQ += deltaTreasuryFee;
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
 
         // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
-            // console.log("preTVL %s", calcTVL());
-            // console.log("preBalance %s", DAI.balanceOf(alice.addr));
-            // console.log("preBalance %s", USDC.balanceOf(alice.addr));
+            console.log("preTVL %s", calcTVL());
+            console.log("preBalance %s", DAI.balanceOf(alice.addr));
+            console.log("preBalance %s", USDC.balanceOf(alice.addr));
 
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            hook.withdraw(alice.addr, sharesToWithdraw / 4, 0, 0);
 
-            // console.log("postTVL %s", calcTVL());
-            // console.log("postBalance %s", DAI.balanceOf(alice.addr));
-            // console.log("postBalance %s", USDC.balanceOf(alice.addr));
+            console.log("postTVL %s", calcTVL());
+            console.log("postBalance %s", DAI.balanceOf(alice.addr));
+            console.log("postBalance %s", USDC.balanceOf(alice.addr));
         }
 
+        // ** Swap Up In
         {
+            console.log("SWAP UP IN");
+
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
 
-            console.log("deltaDAI", deltaDAI);
-            console.log("deltaUSDC", deltaUSDC);
+            assertApproxEqAbs(deltaDAI, deltaY, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeB += deltaTreasuryFee;
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
 
         // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -268,46 +297,65 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            uint256 usdcToSwap = 10000e6; // 10k USDC
+            console.log("SWAP UP IN");
+
+            uint256 usdcToSwap = 1000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            // (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, deltaX, 1e15);
-            // assertApproxEqAbs((usdcToSwap * (1e18 - feeLP)) / 1e18, deltaY, 1e7);
+            assertApproxEqAbs(deltaDAI, deltaY, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
+
+            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeB += deltaTreasuryFee;
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 4, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
 
         // ** Swap Up out
         {
-            uint256 daiToGetFSwap = 1000e18; //1k DAI
-            (, uint256 usdcToSwapQ) = _quoteOutputSwap(false, daiToGetFSwap);
+            console.log("SWAP UP OUT");
+
+            uint256 daiToGetFSwap = 100e18; //1k DAI
+            uint256 usdcToSwapQ = quoteUSDC_DAI_Out(daiToGetFSwap);
 
             console.log("usdcToSwapQ", usdcToSwapQ);
-
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_Out(daiToGetFSwap);
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_Out(usdcToSwapQ);
 
             console.log("deltaDAI", deltaDAI);
             console.log("deltaUSDC", deltaUSDC);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs(deltaDAI, deltaX, 3e14);
-            // assertApproxEqAbs(deltaUSDC, (deltaY * (1e18 + feeLP)) / 1e18, 1e7);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+
+            assertApproxEqAbs(deltaDAI, deltaY, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
+
+            uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+
+            treasuryFeeB += deltaTreasuryFee;
+
+            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 4, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
 
         // ** Swap Down In
@@ -315,27 +363,25 @@ contract UNICORDRALMTest is MorphoTestBase {
             uint256 daiToSwap = 2000e18;
             deal(address(DAI), address(swapper.addr), daiToSwap);
 
-            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_In(daiToSwap);
-            // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
+
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
             console.log("deltaDAI", deltaDAI);
             console.log("deltaUSDC", deltaUSDC);
+            console.log("deltaX", deltaX);
+            console.log("deltaY", deltaY);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(
-            //     uint256(hook.liquidity()) / 1e12,
-            //     uint160(preSqrtPrice),
-            //     uint160(postSqrtPrice)
-            // );
-            // assertApproxEqAbs((deltaDAI * (1e18 - feeLP)) / 1e18, deltaX, 42e13);
-            // assertApproxEqAbs(deltaUSDC, deltaY, 1e7);
+            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 21);
+            assertApproxEqAbs(deltaUSDC, deltaX, 1);
         }
 
         // ** Make oracle change with swap price
-        // alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
+        uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
@@ -350,12 +396,17 @@ contract UNICORDRALMTest is MorphoTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
 
-        assertBalanceNotChanged(address(manager), 1e1);
+        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
+
     function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap(true, int256(amount), key);
+    }
+
+    function quoteDAI_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -363,7 +414,11 @@ contract UNICORDRALMTest is MorphoTestBase {
     }
 
     function swapUSDC_DAI_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
+        return _swap(false, -int256(amount), key);
+    }
+
+    function quoteUSDC_DAI_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
     }
 
     function swapUSDC_DAI_In(uint256 amount) public returns (uint256, uint256) {

@@ -15,3 +15,4 @@ v4-periphery/=lib/v4-periphery/
 @euler-interfaces/=external/euler-interfaces/
 @merkl-contracts/=external/merkl-contracts/ 
 @universal-rewards-distributor/=external/universal-rewards-distributor/
+@solmate/=lib/v4-periphery/lib/v4-core/lib/solmate/
