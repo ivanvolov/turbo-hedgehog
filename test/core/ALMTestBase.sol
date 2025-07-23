@@ -32,7 +32,7 @@ import {Oracle} from "@src/core/oracles/Oracle.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@test/libraries/PRBMathUD60x18.sol";
-import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -237,7 +237,7 @@ abstract contract ALMTestBase is Deployers {
 
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
         // Oracle should already be created
-        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, isInvertedPool, _isInvertedAssets, _isNova);
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, _isInvertedAssets, _isNova);
 
         hook.setProtocolParams(
             _liquidityMultiplier,
@@ -261,7 +261,6 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
         // MARK END
 
-        //TODO: check max/min ticks reverts. Create a separate test for rebalance in different directions.
         initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
         // This is needed in order to simulate proper accounting

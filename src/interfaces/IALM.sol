@@ -20,6 +20,7 @@ interface IALM {
     error NotMinShares();
     error ProtocolFeeNotValid();
     error LiquidityMultiplierNotValid();
+    error TicksMisordered(int24 tickLower, int24 tickUpper);
     error TickLowerOutOfBounds(int24 tick);
     error TickUpperOutOfBounds(int24 tick);
     error TickDeltasNotValid();

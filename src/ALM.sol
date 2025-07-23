@@ -249,12 +249,13 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint160 sqrtPrice = sqrtPriceCurrent();
         checkSwapDeviations(ud(uint256(sqrtPrice)));
 
+        // We assume what fees are positive and only one token accrued fees during a single swap.
         _settleDeltas(
             key,
             params.zeroForOne,
-            uint256(int256(SafeCast.toInt128(feesAccrued.amount0() + feesAccrued.amount1()))),
+            SafeCast.toUint256(int256(feesAccrued.amount0() + feesAccrued.amount1())),
             sqrtPrice
-        ); //TODO: check if one of them is always zero
+        );
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
         return (IHooks.afterSwap.selector, 0);

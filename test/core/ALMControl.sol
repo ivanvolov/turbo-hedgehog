@@ -20,7 +20,7 @@ import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@test/libraries/PRBMathUD60x18.sol";
-import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts

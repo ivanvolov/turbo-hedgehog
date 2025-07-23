@@ -11,7 +11,7 @@ import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {LiquidityAmounts} from "v4-core/../test/utils/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
 // ** interfaces
@@ -165,10 +165,8 @@ contract ETHALMTest is MorphoTestBase {
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
 
         alignOraclesAndPools(hook.sqrtPriceCurrent());
-
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
-
-        console.log("liquidity %s", hook.liquidity());
+        assertEq(hook.liquidity(), 56526950853149492, "liquidity");
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
     }
 
@@ -504,9 +502,24 @@ contract ETHALMTest is MorphoTestBase {
     }
 
     function test_updateLiquidityAndBoundariesToOracle() public {
-        vm.skip(true);
-        //TODO: do the test for it
-        // hook.updateLiquidityAndBoundariesToOracle();
+        // TODO: Y, get normal values and test it, make it go to the extremes
+        test_deposit_rebalance();
+
+        assertTicks(194458, 200458);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
+        assertEq(hook.liquidity(), 56526950853149492, "liquidity");
+
+        uint160 newSqrtPrice = uint160((uint256(hook.sqrtPriceCurrent()) * 101e16) / 1e18);
+        console.log("newSqrtPrice %s", newSqrtPrice);
+
+        alignOraclesAndPools(newSqrtPrice);
+
+        vm.prank(deployer.addr);
+        hook.updateLiquidityAndBoundariesToOracle();
+
+        assertTicks(194458, 200458);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
+        assertEq(hook.liquidity(), 56526950853149492, "liquidity");
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {

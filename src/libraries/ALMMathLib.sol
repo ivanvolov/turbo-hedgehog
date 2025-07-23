@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** libraries
+// ** External imports
 import {UD60x18, ud} from "@prb-math/UD60x18.sol";
 import {mulDiv} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
-import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
+import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 

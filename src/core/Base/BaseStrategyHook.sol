@@ -217,6 +217,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             authorizedPoolKey.tickSpacing
         );
 
+        if (newTickLower >= newTickUpper) revert TicksMisordered(newTickLower, newTickUpper);
         if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
             revert TickLowerOutOfBounds(newTickLower);
         if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK)

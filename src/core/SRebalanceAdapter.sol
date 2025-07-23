@@ -71,7 +71,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     uint256 public rebalanceTimeThreshold;
     uint256 public maxDeviationLong;
     uint256 public maxDeviationShort;
-    bool public immutable isInvertedPool;
     bool public immutable isInvertedAssets;
     bool public immutable isNova;
     address public rebalanceOperator;
@@ -79,11 +78,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        bool _isInvertedPool,
         bool _isInvertedAssets,
         bool _isNova
     ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote) {
-        isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;
     }
