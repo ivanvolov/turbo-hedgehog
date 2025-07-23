@@ -6,14 +6,18 @@ import "forge-std/console.sol";
 // ** V4 imports
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
+import {PoolSwapTest} from "@test/libraries/v4-forks/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {Deployers} from "v4-core-test/utils/Deployers.sol";
+import {Deployers} from "@test/libraries/v4-forks/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
+import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
+import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
+import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -27,8 +31,9 @@ import {Oracle} from "@src/core/oracles/Oracle.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18} from "@test/libraries/PRBMathUD60x18.sol";
 import {LiquidityAmounts} from "@src/libraries/LiquidityAmounts.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
@@ -55,9 +60,9 @@ abstract contract ALMTestBase is Deployers {
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
+    V4Quoter quoter;
     uint160 initialSQRTPrice;
     ALM hook;
-    uint24 constant poolFee = 100; // It's 2*100/100 = 2 ts.
     SRebalanceAdapter rebalanceAdapter;
 
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
@@ -109,6 +114,10 @@ abstract contract ALMTestBase is Deployers {
         bDec = _bDec;
         qDec = _qDec;
 
+        _create_accounts();
+    }
+
+    function _create_accounts() internal {
         deployer = TestAccountLib.createTestAccount("deployer");
         alice = TestAccountLib.createTestAccount("alice");
         migrationContract = TestAccountLib.createTestAccount("migrationContract");
@@ -173,34 +182,34 @@ abstract contract ALMTestBase is Deployers {
         bool _isInvertedPool,
         AggregatorV3Interface feedQ,
         AggregatorV3Interface feedB,
-        uint256 stalenessThresholdQ,
-        uint256 stalenessThresholdB
-    ) internal returns (IOracle _oracle) {
-        isInvertedPool = _isInvertedPool;
-        vm.prank(deployer.addr);
-        _oracle = new Oracle(
-            feedB,
-            feedQ,
-            stalenessThresholdB,
-            stalenessThresholdQ,
-            _isInvertedPool,
-            int8(bDec) - int8(qDec)
-        );
-        oracle = _oracle;
+        uint128 stalenessThresholdQ,
+        uint128 stalenessThresholdB
+    ) internal returns (IOracle) {
+        return
+            _create_oracle(
+                feedQ,
+                feedB,
+                stalenessThresholdQ,
+                stalenessThresholdB,
+                _isInvertedPool,
+                int8(bDec) - int8(qDec)
+            );
     }
 
     function _create_oracle(
         AggregatorV3Interface feedQ,
         AggregatorV3Interface feedB,
-        uint256 stalenessThresholdQ,
-        uint256 stalenessThresholdB,
+        uint128 stalenessThresholdQ,
+        uint128 stalenessThresholdB,
         bool _isInvertedPool,
         int8 decimalsDelta
     ) internal returns (IOracle _oracle) {
         isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
-        _oracle = new Oracle(feedB, feedQ, stalenessThresholdB, stalenessThresholdQ, _isInvertedPool, decimalsDelta);
+        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
         oracle = _oracle;
+        vm.prank(deployer.addr);
+        oracle.setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
     function init_hook(
@@ -219,24 +228,7 @@ abstract contract ALMTestBase is Deployers {
         console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
 
-        // MARK: UniV4 hook deployment process
-        address hookAddress = address(
-            uint160(
-                Hooks.BEFORE_SWAP_FLAG |
-                    Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG |
-                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
-                    Hooks.AFTER_INITIALIZE_FLAG
-            )
-        );
-        deployCodeTo(
-            "ALM.sol",
-            abi.encode(BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
-            hookAddress
-        );
-        hook = ALM(hookAddress);
-        vm.label(address(hook), "hook");
-        assertEq(hook.owner(), deployer.addr);
-        // MARK END
+        deploy_hook_contract(_isInvertedAssets);
 
         // MARK: Deploying modules and setting up parameters
         // LendingAdapter should already be created
@@ -269,13 +261,43 @@ abstract contract ALMTestBase is Deployers {
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
         // MARK END
 
-        (address _token0, address _token1) = getTokensInOrder();
-        (key, ) = initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee, initialSQRTPrice);
+        //TODO: check max/min ticks reverts. Create a separate test for rebalance in different directions.
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
         // This is needed in order to simulate proper accounting
         deal(address(BASE), address(manager), 1000 ether);
         deal(address(QUOTE), address(manager), 1000 ether);
+
+        quoter = new V4Quoter(manager);
         vm.stopPrank();
+    }
+
+    function deploy_hook_contract(bool _isInvertedAssets) internal {
+        address hookAddress = address(
+            uint160(
+                Hooks.BEFORE_SWAP_FLAG |
+                    Hooks.AFTER_SWAP_FLAG |
+                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
+                    Hooks.AFTER_INITIALIZE_FLAG
+            )
+        );
+
+        (address currency0, address currency1) = getTokensInOrder();
+        key = PoolKey(
+            Currency.wrap(currency0),
+            Currency.wrap(currency1),
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
+            IHooks(hookAddress)
+        );
+        deployCodeTo(
+            "ALM.sol",
+            abi.encode(key, BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            hookAddress
+        );
+        hook = ALM(hookAddress);
+        vm.label(address(hook), "hook");
+        assertEq(hook.owner(), deployer.addr);
     }
 
     function updateProtocolFees(uint256 _protocolFee) internal {
@@ -366,6 +388,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     uint256 constant WAD = 1e18;
+
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
         uint256 _poolPrice = TestLib.getPriceFromSqrtPriceX96(newSqrtPrice);
 
@@ -551,9 +574,15 @@ abstract contract ALMTestBase is Deployers {
 
     // --- Uniswap V4 --- //
 
-    function _quoteSwap(bool zeroForOne, int256 amount) internal view returns (uint256, uint256) {
-        uint160 sqrtPriceLimitX96 = zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1;
-        return hook.quoteSwap(zeroForOne, amount, sqrtPriceLimitX96);
+    function _quoteOutputSwap(bool zeroForOne, uint256 amount) internal returns (uint256 amountIn) {
+        (amountIn, ) = quoter.quoteExactOutputSingle(
+            IV4Quoter.QuoteExactSingleParams({
+                poolKey: key,
+                zeroForOne: zeroForOne,
+                exactAmount: SafeCast.toUint128(amount),
+                hookData: ""
+            })
+        );
     }
 
     function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
@@ -594,9 +623,22 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
-    uint256 public assertEqBalanceQuoteThreshold = 1e5;
-    uint256 public assertEqBalanceBaseThreshold = 1e1;
+    uint256 public assertEqBalanceQuoteThreshold = 1;
+    uint256 public assertEqBalanceBaseThreshold = 15;
     uint256 public assertEqSqrtThreshold;
+
+    mapping(address => uint256) public balanceB;
+    mapping(address => uint256) public balanceQ;
+
+    function saveBalance(address owner) public {
+        balanceB[owner] = BASE.balanceOf(owner);
+        balanceQ[owner] = QUOTE.balanceOf(owner);
+    }
+
+    function assertBalanceNotChanged(address owner, uint256 precision) public view {
+        assertApproxEqAbs(BASE.balanceOf(owner), balanceB[owner], precision, "BASE balance");
+        assertApproxEqAbs(QUOTE.balanceOf(owner), balanceQ[owner], precision, "QUOTE balance");
+    }
 
     function assertEqBalanceStateZero(address owner) public view {
         assertEqBalanceState(owner, 0, 0);
@@ -732,13 +774,28 @@ abstract contract ALMTestBase is Deployers {
         assertApproxEqAbs(_leA.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
     }
 
+    function assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {
+        try this._assertEqProtocolState(sqrtPriceCurrent, tvl) {
+            // Intentionally empty
+        } catch {
+            console.log("Error: sqrtPriceCurrent", hook.sqrtPriceCurrent());
+            console.log("Error: tvl", calcTVL());
+            _assertEqProtocolState(sqrtPriceCurrent, tvl); // This is to throw the error
+        }
+    }
+
+    function _assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), sqrtPriceCurrent, 1e1, "sqrtPrice not equal");
+        assertApproxEqAbs(calcTVL(), tvl, 1e1, "TVL not equal");
+    }
+
     // --- Test math --- //
 
     function _checkSwap(
         uint128 liquidity,
         uint160 preSqrtPrice,
         uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
+    ) public view returns (uint256 deltaX, uint256 deltaY) {
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
         (uint256 amt0Pre, uint256 amt1Pre) = LiquidityAmounts.getAmountsForLiquidity(
             preSqrtPrice,
@@ -754,10 +811,14 @@ abstract contract ALMTestBase is Deployers {
             liquidity
         );
 
-        return (
-            amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post,
-            amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post
-        );
+        // deltaX = amt1Post > amt1Pre ? amt1Post - amt1Pre : amt1Pre - amt1Post;
+        // deltaY = amt0Post > amt0Pre ? amt0Post - amt0Pre : amt0Pre - amt0Post;
+
+        deltaX = SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true);
+        deltaY = SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, false);
+
+        // require(deltaX == SqrtPriceMath.getAmount1Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
+        // require(deltaY == SqrtPriceMath.getAmount0Delta(preSqrtPrice, postSqrtPrice, liquidity, true));
     }
 
     function _liquidityCheck(bool _isInvertedPool, uint256 liquidityMultiplier) public view {
@@ -778,49 +839,6 @@ abstract contract ALMTestBase is Deployers {
         }
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
-    }
-
-    function _checkSwapReverse(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = 1e12 * TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        //uint256 priceLower = 1e48 / TestLib.getPriceFromTick(activeTicks.lower); //TODO: stack too deep?
-        uint256 priceUpper = 1e12 * TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            ((priceUpper * prePrice) / 1e18).sqrt();
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / (priceUpper * postPrice).sqrt();
-
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e12 * TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
-    }
-
-    function _checkSwapUnicord(
-        uint256 liquidity,
-        uint160 preSqrtPrice,
-        uint160 postSqrtPrice
-    ) public view returns (uint256, uint256) {
-        uint256 prePrice = TestLib.getPriceFromSqrtPriceX96(preSqrtPrice);
-        uint256 postPrice = TestLib.getPriceFromSqrtPriceX96(postSqrtPrice);
-
-        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-
-        uint256 priceUpper = 1e36 / TestLib.getPriceFromTick(tickUpper);
-
-        uint256 preX = (liquidity * 1e18 * (priceUpper.sqrt() - prePrice.sqrt())) /
-            (((priceUpper * prePrice) / 1e18).sqrt());
-
-        uint256 postX = (liquidity * 1e27 * (priceUpper.sqrt() - postPrice.sqrt())) / ((priceUpper * postPrice).sqrt());
-        uint256 preY = (liquidity * (prePrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickLower)).sqrt())) / 1e12;
-        uint256 postY = (liquidity * (postPrice.sqrt() - (1e48 / TestLib.getPriceFromTick(tickUpper)).sqrt())) / 1e12;
-        return (postX > preX ? postX - preX : preX - postX, postY > preY ? postY - preY : preY - postY);
     }
 
     function calcTVL() internal view returns (uint256) {

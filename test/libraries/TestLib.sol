@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
-import {PRBMathUD60x18, PRBMath} from "@prb-math/PRBMathUD60x18.sol";
+import {PRBMathUD60x18, PRBMath} from "@test/libraries/PRBMathUD60x18.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
@@ -133,9 +133,5 @@ library TestLib {
         if (quot % 2 ** 64 >= 0x8000000000000000) {
             result += 1;
         }
-    }
-
-    function getTickSpacingFromFee(uint24 fee) internal pure returns (int24) {
-        return int24((fee / 100) * 2);
     }
 }

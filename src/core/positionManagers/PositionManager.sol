@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {ud} from "@prb-math/UD60x18.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -17,16 +17,11 @@ import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 /// @notice Holds flow for position adjustment, then the price moves up or down. Calculates swap fees.
 contract PositionManager is Base, IPositionManager {
     event KParamsSet(uint256 newK1, uint256 newK2);
-    event FeesSet(uint24 newFees);
 
-    using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
     uint256 public k1;
     uint256 public k2;
-
-    /// @notice The fee taken from the input amount, expressed in hundredths of a bip.
-    uint24 fees;
 
     constructor(IERC20 _base, IERC20 _quote) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote) {
         // Intentionally empty as all initialization is handled by the parent Base contract
@@ -39,49 +34,47 @@ contract PositionManager is Base, IPositionManager {
         emit KParamsSet(_k1, _k2);
     }
 
-    /// @notice the swap fee is represented in hundredths of a bip, so the max is 100%
-    uint24 internal constant MAX_SWAP_FEE = 1e6;
     uint256 constant WAD = 1e18;
 
-    function setFees(uint24 _fees) external onlyOwner {
-        if (_fees > MAX_SWAP_FEE) revert ProtocolFeeTooLarge(_fees);
-        fees = _fees;
-        emit FeesSet(_fees);
-    }
-
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+    function positionAdjustmentPriceUp(
+        uint256 deltaBase,
+        uint256 deltaQuote,
+        uint160 sqrtPrice
+    ) external onlyALM onlyActive {
         BASE.safeTransferFrom(address(alm), address(this), deltaBase);
 
-        uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
+        uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Repay dUSD of long debt;
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
 
-        lendingAdapter.updatePosition(SafeCast.toInt256(k.mul(deltaQuote)), 0, -SafeCast.toInt256(deltaBase), 0);
-        if (k != WAD) lendingAdapter.repayShort((k - WAD).mul(deltaQuote));
+        uint256 updateAmount = ud(k).mul(ud(deltaQuote)).unwrap();
+        lendingAdapter.updatePosition(SafeCast.toInt256(updateAmount), 0, -SafeCast.toInt256(deltaBase), 0);
+        if (k != WAD) lendingAdapter.repayShort(updateAmount - deltaQuote);
 
         QUOTE.safeTransfer(address(alm), deltaQuote);
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM onlyActive {
+    function positionAdjustmentPriceDown(
+        uint256 deltaBase,
+        uint256 deltaQuote,
+        uint160 sqrtPrice
+    ) external onlyALM onlyActive {
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
 
-        uint256 k = alm.sqrtPriceCurrent() >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
+        uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
         // Add k1 * dETH to long as collateral;
         // Borrow (k1-1) * dETH from short by increasing debt;
         // Borrow dUSD from long by increasing debt;
 
         lendingAdapter.addCollateralLong(deltaQuote);
         if (k != WAD) {
-            lendingAdapter.borrowShort((k - WAD).mul(deltaQuote));
-            lendingAdapter.addCollateralLong((k - WAD).mul(deltaQuote));
+            uint256 updateAmount = ud(k - WAD).mul(ud(deltaQuote)).unwrap();
+            lendingAdapter.borrowShort(updateAmount);
+            lendingAdapter.addCollateralLong(updateAmount);
         }
         lendingAdapter.borrowLong(deltaBase);
 
         BASE.safeTransfer(address(alm), deltaBase);
-    }
-
-    function getSwapFees(bool, int256) external view returns (uint24) {
-        return fees;
     }
 }
