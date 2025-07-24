@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {ud} from "@prb-math/UD60x18.sol";
+import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -48,7 +48,7 @@ contract PositionManager is Base, IPositionManager {
         // Remove k * dETH from long collateral;
         // Repay (k-1) * dETH to short debt;
 
-        uint256 updateAmount = ud(k).mul(ud(deltaQuote)).unwrap();
+        uint256 updateAmount = mul18(k, deltaQuote);
         lendingAdapter.updatePosition(SafeCast.toInt256(updateAmount), 0, -SafeCast.toInt256(deltaBase), 0);
         if (k != WAD) lendingAdapter.repayShort(updateAmount - deltaQuote);
 
@@ -69,7 +69,7 @@ contract PositionManager is Base, IPositionManager {
 
         lendingAdapter.addCollateralLong(deltaQuote);
         if (k != WAD) {
-            uint256 updateAmount = ud(k - WAD).mul(ud(deltaQuote)).unwrap();
+            uint256 updateAmount = mul18(k - WAD, deltaQuote);
             lendingAdapter.borrowShort(updateAmount);
             lendingAdapter.addCollateralLong(updateAmount);
         }

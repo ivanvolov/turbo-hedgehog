@@ -9,7 +9,7 @@ import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 
 // ** External imports
-import {ud} from "@prb-math/UD60x18.sol";
+import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Commands} from "@universal-router/Commands.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -136,9 +136,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
 
         bytes[] memory inputs = new bytes[]((route.length + 1) / 2);
         uint256 amountInLeft = amountIn;
-        for (uint256 i = 0; i < (route.length + 1); i += 2) {
+        for (uint256 i = 0; i < route.length + 1; ) {
             SwapPath memory path = swapPaths[route[i]];
-            uint256 nextAmount = route.length == i + 1 ? amountInLeft : ud(amountIn).mul(ud(route[i + 1])).unwrap();
+            uint256 nextAmount = route.length == i + 1 ? amountInLeft : mul18(amountIn, route[i + 1]);
 
             uint8 nextCommand;
             if (path.protocolType == 0) {
@@ -156,6 +156,10 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             } else revert InvalidProtocolType();
             swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(nextCommand)));
             amountInLeft -= nextAmount;
+
+            unchecked {
+                i += 2;
+            }
         }
 
         router.execute(swapCommands, inputs, block.timestamp);

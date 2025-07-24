@@ -16,7 +16,7 @@ import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
 
 // ** External imports
-import {UD60x18, ud} from "@prb-math/UD60x18.sol";
+import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
@@ -247,7 +247,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             ""
         );
         uint160 sqrtPrice = sqrtPriceCurrent();
-        checkSwapDeviations(ud(uint256(sqrtPrice)));
+        checkSwapDeviations(uint256(sqrtPrice));
 
         // We assume what fees are positive and only one token accrued fees during a single swap.
         _settleDeltas(
@@ -280,7 +280,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     }
 
     function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up, uint160 sqrtPrice) internal {
-        uint256 protocolFeeAmount = protocolFee == 0 ? 0 : ud(feeAmount).mul(ud(protocolFee)).unwrap();
+        uint256 protocolFeeAmount = protocolFee == 0 ? 0 : mul18(feeAmount, protocolFee);
         if (up) {
             accumulatedFeeB += protocolFeeAmount;
             positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut, sqrtPrice);
@@ -290,11 +290,11 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         }
     }
 
-    function checkSwapDeviations(UD60x18 sqrtPriceNext) internal view {
-        UD60x18 sqrtPriceAtLastRebalance = ud(rebalanceAdapter.sqrtPriceAtLastRebalance());
-        UD60x18 priceThreshold = sqrtPriceNext.div(sqrtPriceAtLastRebalance);
-        if (priceThreshold < ALMMathLib.udWAD) priceThreshold = sqrtPriceAtLastRebalance.div(sqrtPriceNext);
-        if (priceThreshold >= ud(swapPriceThreshold)) revert SwapPriceChangeTooHigh();
+    function checkSwapDeviations(uint256 sqrtPriceNext) internal view {
+        uint256 sqrtPriceAtLastRebalance = rebalanceAdapter.sqrtPriceAtLastRebalance();
+        uint256 priceThreshold = ALMMathLib.div18(sqrtPriceNext, sqrtPriceAtLastRebalance);
+        if (priceThreshold < ALMMathLib.WAD) priceThreshold = ALMMathLib.div18(sqrtPriceAtLastRebalance, sqrtPriceNext);
+        if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
     // ** Math functions
