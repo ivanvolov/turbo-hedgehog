@@ -84,9 +84,11 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         emit TreasurySet(_treasury);
     }
 
-    /// @notice The swap fee is represented in hundredths of a bip, so the max is 100%.
+    /// @notice The lp fee is represented in hundredths of a bip, so the max is 100%.
+    uint24 internal constant MAX_SWAP_FEE = 1e6;
+
     function setNextLPFee(uint24 _nextLPFee) external onlyOwner {
-        if (_nextLPFee > 1e6) revert LPFeeTooLarge(_nextLPFee);
+        if (_nextLPFee > MAX_SWAP_FEE) revert LPFeeTooLarge(_nextLPFee);
         nextLPFee = _nextLPFee;
     }
 

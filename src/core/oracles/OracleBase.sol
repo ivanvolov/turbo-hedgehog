@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 // ** External imports
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {UD60x18, ud} from "@prb-math/UD60x18.sol";
+import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {mulDiv} from "@prb-math/Common.sol";
+
+// ** libraries
+import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
 
 // ** interfaces
 import {IOracle} from "../../interfaces/IOracle.sol";
@@ -13,7 +16,7 @@ import {IOracle} from "../../interfaces/IOracle.sol";
 /// @notice Abstract contract that serves as a base for all oracles. Holds functions to calculate price in different formats.
 abstract contract OracleBase is Ownable, IOracle {
     bool public immutable isInvertedPool;
-    UD60x18 public immutable ratio;
+    uint256 public immutable ratio;
     uint256 public immutable scaleFactor;
     StalenessThresholds public stalenessThresholds;
 
@@ -22,7 +25,7 @@ abstract contract OracleBase is Ownable, IOracle {
         if (tokenDecimalsDelta < -18) revert TokenDecimalsDeltaNotValid();
         if (feedDecimalsDelta < -18) revert FeedDecimalsDeltaNotValid();
 
-        ratio = ud(10 ** uint256(int256(tokenDecimalsDelta) + 18));
+        ratio = 10 ** uint256(int256(tokenDecimalsDelta) + 18);
         scaleFactor = 10 ** uint256(int256(feedDecimalsDelta) + 18);
     }
 
@@ -31,15 +34,13 @@ abstract contract OracleBase is Ownable, IOracle {
         emit StalenessThresholdsSet(thresholdBase, thresholdQuote);
     }
 
-    UD60x18 constant WAD = UD60x18.wrap(1e18);
-
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18).
     /// Calculates quote token price in terms of base token, adjusted for token decimals.
     /// @return _price The price of quote token denominated in base token units.
     function price() public view returns (uint256 _price) {
         (uint256 _priceBase, uint256 _priceQuote) = _fetchAssetsPrices();
 
-        _price = ud(mulDiv(_priceQuote, scaleFactor, _priceBase)).mul(ratio).unwrap();
+        _price = mul18(mulDiv(_priceQuote, scaleFactor, _priceBase), ratio);
         if (_price == 0) revert PriceZero();
     }
 
@@ -49,7 +50,7 @@ abstract contract OracleBase is Ownable, IOracle {
     /// @return _poolPrice The pool-compatible price.
     function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
         _price = price();
-        _poolPrice = isInvertedPool ? WAD.div(ud(_price)).unwrap() : _price;
+        _poolPrice = isInvertedPool ? ALMMathLib.div18(ALMMathLib.WAD, _price) : _price;
         if (_poolPrice == 0) revert PriceZero();
     }
 
