@@ -52,7 +52,6 @@ contract ETHRALMTest is ALMTestBase {
         create_flash_loan_adapter_euler(TestLib.eulerUSDTVault2, 3000000 * 1e6, TestLib.eulerWETHVault2, 0);
         create_oracle(false, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
-        assertTicks(-200488, -194488);
 
         // ** Setting up strategy params
         {
@@ -66,6 +65,11 @@ contract ETHRALMTest is ALMTestBase {
         }
 
         approve_accounts();
+    }
+
+    function test_setUp() public {
+        assertEq(hook.owner(), deployer.addr);
+        assertTicks(-200488, -194488);
     }
 
     uint256 amountToDep = 100 ether;

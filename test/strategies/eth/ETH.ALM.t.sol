@@ -63,7 +63,6 @@ contract ETHALMTest is MorphoTestBase {
         create_flash_loan_adapter_euler_WETH_USDC();
         create_oracle(true, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
-        assertTicks(194466, 200466);
 
         // ** Setting up strategy params
         {
@@ -77,6 +76,11 @@ contract ETHALMTest is MorphoTestBase {
         }
 
         approve_accounts();
+    }
+
+    function test_setUp() public {
+        assertEq(hook.owner(), deployer.addr);
+        assertTicks(194466, 200466);
     }
 
     function test_withdraw() public {

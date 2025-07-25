@@ -73,7 +73,6 @@ contract UNICORDALMTest is MorphoTestBase {
         create_flash_loan_adapter_morpho();
         create_oracle(true, TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
-        assertTicks(-99, 101);
 
         // ** Setting up strategy params
         {
@@ -85,6 +84,11 @@ contract UNICORDALMTest is MorphoTestBase {
         }
 
         approve_accounts();
+    }
+
+    function test_setUp() public {
+        assertEq(hook.owner(), deployer.addr);
+        assertTicks(-99, 101);
     }
 
     uint256 amountToDep = 100000e6;

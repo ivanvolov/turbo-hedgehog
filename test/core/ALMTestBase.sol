@@ -60,6 +60,7 @@ abstract contract ALMTestBase is Deployers {
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
+    PoolKey unauthorizedKey;
     V4Quoter quoter;
     uint160 initialSQRTPrice;
     ALM hook;
@@ -289,6 +290,7 @@ abstract contract ALMTestBase is Deployers {
             1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
+        unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
             abi.encode(key, BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
@@ -296,7 +298,6 @@ abstract contract ALMTestBase is Deployers {
         );
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
-        assertEq(hook.owner(), deployer.addr);
     }
 
     function updateProtocolFees(uint256 _protocolFee) internal {
