@@ -90,12 +90,9 @@ contract BTCALMTest is ALMTestBase {
     function test_deposit_rebalance() public {
         test_deposit();
 
-        // uint256 preRebalanceTVL = calcTVL();
-
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(-71898, -65898);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 2528463782851807812600059248, 1e1, "sqrtPrice");
@@ -418,11 +415,9 @@ contract BTCALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());

@@ -113,7 +113,6 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         // assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionStateDN(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(194458, 200458);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
@@ -665,11 +664,9 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        //assertEqHookPositionStateDN(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());

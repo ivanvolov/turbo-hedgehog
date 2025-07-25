@@ -118,18 +118,15 @@ contract UNICORDALMTest is MorphoTestBase {
 
     function test_deposit_rebalance() public {
         test_deposit();
-        // uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         assertTicks(-98, 102);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441913940305965, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -140,25 +137,24 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
-        assertApproxEqAbs(deltaUSDT, 4626805947735540197, 1e4, "tvl");
+        assertApproxEqAbs(deltaUSDT, 17838990902, 1, "tvl");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(173406801524476855220, 307920000000, 444249109866, 38073607472212395416);
-        assertEqProtocolState(1270692167884249415165740426235478, 99913835812202105946);
+        assertEqPositionState(32312602163, 67734162297, 0, 0);
+        assertEqProtocolState(78957152480392665472826686309, 100065267844);
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 usdtToGetFSwap = 4626903915919660000;
+        uint256 usdtToGetFSwap = 17897776432;
         uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
-        assertEq(usdcToSwapQ, 12371660056);
+        assertEq(usdcToSwapQ, 17956966898);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -166,70 +162,60 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
-        assertApproxEqAbs(deltaUSDT, 4626903915919660000, 1e1, "tvl");
+        assertApproxEqAbs(deltaUSDT, 17897776432, 1e1, "USDT");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(173406661919814484500, 307920000000, 444248729008, 38073565835734144500);
-        assertEqProtocolState(1270692033691648863352713011702213, 99913836793875091884);
+        assertEqPositionState(32253816633, 67793352762, 0, 0);
+        assertEqProtocolState(78956223751810304282634447090, 100065688948);
     }
 
     function test_deposit_rebalance_swap_price_up_out_revert_deviations() public {
-        vm.skip(true);
         vm.startPrank(deployer.addr);
         updateProtocolPriceThreshold(3 * 1e15);
         vm.stopPrank();
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 usdtToGetFSwap = 4626903915919660000;
+        uint256 usdtToGetFSwap = 200e9; //150k USDT
+
+        vm.expectRevert();
         uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
-
-        // ** Swap
-        bool hasReverted = false;
-        try this.swapUSDC_USDT_Out(usdtToGetFSwap) {
-            hasReverted = false;
-        } catch {
-            hasReverted = true;
-        }
-        assertTrue(hasReverted, "Expected function to revert but it didn't");
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 usdtToSwap = 4696832668752530000;
+        uint256 usdtToSwap = 17897776432;
         deal(address(USDT), address(swapper.addr), usdtToSwap);
         assertEqBalanceState(swapper.addr, usdtToSwap, 0);
 
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapUSDT_USDC_In(usdtToSwap);
-        assertEq(deltaUSDC, 17987871838);
+        assertEq(deltaUSDC, 17829265826);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186692986552972355250, 307920000000, 480134758137, 42036153884219825249);
-        assertEqProtocolState(1283463286628492184493879892596945, 99914105171480511295);
+        assertEqPositionState(68049369498, 32007120039, 0, 0);
+        assertEqProtocolState(79521743074015585840483767881, 100065233131);
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
         uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
-        assertEq(usdtToSwapQ, 4696732800805156176);
+        assertEq(usdtToSwapQ, 18057181721);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
         assertEqBalanceState(swapper.addr, usdtToSwapQ, 0);
@@ -244,12 +230,11 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186692844241147347549, 307920000000, 480134377581, 42036111440342191374);
-        assertEqProtocolState(1283463149833677722315484726714060, 99914104174928305045);
+        assertEqPositionState(68208774786, 31848894582, 0, 0);
+        assertEqProtocolState(79524261453078311595880024582, 100066369738);
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -262,27 +247,26 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
-        assertApproxEqAbs(deltaUSDT, 4624504019982289378, 1e4, "tvl");
+        assertApproxEqAbs(deltaUSDT, 17837213345, 1e4, "USDT");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(173410081771525237636, 307920000000, 444249109866, 38074585791507527014);
-        assertEqProtocolState(1270695320965775488682522591655933, 99916137739955356764);
+        assertEqPositionState(32314379719, 67734162296, 0, 0);
+        assertEqProtocolState(78957180563277804775329873055, 100067045399);
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 usdtToGetFSwap = 4626903915919660000;
+        uint256 usdtToGetFSwap = 17897776432;
         uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
-        assertEq(usdcToSwapQ, 17907106368);
+        assertEq(usdcToSwapQ, 17958762775);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -290,44 +274,42 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
-        assertApproxEqAbs(deltaUSDT, 4626903915919660000, 1e1, "tvl");
+        assertApproxEqAbs(deltaUSDT, 17897776432, 1e1, "USDT");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(173406661919814484500, 307920000000, 444239779931, 38073565835734144500);
-        assertEqProtocolState(1270692033691648863352713011702213, 99916161833365868709);
+        assertEqPositionState(32253816633, 67795148638, 0, 0);
+        assertEqProtocolState(78956223751810304282634447090, 100067485315);
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 usdtToSwap = 4696832668752530000;
+        uint256 usdtToSwap = 17897776432;
         deal(address(USDT), address(swapper.addr), usdtToSwap);
         assertEqBalanceState(swapper.addr, usdtToSwap, 0);
 
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapUSDT_USDC_In(usdtToSwap);
-        assertEq(deltaUSDC, 17978922963);
+        assertEq(deltaUSDC, 17827489238);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186692986552972355250, 307920000000, 480125809262, 42036153884219825249);
-        assertEqProtocolState(1283460069868909267964367933948804, 99916430158490124182);
+        assertEqPositionState(68049369497, 32008896627, 0, 0);
+        assertEqProtocolState(79521714798043839188594281306, 100067010203);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -335,7 +317,7 @@ contract UNICORDALMTest is MorphoTestBase {
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
         uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
-        assertEq(usdtToSwapQ, 4699081167205558754);
+        assertEq(usdtToSwapQ, 18058987620);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
         assertEqBalanceState(swapper.addr, usdtToSwapQ, 0);
@@ -350,8 +332,8 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(186696190663267921224, 307920000000, 480134377581, 42037109496062362469);
-        assertEqProtocolState(1283463149833677722315484726714060, 99916452541328707625);
+        assertEqPositionState(68210580684, 31848894582, 0, 0);
+        assertEqProtocolState(79524261453078311595880024582, 100068175636);
     }
 
     function test_lifecycle() public {

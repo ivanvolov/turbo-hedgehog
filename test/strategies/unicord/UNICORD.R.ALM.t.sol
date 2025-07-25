@@ -119,12 +119,10 @@ contract UNICORDRALMTest is MorphoTestBase {
 
     function test_deposit_rebalance() public {
         test_deposit();
-        // uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         console.log("tvl %s", calcTVL());
 
         console.log("liquidity %s", hook.liquidity());
@@ -381,10 +379,8 @@ contract UNICORDRALMTest is MorphoTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        //assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
