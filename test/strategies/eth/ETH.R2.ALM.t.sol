@@ -111,7 +111,7 @@ contract ETHR2ALMTest is ALMTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        console.log("DEPOSIT REBALANCE");
+        // console.log("DEPOSIT REBALANCE");
 
         saveBalance(address(manager));
 
@@ -135,26 +135,26 @@ contract ETHR2ALMTest is ALMTestBase {
             deal(address(USDT), address(swapper.addr), usdtToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            console.log("SWAP");
+            // console.log("SWAP");
             (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_In(usdtToSwap);
-            console.log("SWAP DONE");
+            // console.log("SWAP DONE");
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaY, 1);
             assertApproxEqAbs((usdtToSwap * (1e18 - testFee)) / 1e18, deltaX, 4);
 
             uint256 deltaTreasuryFee = (usdtToSwap * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            // console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            // console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
 
@@ -183,21 +183,21 @@ contract ETHR2ALMTest is ALMTestBase {
             (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_In(usdtToSwap);
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaY, 1);
             assertApproxEqAbs((usdtToSwap * (1e18 - testFee)) / 1e18, deltaX, 1);
 
             uint256 deltaTreasuryFee = (usdtToSwap * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            // console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            // console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
 
@@ -227,24 +227,24 @@ contract ETHR2ALMTest is ALMTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 1);
             assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaY, 3);
 
             uint256 deltaTreasuryFee = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
 
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            // console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            // console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
             assertEqPositionState(
                 CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
@@ -282,21 +282,21 @@ contract ETHR2ALMTest is ALMTestBase {
             (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_In(usdtToSwap);
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaY, 1);
             assertApproxEqAbs((usdtToSwap * (1e18 - testFee)) / 1e18, deltaX, 1);
 
             uint256 deltaTreasuryFee = (usdtToSwap * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            // console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            // console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
 
@@ -336,21 +336,21 @@ contract ETHR2ALMTest is ALMTestBase {
             (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_In(usdtToSwap);
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaY, 1);
             assertApproxEqAbs((usdtToSwap * (1e18 - testFee)) / 1e18, deltaX, 1);
 
             uint256 deltaTreasuryFee = (usdtToSwap * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            // console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            // console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
 
@@ -376,13 +376,13 @@ contract ETHR2ALMTest is ALMTestBase {
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaWETH, uint256 deltaUSDT) = swapUSDT_WETH_Out(wethToGetFSwap);
-            console.log("SWAP DONE");
+            // console.log("SWAP DONE");
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs((deltaUSDT * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaWETH, deltaY, 1);
@@ -410,8 +410,8 @@ contract ETHR2ALMTest is ALMTestBase {
                 lendingAdapter.getBorrowedShort()
             );
 
-            console.log("CL %s", CL);
-            console.log("DL %s", DL);
+            // console.log("CL %s", CL);
+            // console.log("DL %s", DL);
 
             uint256 wethToSwap = 10e18;
             deal(address(WETH), address(swapper.addr), wethToSwap);
@@ -421,21 +421,21 @@ contract ETHR2ALMTest is ALMTestBase {
             (uint256 deltaWETH, uint256 deltaUSDT) = swapWETH_USDT_In(wethToSwap);
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDT %s", deltaUSDT);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 3);
             assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFeeQ = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFeeQ;
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("testFee %s", testFee);
-            console.log("hook.protocolFee() %s", hook.protocolFee());
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("testFee %s", testFee);
+            // console.log("hook.protocolFee() %s", hook.protocolFee());
 
-            console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
+            // console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);

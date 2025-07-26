@@ -155,7 +155,7 @@ contract ETHALMTest is MorphoTestBase {
         test_deposit();
 
         uint256 preRebalanceTVL = calcTVL();
-        console.log("preRebalanceTVL %s", preRebalanceTVL);
+        // console.log("preRebalanceTVL %s", preRebalanceTVL);
 
         vm.expectRevert();
         rebalanceAdapter.rebalance(slippage);
@@ -163,7 +163,7 @@ contract ETHALMTest is MorphoTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        console.log("postRebalanceTVL %s", calcTVL());
+        // console.log("postRebalanceTVL %s", calcTVL());
 
         assertTicks(194458, 200458);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
@@ -311,9 +311,9 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** After swap State
         (uint256 wethDelta, uint256 usdcDelta) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-        console.log("usdcDelta %s", usdcDelta);
-        console.log("wethDelta %s", wethDelta);
-        console.log("deltaWETH %s", deltaWETH);
+        // console.log("usdcDelta %s", usdcDelta);
+        // console.log("wethDelta %s", wethDelta);
+        // console.log("deltaWETH %s", deltaWETH);
 
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
@@ -380,9 +380,9 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** After swap State
         (uint256 wethDelta, uint256 usdcDelta) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-        console.log("usdcDelta %s", usdcDelta);
-        console.log("wethDelta %s", wethDelta);
-        console.log("deltaUSDC %s", deltaUSDC);
+        // console.log("usdcDelta %s", usdcDelta);
+        // console.log("wethDelta %s", wethDelta);
+        // console.log("deltaUSDC %s", deltaUSDC);
 
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
@@ -411,10 +411,10 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** After swap State
         (uint256 wethDelta, uint256 usdcDelta) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-        console.log("usdcDelta %s", usdcDelta);
-        console.log("wethDelta %s", wethDelta);
-        console.log("deltaUSDC %s", deltaUSDC);
-        console.log("sqrtPriceAfter %s", hook.sqrtPriceCurrent());
+        // console.log("usdcDelta %s", usdcDelta);
+        // console.log("wethDelta %s", wethDelta);
+        // console.log("deltaUSDC %s", deltaUSDC);
+        // console.log("sqrtPriceAfter %s", hook.sqrtPriceCurrent());
 
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
@@ -442,9 +442,9 @@ contract ETHALMTest is MorphoTestBase {
 
         // ** After swap State
         (uint256 wethDelta, uint256 usdcDelta) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-        console.log("usdcDelta %s", usdcDelta);
-        console.log("wethDelta %s", wethDelta);
-        console.log("deltaWETH %s", deltaWETH);
+        // console.log("usdcDelta %s", usdcDelta);
+        // console.log("wethDelta %s", wethDelta);
+        // console.log("deltaWETH %s", deltaWETH);
 
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
@@ -775,10 +775,10 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
@@ -800,10 +800,10 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
@@ -827,10 +827,10 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 2);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
@@ -853,8 +853,8 @@ contract ETHALMTest is MorphoTestBase {
             );
 
             assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
-            console.log("liquidity %s", hook.liquidity());
-            console.log("liquidityCheck %s", liquidityCheck);
+            // console.log("liquidity %s", hook.liquidity());
+            // console.log("liquidityCheck %s", liquidityCheck);
         }
 
         // ** Swap Up In
@@ -911,7 +911,7 @@ contract ETHALMTest is MorphoTestBase {
         {
             uint256 wethToGetFSwap = 1e17;
             uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
-            console.log("usdcToSwapQ %s", usdcToSwapQ);
+            // console.log("usdcToSwapQ %s", usdcToSwapQ);
 
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
@@ -925,10 +925,10 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaWETH, deltaX, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 5);
@@ -949,10 +949,10 @@ contract ETHALMTest is MorphoTestBase {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaWETH %s", deltaWETH);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 3);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);

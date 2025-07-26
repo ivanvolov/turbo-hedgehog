@@ -409,25 +409,25 @@ contract UNICORDALMTest is MorphoTestBase {
 
         // ** Withdraw
         {
-            console.log("shares before withdraw %s", hook.totalSupply());
-            console.log("tvl pre %s", hook.TVL(oracle.price()));
+            // console.log("shares before withdraw %s", hook.totalSupply());
+            // console.log("tvl pre %s", hook.TVL(oracle.price()));
 
-            console.log("CL pre %s", lendingAdapter.getCollateralLong());
-            console.log("CS pre %s", lendingAdapter.getCollateralShort());
-            console.log("DL pre %s", lendingAdapter.getBorrowedLong());
-            console.log("DS pre %s", lendingAdapter.getBorrowedShort());
+            // console.log("CL pre %s", lendingAdapter.getCollateralLong());
+            // console.log("CS pre %s", lendingAdapter.getCollateralShort());
+            // console.log("DL pre %s", lendingAdapter.getBorrowedLong());
+            // console.log("DS pre %s", lendingAdapter.getBorrowedShort());
 
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
-            console.log("shares after withdraw %s", hook.totalSupply());
-            console.log("tvl after %s", hook.TVL(oracle.price()));
+            // console.log("shares after withdraw %s", hook.totalSupply());
+            // console.log("tvl after %s", hook.TVL(oracle.price()));
 
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
+            // console.log("CL after %s", lendingAdapter.getCollateralLong());
+            // console.log("CS after %s", lendingAdapter.getCollateralShort());
+            // console.log("DL after %s", lendingAdapter.getBorrowedLong());
+            // console.log("DS after %s", lendingAdapter.getBorrowedShort());
 
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }

@@ -127,12 +127,12 @@ contract UNICORDRALMTest is MorphoTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        console.log("tvl %s", calcTVL());
+        // console.log("tvl %s", calcTVL());
 
-        console.log("liquidity %s", hook.liquidity());
+        // console.log("liquidity %s", hook.liquidity());
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        console.log("tickLower %s", tickLower);
-        console.log("tickUpper %s", tickUpper);
+        // console.log("tickLower %s", tickLower);
+        // console.log("tickUpper %s", tickUpper);
         assertTicks(-276421, -276221);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 79240362711883211369901, 1e1, "sqrtPrice");
     }
@@ -155,7 +155,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            console.log("SWAP UP IN");
+            // console.log("SWAP UP IN");
 
             uint256 usdcToSwap = 1000e6; // 1k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -169,11 +169,11 @@ contract UNICORDRALMTest is MorphoTestBase {
             assertApproxEqAbs(deltaDAI, deltaY, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
-            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
-            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+            // console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            // console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeB += deltaTreasuryFee;
 
@@ -183,7 +183,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            console.log("SWAP UP IN");
+            // console.log("SWAP UP IN");
 
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -197,11 +197,11 @@ contract UNICORDRALMTest is MorphoTestBase {
             assertApproxEqAbs(deltaDAI, deltaY, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
-            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
-            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+            // console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            // console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeB += deltaTreasuryFee;
 
@@ -212,12 +212,12 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Swap Down Out
         {
-            console.log("SWAP DOWN OUT");
+            // console.log("SWAP DOWN OUT");
 
             uint256 usdcToGetFSwap = 10000e6; //10k USDC
             uint256 daiToSwapQ = quoteDAI_USDC_Out(usdcToGetFSwap);
 
-            console.log("daiToSwapQ %s", daiToSwapQ);
+            // console.log("daiToSwapQ %s", daiToSwapQ);
 
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -230,7 +230,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             assertApproxEqAbs(deltaUSDC, deltaX, 1);
 
             uint256 deltaTreasuryFee = (deltaDAI * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeQ += deltaTreasuryFee;
 
@@ -244,22 +244,22 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Withdraw
         {
-            console.log("preTVL %s", calcTVL());
-            console.log("preBalance %s", DAI.balanceOf(alice.addr));
-            console.log("preBalance %s", USDC.balanceOf(alice.addr));
+            // console.log("preTVL %s", calcTVL());
+            // console.log("preBalance %s", DAI.balanceOf(alice.addr));
+            // console.log("preBalance %s", USDC.balanceOf(alice.addr));
 
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 4, 0, 0);
 
-            console.log("postTVL %s", calcTVL());
-            console.log("postBalance %s", DAI.balanceOf(alice.addr));
-            console.log("postBalance %s", USDC.balanceOf(alice.addr));
+            // console.log("postTVL %s", calcTVL());
+            // console.log("postBalance %s", DAI.balanceOf(alice.addr));
+            // console.log("postBalance %s", USDC.balanceOf(alice.addr));
         }
 
         // ** Swap Up In
         {
-            console.log("SWAP UP IN");
+            // console.log("SWAP UP IN");
 
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -273,11 +273,11 @@ contract UNICORDRALMTest is MorphoTestBase {
             assertApproxEqAbs(deltaDAI, deltaY, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
-            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
-            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+            // console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            // console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeB += deltaTreasuryFee;
 
@@ -299,7 +299,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Swap Up In
         {
-            console.log("SWAP UP IN");
+            // console.log("SWAP UP IN");
 
             uint256 usdcToSwap = 1000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -313,11 +313,11 @@ contract UNICORDRALMTest is MorphoTestBase {
             assertApproxEqAbs(deltaDAI, deltaY, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
-            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
-            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+            // console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            // console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeB += deltaTreasuryFee;
 
@@ -328,19 +328,19 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Swap Up out
         {
-            console.log("SWAP UP OUT");
+            // console.log("SWAP UP OUT");
 
             uint256 daiToGetFSwap = 100e18; //1k DAI
             uint256 usdcToSwapQ = quoteUSDC_DAI_Out(daiToGetFSwap);
 
-            console.log("usdcToSwapQ", usdcToSwapQ);
+            // console.log("usdcToSwapQ", usdcToSwapQ);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_Out(usdcToSwapQ);
 
-            console.log("deltaDAI", deltaDAI);
-            console.log("deltaUSDC", deltaUSDC);
+            // console.log("deltaDAI", deltaDAI);
+            // console.log("deltaUSDC", deltaUSDC);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
@@ -348,12 +348,12 @@ contract UNICORDRALMTest is MorphoTestBase {
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
-            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             treasuryFeeB += deltaTreasuryFee;
 
-            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
-            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+            // console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            // console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 4, "treasuryFee");
@@ -370,10 +370,10 @@ contract UNICORDRALMTest is MorphoTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaDAI", deltaDAI);
-            console.log("deltaUSDC", deltaUSDC);
-            console.log("deltaX", deltaX);
-            console.log("deltaY", deltaY);
+            // console.log("deltaDAI", deltaDAI);
+            // console.log("deltaUSDC", deltaUSDC);
+            // console.log("deltaX", deltaX);
+            // console.log("deltaY", deltaY);
 
             assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 21);
             assertApproxEqAbs(deltaUSDC, deltaX, 1);

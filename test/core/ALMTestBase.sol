@@ -223,10 +223,10 @@ abstract contract ALMTestBase is Deployers {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) internal {
-        console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
-        console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
-        console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
-        console.log("oracle: initialPrice %s", oraclePriceW());
+        // console.log("v3Pool: initialPrice %s", getV3PoolPrice(TARGET_SWAP_POOL));
+        // console.log("v3Pool: initialSQRTPrice %s", initialSQRTPrice);
+        // console.log("v3Pool: initialTick %s", getV3PoolTick(TARGET_SWAP_POOL));
+        // console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
 
         deploy_hook_contract(_isInvertedAssets);
@@ -483,10 +483,10 @@ abstract contract ALMTestBase is Deployers {
             if (stepSize < minStepSize) stepSize = minStepSize;
         }
 
-        // console.log("Final price adjustment results:");
-        // console.log("Target price:", targetPrice);
-        // console.log("Final price:", currentPrice);
-        // console.log("Iterations:", iterations);
+        // // console.log("Final price adjustment results:");
+        // // console.log("Target price:", targetPrice);
+        // // console.log("Final price:", currentPrice);
+        // // console.log("Iterations:", iterations);
 
         if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
     }
@@ -652,8 +652,8 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqBalanceState(owner, _balanceQ, _balanceB) {
             // Intentionally empty
         } catch {
-            console.log("Error: QUOTE Balance", QUOTE.balanceOf(owner));
-            console.log("Error: BASE Balance", BASE.balanceOf(owner));
+            // console.log("Error: QUOTE Balance", QUOTE.balanceOf(owner));
+            // console.log("Error: BASE Balance", BASE.balanceOf(owner));
             _assertEqBalanceState(owner, _balanceQ, _balanceB); // This is to throw the error
         }
     }
@@ -721,10 +721,10 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqPositionState(CL, CS, DL, DS) {
             // Intentionally empty
         } catch {
-            console.log("Error: CL", _leA.getCollateralLong());
-            console.log("Error: CS", _leA.getCollateralShort());
-            console.log("Error: DL", _leA.getBorrowedLong());
-            console.log("Error: DS", _leA.getBorrowedShort());
+            // console.log("Error: CL", _leA.getCollateralLong());
+            // console.log("Error: CS", _leA.getCollateralShort());
+            // console.log("Error: DL", _leA.getBorrowedLong());
+            // console.log("Error: DS", _leA.getBorrowedShort());
             _assertEqPositionState(CL, CS, DL, DS); // This is to throw the error
         }
     }
@@ -741,8 +741,8 @@ abstract contract ALMTestBase is Deployers {
         try this._assertEqProtocolState(sqrtPriceCurrent, tvl) {
             // Intentionally empty
         } catch {
-            console.log("Error: sqrtPriceCurrent", hook.sqrtPriceCurrent());
-            console.log("Error: tvl", calcTVL());
+            // console.log("Error: sqrtPriceCurrent", hook.sqrtPriceCurrent());
+            // console.log("Error: tvl", calcTVL());
             _assertEqProtocolState(sqrtPriceCurrent, tvl); // This is to throw the error
         }
     }
@@ -820,7 +820,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function logGas() internal {
-        console.log("gasSpend", tempGas - gasleft());
+        // console.log("gasSpend", tempGas - gasleft());
         tempGas = 0;
     }
 

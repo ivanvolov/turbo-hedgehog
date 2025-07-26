@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -117,17 +119,32 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         );
 
         _burn(msg.sender, sharesOut);
-        if (uDS != 0 && uDL != 0) flashLoanAdapter.flashLoanTwoTokens(uDL, uDS, abi.encode(uCL, uCS));
-        else if (uDS == 0 && uDL == 0) {
-            if (uCL != 0 && uCS != 0)
+        if (uDS != 0 && uDL != 0) {
+            console.log(">1");
+            flashLoanAdapter.flashLoanTwoTokens(uDL, uDS, abi.encode(uCL, uCS));
+        } else if (uDS == 0 && uDL == 0) {
+            if (uCL != 0 && uCS != 0) {
+                console.log(">2");
                 lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), 0, 0);
-            else if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
-            else if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
+            } else if (uCL != 0) {
+                lendingAdapter.removeCollateralLong(uCL);
+                console.log(">3");
+            } else if (uCS != 0) {
+                console.log(">4");
+                lendingAdapter.removeCollateralShort(uCS);
+            }
 
-            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance());
-            else swapAdapter.swapExactInput(true, baseBalance());
-        } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL, abi.encode(uCL, uCS));
-        else revert NotAValidPositionState();
+            if (isInvertedAssets) {
+                console.log(">a");
+                swapAdapter.swapExactInput(false, quoteBalance());
+            } else {
+                console.log(">b");
+                swapAdapter.swapExactInput(true, baseBalance());
+            }
+        } else if (uDL > 0) {
+            console.log(">5");
+            flashLoanAdapter.flashLoanSingle(true, uDL, abi.encode(uCL, uCS));
+        } else revert NotAValidPositionState();
 
         uint256 baseOut;
         uint256 quoteOut;

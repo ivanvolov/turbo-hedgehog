@@ -132,17 +132,17 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            console.log("preSqrtPrice %s", preSqrtPrice);
-            console.log("liquidity %s", hook.liquidity());
+            // console.log("preSqrtPrice %s", preSqrtPrice);
+            // console.log("liquidity %s", hook.liquidity());
 
             (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaBTC %s", deltaBTC);
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaBTC %s", deltaBTC);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaBTC, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
@@ -152,8 +152,8 @@ contract BTCALMTest is ALMTestBase {
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
-            console.log("treasuryFee BASE %s", treasuryFeeB);
-            console.log("treasuryFee QUOTE %s", treasuryFeeQ);
+            // console.log("treasuryFee BASE %s", treasuryFeeB);
+            // console.log("treasuryFee QUOTE %s", treasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
@@ -179,15 +179,15 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            console.log("preSqrtPrice %s", preSqrtPrice);
+            // console.log("preSqrtPrice %s", preSqrtPrice);
             (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaBTC %s", deltaBTC);
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaBTC %s", deltaBTC);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaBTC, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 2);
@@ -197,8 +197,8 @@ contract BTCALMTest is ALMTestBase {
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
-            console.log("treasuryFee BASE %s", treasuryFeeB);
-            console.log("treasuryFee QUOTE %s", treasuryFeeQ);
+            // console.log("treasuryFee BASE %s", treasuryFeeB);
+            // console.log("treasuryFee QUOTE %s", treasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
@@ -228,10 +228,10 @@ contract BTCALMTest is ALMTestBase {
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaBTC %s", deltaBTC);
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaBTC %s", deltaBTC);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
@@ -241,8 +241,8 @@ contract BTCALMTest is ALMTestBase {
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            // console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
+            // console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
@@ -260,25 +260,25 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Withdraw
         {
-            console.log("shares before withdraw %s", hook.totalSupply());
-            console.log("tvl pre %s", hook.TVL(oracle.price()));
+            // console.log("shares before withdraw %s", hook.totalSupply());
+            // console.log("tvl pre %s", hook.TVL(oracle.price()));
 
-            console.log("CL pre %s", lendingAdapter.getCollateralLong());
-            console.log("CS pre %s", lendingAdapter.getCollateralShort());
-            console.log("DL pre %s", lendingAdapter.getBorrowedLong());
-            console.log("DS pre %s", lendingAdapter.getBorrowedShort());
+            // console.log("CL pre %s", lendingAdapter.getCollateralLong());
+            // console.log("CS pre %s", lendingAdapter.getCollateralShort());
+            // console.log("DL pre %s", lendingAdapter.getBorrowedLong());
+            // console.log("DS pre %s", lendingAdapter.getBorrowedShort());
 
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
-            console.log("shares after withdraw %s", hook.totalSupply());
-            console.log("tvl after %s", hook.TVL(oracle.price()));
+            // console.log("shares after withdraw %s", hook.totalSupply());
+            // console.log("tvl after %s", hook.TVL(oracle.price()));
 
-            console.log("CL after %s", lendingAdapter.getCollateralLong());
-            console.log("CS after %s", lendingAdapter.getCollateralShort());
-            console.log("DL after %s", lendingAdapter.getBorrowedLong());
-            console.log("DS after %s", lendingAdapter.getBorrowedShort());
+            // console.log("CL after %s", lendingAdapter.getCollateralLong());
+            // console.log("CS after %s", lendingAdapter.getCollateralShort());
+            // console.log("DL after %s", lendingAdapter.getBorrowedLong());
+            // console.log("DS after %s", lendingAdapter.getBorrowedShort());
 
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
@@ -307,15 +307,15 @@ contract BTCALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            console.log("preSqrtPrice %s", preSqrtPrice);
+            // console.log("preSqrtPrice %s", preSqrtPrice);
             (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaBTC %s", deltaBTC);
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            // console.log("deltaBTC %s", deltaBTC);
+            // console.log("deltaUSDC %s", deltaUSDC);
+            // console.log("deltaX %s", deltaX);
+            // console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaBTC, deltaX, 1);
             assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 2);
@@ -325,8 +325,8 @@ contract BTCALMTest is ALMTestBase {
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
-            console.log("treasuryFee BASE %s", treasuryFeeB);
-            console.log("treasuryFee QUOTE %s", treasuryFeeQ);
+            // console.log("treasuryFee BASE %s", treasuryFeeB);
+            // console.log("treasuryFee QUOTE %s", treasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
@@ -389,7 +389,7 @@ contract BTCALMTest is ALMTestBase {
             (uint256 deltaUSDC, uint256 deltaBTC) = swapBTC_USDC_In(btcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-            console.log("deltaX %s", deltaX);
+            // console.log("deltaX %s", deltaX);
             assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
@@ -397,15 +397,15 @@ contract BTCALMTest is ALMTestBase {
             treasuryFeeQ += deltaTreasuryFeeQ;
 
             //treasuryFeeB += deltaTreasuryFeeB;
-            console.log("treasuryFeeB %s", hook.accumulatedFeeB());
-            console.log("deltaTreasuryFeeB %s", deltaTreasuryFeeQ);
+            // console.log("treasuryFeeB %s", hook.accumulatedFeeB());
+            // console.log("deltaTreasuryFeeB %s", deltaTreasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 3, "treasuryFee");
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
-            //console.log("deltaTreasuryFeeQ %s", treasuryFeeB);
+            //// console.log("deltaTreasuryFeeQ %s", treasuryFeeB);
 
             assertEqPositionState(
                 CL + ((deltaBTC - deltaTreasuryFeeQ) * k1) / 1e18,

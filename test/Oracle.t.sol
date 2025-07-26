@@ -165,15 +165,15 @@ contract OracleTest is ALMTestBase {
         (uint256 _price, uint256 _poolPrice) = mockOracle.poolPrice();
         assertEq(_price, __price);
 
-        console.log("calc price    ", _price);
-        console.log("(.)  poolPrice", poolPrice);
-        console.log("calc poolPrice", _poolPrice);
+        // console.log("calc price    ", _price);
+        // console.log("(.)  poolPrice", poolPrice);
+        // console.log("calc poolPrice", _poolPrice);
     }
 
     function test_strategy_oracles_chainlink() public {
         IOracle mock_oracle;
 
-        console.log("> DN/ETHALM");
+        // console.log("> DN/ETHALM");
         {
             mock_oracle = _create_oracle(
                 TestLib.chainlink_feed_WETH,
@@ -190,7 +190,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 550348500785935357994619527);
         }
 
-        console.log("> ETH-R-ALM/ETH-R2-ALM");
+        // console.log("> ETH-R-ALM/ETH-R2-ALM");
         {
             mock_oracle = _create_oracle(
                 TestLib.chainlink_feed_WETH,
@@ -207,7 +207,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 1816422855);
         }
 
-        console.log("> BTCALMTest");
+        // console.log("> BTCALMTest");
         {
             mock_oracle = _create_oracle(
                 TestLib.chainlink_feed_cbBTC,
@@ -227,10 +227,10 @@ contract OracleTest is ALMTestBase {
         // This example is not present in strategies
         {
             // mock_oracle = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 50 hours, 50 hours);
-            // console.log("oracle", mock_oracle.price());
+            // // console.log("oracle", mock_oracle.price());
         }
 
-        console.log("> UNICORD-R");
+        // console.log("> UNICORD-R");
         {
             mock_oracle = _create_oracle(
                 TestLib.chainlink_feed_DAI,
@@ -246,7 +246,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 999782276316310439);
         }
 
-        console.log("> UNICORD");
+        // console.log("> UNICORD");
         {
             mock_oracle = _create_oracle(
                 TestLib.chainlink_feed_USDT,
@@ -271,7 +271,7 @@ contract OracleTest is ALMTestBase {
         IOracle mock_oracle;
         vm.rollFork(22974236);
 
-        console.log("> DN/ETHALM");
+        // console.log("> DN/ETHALM");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x5b0cf2b36a65a6BB085D501B971e4c102B9Cd473), // WETH
@@ -287,7 +287,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 275042764824882792402936746);
         }
 
-        console.log("> ETH-R-ALM/ETH-R2-ALM");
+        // console.log("> ETH-R-ALM/ETH-R2-ALM");
         {
             select_arbitrum_fork(360360800);
             mock_oracle = _create_oracle(
@@ -304,7 +304,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 3683777823);
         }
 
-        console.log("> BTCALMTest");
+        // console.log("> BTCALMTest");
         {
             select_sepolia_fork(8817967);
             mock_oracle = _create_oracle(
@@ -324,10 +324,10 @@ contract OracleTest is ALMTestBase {
         // This example is not present in strategies
         {
             // mock_oracle = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 24 hours, 24 hours);
-            // console.log("oracle", mock_oracle.price());
+            // // console.log("oracle", mock_oracle.price());
         }
 
-        console.log("> UNICORD-R");
+        // console.log("> UNICORD-R");
         {
             select_sepolia_fork(8818009);
             mock_oracle = _create_oracle(
@@ -344,7 +344,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 999792479247924893);
         }
 
-        console.log("> UNICORD");
+        // console.log("> UNICORD");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x4eadC6ee74b7Ceb09A4ad90a33eA2915fbefcf76), // USDT
@@ -365,7 +365,7 @@ contract OracleTest is ALMTestBase {
         IOracle mock_oracle;
         select_sepolia_fork(8818766);
 
-        console.log("> DN/ETHALM");
+        // console.log("> DN/ETHALM");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x3b8Cd6127a6CBEB9336667A3FfCD32B3509Cb5D9), // WETH
@@ -383,7 +383,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 274259288754423679596577136);
         }
 
-        console.log("> ETH-R-ALM/ETH-R2-ALM");
+        // console.log("> ETH-R-ALM/ETH-R2-ALM");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x3b8Cd6127a6CBEB9336667A3FfCD32B3509Cb5D9), // WETH
@@ -401,7 +401,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 3644507977);
         }
 
-        console.log("> BTCALMTest");
+        // console.log("> BTCALMTest");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0xe4f05C62c09a3ec000a3f3895eFD2Ec9a1A11742), // cbBTC
@@ -422,10 +422,10 @@ contract OracleTest is ALMTestBase {
         // This example is not present in strategies
         {
             // mock_oracle = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 24 hours, 24 hours);
-            // console.log("oracle", mock_oracle.price());
+            // // console.log("oracle", mock_oracle.price());
         }
 
-        console.log("> UNICORD-R");
+        // console.log("> UNICORD-R");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0xaf900d10f197762794C41dac395C5b8112eD13E1), //DAI
@@ -443,7 +443,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 1000020846272667222);
         }
 
-        console.log("> UNICORD");
+        // console.log("> UNICORD");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x8c852EEC6ae356FeDf5d7b824E254f7d94Ac6824), // USDT
@@ -469,7 +469,7 @@ contract OracleTest is ALMTestBase {
             uint256 decimalsQuote = 18;
             uint256 priceBase = 99994904;
             uint256 decimalsBase = 8;
-            console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
+            // console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
         }
 
         // This is illustration of overflow if decimalsBase - decimalsQuote < -18
@@ -490,7 +490,7 @@ contract OracleTest is ALMTestBase {
             uint256 decimalsQuote = 6;
             uint256 priceBase = 99994904000000005278531584;
             uint256 decimalsBase = 26;
-            console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
+            // console.log("price", mock_calc_price(priceQuote, decimalsQuote, priceBase, decimalsBase));
         }
     }
 
