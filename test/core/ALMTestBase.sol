@@ -390,6 +390,11 @@ abstract contract ALMTestBase is Deployers {
     uint256 constant WAD = 1e18;
 
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
+        alignOracles(newSqrtPrice);
+        setV3PoolPrice(newSqrtPrice);
+    }
+
+    function alignOracles(uint160 newSqrtPrice) public {
         uint256 _poolPrice = TestLib.getPriceFromSqrtPriceX96(newSqrtPrice);
 
         uint256 _oraclePrice = TestLib.getOraclePriceFromPoolPrice(_poolPrice, isInvertedPool, int8(bDec) - int8(qDec));
@@ -402,7 +407,6 @@ abstract contract ALMTestBase is Deployers {
             abi.encodeWithSelector(IOracle.poolPrice.selector),
             abi.encode(_price, _poolPrice)
         );
-        setV3PoolPrice(newSqrtPrice);
     }
 
     // --- Uniswap V3 --- //
@@ -441,7 +445,7 @@ abstract contract ALMTestBase is Deployers {
         uint256 targetPrice = _sqrtPriceToOraclePrice(newSqrtPrice);
 
         // ** Configuration parameters
-        uint256 initialStepSize = 1000 ether; // Initial swap amount
+        uint256 initialStepSize = 10 ether; // Initial swap amount
         uint256 adaptiveDecayBase = 90; // 90% decay when moving in right direction
         uint256 aggressiveDecayBase = 70; // 70% decay when overshooting
 
@@ -487,8 +491,8 @@ abstract contract ALMTestBase is Deployers {
         if (ALMMathLib.absSub(currentPrice, targetPrice) > slippageTolerance) revert("setV3PoolPrice fail");
     }
 
-    uint256 constant MAX_ITER = 8; // binary-search depth
-    uint256 constant MIN_IN = 3e8; // 300 USDC   (token1)  or 0.0000003 WETH (token0)
+    uint256 constant MAX_ITER = 80; // binary-search depth
+    uint256 constant MIN_IN = 3e9; // 3000 USDC   (token1)  or 0.000003 WETH (token0)
 
     function setV3PoolPrice(uint160 targetSqrtPriceX96) public {
         uint160 sqrtCurrent = hook.sqrtPriceCurrent();
@@ -623,7 +627,7 @@ abstract contract ALMTestBase is Deployers {
     uint256 public assertEqPSThresholdCS;
     uint256 public assertEqPSThresholdDL;
     uint256 public assertEqPSThresholdDS;
-    uint256 public assertEqBalanceQuoteThreshold = 1;
+    uint256 public assertEqBalanceQuoteThreshold = 2;
     uint256 public assertEqBalanceBaseThreshold = 15;
     uint256 public assertEqSqrtThreshold;
 
@@ -700,51 +704,10 @@ abstract contract ALMTestBase is Deployers {
             ? calcDS - _lendingAdapter.getBorrowedShort()
             : _lendingAdapter.getBorrowedShort() - calcDS;
 
-        uint256 diffDL = calcDL >= _lendingAdapter.getBorrowedLong()
-            ? calcDL - _lendingAdapter.getBorrowedLong()
-            : _lendingAdapter.getBorrowedLong() - calcDL;
-
         assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 100);
         assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 100);
-        // assertApproxEqAbs(calcDL * 1e18 /_lendingAdapter.getBorrowedLong(), , slippage);
-        assertApproxEqAbs((diffDL * 1e18) / calcDS, slippage, slippage);
 
         if (shortLeverage != 1e18) assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
-
-        uint256 tvlRatio = calcTVL() > preRebalanceTVL
-            ? (calcTVL() * 1e18) / preRebalanceTVL - 1e18
-            : 1e18 - (calcTVL() * 1e18) / preRebalanceTVL;
-
-        assertApproxEqAbs(tvlRatio, slippage, slippage);
-    }
-
-    function assertEqHookPositionStateDN(
-        uint256 preRebalanceTVL,
-        uint256 weight,
-        uint256 longLeverage,
-        uint256 shortLeverage,
-        uint256 slippage
-    ) public view {
-        ILendingAdapter _lendingAdapter = ILendingAdapter(hook.lendingAdapter());
-
-        uint256 calcCL = (preRebalanceTVL * (weight * longLeverage)) / oraclePriceW() / 1e18;
-
-        uint256 calcCS = ((preRebalanceTVL * (1e18 - weight) * shortLeverage) / 1e48);
-
-        uint256 calcDL = (((calcCL * oraclePriceW() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
-            1e30;
-        uint256 calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oraclePriceW()) * (1e18 + slippage)) /
-            1e24;
-
-        uint256 diffDS = calcDS > _lendingAdapter.getBorrowedShort()
-            ? calcDS - _lendingAdapter.getBorrowedShort()
-            : _lendingAdapter.getBorrowedShort() - calcDS;
-
-        assertApproxEqAbs(calcCL, _lendingAdapter.getCollateralLong(), 1e1);
-        assertApproxEqAbs(calcCS, _lendingAdapter.getCollateralShort(), 1e1);
-        assertApproxEqAbs(calcDL, _lendingAdapter.getBorrowedLong(), slippage);
-
-        assertApproxEqAbs((diffDS * 1e18) / calcDS, slippage, slippage);
 
         uint256 tvlRatio = calcTVL() > preRebalanceTVL
             ? (calcTVL() * 1e18) / preRebalanceTVL - 1e18

@@ -29,9 +29,9 @@ terl:
 	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_"
 
 ter2:
-	clear && forge test -vv --match-contract ETHR2ALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract ETHR2ALMTest --match-test "test_"
 ter2l:
-	clear && forge test -vvvv --match-contract ETHR2ALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract ETHR2ALMTest --match-test "test_"
 
 tu:
 	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_"
@@ -48,26 +48,30 @@ tb:
 tbl:
 	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
 
 tg:
 	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
 tgl:
 	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_"
+
 tla:
 	clear && forge test -vv --match-contract LendingAdaptersTest --match-test "test_"
 tlal:
 	clear && forge test -vvvv --match-contract LendingAdaptersTest --match-test "test_"
+
 tra:
 	clear && forge test -vv --match-contract RewardsAdaptersTest --match-test "test_"
 tral:
 	clear && forge test -vvvv --match-contract RewardsAdaptersTest --match-test "test_"
+
 tsa:
 	clear && forge test -vv --match-contract SwapAdapterTest --match-test "test_"
 tsal:
 	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
+
 to:
 	clear && forge test -vv --match-contract OracleTest --match-test "test_"
 tol:

@@ -67,7 +67,7 @@ contract ETHRALMTest is ALMTestBase {
         approve_accounts();
     }
 
-    function test_setUp() public {
+    function test_setUp() public view {
         assertEq(hook.owner(), deployer.addr);
         assertTicks(-200488, -194488);
     }
@@ -94,12 +94,10 @@ contract ETHRALMTest is ALMTestBase {
 
     function test_deposit_rebalance() public {
         test_deposit();
-        // uint256 preRebalanceTVL = calcTVL();
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(-197461 - 3000, -197461 + 3000);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 4086015488346380075686829, 1, "sqrtPrice");
@@ -453,11 +451,11 @@ contract ETHRALMTest is ALMTestBase {
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
+        uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage); //TODO check after all the cases on slippage
+        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage * 2);
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
