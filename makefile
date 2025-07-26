@@ -69,9 +69,9 @@ tsa:
 tsal:
 	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
 to:
-	clear && forge test -vv --match-contract OracleTest --match-test "test_"
+	clear && forge test -vv --match-contract OracleTest --match-test "test_strategy_oracles_chronicle_one_feed"
 tol:
-	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
+	clear && forge test -vvvv --match-contract OracleTest --match-test "test_strategy_oracles_chronicle_one_feed"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"

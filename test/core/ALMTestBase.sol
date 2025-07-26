@@ -92,6 +92,7 @@ abstract contract ALMTestBase is Deployers {
     TestAccount marketMaker;
     TestAccount zero;
     TestAccount treasury;
+    TestAccount mock_empty_oracle;
 
     uint256 almId;
     uint256 tempGas;
@@ -126,6 +127,7 @@ abstract contract ALMTestBase is Deployers {
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
         treasury = TestAccountLib.createTestAccount("treasury");
+        mock_empty_oracle = TestAccountLib.createTestAccount("mock_empty_oracle");
     }
 
     function create_lending_adapter_euler_WETH_USDC() internal {
