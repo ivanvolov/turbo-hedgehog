@@ -680,11 +680,21 @@ contract ETHALMTest is MorphoTestBase {
     }
 
     function test_deposit_rebalance_swap_rebalance() public {
-        test_deposit_rebalance_swap_price_up_in();
+        test_deposit_rebalance();
+
+        uint256 usdcToSwap = 50000e6; // 50k USDC
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+
+        swapUSDC_WETH_In(usdcToSwap);
 
         // ** Fail swap without oracle update
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
+        rebalanceAdapter.rebalance(slippage);
+
+        alignOraclesAndPools(hook.sqrtPriceCurrent());
+
+        vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
     }
 
