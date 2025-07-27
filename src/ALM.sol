@@ -252,7 +252,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         );
         uint160 sqrtPrice = sqrtPriceCurrent();
         checkSwapDeviations(uint256(sqrtPrice));
-
         // We assume what fees are positive and only one token accrued fees during a single swap.
         _settleDeltas(
             key,
@@ -266,10 +265,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     }
 
     function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
-        console.log("SETTLE DELTAS");
         if (zeroForOne) {
-            console.log("SETTLE DELTAS zeroForOne true");
-
             uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
@@ -277,13 +273,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
-            console.log("SETTLE DELTAS zeroForOne false");
-
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
-
-            console.log("token 0 %s", token0);
-            console.log("token 1 %s", token1);
 
             key.currency1.take(poolManager, address(this), token1, false);
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);

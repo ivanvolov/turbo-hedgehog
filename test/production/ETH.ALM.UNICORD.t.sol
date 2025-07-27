@@ -44,6 +44,11 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
     PoolKey USDC_USDT_key;
     PoolKey poolKey2;
 
+    uint24 feeLP = 500; //0.05%
+
+    uint256 k1 = 1425e15; //1.425
+    uint256 k2 = 1425e15; //1.425
+
     function setUp() public {
         uint256 mainnetFork = vm.createFork(UNICHAIN_RPC_URL);
         vm.selectFork(mainnetFork);
@@ -148,7 +153,7 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         assertEqBalanceStateZero(alice.addr);
     }
 
-    uint256 amountToDep2 = 10 ether;
+    uint256 amountToDep2 = 100 ether;
 
     function part_deposit_ETHALM() public {
         deal(address(WETH), address(alice.addr), amountToDep2);
@@ -157,18 +162,18 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         uint256 shares = hook.deposit(alice.addr, amountToDep2, 0);
         vm.stopPrank();
 
-        assertApproxEqAbs(shares, amountToDep2, 1e1);
+        assertApproxEqAbs(shares, amountToDep2, 1);
         assertEqBalanceStateZero(alice.addr);
     }
 
     function part_rebalance_UNICORD() public {
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(30e14);
+        rebalanceAdapter.rebalance(10e14);
     }
 
     function part_rebalance_ETH_ALM() public {
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(15e14);
+        rebalanceAdapter.rebalance(10e14);
     }
 
     function test_lifecycle() public {
@@ -193,7 +198,7 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
 
         part_deploy_ETH_ALM();
 
-        // USDC->USDT->ETH->WETH
+        //USDC->USDT->ETH->WETH
         {
             PoolKey memory ETH_USDT_key = _getAndCheckPoolKey(
                 IERC20(0x8f187aA05619a017077f5308904739877ce9eA21),
@@ -224,32 +229,60 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         }
 
         part_deposit_ETHALM();
+
         part_rebalance_ETH_ALM();
+        console.log("REBALANCE DONE");
+
+        vm.startPrank(deployer.addr);
+        rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
+        hook.setNextLPFee(feeLP);
+        vm.stopPrank();
+
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        // ** Swap Up In
+        {
+            uint256 usdcToSwap = 1000e6; // 100k USDC
+            deal(address(USDC), address(swapper.addr), usdcToSwap);
+
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+
+            console.log("deltaUSDC %s", deltaUSDC);
+            console.log("deltaWETH %s", deltaWETH);
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
+
+            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
+        }
     }
 
     // ** Helpers
 
-    // function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(false, int256(amount), key);
-    // }
+    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, int256(amount), key);
+    }
 
-    // function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
-    //     return _quoteOutputSwap(false, amount);
-    // }
+    function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
+    }
 
-    // function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(false, -int256(amount), key);
-    // }
+    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(false, -int256(amount), key);
+    }
 
-    // function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(true, int256(amount), key);
-    // }
+    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap(true, int256(amount), key);
+    }
 
-    // function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
-    //     return _quoteOutputSwap(true, amount);
-    // }
+    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
+    }
 
-    // function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(true, -int256(amount), key);
-    // }
+    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap(true, -int256(amount), key);
+    }
 }
