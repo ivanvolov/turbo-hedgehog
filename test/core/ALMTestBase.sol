@@ -136,6 +136,14 @@ abstract contract ALMTestBase is Deployers {
         create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerWETHVault2, 0);
     }
 
+    function create_lending_adapter_euler_USDT_USDC() internal {
+        create_lending_adapter_euler(TestLib.eulerUSDCVault1, 10e12, TestLib.eulerUSDTVault1, 10e12);
+    }
+
+    function create_flash_loan_adapter_euler_USDT_USDC() internal {
+        create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 10e12, TestLib.eulerUSDTVault2, 10e12);
+    }
+
     function create_lending_adapter_euler(
         IEulerVault _vault0,
         uint256 deposit0,
@@ -695,8 +703,6 @@ abstract contract ALMTestBase is Deployers {
         uint256 calcCS = (((preRebalanceTVL * oraclePriceW()) / 1e18) * (((1e18 - weight) * shortLeverage) / 1e18)) /
             1e30;
 
-        uint256 calcDL = (((calcCL * oraclePriceW() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
-            1e30;
         if (shortLeverage != 1e18)
             calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oraclePriceW()) * (1e18 + slippage)) / 1e24;
 

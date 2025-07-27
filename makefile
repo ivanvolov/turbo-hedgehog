@@ -23,6 +23,12 @@ te:
 	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
 tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
+
+tte:
+	clear && forge test -vv --match-contract TURBOALMTest --match-test "test_"
+ttel:
+	clear && forge test -vvvv --match-contract TURBOALMTest --match-test "test_"
+
 ter:
 	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"
 terl:
