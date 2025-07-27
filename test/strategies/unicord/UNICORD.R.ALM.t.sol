@@ -72,7 +72,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         create_lending_adapter_morpho_earn_dai_usdc();
         create_flash_loan_adapter_morpho();
         create_oracle(false, TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
-        init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
+        init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 10, 10, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
         {
@@ -116,9 +116,19 @@ contract UNICORDRALMTest is MorphoTestBase {
     function test_deposit_withdraw() public {
         test_deposit();
 
+        console.log("pre CL %s", lendingAdapter.getCollateralLong());
+        console.log("pre CS %s", lendingAdapter.getCollateralShort());
+        console.log("pre DL %s", lendingAdapter.getBorrowedLong());
+        console.log("pre DS %s", lendingAdapter.getBorrowedShort());
+
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
         vm.prank(alice.addr);
         hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+        console.log("post CL %s", lendingAdapter.getCollateralLong());
+        console.log("post CS %s", lendingAdapter.getCollateralShort());
+        console.log("post DL %s", lendingAdapter.getBorrowedLong());
+        console.log("post DS %s", lendingAdapter.getBorrowedShort());
     }
 
     function test_deposit_rebalance() public {
@@ -127,14 +137,38 @@ contract UNICORDRALMTest is MorphoTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
-        // console.log("tvl %s", calcTVL());
 
-        // console.log("liquidity %s", hook.liquidity());
         (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        // console.log("tickLower %s", tickLower);
-        // console.log("tickUpper %s", tickUpper);
-        assertTicks(-276421, -276221);
+
+        assertTicks(-276331, -276311);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 79240362711883211369901, 1e1, "sqrtPrice");
+    }
+
+    function test_deposit_rebalance_swap_withdraw() public {
+        test_deposit_rebalance();
+
+        console.log("pre CL %s", lendingAdapter.getCollateralLong());
+        console.log("pre CS %s", lendingAdapter.getCollateralShort());
+        console.log("pre DL %s", lendingAdapter.getBorrowedLong());
+        console.log("pre DS %s", lendingAdapter.getBorrowedShort());
+
+        uint256 usdcToSwap = 20e9; // 20k USDC
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+        (uint256 deltaDAI, uint256 deltaUSDC) = swapUSDC_DAI_In(usdcToSwap);
+
+        console.log("post CL %s", lendingAdapter.getCollateralLong());
+        console.log("post CS %s", lendingAdapter.getCollateralShort());
+        console.log("post DL %s", lendingAdapter.getBorrowedLong());
+        console.log("post DS %s", lendingAdapter.getBorrowedShort());
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+        console.log("post CL %s", lendingAdapter.getCollateralLong());
+        console.log("post CS %s", lendingAdapter.getCollateralShort());
+        console.log("post DL %s", lendingAdapter.getBorrowedLong());
+        console.log("post DS %s", lendingAdapter.getBorrowedShort());
     }
 
     function test_lifecycle() public {

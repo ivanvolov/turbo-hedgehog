@@ -106,6 +106,24 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
+    function test_deposit_withdraw() public {
+        test_deposit();
+
+        console.log("pre CL %s", lendingAdapter.getCollateralLong());
+        console.log("pre CS %s", lendingAdapter.getCollateralShort());
+        console.log("pre DL %s", lendingAdapter.getBorrowedLong());
+        console.log("pre DS %s", lendingAdapter.getBorrowedShort());
+
+        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        vm.prank(alice.addr);
+        hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+
+        console.log("post CL %s", lendingAdapter.getCollateralLong());
+        console.log("post CS %s", lendingAdapter.getCollateralShort());
+        console.log("post DL %s", lendingAdapter.getBorrowedLong());
+        console.log("post DS %s", lendingAdapter.getBorrowedShort());
+    }
+
     function test_deposit_rebalance() public {
         test_deposit();
 

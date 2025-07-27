@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
 import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -210,7 +212,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
         uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
+        console.log("swapExactOutput");
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
+
+        console.log("amount %s", amount);
+        console.log("balance %s", balance);
     }
 
     function onFlashLoanTwoTokens(
