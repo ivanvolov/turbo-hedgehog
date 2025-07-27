@@ -11,6 +11,7 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolSwapTest} from "@test/libraries/v4-forks/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Deployers} from "@test/libraries/v4-forks/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -36,6 +37,7 @@ import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants} from "@test/libraries/Constants.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
@@ -57,6 +59,7 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
     using CurrencyLibrary for Currency;
+    using PoolIdLibrary for PoolId;
     using PRBMathUD60x18 for uint256;
     using SafeERC20 for IERC20;
 
@@ -65,6 +68,8 @@ abstract contract ALMTestBase is Deployers {
     uint160 initialSQRTPrice;
     ALM hook;
     SRebalanceAdapter rebalanceAdapter;
+
+    string UNICHAIN_RPC_URL = vm.envString("UNICHAIN_RPC_URL");
 
     address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
 
@@ -132,6 +137,34 @@ abstract contract ALMTestBase is Deployers {
         create_lending_adapter_euler(TestLib.eulerUSDCVault1, 0, TestLib.eulerWETHVault1, 0);
     }
 
+    function create_lending_adapter_euler_WETH_USDC_unichain() internal returns (ILendingAdapter) {
+        vm.prank(deployer.addr);
+        lendingAdapter = new EulerLendingAdapter(
+            BASE,
+            QUOTE,
+            Constants.EULER_VAULT_CONNECT,
+            Constants.eulerUSDCVault1,
+            Constants.eulerWETHVault1,
+            Constants.merklRewardsDistributor,
+            Constants.rEUL
+        );
+        return lendingAdapter;
+    }
+
+    function create_lending_adapter_euler_USDC_USDT_unichain() internal returns (ILendingAdapter) {
+        vm.prank(deployer.addr);
+        lendingAdapter = new EulerLendingAdapter(
+            BASE,
+            QUOTE,
+            Constants.EULER_VAULT_CONNECT,
+            Constants.eulerUSDCVault1,
+            Constants.eulerUSDTVault1,
+            Constants.merklRewardsDistributor,
+            Constants.rEUL
+        );
+        return lendingAdapter;
+    }
+
     function create_flash_loan_adapter_euler_WETH_USDC() internal {
         create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerWETHVault2, 0);
     }
@@ -179,6 +212,8 @@ abstract contract ALMTestBase is Deployers {
         vm.stopPrank();
     }
 
+    // --- Oracles  --- //
+
     function create_oracle(
         bool _isInvertedPool,
         AggregatorV3Interface feedQ,
@@ -213,6 +248,73 @@ abstract contract ALMTestBase is Deployers {
         oracle.setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
+    function mock_latestRoundData(address feed, uint256 value) public {
+        vm.mockCall(
+            address(feed),
+            abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
+            abi.encode(uint80(0), int256(value), uint256(0), uint256(block.timestamp), uint80(0))
+        );
+    }
+
+    function production_init_hook(
+        bool _isInvertedAssets,
+        bool _isNova,
+        uint256 _liquidityMultiplier,
+        uint256 _protocolFee,
+        uint256 _tvlCap,
+        int24 _tickLowerDelta,
+        int24 _tickUpperDelta,
+        uint256 _swapPriceThreshold
+    ) internal {
+        vm.startPrank(deployer.addr);
+
+        deploy_hook_contract(_isInvertedAssets);
+
+        // MARK: Deploying modules and setting up parameters
+        // LendingAdapter should already be created
+        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
+        else positionManager = new PositionManager(BASE, QUOTE);
+
+        swapAdapter = new UniswapSwapAdapter(
+            BASE,
+            QUOTE,
+            Constants.UNIVERSAL_ROUTER,
+            Constants.PERMIT_2,
+            Constants.WETH9
+        );
+        // Oracle should already be created
+        rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, _isInvertedAssets, _isNova);
+
+        hook.setProtocolParams(
+            _liquidityMultiplier,
+            _protocolFee,
+            _tvlCap,
+            _tickLowerDelta,
+            _tickUpperDelta,
+            _swapPriceThreshold
+        );
+        _setComponents(address(hook));
+
+        _setComponents(address(lendingAdapter));
+        _setComponents(address(flashLoanAdapter));
+        _setComponents(address(positionManager));
+
+        _setComponents(address(swapAdapter));
+
+        _setComponents(address(rebalanceAdapter));
+        rebalanceAdapter.setRebalanceOperator(deployer.addr);
+        rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
+        // MARK END
+
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+
+        vm.stopPrank();
+    }
+
+    function _test_currencies_order(address token0, address token1) internal pure {
+        if (token0 >= token1) revert("Out of order");
+    }
+
     function init_hook(
         bool _isInvertedAssets,
         bool _isNova,
@@ -236,7 +338,7 @@ abstract contract ALMTestBase is Deployers {
         if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
         else positionManager = new PositionManager(BASE, QUOTE);
 
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2, TestLib.WETH9);
         // Oracle should already be created
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, _isInvertedAssets, _isNova);
 
@@ -255,7 +357,7 @@ abstract contract ALMTestBase is Deployers {
         _setComponents(address(positionManager));
 
         _setComponents(address(swapAdapter));
-        setSwapAdapterToV3SingleSwap();
+        setSwapAdapterToV3SingleSwap(TARGET_SWAP_POOL);
 
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setRebalanceOperator(deployer.addr);
@@ -273,14 +375,7 @@ abstract contract ALMTestBase is Deployers {
     }
 
     function deploy_hook_contract(bool _isInvertedAssets) internal {
-        address hookAddress = address(
-            uint160(
-                Hooks.BEFORE_SWAP_FLAG |
-                    Hooks.AFTER_SWAP_FLAG |
-                    Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
-                    Hooks.AFTER_INITIALIZE_FLAG
-            )
-        );
+        address hookAddress = create_address_without_collision();
 
         (address currency0, address currency1) = getTokensInOrder();
         key = PoolKey(
@@ -298,6 +393,18 @@ abstract contract ALMTestBase is Deployers {
         );
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
+    }
+
+    bool public deployedOnce = false;
+    function create_address_without_collision() internal returns (address hookAddress) {
+        uint160 flags = uint160(
+            Hooks.BEFORE_SWAP_FLAG |
+                Hooks.AFTER_SWAP_FLAG |
+                Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
+                Hooks.AFTER_INITIALIZE_FLAG
+        );
+        hookAddress = deployedOnce ? address(flags ^ (0x4444 << 144)) : address(flags);
+        deployedOnce = true;
     }
 
     function updateProtocolFees(uint256 _protocolFee) internal {
@@ -336,13 +443,21 @@ abstract contract ALMTestBase is Deployers {
         );
     }
 
-    function setSwapAdapterToV3SingleSwap() internal {
+    function setSwapAdapterToV3SingleSwap(address pool) internal {
         IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
 
-        uint256 fee = IUniswapV3Pool(TARGET_SWAP_POOL).fee();
+        uint256 fee = IUniswapV3Pool(pool).fee();
 
-        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(0, 1, abi.encodePacked(BASE, uint24(fee), QUOTE));
-        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(1, 1, abi.encodePacked(QUOTE, uint24(fee), BASE));
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
+            0,
+            protToC(ProtId.V3),
+            abi.encodePacked(BASE, uint24(fee), QUOTE)
+        );
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
+            1,
+            protToC(ProtId.V3),
+            abi.encodePacked(QUOTE, uint24(fee), BASE)
+        );
 
         uint256[] memory activeSwapRoute = new uint256[](1);
         activeSwapRoute[0] = 0;
@@ -352,6 +467,82 @@ abstract contract ALMTestBase is Deployers {
         activeSwapRoute[0] = 1;
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute);
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute);
+    }
+
+    function setSwapAdapterToV4SingleSwap(PoolKey memory targetKey, bool isReversed) internal {
+        IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
+
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
+            0,
+            protToC(ProtId.V4_SINGLE),
+            abi.encode(false, targetKey, true, bytes(""))
+        );
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
+            1,
+            protToC(ProtId.V4_SINGLE),
+            abi.encode(false, targetKey, false, bytes(""))
+        );
+
+        uint256[] memory activeSwapRoute = new uint256[](1);
+        activeSwapRoute[0] = isReversed ? 1 : 0;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute); // exactIn, base => quote
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base ->
+
+        activeSwapRoute[0] = isReversed ? 0 : 1;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute); // exactOut, base => quote
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
+    }
+
+    function setSwapAdapterToV4MultihopSwap(bytes memory path, bool isReversed) internal {
+        IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
+
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(0, protToC(ProtId.V4_MULTIHOP), path);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(1, protToC(ProtId.V4_MULTIHOP), path);
+
+        uint256[] memory activeSwapRoute = new uint256[](1);
+        activeSwapRoute[0] = isReversed ? 1 : 0;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute); // exactIn, base => quote
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base ->
+
+        activeSwapRoute[0] = isReversed ? 0 : 1;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute); // exactOut, base => quote
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
+    }
+
+    enum ProtId {
+        V2,
+        V3,
+        V4_SINGLE,
+        V4_MULTIHOP
+    }
+
+    IERC20 ETH = IERC20(address(0));
+
+    function protToC(ProtId protocolId) internal pure returns (uint8) {
+        if (protocolId == ProtId.V2) return 0;
+        else if (protocolId == ProtId.V3) return 1;
+        else if (protocolId == ProtId.V4_SINGLE) return 2;
+        else if (protocolId == ProtId.V4_MULTIHOP) return 3;
+        else revert("ProtId not found");
+    }
+
+    function _getAndCheckPoolKey(
+        IERC20 token0,
+        IERC20 token1,
+        uint24 fee,
+        int24 tickSpacing,
+        bytes32 _poolId
+    ) internal pure returns (PoolKey memory poolKey) {
+        _test_currencies_order(address(token0), address(token1));
+        poolKey = PoolKey(
+            Currency.wrap(address(token0)),
+            Currency.wrap(address(token1)),
+            fee,
+            tickSpacing,
+            IHooks(address(0))
+        );
+        PoolId id = poolKey.toId();
+        assertEq(PoolId.unwrap(id), _poolId, "PoolId not equal");
     }
 
     function getTokensInOrder() internal view returns (address, address) {
@@ -695,8 +886,6 @@ abstract contract ALMTestBase is Deployers {
         uint256 calcCS = (((preRebalanceTVL * oraclePriceW()) / 1e18) * (((1e18 - weight) * shortLeverage) / 1e18)) /
             1e30;
 
-        uint256 calcDL = (((calcCL * oraclePriceW() * (1e18 - (1e36 / longLeverage))) / 1e36) * (1e18 + slippage)) /
-            1e30;
         if (shortLeverage != 1e18)
             calcDS = (((calcCS * (1e18 - (1e36 / shortLeverage)) * 1e18) / oraclePriceW()) * (1e18 + slippage)) / 1e24;
 

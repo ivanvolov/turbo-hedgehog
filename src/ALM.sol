@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -186,6 +188,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
         uint256 _balance = token == BASE ? baseBalance() : quoteBalance();
+        console.log("_ensureEnoughBalance");
+
         if (balance >= _balance) swapAdapter.swapExactOutput(token == QUOTE, balance - _balance);
         else swapAdapter.swapExactInput(token == BASE, _balance - balance);
     }
@@ -262,7 +266,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     }
 
     function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
+        console.log("SETTLE DELTAS");
         if (zeroForOne) {
+            console.log("SETTLE DELTAS zeroForOne true");
+
             uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
@@ -270,8 +277,13 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
+            console.log("SETTLE DELTAS zeroForOne false");
+
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
+
+            console.log("token 0 %s", token0);
+            console.log("token 1 %s", token1);
 
             key.currency1.take(poolManager, address(this), token1, false);
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);

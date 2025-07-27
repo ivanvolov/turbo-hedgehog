@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
 import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -210,6 +212,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
         uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
+
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
 
@@ -218,14 +221,18 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amountQuote,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
+        console.log("!");
         _managePositionDeltas(data);
+        console.log("!");
 
         uint256 baseBalance = BASE.balanceOf(address(this));
         if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
         else {
+            console.log("1");
             uint256 quoteBalance = QUOTE.balanceOf(address(this));
             if (amountQuote > quoteBalance) swapAdapter.swapExactOutput(true, amountQuote - quoteBalance);
         }
+        console.log("3");
     }
 
     /// @dev This function is mainly for removing stack too deep error.

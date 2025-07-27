@@ -19,6 +19,11 @@ tss:
 tssl:
 	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
 
+teu:
+	clear && forge test -vv --match-contract ETHALM_UNICORDTest --match-test "test_"
+teul:
+	clear && forge test -vvvv --match-contract ETHALM_UNICORDTest --match-test "test_"
+
 te:
 	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
 tel:

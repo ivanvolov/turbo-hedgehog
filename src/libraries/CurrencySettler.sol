@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.24;
 
+import "forge-std/console.sol";
+
 import {Currency} from "v4-core/types/Currency.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -68,6 +70,7 @@ library CurrencySettler {
         // Early return when amount is 0 given that some tokens may revert in this case
         if (amount == 0) return;
 
+        console.log("1");
         claims ? poolManager.mint(recipient, currency.toId(), amount) : poolManager.take(currency, recipient, amount);
     }
 }
