@@ -830,8 +830,10 @@ abstract contract ALMTestBase is Deployers {
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = __getV4Input(_key, zeroForOne, isExactInput, amount);
         bytes memory swapCommands;
-        swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(Commands.V4_SWAP)));
+        swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.V4_SWAP))));
+        console.log("before swap");
         universalRouter.execute(swapCommands, inputs, block.timestamp);
+        console.log("after swap");
 
         vm.stopPrank();
     }

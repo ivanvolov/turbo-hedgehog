@@ -146,8 +146,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         uint256[] memory route = swapRoutes[toSwapKey(isExactInput, isBaseToQuote)];
         if (route.length == 0) revert RouteNotFound(isBaseToQuote, isExactInput);
 
-        bytes[] memory inputs = new bytes[]((route.length + 1) / 2);
+        bytes[] memory inputs = new bytes[]((route.length + 1) / 2 + 1);
         uint256 amountTargetLeft = amountTarget;
+        bool sweepEth;
         for (uint256 i = 0; i < route.length + 1; ) {
             SwapPath memory path = swapPaths[route[i]];
             if (path.protocolType > 3) revert InvalidProtocolType();
@@ -177,6 +178,10 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
                 i += 2;
             }
         }
+
+        // Always SWEEP extra ETH to the caller
+        swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
+        inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);

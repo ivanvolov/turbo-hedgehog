@@ -80,7 +80,7 @@ contract SwapAdapterTest is ALMTestBase {
 
     uint256 testAmount;
 
-    function test_swap_eth_ExactInput_eth_V4_SINGLE_BASE_QUOTE() public {
+    function test_swap_eth_ExactInput_V4_SINGLE_BASE_QUOTE() public {
         BASE = IERC20(TestLib.WETH);
         QUOTE = IERC20(TestLib.USDT);
         _create_accounts();
@@ -104,13 +104,13 @@ contract SwapAdapterTest is ALMTestBase {
         part_test_swap(
             SwapType.EXACT_OUTPUT,
             SwapDirection.BASE_QUOTE,
-            2e18,
+            999999999619294475,
             abi.encode(true, poolKeyETH_USDT, true, bytes("")),
             ProtId.V4_SINGLE
         );
     }
 
-    function test_swap_eth_ExactInput_eth_V4_SINGLE_QUOTE_BASE() public {
+    function test_swap_eth_ExactInput_V4_SINGLE_QUOTE_BASE() public {
         BASE = IERC20(TestLib.WETH);
         QUOTE = IERC20(TestLib.USDT);
         _create_accounts();
@@ -125,7 +125,7 @@ contract SwapAdapterTest is ALMTestBase {
         );
     }
 
-    function test_swap_eth_ExactOutput_eth_V4_SINGLE_QUOTE_BASE() public {
+    function test_swap_eth_ExactOutput_V4_SINGLE_QUOTE_BASE() public {
         BASE = IERC20(TestLib.WETH);
         QUOTE = IERC20(TestLib.USDT);
         _create_accounts();

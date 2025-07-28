@@ -178,10 +178,13 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
     }
 
     function par_swap_up_in_ETH_ALM() public {
-        // vm.startPrank(swapper.addr);
-        // BASE.forceApprove(address(universalRouter), type(uint256).max);
-        // QUOTE.forceApprove(address(universalRouter), type(uint256).max);
-        // vm.stopPrank();
+        vm.startPrank(swapper.addr);
+        USDC.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
+        Constants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
+
+        WETH.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
+        Constants.PERMIT_2.approve(address(WETH), address(universalRouter), type(uint160).max, type(uint48).max);
+        vm.stopPrank();
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
@@ -193,12 +196,12 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
             console.log("deltaUSDC %s", deltaUSDC);
             console.log("deltaWETH %s", deltaWETH);
-            // console.log("deltaX %s", deltaX);
-            // console.log("deltaY %s", deltaY);
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
 
             // assertApproxEqAbs(deltaWETH, deltaX, 2);
             // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
@@ -298,6 +301,6 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         __swap_production(true, true, amount, USDC_WETH_key);
         int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         int256 wethAfter = int256(WETH.balanceOf(swapper.addr));
-        return (uint256(usdcAfter - usdcBefore), uint256(wethAfter - wethBefore));
+        return (abs(usdcAfter - usdcBefore), abs(wethAfter - wethBefore));
     }
 }
