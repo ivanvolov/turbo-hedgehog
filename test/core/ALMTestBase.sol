@@ -362,7 +362,7 @@ abstract contract ALMTestBase is Deployers {
         _setComponents(address(positionManager));
 
         _setComponents(address(swapAdapter));
-        setSwapAdapterToV3SingleSwap(TARGET_SWAP_POOL);
+        if (TARGET_SWAP_POOL != address(0)) setSwapAdapterToV3SingleSwap(TARGET_SWAP_POOL);
 
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setRebalanceOperator(deployer.addr);
@@ -390,8 +390,6 @@ abstract contract ALMTestBase is Deployers {
             1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
-        console.log(currency0);
-        console.log(currency1);
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
@@ -493,7 +491,7 @@ abstract contract ALMTestBase is Deployers {
         uint256[] memory activeSwapRoute = new uint256[](1);
         activeSwapRoute[0] = isReversed ? 1 : 0;
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute); // exactIn, base => quote
-        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base ->
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base
 
         activeSwapRoute[0] = isReversed ? 0 : 1;
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute); // exactOut, base => quote
