@@ -178,34 +178,43 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
     }
 
     function par_swap_up_in_ETH_ALM() public {
-        vm.startPrank(swapper.addr);
-        USDC.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
-        Constants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
-
-        WETH.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
-        Constants.PERMIT_2.approve(address(WETH), address(universalRouter), type(uint160).max, type(uint48).max);
-        vm.stopPrank();
-
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
-        // ** Swap Up In
-        {
-            uint256 usdcToSwap = 1000e6; // 100k USDC
-            deal(address(USDC), address(swapper.addr), usdcToSwap);
+        uint256 usdcToSwap = 1000e6; // 100k USDC
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+        uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+        (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
 
-            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+        console.log("deltaUSDC %s", deltaUSDC);
+        console.log("deltaWETH %s", deltaWETH);
+        console.log("deltaX %s", deltaX);
+        console.log("deltaY %s", deltaY);
 
-            // assertApproxEqAbs(deltaWETH, deltaX, 2);
-            // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
-        }
+        // assertApproxEqAbs(deltaWETH, deltaX, 2);
+        // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
+    }
+
+    function par_swap_down_in_ETH_ALM() public {
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        uint256 wethToSwap = 1e18 / 2;
+        deal(address(WETH), address(swapper.addr), wethToSwap);
+
+        uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+        (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
+
+        // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+
+        console.log("deltaUSDC %s", deltaUSDC);
+        console.log("deltaWETH %s", deltaWETH);
+        // console.log("deltaX %s", deltaX);
+        // console.log("deltaY %s", deltaY);
+
+        // assertApproxEqAbs(deltaWETH, deltaX, 2);
+        // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
     }
 
     function test_lifecycle() public {
@@ -270,7 +279,19 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         hook.setNextLPFee(feeLP);
         vm.stopPrank();
 
+        // Permit2 approvals
+        {
+            vm.startPrank(swapper.addr);
+            USDC.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
+            Constants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
+
+            WETH.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
+            Constants.PERMIT_2.approve(address(WETH), address(universalRouter), type(uint160).max, type(uint48).max);
+            vm.stopPrank();
+        }
+
         par_swap_up_in_ETH_ALM();
+        par_swap_down_in_ETH_ALM();
     }
 
     // ** Helpers
@@ -283,9 +304,14 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
     //     return _quoteOutputSwap(false, amount);
     // }
 
-    // function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(false, -int256(amount), key);
-    // }
+    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
+        int256 wethBefore = int256(WETH.balanceOf(swapper.addr));
+        __swap_production(false, true, amount, USDC_WETH_key);
+        int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
+        int256 wethAfter = int256(WETH.balanceOf(swapper.addr));
+        return (abs(usdcAfter - usdcBefore), abs(wethAfter - wethBefore));
+    }
 
     // function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
     //     return _swap(true, int256(amount), key);
