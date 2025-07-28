@@ -16,9 +16,12 @@ import {Deployers} from "@test/libraries/v4-forks/Deployers.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
+import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
 import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
+import {Actions} from "v4-periphery/src/libraries/Actions.sol";
+import {Commands} from "@universal-router/Commands.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -55,6 +58,7 @@ import {IUniswapV3Pool} from "@uniswap-v3/IUniswapV3Pool.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
 
 abstract contract ALMTestBase is Deployers {
     using TestAccountLib for TestAccount;
@@ -65,6 +69,7 @@ abstract contract ALMTestBase is Deployers {
 
     PoolKey unauthorizedKey;
     V4Quoter quoter;
+    IUniversalRouter universalRouter;
     uint160 initialSQRTPrice;
     ALM hook;
     SRebalanceAdapter rebalanceAdapter;
@@ -385,6 +390,8 @@ abstract contract ALMTestBase is Deployers {
             1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
+        console.log(currency0);
+        console.log(currency1);
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
@@ -810,6 +817,50 @@ abstract contract ALMTestBase is Deployers {
             assertEq(token1Before - IERC20(_token1).balanceOf(swapper.addr), abs(delta.amount1()));
         }
         return (int256(delta.amount0()), int256(delta.amount1()));
+    }
+
+    function __swap_production(
+        bool zeroForOne,
+        bool isExactInput,
+        uint256 amount,
+        PoolKey memory _key
+    ) internal returns (int256, int256) {
+        vm.startPrank(swapper.addr);
+
+        bytes[] memory inputs = new bytes[](1);
+        inputs[0] = __getV4Input(_key, zeroForOne, isExactInput, amount);
+        bytes memory swapCommands;
+        swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(Commands.V4_SWAP)));
+        universalRouter.execute(swapCommands, inputs, block.timestamp);
+
+        vm.stopPrank();
+    }
+
+    function __getV4Input(
+        PoolKey memory poolKey,
+        bool zeroForOne,
+        bool isExactInput,
+        uint256 amount
+    ) internal returns (bytes memory) {
+        bytes[] memory params = new bytes[](3);
+        uint8 swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN_SINGLE) : uint8(Actions.SWAP_EXACT_OUT_SINGLE);
+
+        params[0] = abi.encode(
+            // We use ExactInputSingleParams structure for both exact input and output swaps
+            // since the parameter structure is identical.
+            IV4Router.ExactInputSingleParams({
+                poolKey: key,
+                zeroForOne: zeroForOne,
+                amountIn: uint128(amount),
+                amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max,
+                hookData: ""
+            })
+        );
+
+        params[1] = abi.encode(zeroForOne ? key.currency0 : key.currency1, isExactInput ? amount : type(uint256).max);
+        params[2] = abi.encode(zeroForOne ? key.currency1 : key.currency0, isExactInput ? 0 : amount);
+
+        return abi.encode(abi.encodePacked(swapAction, uint8(Actions.SETTLE_ALL), uint8(Actions.TAKE_ALL)), params);
     }
 
     // --- Custom assertions --- //
