@@ -36,7 +36,8 @@ abstract contract ALMTestBase is TestBaseMorpho {
     ) internal {
         console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
-        deploy_hook_contract(_isInvertedAssets);
+        deploy_hook_contract(_isInvertedAssets, MConstants.WETH9);
+        isInvertedAssets = _isInvertedAssets;
 
         if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
         else positionManager = new PositionManager(BASE, QUOTE);

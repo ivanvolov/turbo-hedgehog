@@ -75,12 +75,14 @@ contract ALMGeneralTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
 
-            address hookAddress = address(
-                uint160(
-                    Hooks.BEFORE_SWAP_FLAG |
-                        Hooks.AFTER_SWAP_FLAG |
-                        Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
-                        Hooks.AFTER_INITIALIZE_FLAG
+            address payable hookAddress = payable(
+                address(
+                    uint160(
+                        Hooks.BEFORE_SWAP_FLAG |
+                            Hooks.AFTER_SWAP_FLAG |
+                            Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
+                            Hooks.AFTER_INITIALIZE_FLAG
+                    )
                 )
             );
 

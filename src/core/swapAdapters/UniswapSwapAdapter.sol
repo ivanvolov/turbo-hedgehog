@@ -178,17 +178,16 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             }
         }
 
-        // Always SWEEP extra ETH to the caller
+        // Always SWEEP extra ETH from router to adapter.
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
         inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
 
-        console.log("before");
+        // If routers returns ETH, we need to wrap it.
         ethBalance = address(this).balance;
         if (ethBalance > 0) WETH9.deposit{value: ethBalance}();
-        console.log("after");
     }
 
     function _getV2Input(bool isExactInput, uint256 amount, bytes memory route) internal view returns (bytes memory) {
@@ -260,7 +259,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     }
 
     receive() external payable {
-        console.log("receive");
+        //TODO: restrict by UNIVERSAL_ROUTER
         // Intentionally empty as the contract need to receive ETH from V4 router.
     }
 

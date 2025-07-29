@@ -376,16 +376,23 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         return (int256(delta.amount0()), int256(delta.amount1()));
     }
 
-    function __swap_production(bool zeroForOne, bool isExactInput, uint256 amount, PoolKey memory _key) internal {
+    function __swap_production(
+        bool zeroForOne,
+        bool isExactInput,
+        uint256 amount,
+        PoolKey memory _key,
+        bool isEth
+    ) internal {
         vm.startPrank(swapper.addr);
 
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = __getV4Input(_key, zeroForOne, isExactInput, amount);
         bytes memory swapCommands;
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.V4_SWAP))));
-        console.log("before swap");
-        universalRouter.execute(swapCommands, inputs, block.timestamp);
-        console.log("after swap");
+        if (isEth) universalRouter.execute{value: amount}(swapCommands, inputs, block.timestamp);
+        else universalRouter.execute(swapCommands, inputs, block.timestamp);
+
+        console.log("(10)");
 
         vm.stopPrank();
     }

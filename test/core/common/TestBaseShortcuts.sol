@@ -9,6 +9,7 @@ import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** contracts
 import {TestBaseUniswap} from "./TestBaseUniswap.sol";
@@ -31,10 +32,15 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     // --- Shortcuts  --- //
 
-    function deploy_hook_contract(bool _isInvertedAssets) internal {
-        address hookAddress = create_address_without_collision();
+    function deploy_hook_contract(bool _isInvertedAssets, IWETH9 WETH9) internal {
+        address payable hookAddress = create_address_without_collision();
 
         (address currency0, address currency1) = getTokensInOrder();
+        console.log("> currency0: %s", currency0);
+        console.log("> currency1: %s", currency1);
+        (currency0, currency1) = adjustForNativeEth(currency0, currency1);
+        console.log("> currency0: %s", currency0);
+        console.log("> currency1: %s", currency1);
         key = PoolKey(
             Currency.wrap(currency0),
             Currency.wrap(currency1),
@@ -47,23 +53,40 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
-            abi.encode(key, BASE, QUOTE, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            abi.encode(
+                key,
+                BASE,
+                QUOTE,
+                WETH9,
+                isInvertedPool,
+                _isInvertedAssets,
+                isNativeETH,
+                manager,
+                "NAME",
+                "SYMBOL"
+            ),
             hookAddress
         );
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
     }
 
+    function adjustForNativeEth(address currency0, address currency1) internal view returns (address, address) {
+        if (isNativeETH == 2) return (currency0, currency1);
+        if (isNativeETH == 0) return (address(0), currency1);
+        return (currency0, address(0));
+    }
+
     bool public deployedOnce = false;
 
-    function create_address_without_collision() internal returns (address hookAddress) {
+    function create_address_without_collision() internal returns (address payable hookAddress) {
         uint160 flags = uint160(
             Hooks.BEFORE_SWAP_FLAG |
                 Hooks.AFTER_SWAP_FLAG |
                 Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
                 Hooks.AFTER_INITIALIZE_FLAG
         );
-        hookAddress = deployedOnce ? address(flags ^ (0x4444 << 144)) : address(flags);
+        hookAddress = payable(deployedOnce ? address(flags ^ (0x4444 << 144)) : address(flags));
         deployedOnce = true;
     }
 

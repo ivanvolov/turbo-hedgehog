@@ -3,6 +3,9 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
+// ** V4 imports
+import {Currency} from "v4-core/types/Currency.sol";
+
 // ** contracts
 import {TestBaseMorpho} from "./common/TestBaseMorpho.sol";
 import {ALM} from "@src/ALM.sol";
@@ -26,7 +29,8 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
         uint256 _swapPriceThreshold
     ) internal {
         vm.startPrank(deployer.addr);
-        deploy_hook_contract(_isInvertedAssets);
+        deploy_hook_contract(_isInvertedAssets, UConstants.WETH9);
+        isInvertedAssets = _isInvertedAssets;
 
         if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
         else positionManager = new PositionManager(BASE, QUOTE);

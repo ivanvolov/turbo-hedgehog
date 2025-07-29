@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -14,6 +16,7 @@ import {TransientStateLibrary} from "v4-core/libraries/TransientStateLibrary.sol
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** External imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -46,14 +49,21 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         PoolKey memory _key,
         IERC20 _base,
         IERC20 _quote,
+        IWETH9 _WETH9,
         bool _isInvertedPool,
         bool _isInvertedAssets,
+        uint8 _isNativeETH,
         IPoolManager _poolManager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
+    )
+        BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _isNativeETH, _poolManager)
+        ERC20(name, symbol)
+    {
         authorizedPoolKey = _key;
         authorizedPoolId = PoolId.unwrap(_key.toId());
+        WETH9 = _WETH9;
+        console.log("WETH9", address(WETH9));
     }
 
     function _afterInitialize(
@@ -258,23 +268,40 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         );
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
+        console.log("(1)");
+        console.log("unichain ballance", address(poolManager).balance);
+        console.log("USDC", key.currency1.balanceOf(address(poolManager)));
         return (IHooks.afterSwap.selector, 0);
     }
 
     function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
+        console.log("_settleDeltas");
+        console.log("token0", Currency.unwrap(key.currency0));
+        console.log("token1", Currency.unwrap(key.currency1));
+
         if (zeroForOne) {
             uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
+            console.log("!");
             key.currency0.take(poolManager, address(this), token0, false);
+            console.log("!");
+            if (isNativeETH == 0) WETH9.deposit{value: token0}();
+            console.log("!");
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
+            console.log("!");
+            if (isNativeETH == 1) WETH9.withdraw(token1);
+            console.log("!");
             key.currency1.settle(poolManager, address(this), token1, false);
+            console.log("_settleDeltas done");
         } else {
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
 
             key.currency1.take(poolManager, address(this), token1, false);
+            if (isNativeETH == 1) WETH9.deposit{value: token1}();
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
+            if (isNativeETH == 0) WETH9.withdraw(token0);
             key.currency0.settle(poolManager, address(this), token0, false);
         }
     }
