@@ -24,17 +24,16 @@ contract OracleTest is ALMTestBase {
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
     string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
     string SEPOLIA_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
+    string UNICHAIN_RPC_URL = vm.envString("UNICHAIN_RPC_URL");
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22375550);
-        _create_accounts();
+        select_mainnet_fork(22375550);
     }
 
     // ** Notice
-    // 1. _isInvertedAssets is everywhere the assets operations are, so we deposit in Base or Quote, withdraw from Long or Short. Rebalance to Base o Quote
-    // 2. _isInvertedPool, expect pools to be Quote:Base, and invert assets if it's true. So everywhere there currencies are used together with token we need these variable.
+    // 1. _isInvertedAssets is everywhere the assets operations are, so we deposit in Base or Quote, withdraw from Long or Short. Rebalance to Base o Quote.
+    // 2. _isInvertedPool: We expect pools to be Quote:Base, and _isInvertedPool = true if not. So everywhere there currencies are used together with token we need these variable.
+
     function test_oracle_pool_price_USDC_WETH() public {
         _test_currencies_order(TestLib.USDC, TestLib.WETH); // quote, base
         part_test_oracle_pool_price(
@@ -178,8 +177,8 @@ contract OracleTest is ALMTestBase {
             mock_oracle = _create_oracle(
                 TestLib.chainlink_feed_WETH,
                 TestLib.chainlink_feed_USDC,
-                10 hours,
-                10 hours,
+                25 hours,
+                25 hours,
                 true,
                 int8(6 - 18)
             );
@@ -462,6 +461,46 @@ contract OracleTest is ALMTestBase {
         }
     }
 
+    function test_strategy_oracles_chronicle_one_feed() public {
+        // IOracle mock_oracle;
+
+        console.log("> WSTETH/ETH");
+        {
+            select_unichain_fork(22723895);
+
+            // Set mock feed to return 0 price, and 18 decimals.
+            vm.mockCall(
+                mock_empty_oracle.addr,
+                abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
+                abi.encode(uint80(0), int256(0), uint256(0), uint256(block.timestamp), uint80(0))
+            );
+            vm.mockCall(
+                mock_empty_oracle.addr,
+                abi.encodeWithSelector(AggregatorV3Interface.decimals.selector),
+                abi.encode(18)
+            );
+
+            // mock_oracle = _create_oracle(
+            //     AggregatorV3Interface(0x3b8Cd6127a6CBEB9336667A3FfCD32B3509Cb5D9), // WETH
+            //     AggregatorV3Interface(0xb34d784dc8E7cD240Fe1F318e282dFdD13C389AC), // WSTETH
+            //     24 hours,
+            //     24 hours,
+            //     false,
+            //     int8(18 - 18)
+            // );
+            //     whitelist_chronicle_feed(address(IOracleTest(address(mock_oracle)).feedQuote()), mock_oracle);
+            //     whitelist_chronicle_feed(address(IOracleTest(address(mock_oracle)).feedBase()), mock_oracle);
+            //     (uint256 price, uint256 poolPrice) = mock_oracle.poolPrice();
+            //     assertEq(price, 3646184618);
+            //     assertEq(poolPrice, 274259288754423679596577136);
+            // Reference pool: https://etherscan.io/address/0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa#readContract. token0: WSTETH, token1: ETH.
+            // We have QUOTE: WSTETH, BASE: ETH. So _isInvertedPool = false.
+            uint160 refSqrtPrice = 87064726253919967154949356881;
+            console.log("refSqrtPrice %s", TestLib.getPriceFromSqrtPriceX96(refSqrtPrice));
+            console.log("refSqrtPrice %s", TestLib.getPriceFromSqrtPriceX96(1299295196792460418396435950326076));
+        }
+    }
+
     function test_oracle_constraints() public {
         // Normal oracle price
         {
@@ -528,6 +567,13 @@ contract OracleTest is ALMTestBase {
         if (token0 >= token1) revert("Out of order");
     }
 
+    function select_mainnet_fork(uint256 block_number) internal {
+        uint256 fork = vm.createFork(MAINNET_RPC_URL);
+        vm.selectFork(fork);
+        vm.rollFork(block_number);
+        _create_accounts();
+    }
+
     function select_arbitrum_fork(uint256 block_number) internal {
         uint256 fork = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(fork);
@@ -537,6 +583,13 @@ contract OracleTest is ALMTestBase {
 
     function select_sepolia_fork(uint256 block_number) internal {
         uint256 fork = vm.createFork(SEPOLIA_RPC_URL);
+        vm.selectFork(fork);
+        vm.rollFork(block_number);
+        _create_accounts();
+    }
+
+    function select_unichain_fork(uint256 block_number) internal {
+        uint256 fork = vm.createFork(UNICHAIN_RPC_URL);
         vm.selectFork(fork);
         vm.rollFork(block_number);
         _create_accounts();

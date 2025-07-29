@@ -8,7 +8,7 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 import {OracleBase} from "./OracleBase.sol";
 
 /// @title Oracle
-/// @notice Implementation of the Chainlink based oracle.
+/// @notice Implementation of the Chainlink based oracle with two feeds.
 contract Oracle is OracleBase {
     error StalenessThresholdExceeded();
     error PriceNotValid();

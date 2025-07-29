@@ -14,6 +14,7 @@ import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {toBalanceDelta} from "v4-core/types/BalanceDelta.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -403,5 +404,27 @@ contract ALMGeneralTest is ALMTestBase {
         vm.prank(deployer.addr);
         vm.expectRevert(IALM.LiquidityMultiplierNotValid.selector);
         hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    // TODO: this should be fuzz testes
+    function test_Fuzz_getSqrtPriceX96FromPrice(int24 tick) public {
+        vm.skip(true);
+        vm.assume(tick >= TickMath.MIN_TICK && tick <= TickMath.MAX_TICK);
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(_getPrice(tick));
+    }
+
+    function test_getSqrtPriceX96FromPrice_edge_cases() public {
+        // uint256 price = _getPrice(443637);
+        uint256 price = 1;
+        uint160 sqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(
+            340256786833063481322211904572563530436318729319284211712
+        );
+        console.log(sqrtPrice);
+    }
+
+    uint256 internal constant Q96 = 0x1000000000000000000000000;
+    function _getPrice(int24 tick) internal pure returns (uint256 priceX96) {
+        uint160 sqrtPriceX96 = ALMMathLib.getSqrtPriceX96FromTick(tick);
+        priceX96 = uint256(sqrtPriceX96) ** 2 / Q96;
     }
 }
