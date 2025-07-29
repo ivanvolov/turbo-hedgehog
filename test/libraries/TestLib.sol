@@ -8,6 +8,7 @@ import {PRBMathUD60x18, PRBMath} from "@test/libraries/PRBMathUD60x18.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
@@ -24,6 +25,7 @@ library TestLib {
     using PRBMathUD60x18 for uint256;
 
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    IWETH9 constant WETH9 = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     address constant cbBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;

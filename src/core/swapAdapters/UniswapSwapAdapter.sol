@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Actions} from "v4-periphery/src/libraries/Actions.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** External imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -27,6 +30,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     error InvalidSwapRoute();
     error InvalidProtocolType();
     error NotRoutesOperator(address account);
+    error RouteNotFound(bool isBaseToQuote, bool isExactInput);
 
     event RoutesOperatorSet(address indexed routesOperator);
     event SwapPathSet(uint256 indexed swapRouteId, uint8 indexed protocolType, bytes input);
@@ -37,6 +41,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     IUniversalRouter public immutable router;
     IPermit2 public immutable permit2;
     address public routesOperator;
+    IWETH9 public immutable WETH9;
 
     struct SwapPath {
         uint8 protocolType;
@@ -50,10 +55,12 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         IERC20 _base,
         IERC20 _quote,
         IUniversalRouter _router,
-        IPermit2 _permit2
+        IPermit2 _permit2,
+        IWETH9 _weth
     ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote) {
         router = _router;
         permit2 = _permit2;
+        WETH9 = _weth;
 
         BASE.forceApprove(address(permit2), type(uint256).max);
         permit2.approve(address(BASE), address(router), type(uint160).max, type(uint48).max);
@@ -105,6 +112,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
 
+        console.log("tokenIn", address(tokenIn));
+        console.log("tokenOut", address(tokenOut));
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, true, amountIn);
 
@@ -117,6 +126,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
 
+        console.log("tokenIn", address(tokenIn));
+        console.log("tokenOut", address(tokenOut));
         amountIn = tokenIn.balanceOf(msg.sender);
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, false, amountOut);
@@ -130,15 +141,18 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         }
     }
 
-    function executeSwap(bool isBaseToQuote, bool isExactInput, uint256 amountIn) internal {
+    function executeSwap(bool isBaseToQuote, bool isExactInput, uint256 amountTarget) internal {
         bytes memory swapCommands;
         uint256[] memory route = swapRoutes[toSwapKey(isExactInput, isBaseToQuote)];
+        if (route.length == 0) revert RouteNotFound(isBaseToQuote, isExactInput);
 
-        bytes[] memory inputs = new bytes[]((route.length + 1) / 2);
-        uint256 amountInLeft = amountIn;
+        bytes[] memory inputs = new bytes[]((route.length + 1) / 2 + 1);
+        uint256 amountTargetLeft = amountTarget;
+        bool sweepEth;
         for (uint256 i = 0; i < route.length + 1; ) {
             SwapPath memory path = swapPaths[route[i]];
-            uint256 nextAmount = route.length == i + 1 ? amountInLeft : mul18(amountIn, route[i + 1]);
+            if (path.protocolType > 3) revert InvalidProtocolType();
+            uint256 nextAmount = route.length == i + 1 ? amountTargetLeft : mul18(amountTarget, route[i + 1]);
 
             uint8 nextCommand;
             if (path.protocolType == 0) {
@@ -147,22 +161,35 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             } else if (path.protocolType == 1) {
                 nextCommand = isExactInput ? uint8(Commands.V3_SWAP_EXACT_IN) : uint8(Commands.V3_SWAP_EXACT_OUT);
                 inputs[i / 2] = _getV3Input(isExactInput, nextAmount, path.input);
-            } else if (path.protocolType == 2) {
+            } else {
                 nextCommand = uint8(Commands.V4_SWAP);
-                inputs[i / 2] = _getV4Input(isBaseToQuote, isExactInput, false, nextAmount, path.input);
-            } else if (path.protocolType == 3) {
-                nextCommand = uint8(Commands.V4_SWAP);
-                inputs[i / 2] = _getV4Input(isBaseToQuote, isExactInput, true, nextAmount, path.input);
-            } else revert InvalidProtocolType();
+                inputs[i / 2] = _getV4Input(
+                    isBaseToQuote,
+                    isExactInput,
+                    path.protocolType == 3,
+                    nextAmount,
+                    path.input
+                );
+            }
             swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(nextCommand)));
-            amountInLeft -= nextAmount;
+            amountTargetLeft -= nextAmount;
 
             unchecked {
                 i += 2;
             }
         }
 
-        router.execute(swapCommands, inputs, block.timestamp);
+        // Always SWEEP extra ETH to the caller
+        swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
+        inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
+
+        uint256 ethBalance = address(this).balance;
+        router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
+
+        console.log("before");
+        ethBalance = address(this).balance;
+        if (ethBalance > 0) WETH9.deposit{value: ethBalance}();
+        console.log("after");
     }
 
     function _getV2Input(bool isExactInput, uint256 amount, bytes memory route) internal view returns (bytes memory) {
@@ -180,26 +207,31 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         bool isMultihop,
         uint256 amount,
         bytes memory route
-    ) internal view returns (bytes memory) {
+    ) internal returns (bytes memory) {
         bytes[] memory params = new bytes[](3);
         uint8 swapAction;
+        bool unwrapBefore;
 
         if (isMultihop) {
-            PathKey[] memory path = abi.decode(route, (PathKey[]));
+            PathKey[] memory path;
+            (unwrapBefore, path) = abi.decode(route, (bool, PathKey[]));
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN) : uint8(Actions.SWAP_EXACT_OUT);
 
             params[0] = abi.encode(
                 // We use ExactInputParams structure for both exact input and output swaps
                 // since the parameter structure is identical.
                 IV4Router.ExactInputParams({
-                    currencyIn: Currency.wrap(address(isBaseToQuote == isExactInput ? BASE : QUOTE)),
+                    currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE),
                     path: path,
                     amountIn: uint128(amount),
                     amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max
                 })
             );
         } else {
-            (PoolKey memory key, bool zeroForOne, bytes memory hookData) = abi.decode(route, (PoolKey, bool, bytes));
+            PoolKey memory key;
+            bool zeroForOne;
+            bytes memory hookData;
+            (unwrapBefore, key, zeroForOne, hookData) = abi.decode(route, (bool, PoolKey, bool, bytes));
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN_SINGLE) : uint8(Actions.SWAP_EXACT_OUT_SINGLE);
 
             params[0] = abi.encode(
@@ -215,13 +247,22 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             );
         }
 
-        params[1] = abi.encode(
-            Currency.wrap(address(isBaseToQuote ? BASE : QUOTE)),
-            isExactInput ? amount : type(uint256).max
-        );
-        params[2] = abi.encode(Currency.wrap(address(isBaseToQuote ? QUOTE : BASE)), isExactInput ? 0 : amount);
+        if (unwrapBefore) isExactInput ? WETH9.withdraw(amount) : WETH9.withdraw(WETH9.balanceOf(address(this)));
+
+        params[1] = abi.encode(adjustForEth(isBaseToQuote ? BASE : QUOTE), isExactInput ? amount : type(uint256).max);
+        params[2] = abi.encode(adjustForEth(isBaseToQuote ? QUOTE : BASE), isExactInput ? 0 : amount);
 
         return abi.encode(abi.encodePacked(swapAction, uint8(Actions.SETTLE_ALL), uint8(Actions.TAKE_ALL)), params);
+    }
+
+    function adjustForEth(IERC20 token) internal view returns (Currency) {
+        if (address(token) == address(WETH9)) return Currency.wrap(address(0));
+        return Currency.wrap(address(token));
+    }
+
+    receive() external payable {
+        console.log("receive");
+        // Intentionally empty as the contract need to receive ETH from V4 router.
     }
 
     // ** Helpers

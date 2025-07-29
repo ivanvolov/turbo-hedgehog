@@ -524,10 +524,6 @@ contract OracleTest is ALMTestBase {
         (price, ) = mock_oracle.poolPrice();
     }
 
-    function _test_currencies_order(address token0, address token1) internal pure {
-        if (token0 >= token1) revert("Out of order");
-    }
-
     function select_arbitrum_fork(uint256 block_number) internal {
         uint256 fork = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(fork);

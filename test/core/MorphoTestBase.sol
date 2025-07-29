@@ -17,6 +17,7 @@ import {MorphoFlashLoanAdapter} from "@src/core/flashLoanAdapters/MorphoFlashLoa
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants} from "@test/libraries/Constants.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -39,6 +40,11 @@ abstract contract MorphoTestBase is ALMTestBase {
     function create_flash_loan_adapter_morpho() internal {
         vm.prank(deployer.addr);
         flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, TestLib.MORPHO);
+    }
+
+    function create_flash_loan_adapter_morpho_unichain() internal {
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, Constants.MORPHO);
     }
 
     function create_lending_adapter_morpho() internal {
