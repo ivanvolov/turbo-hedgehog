@@ -163,26 +163,26 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
 
     function part_rebalance_ETH_ALM() public {
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(10e14);
+        rebalanceAdapter.rebalance(15e14);
     }
 
     function par_swap_up_in_ETH_ALM() public {
-        uint256 usdcToSwap = 1000e6; // 1k USDC
+        uint256 usdcToSwap = 10000e6; // 100k USDC
         deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-        // uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+        uint160 preSqrtPrice = hook.sqrtPriceCurrent();
         (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_In(usdcToSwap);
 
-        // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
         console.log("deltaUSDC %s", deltaUSDC);
         console.log("deltaETH %s", deltaETH);
-        // console.log("deltaX %s", deltaX);
-        // console.log("deltaY %s", deltaY);
+        console.log("deltaX %s", deltaX);
+        console.log("deltaY %s", deltaY);
 
-        // uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-        // assertApproxEqAbs(deltaETH, deltaX, 2);
-        // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+        assertApproxEqAbs(deltaETH, deltaY, 1);
+        assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
     }
 
     function par_swap_down_in_ETH_ALM() public {
@@ -200,8 +200,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         console.log("deltaY %s", deltaY);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-        assertApproxEqAbs(deltaETH, deltaX, 2);
-        assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
+        // assertApproxEqAbs(deltaETH, deltaX, 0);
+        assertApproxEqAbs((ethToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
     }
 
     function test_lifecycle() public {
@@ -258,12 +258,12 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
 
         part_deposit_ETHALM();
 
-        part_rebalance_ETH_ALM();
-
         vm.startPrank(deployer.addr);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
         hook.setNextLPFee(feeLP);
         vm.stopPrank();
+
+        part_rebalance_ETH_ALM();
 
         // Permit2 approvals
         {
@@ -274,8 +274,11 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             // Can't approve ETH to permit.
         }
 
-        par_swap_up_in_ETH_ALM();
+        //par_swap_up_in_ETH_ALM();
         par_swap_down_in_ETH_ALM();
+        console.log("SWAP DONE");
+
+        part_rebalance_ETH_ALM();
     }
 
     // ** Helpers

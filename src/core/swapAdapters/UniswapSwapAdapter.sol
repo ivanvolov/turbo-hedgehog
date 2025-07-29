@@ -122,6 +122,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     }
 
     function swapExactOutput(bool isBaseToQuote, uint256 amountOut) external onlyModule returns (uint256 amountIn) {
+        console.log("swapExactOutput");
+        console.log("amountOut %s", amountOut);
+
         if (amountOut == 0) return 0;
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
@@ -129,6 +132,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         console.log("tokenIn", address(tokenIn));
         console.log("tokenOut", address(tokenOut));
         amountIn = tokenIn.balanceOf(msg.sender);
+        console.log("amountIn %s", amountIn);
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, false, amountOut);
 
@@ -139,6 +143,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             tokenIn.safeTransfer(msg.sender, amountExtra);
             amountIn -= amountExtra;
         }
+        console.log("swapExactOutput DONE");
     }
 
     function executeSwap(bool isBaseToQuote, bool isExactInput, uint256 amountTarget) internal {

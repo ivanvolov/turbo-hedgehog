@@ -269,7 +269,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
         console.log("(1)");
-        console.log("unichain ballance", address(poolManager).balance);
+        console.log("unichain balance", address(poolManager).balance);
         console.log("USDC", key.currency1.balanceOf(address(poolManager)));
         return (IHooks.afterSwap.selector, 0);
     }
@@ -282,6 +282,9 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         if (zeroForOne) {
             uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
+
+            console.log("token0 amount", token0);
+            console.log("token1 amount", token1);
 
             console.log("!");
             key.currency0.take(poolManager, address(this), token0, false);
