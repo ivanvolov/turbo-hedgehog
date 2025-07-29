@@ -5,39 +5,26 @@ import "forge-std/console.sol";
 
 // ** v4 imports
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
+import {PoolIdLibrary, PoolId} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract UNICORDRALMTest is MorphoTestBase {
+contract UNICORDRALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
-
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
@@ -46,8 +33,8 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 slippage = 10e14; //0.1%
     uint24 feeLP = 100; //0.01%
 
-    IERC20 DAI = IERC20(TestLib.DAI);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 DAI = IERC20(MConstants.DAI);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -56,7 +43,7 @@ contract UNICORDRALMTest is MorphoTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_DAI_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_DAI_USDC_POOL;
             assertEqPSThresholdCL = 1e1;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -68,10 +55,10 @@ contract UNICORDRALMTest is MorphoTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.DAI, 18, "DAI");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.DAI, 18, "DAI");
         create_lending_adapter_morpho_earn_dai_usdc();
         create_flash_loan_adapter_morpho();
-        create_oracle(false, TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_oracle(false, MConstants.chainlink_feed_DAI, MConstants.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

@@ -8,14 +8,14 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BTCALMTest is ALMTestBase {
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;
@@ -23,8 +23,8 @@ contract BTCALMTest is ALMTestBase {
     uint256 slippage = 7e15;
     uint24 feeLP = 500; //0.05%
 
-    IERC20 BTC = IERC20(TestLib.cbBTC);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 BTC = IERC20(MConstants.cbBTC);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
@@ -36,7 +36,7 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_cbBTC_USDC_POOL;
             assertEqPSThresholdCL = 1e2;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -46,10 +46,10 @@ contract BTCALMTest is ALMTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.cbBTC, 8, "BTC");
-        create_lending_adapter_euler(TestLib.eulerUSDCVault1, 2000000e6, TestLib.eulerCbBTCVault1, 0);
-        create_flash_loan_adapter_euler(TestLib.eulerUSDCVault2, 0, TestLib.eulerCbBTCVault2, 100e8);
-        create_oracle(true, TestLib.chainlink_feed_cbBTC, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.cbBTC, 8, "BTC");
+        create_lending_adapter_euler(MConstants.eulerUSDCVault1, 2000000e6, MConstants.eulerCbBTCVault1, 0);
+        create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerCbBTCVault2, 100e8);
+        create_oracle(true, MConstants.chainlink_feed_cbBTC, MConstants.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

@@ -4,40 +4,28 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** contracts
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
+import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
 import {ALM} from "@src/ALM.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {Constants} from "@test/libraries/Constants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IOracleTest, IChronicleSelfKisser} from "@test/interfaces/IOracleTest.sol";
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
-contract ETHALM_UNICORDTest is MorphoTestBase {
+contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     using SafeERC20 for IERC20;
 
-    IERC20 WETH = IERC20(Constants.WETH);
-    IERC20 USDC = IERC20(Constants.USDC);
-    IERC20 USDT = IERC20(Constants.USDT);
+    IERC20 WETH = IERC20(UConstants.WETH);
+    IERC20 USDC = IERC20(UConstants.USDC);
+    IERC20 USDT = IERC20(UConstants.USDT);
 
     ALM hook1;
     ALM hook2;
@@ -64,8 +52,8 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
 
         initialSQRTPrice = SQRT_PRICE_1_1;
         _create_accounts();
-        manager = Constants.manager;
-        universalRouter = Constants.UNIVERSAL_ROUTER;
+        manager = UConstants.manager;
+        universalRouter = UConstants.UNIVERSAL_ROUTER;
     }
 
     function part_deploy_ETH_ALM() internal {
@@ -178,8 +166,6 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
     }
 
     function par_swap_up_in_ETH_ALM() public {
-        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-
         uint256 usdcToSwap = 1000e6; // 100k USDC
         deal(address(USDC), address(swapper.addr), usdcToSwap);
 
@@ -193,17 +179,16 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         console.log("deltaX %s", deltaX);
         console.log("deltaY %s", deltaY);
 
+        // uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         // assertApproxEqAbs(deltaWETH, deltaX, 2);
         // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
     }
 
     function par_swap_down_in_ETH_ALM() public {
-        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-
         uint256 wethToSwap = 1e18 / 2;
         deal(address(WETH), address(swapper.addr), wethToSwap);
 
-        uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+        // uint160 preSqrtPrice = hook.sqrtPriceCurrent();
         (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
 
         // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
@@ -213,6 +198,7 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         // console.log("deltaX %s", deltaX);
         // console.log("deltaY %s", deltaY);
 
+        // uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         // assertApproxEqAbs(deltaWETH, deltaX, 2);
         // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
     }
@@ -282,11 +268,11 @@ contract ETHALM_UNICORDTest is MorphoTestBase {
         // Permit2 approvals
         {
             vm.startPrank(swapper.addr);
-            USDC.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
-            Constants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
+            USDC.forceApprove(address(UConstants.PERMIT_2), type(uint256).max);
+            UConstants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
 
-            WETH.forceApprove(address(Constants.PERMIT_2), type(uint256).max);
-            Constants.PERMIT_2.approve(address(WETH), address(universalRouter), type(uint160).max, type(uint48).max);
+            WETH.forceApprove(address(UConstants.PERMIT_2), type(uint256).max);
+            UConstants.PERMIT_2.approve(address(WETH), address(universalRouter), type(uint160).max, type(uint48).max);
             vm.stopPrank();
         }
 

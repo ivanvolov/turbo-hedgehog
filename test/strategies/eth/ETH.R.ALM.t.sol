@@ -8,6 +8,8 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
@@ -15,8 +17,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // This test illustrates the pool with the reversed order of currencies. The main asset first and the stable next.
 contract ETHRALMTest is ALMTestBase {
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16; //50%
@@ -27,8 +27,8 @@ contract ETHRALMTest is ALMTestBase {
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
 
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDT = IERC20(TestLib.USDT);
+    IERC20 WETH = IERC20(MConstants.WETH);
+    IERC20 USDT = IERC20(MConstants.USDT);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -37,7 +37,7 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDT_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_WETH_USDT_POOL;
             assertEqPSThresholdCL = 1e1;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -47,10 +47,10 @@ contract ETHRALMTest is ALMTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDT, 6, "USDT", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler(TestLib.eulerUSDTVault1, 3000000 * 1e6, TestLib.eulerWETHVault1, 0);
-        create_flash_loan_adapter_euler(TestLib.eulerUSDTVault2, 3000000 * 1e6, TestLib.eulerWETHVault2, 0);
-        create_oracle(false, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDT, 1 hours, 10 hours);
+        create_accounts_and_tokens(MConstants.USDT, 6, "USDT", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler(MConstants.eulerUSDTVault1, 3000000 * 1e6, MConstants.eulerWETHVault1, 0);
+        create_flash_loan_adapter_euler(MConstants.eulerUSDTVault2, 3000000 * 1e6, MConstants.eulerWETHVault2, 0);
+        create_oracle(false, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDT, 1 hours, 10 hours);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

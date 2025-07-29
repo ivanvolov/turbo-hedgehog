@@ -3,28 +3,27 @@ pragma solidity ^0.8.0;
 
 // ** Morpho imports
 import {IMorpho, Id, MarketParams} from "@morpho-blue/interfaces/IMorpho.sol";
-import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 import {MarketParamsLib} from "@morpho-blue/libraries/MarketParamsLib.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {IMorphoChainlinkOracleV2Factory} from "@morpho-oracles/IMorphoChainlinkOracleV2Factory.sol";
 
 // ** contracts
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {TestBaseEuler} from "./TestBaseEuler.sol";
 import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
 import {MorphoFlashLoanAdapter} from "@src/core/flashLoanAdapters/MorphoFlashLoanAdapter.sol";
 
 // ** libraries
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
-import {TestLib} from "@test/libraries/TestLib.sol";
-import {Constants} from "@test/libraries/Constants.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {ILendingAdapterMorpho} from "@test/interfaces/ILendingAdapterMorpho.sol";
 
-abstract contract MorphoTestBase is ALMTestBase {
+abstract contract TestBaseMorpho is TestBaseEuler {
     using TestAccountLib for TestAccount;
     using SafeERC20 for IERC20;
 
@@ -33,74 +32,10 @@ abstract contract MorphoTestBase is ALMTestBase {
 
     Id shortMId;
     Id longMId;
-    IMorpho morpho = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb);
-    IMorphoChainlinkOracleV2Factory oracleFactory =
-        IMorphoChainlinkOracleV2Factory(0x3A7bB36Ee3f3eE32A60e9f2b33c1e5f2E83ad766);
+    IMorpho morpho = MConstants.MORPHO;
+    IMorphoChainlinkOracleV2Factory oracleFactory = MConstants.morphoOracleFactory;
 
-    function create_flash_loan_adapter_morpho() internal {
-        vm.prank(deployer.addr);
-        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, TestLib.MORPHO);
-    }
-
-    function create_flash_loan_adapter_morpho_unichain() internal {
-        vm.prank(deployer.addr);
-        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, Constants.MORPHO);
-    }
-
-    function create_lending_adapter_morpho() internal {
-        create_and_seed_morpho_markets();
-        vm.prank(deployer.addr);
-        IERC4626 mockAdapter = IERC4626(address(0));
-        lendingAdapter = new MorphoLendingAdapter(
-            BASE,
-            QUOTE,
-            TestLib.MORPHO,
-            longMId,
-            shortMId,
-            mockAdapter,
-            mockAdapter,
-            TestLib.merklRewardsDistributor
-        );
-
-        setURD();
-    }
-
-    function create_lending_adapter_morpho_earn() internal {
-        vm.prank(deployer.addr);
-        lendingAdapter = new MorphoLendingAdapter(
-            BASE,
-            QUOTE,
-            TestLib.MORPHO,
-            Id.wrap(""),
-            Id.wrap(""),
-            TestLib.morphoUSDCVault,
-            TestLib.morphoUSDTVault,
-            TestLib.merklRewardsDistributor
-        );
-
-        setURD();
-    }
-
-    function create_lending_adapter_morpho_earn_dai_usdc() internal {
-        vm.prank(deployer.addr);
-        lendingAdapter = new MorphoLendingAdapter(
-            BASE,
-            QUOTE,
-            TestLib.MORPHO,
-            Id.wrap(""),
-            Id.wrap(""),
-            TestLib.morphoUSDCVault,
-            TestLib.morphoDAIVault,
-            TestLib.merklRewardsDistributor
-        );
-
-        setURD();
-    }
-
-    function setURD() internal {
-        vm.prank(deployer.addr);
-        ILendingAdapterMorpho(address(lendingAdapter)).setURD(TestLib.universalRewardsDistributor);
-    }
+    // --- Overrides --- //
 
     function create_accounts_and_tokens(
         address _base,
@@ -116,38 +51,108 @@ abstract contract MorphoTestBase is ALMTestBase {
         morphoLpProvider = TestAccountLib.createTestAccount("morphoLpProvider");
     }
 
-    function approve_accounts() public override {
+    function approve_accounts() public virtual override {
         super.approve_accounts();
+
         vm.startPrank(alice.addr);
         BASE.forceApprove(address(morpho), type(uint256).max);
         QUOTE.forceApprove(address(morpho), type(uint256).max);
         vm.stopPrank();
     }
 
+    // --- Shortcuts --- //
+
+    function create_flash_loan_adapter_morpho() internal {
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, MConstants.MORPHO);
+    }
+
+    function create_flash_loan_adapter_morpho_unichain() internal {
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, UConstants.MORPHO);
+    }
+
+    function create_lending_adapter_morpho() internal {
+        create_and_seed_morpho_markets();
+        vm.prank(deployer.addr);
+        IERC4626 mockAdapter = IERC4626(address(0));
+        lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            MConstants.MORPHO,
+            longMId,
+            shortMId,
+            mockAdapter,
+            mockAdapter,
+            MConstants.merklRewardsDistributor
+        );
+
+        setURD();
+    }
+
+    function create_lending_adapter_morpho_earn() internal {
+        vm.prank(deployer.addr);
+        lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            MConstants.MORPHO,
+            Id.wrap(""),
+            Id.wrap(""),
+            MConstants.morphoUSDCVault,
+            MConstants.morphoUSDTVault,
+            MConstants.merklRewardsDistributor
+        );
+
+        setURD();
+    }
+
+    function create_lending_adapter_morpho_earn_dai_usdc() internal {
+        vm.prank(deployer.addr);
+        lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            MConstants.MORPHO,
+            Id.wrap(""),
+            Id.wrap(""),
+            MConstants.morphoUSDCVault,
+            MConstants.morphoDAIVault,
+            MConstants.merklRewardsDistributor
+        );
+
+        setURD();
+    }
+
+    // --- Helpers --- //
+
+    function setURD() internal {
+        vm.prank(deployer.addr);
+        ILendingAdapterMorpho(address(lendingAdapter)).setURD(MConstants.universalRewardsDistributor);
+    }
+
     function create_and_seed_morpho_markets() internal {
-        longMId = create_morpho_market(
+        longMId = _create_morpho_market(
             address(BASE),
             address(QUOTE),
             915000000000000000,
-            deployMockOracle(address(0), 0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, 18, 6)
+            _deployMockOracle(address(0), 0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, 18, 6)
         );
-        provideLiquidityToMorpho(longMId, 4000000e6); // Providing some BASE
+        _provideLiquidityToMorpho(longMId, 4000000e6); // Providing some BASE
 
-        shortMId = create_morpho_market(
+        shortMId = _create_morpho_market(
             address(QUOTE),
             address(BASE),
             945000000000000000,
-            deployMockOracle(0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, address(0), 6, 18)
+            _deployMockOracle(0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46, address(0), 6, 18)
         );
-        provideLiquidityToMorpho(shortMId, 1000 ether); // Providing some QUOTE
+        _provideLiquidityToMorpho(shortMId, 1000 ether); // Providing some QUOTE
     }
 
-    function deployMockOracle(
+    function _deployMockOracle(
         address feed0,
         address feed1,
         uint256 decimal0,
         uint256 decimal1
-    ) internal returns (address) {
+    ) private returns (address) {
         address oracle = oracleFactory.createMorphoChainlinkOracleV2(
             address(0),
             1,
@@ -165,12 +170,12 @@ abstract contract MorphoTestBase is ALMTestBase {
         return oracle;
     }
 
-    function create_morpho_market(
+    function _create_morpho_market(
         address loanToken,
         address collateralToken,
         uint256 lltv,
         address _oracle
-    ) internal returns (Id) {
+    ) private returns (Id) {
         MarketParams memory marketParams = MarketParams(
             loanToken,
             collateralToken,
@@ -184,7 +189,7 @@ abstract contract MorphoTestBase is ALMTestBase {
         return MarketParamsLib.id(marketParams);
     }
 
-    function provideLiquidityToMorpho(Id marketId, uint256 amount) internal {
+    function _provideLiquidityToMorpho(Id marketId, uint256 amount) private {
         MarketParams memory marketParams = morpho.idToMarketParams(marketId);
 
         vm.startPrank(morphoLpProvider.addr);

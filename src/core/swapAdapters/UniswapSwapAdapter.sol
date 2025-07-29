@@ -148,7 +148,6 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
 
         bytes[] memory inputs = new bytes[]((route.length + 1) / 2 + 1);
         uint256 amountTargetLeft = amountTarget;
-        bool sweepEth;
         for (uint256 i = 0; i < route.length + 1; ) {
             SwapPath memory path = swapPaths[route[i]];
             if (path.protocolType > 3) revert InvalidProtocolType();

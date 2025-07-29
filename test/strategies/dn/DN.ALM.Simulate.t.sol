@@ -4,9 +4,11 @@ pragma solidity ^0.8.0;
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** contracts
-import {ALMTestSimBase} from "@test/core/ALMTestSimBase.sol";
+import {ALMTestSimBase} from "@test/core/simulations/ALMTestSimBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -14,10 +16,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(MConstants.WETH);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
         clear_snapshots();
@@ -28,7 +28,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_WETH_USDC_POOL;
             assertEqPSThresholdCL = 1e5;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -37,10 +37,10 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
-        create_oracle(true, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
+        create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, 0, 1e18, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

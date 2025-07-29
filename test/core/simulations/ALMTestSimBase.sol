@@ -8,8 +8,8 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 
 // ** contracts
-import {ALMTestBase} from "./ALMTestBase.sol";
-import {ALMControl} from "@test/core/ALMControl.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {ALMControl} from "@test/core/simulations/ALMControl.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";

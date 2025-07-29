@@ -5,21 +5,19 @@ import "forge-std/console.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
+
 // ** contracts
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
-
-// ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract DeltaNeutralALMTest is MorphoTestBase {
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
+contract DeltaNeutralALMTest is ALMTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 3e18;
     uint256 weight = 45e16;
@@ -30,8 +28,8 @@ contract DeltaNeutralALMTest is MorphoTestBase {
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
 
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(MConstants.WETH);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -40,7 +38,7 @@ contract DeltaNeutralALMTest is MorphoTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_WETH_USDC_POOL;
             assertEqPSThresholdCL = 1e1;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -50,10 +48,10 @@ contract DeltaNeutralALMTest is MorphoTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
-        create_oracle(true, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
+        create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

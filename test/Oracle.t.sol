@@ -6,8 +6,7 @@ import "forge-std/console.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMath} from "@test/libraries/PRBMath.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
@@ -21,7 +20,6 @@ import {IOracleTest, IChronicleSelfKisser} from "@test/interfaces/IOracleTest.so
 contract OracleTest is ALMTestBase {
     using SafeERC20 for IERC20;
 
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
     string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
     string SEPOLIA_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
 
@@ -36,11 +34,11 @@ contract OracleTest is ALMTestBase {
     // 1. _isInvertedAssets is everywhere the assets operations are, so we deposit in Base or Quote, withdraw from Long or Short. Rebalance to Base o Quote
     // 2. _isInvertedPool, expect pools to be Quote:Base, and invert assets if it's true. So everywhere there currencies are used together with token we need these variable.
     function test_oracle_pool_price_USDC_WETH() public {
-        _test_currencies_order(TestLib.USDC, TestLib.WETH); // quote, base
+        _test_currencies_order(MConstants.USDC, MConstants.WETH); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_USDC, // Base
-            TestLib.chainlink_feed_WETH, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_WETH_USDC_POOL, // pool always returns in it's own order
+            MConstants.chainlink_feed_USDC, // Base
+            MConstants.chainlink_feed_WETH, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_WETH_USDC_POOL, // pool always returns in it's own order
             true, // false if QUOTE : BASE
             int8(6 - 18) // BDec - QDec
         );
@@ -48,22 +46,22 @@ contract OracleTest is ALMTestBase {
 
     /// @dev Was uncovered.
     function test_oracle_pool_price_USDC_WETH_R() public {
-        _test_currencies_order(TestLib.USDC, TestLib.WETH); // quote, base
+        _test_currencies_order(MConstants.USDC, MConstants.WETH); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_WETH, // Base
-            TestLib.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_WETH_USDC_POOL, // pool always returns in it's own order
+            MConstants.chainlink_feed_WETH, // Base
+            MConstants.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_WETH_USDC_POOL, // pool always returns in it's own order
             false, // false if QUOTE : BASE
             int8(18 - 6) // BDec - QDec
         );
     }
 
     function test_oracle_pool_price_WETH_USDT() public {
-        _test_currencies_order(TestLib.WETH, TestLib.USDT); // quote, base
+        _test_currencies_order(MConstants.WETH, MConstants.USDT); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_USDT, // Base
-            TestLib.chainlink_feed_WETH, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_WETH_USDT_POOL,
+            MConstants.chainlink_feed_USDT, // Base
+            MConstants.chainlink_feed_WETH, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_WETH_USDT_POOL,
             false, // false if QUOTE : BASE
             int8(6 - 18) // BDec - QDec
         );
@@ -71,33 +69,33 @@ contract OracleTest is ALMTestBase {
 
     /// @dev Was uncovered.
     function test_oracle_pool_price_WETH_USDT_R() public {
-        _test_currencies_order(TestLib.WETH, TestLib.USDT); // quote, base
+        _test_currencies_order(MConstants.WETH, MConstants.USDT); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_WETH, // Base
-            TestLib.chainlink_feed_USDT, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_WETH_USDT_POOL,
+            MConstants.chainlink_feed_WETH, // Base
+            MConstants.chainlink_feed_USDT, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_WETH_USDT_POOL,
             true, // false if QUOTE : BASE
             int8(18 - 6) // BDec - QDec
         );
     }
 
     function test_oracle_pool_price_USDC_USDT() public {
-        _test_currencies_order(TestLib.USDC, TestLib.USDT); // quote, base
+        _test_currencies_order(MConstants.USDC, MConstants.USDT); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_USDT, // Base
-            TestLib.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_USDC_USDT_POOL,
+            MConstants.chainlink_feed_USDT, // Base
+            MConstants.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_USDC_USDT_POOL,
             false, // false if QUOTE : BASE
             int8(6 - 6) // BDec - QDec
         );
     }
 
     function test_oracle_pool_price_USDC_USDT_R() public {
-        _test_currencies_order(TestLib.USDC, TestLib.USDT); // quote, base
+        _test_currencies_order(MConstants.USDC, MConstants.USDT); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_USDC, // Base
-            TestLib.chainlink_feed_USDT, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_USDC_USDT_POOL,
+            MConstants.chainlink_feed_USDC, // Base
+            MConstants.chainlink_feed_USDT, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_USDC_USDT_POOL,
             true, // false if QUOTE : BASE
             int8(6 - 6) // BDec - QDec
         );
@@ -105,22 +103,22 @@ contract OracleTest is ALMTestBase {
 
     /// @dev Was uncovered.
     function test_oracle_pool_price_DAI_USDC() public {
-        _test_currencies_order(TestLib.DAI, TestLib.USDC); // quote, base
+        _test_currencies_order(MConstants.DAI, MConstants.USDC); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_DAI, // Base
-            TestLib.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_DAI_USDC_POOL,
+            MConstants.chainlink_feed_DAI, // Base
+            MConstants.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_DAI_USDC_POOL,
             true, // false if QUOTE : BASE
             int8(18 - 6) // BDec - QDec
         );
     }
 
     function test_oracle_pool_price_DAI_USDC_R() public {
-        _test_currencies_order(TestLib.DAI, TestLib.USDC); // quote, base
+        _test_currencies_order(MConstants.DAI, MConstants.USDC); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_USDC, // Base
-            TestLib.chainlink_feed_DAI, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_DAI_USDC_POOL,
+            MConstants.chainlink_feed_USDC, // Base
+            MConstants.chainlink_feed_DAI, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_DAI_USDC_POOL,
             false, // false if QUOTE : BASE
             int8(6 - 18) // BDec - QDec
         );
@@ -128,22 +126,22 @@ contract OracleTest is ALMTestBase {
 
     /// @dev Was uncovered.
     function test_oracle_pool_price_USDC_cbBTC() public {
-        _test_currencies_order(TestLib.USDC, TestLib.cbBTC); // quote, base
+        _test_currencies_order(MConstants.USDC, MConstants.cbBTC); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_cbBTC, // Base
-            TestLib.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_cbBTC_USDC_POOL,
+            MConstants.chainlink_feed_cbBTC, // Base
+            MConstants.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_cbBTC_USDC_POOL,
             false, // false if QUOTE : BASE
             int8(8 - 6) // BDec - QDec
         );
     }
 
     function test_oracle_pool_price_USDC_cbBTC_R() public {
-        _test_currencies_order(TestLib.USDC, TestLib.cbBTC); // quote, base
+        _test_currencies_order(MConstants.USDC, MConstants.cbBTC); // quote, base
         part_test_oracle_pool_price(
-            TestLib.chainlink_feed_USDC, // Base
-            TestLib.chainlink_feed_cbBTC, // Quote, oracle always return Quote in BASE
-            TestLib.uniswap_v3_cbBTC_USDC_POOL,
+            MConstants.chainlink_feed_USDC, // Base
+            MConstants.chainlink_feed_cbBTC, // Quote, oracle always return Quote in BASE
+            MConstants.uniswap_v3_cbBTC_USDC_POOL,
             true, // false if QUOTE : BASE
             int8(6 - 8) // BDec - QDec
         );
@@ -176,8 +174,8 @@ contract OracleTest is ALMTestBase {
         console.log("> DN/ETHALM");
         {
             mock_oracle = _create_oracle(
-                TestLib.chainlink_feed_WETH,
-                TestLib.chainlink_feed_USDC,
+                MConstants.chainlink_feed_WETH,
+                MConstants.chainlink_feed_USDC,
                 10 hours,
                 10 hours,
                 true,
@@ -193,8 +191,8 @@ contract OracleTest is ALMTestBase {
         console.log("> ETH-R-ALM/ETH-R2-ALM");
         {
             mock_oracle = _create_oracle(
-                TestLib.chainlink_feed_WETH,
-                TestLib.chainlink_feed_USDT,
+                MConstants.chainlink_feed_WETH,
+                MConstants.chainlink_feed_USDT,
                 1 hours,
                 10 hours,
                 false,
@@ -210,8 +208,8 @@ contract OracleTest is ALMTestBase {
         console.log("> BTCALMTest");
         {
             mock_oracle = _create_oracle(
-                TestLib.chainlink_feed_cbBTC,
-                TestLib.chainlink_feed_USDC,
+                MConstants.chainlink_feed_cbBTC,
+                MConstants.chainlink_feed_USDC,
                 10 hours,
                 10 hours,
                 true,
@@ -226,15 +224,15 @@ contract OracleTest is ALMTestBase {
 
         // This example is not present in strategies
         {
-            // mock_oracle = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 50 hours, 50 hours);
+            // mock_oracle = _create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_cbBTC, 50 hours, 50 hours);
             // console.log("oracle", mock_oracle.price());
         }
 
         console.log("> UNICORD-R");
         {
             mock_oracle = _create_oracle(
-                TestLib.chainlink_feed_DAI,
-                TestLib.chainlink_feed_USDC,
+                MConstants.chainlink_feed_DAI,
+                MConstants.chainlink_feed_USDC,
                 10 hours,
                 10 hours,
                 true,
@@ -249,8 +247,8 @@ contract OracleTest is ALMTestBase {
         console.log("> UNICORD");
         {
             mock_oracle = _create_oracle(
-                TestLib.chainlink_feed_USDT,
-                TestLib.chainlink_feed_USDC,
+                MConstants.chainlink_feed_USDT,
+                MConstants.chainlink_feed_USDC,
                 10 hours,
                 10 hours,
                 true,
@@ -323,7 +321,7 @@ contract OracleTest is ALMTestBase {
 
         // This example is not present in strategies
         {
-            // mock_oracle = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 24 hours, 24 hours);
+            // mock_oracle = _create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_cbBTC, 24 hours, 24 hours);
             // console.log("oracle", mock_oracle.price());
         }
 
@@ -421,7 +419,7 @@ contract OracleTest is ALMTestBase {
 
         // This example is not present in strategies
         {
-            // mock_oracle = _create_oracle(TestLib.chainlink_feed_USDC, TestLib.chainlink_feed_cbBTC, 24 hours, 24 hours);
+            // mock_oracle = _create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_cbBTC, 24 hours, 24 hours);
             // console.log("oracle", mock_oracle.price());
         }
 
@@ -503,8 +501,8 @@ contract OracleTest is ALMTestBase {
         uint256 decimalsBase
     ) public returns (uint256 price) {
         IOracle mock_oracle = _create_oracle(
-            TestLib.chainlink_feed_WETH,
-            TestLib.chainlink_feed_USDC,
+            MConstants.chainlink_feed_WETH,
+            MConstants.chainlink_feed_USDC,
             10 hours,
             10 hours,
             true,
@@ -512,12 +510,12 @@ contract OracleTest is ALMTestBase {
         );
 
         vm.mockCall(
-            address(TestLib.chainlink_feed_WETH),
+            address(MConstants.chainlink_feed_WETH),
             abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
             abi.encode(uint80(0), int256(priceQuote), uint256(0), uint256(block.timestamp), uint80(0))
         );
         vm.mockCall(
-            address(TestLib.chainlink_feed_USDC),
+            address(MConstants.chainlink_feed_USDC),
             abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
             abi.encode(uint80(0), int256(priceBase), uint256(0), uint256(block.timestamp), uint80(0))
         );

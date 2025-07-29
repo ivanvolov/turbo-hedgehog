@@ -18,7 +18,9 @@ import {toBalanceDelta} from "v4-core/types/BalanceDelta.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMath} from "@test/libraries/PRBMath.sol";
+import {PRBMath} from "@test/libraries/math/PRBMath.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
@@ -35,10 +37,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract ALMGeneralTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
 
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(MConstants.WETH);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -47,7 +47,7 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_WETH_USDC_POOL;
             assertEqPSThresholdCL = 1e5;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
@@ -58,10 +58,10 @@ contract ALMGeneralTest is ALMTestBase {
 
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_WETH_USDC();
         create_flash_loan_adapter_euler_WETH_USDC();
-        create_oracle(true, TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
+        create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
     }
 
     /// @dev This test will sometimes need other deploys.
