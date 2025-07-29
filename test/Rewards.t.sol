@@ -15,7 +15,10 @@ import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILendingAdapterEuler} from "@test/interfaces/ILendingAdapterEuler.sol";
 import {IMerklDistributor, MerkleTree} from "@merkl-contracts/IMerklDistributor.sol";
-import {IUniversalRewardsDistributor, PendingRoot} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
+import {
+    IUniversalRewardsDistributor,
+    PendingRoot
+} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 import {ILendingAdapterMorpho} from "./interfaces/ILendingAdapterMorpho.sol";
 import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
 

@@ -62,7 +62,7 @@ abstract contract ALMTestBase is TestBaseMorpho {
         _setComponents(address(flashLoanAdapter));
         _setComponents(address(positionManager));
         _setComponents(address(swapAdapter));
-        setSwapAdapterToV3SingleSwap(TARGET_SWAP_POOL);
+        if (TARGET_SWAP_POOL != address(0)) setSwapAdapterToV3SingleSwap(TARGET_SWAP_POOL);
         _setComponents(address(rebalanceAdapter));
         rebalanceAdapter.setRebalanceOperator(deployer.addr);
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
