@@ -212,7 +212,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
 
     uint256 MAX_ITER_V4 = 80; // binary-search depth
     uint256 MIN_IN_V4 = 3e9; // 3000 USDC   (token1)  or 0.000003 WETH (token0)
-    uint256 SLIPPAGE_TOLERANCE_V4 = 1e16; // 1% acceptable price difference
+    uint256 SLIPPAGE_TOLERANCE_V4 = 1e6; // 1% acceptable price difference
 
     function setV4PoolPrice(ALM hook, PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
         uint160 sqrtCurrent = getV4PoolSQRTPrice(_poolKey);
@@ -264,7 +264,6 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
                 console.log("setV4PoolPrice: converged in %s iterations", i);
                 return;
             }
-            console.log("diff: %s", diff);
 
             bool nowAbove = priceCurrent > priceTarget;
             if (nowAbove == (isInvertedPool ? !zeroForOne : zeroForOne)) {

@@ -177,9 +177,9 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         rebalanceAdapterUnicord.rebalance(10e14);
     }
 
-    function part_rebalance_ETH_ALM() public {
+    function part_rebalance_ETH_ALM(uint256 slippage) public {
         vm.prank(deployer.addr);
-        rebalanceAdapterALM.rebalance(15e14);
+        rebalanceAdapterALM.rebalance(slippage);
     }
 
     function par_swap_up_in_ETH_ALM() public {
@@ -202,7 +202,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     }
 
     function par_swap_down_in_ETH_ALM() public {
-        uint256 ethToSwap = 1e18 / 2;
+        uint256 ethToSwap = 1e18;
         deal(address(swapper.addr), ethToSwap);
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
@@ -272,7 +272,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         hookALM.setNextLPFee(feeLP);
         vm.stopPrank();
 
-        part_rebalance_ETH_ALM();
+        part_rebalance_ETH_ALM(20e14);
 
         // Permit2 approvals
         {
@@ -285,10 +285,10 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         // par_swap_up_in_ETH_ALM();
         par_swap_down_in_ETH_ALM();
 
-        // // ** Make oracle change with swap price
-        // alignOracles(hookALM.sqrtPriceCurrent());
+        // ** Make oracle change with swap price
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
 
-        // part_rebalance_ETH_ALM();
+        part_rebalance_ETH_ALM(3e14);
     }
 
     // ** Helpers

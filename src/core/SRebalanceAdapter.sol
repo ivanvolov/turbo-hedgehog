@@ -181,6 +181,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         console.log("quoteToFl %s", quoteToFl);
 
         if (isNova) {
+            console.log("> isNova");
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
             else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
             uint256 baseBalance = baseBalanceUnwr();
@@ -188,9 +189,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             uint256 quoteBalance = quoteBalanceUnwr();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
         } else {
-            console.log("1");
+            console.log("> !isNova");
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
-            console.log("2");
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
             uint256 quoteBalance = quoteBalanceUnwr();
@@ -225,7 +225,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amountQuote,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
-        console.log("here");
+        console.log("> START: onFlashLoanTwoTokens");
         console.log("amountBase %s", amountBase);
         console.log("amountQuote %s", amountQuote);
 
@@ -234,15 +234,15 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
         console.log("baseBalance %s", baseBalance);
         console.log("quoteBalance %s", QUOTE.balanceOf(address(this)));
-
-        console.log("amountBase > baseBalance %s", amountBase > baseBalance);
+        if (amountBase > baseBalance) console.log("(1)");
         if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
         else {
-            console.log("here 2");
-
+            console.log("(2)");
             uint256 quoteBalance = QUOTE.balanceOf(address(this));
+            if (amountQuote > quoteBalance) console.log("(3)");
             if (amountQuote > quoteBalance) swapAdapter.swapExactOutput(true, amountQuote - quoteBalance);
         }
+        console.log("> END: onFlashLoanTwoTokens");
     }
 
     /// @dev This function is mainly for removing stack too deep error.

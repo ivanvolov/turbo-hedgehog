@@ -122,7 +122,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     }
 
     function swapExactOutput(bool isBaseToQuote, uint256 amountOut) external onlyModule returns (uint256 amountIn) {
-        console.log("swapExactOutput");
+        console.log("> START:swapExactOutput");
+        console.log("isBaseToQuote %s", isBaseToQuote);
         console.log("amountOut %s", amountOut);
 
         if (amountOut == 0) return 0;
@@ -132,7 +133,6 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         console.log("tokenIn", address(tokenIn));
         console.log("tokenOut", address(tokenOut));
         amountIn = tokenIn.balanceOf(msg.sender);
-        console.log("amountIn %s", amountIn);
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, false, amountOut);
 
@@ -143,7 +143,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             tokenIn.safeTransfer(msg.sender, amountExtra);
             amountIn -= amountExtra;
         }
-        console.log("swapExactOutput DONE");
+        console.log("> END: swapExactOutput");
     }
 
     function executeSwap(bool isBaseToQuote, bool isExactInput, uint256 amountTarget) internal {
@@ -188,7 +188,9 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
+        console.log("> START: router.execute");
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
+        console.log("> END: router.execute");
 
         // If routers returns ETH, we need to wrap it.
         ethBalance = address(this).balance;
@@ -211,26 +213,34 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         uint256 amount,
         bytes memory route
     ) internal returns (bytes memory) {
+        console.log("> START: _getV4Input");
         bytes[] memory params = new bytes[](3);
         uint8 swapAction;
         bool unwrapBefore;
 
         if (isMultihop) {
+            console.log("> isMultihop");
             PathKey[] memory path;
+            // IERC20 currencyIn;
             (unwrapBefore, path) = abi.decode(route, (bool, PathKey[]));
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN) : uint8(Actions.SWAP_EXACT_OUT);
 
+            // Currency cur = adjustForEth(isBaseToQuote == true ? BASE : QUOTE);
+            Currency cur = adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE);
+            if (isExactInput) console.log("currencyIn:", Currency.unwrap(cur));
+            else console.log("currencyOut:", Currency.unwrap(cur));
             params[0] = abi.encode(
                 // We use ExactInputParams structure for both exact input and output swaps
                 // since the parameter structure is identical.
                 IV4Router.ExactInputParams({
-                    currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE),
+                    currencyIn: cur, // or currencyOut for ExactOutputParams
                     path: path,
-                    amountIn: uint128(amount),
-                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max
+                    amountIn: uint128(amount), // or amountOut for ExactOutputParams
+                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max // or amountInMaximum for ExactOutputParams
                 })
             );
         } else {
+            console.log("> !isMultihop");
             PoolKey memory key;
             bool zeroForOne;
             bytes memory hookData;
@@ -243,8 +253,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
                 IV4Router.ExactInputSingleParams({
                     poolKey: key,
                     zeroForOne: zeroForOne,
-                    amountIn: uint128(amount),
-                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max,
+                    amountIn: uint128(amount), // or amountOut for ExactOutputSingleParams
+                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max, // or amountInMaximum for ExactInputSingleParams
                     hookData: hookData
                 })
             );
