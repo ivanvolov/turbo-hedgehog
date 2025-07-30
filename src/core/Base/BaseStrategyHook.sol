@@ -152,8 +152,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     /// @notice Updates liquidity and sets new boundaries around the current oracle price.
     function updateLiquidityAndBoundariesToOracle() external override onlyOwner onlyActive {
-        (, uint256 oraclePoolPrice) = oracle.poolPrice();
-        uint160 oracleSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(oraclePoolPrice);
+        (, uint160 oracleSqrtPrice) = oracle.poolPrice();
         _updateLiquidityAndBoundaries(oracleSqrtPrice);
     }
 
