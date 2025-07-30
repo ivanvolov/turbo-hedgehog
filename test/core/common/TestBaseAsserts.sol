@@ -18,13 +18,12 @@ import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 
 abstract contract TestBaseAsserts is TestBaseUtils {
-    uint256 public assertEqPSThresholdCL;
-    uint256 public assertEqPSThresholdCS;
-    uint256 public assertEqPSThresholdDL;
-    uint256 public assertEqPSThresholdDS;
-    uint256 public assertEqBalanceQuoteThreshold = 2;
-    uint256 public assertEqBalanceBaseThreshold = 15;
-    uint256 public assertEqSqrtThreshold;
+    uint256 public ASSERT_EQ_PS_THRESHOLD_CL;
+    uint256 public ASSERT_EQ_PS_THRESHOLD_CS;
+    uint256 public ASSERT_EQ_PS_THRESHOLD_DL;
+    uint256 public ASSERT_EQ_PS_THRESHOLD_DS;
+    uint256 public ASSERT_EQ_BALANCE_Q_THRESHOLD = 2;
+    uint256 public ASSERT_EQ_BALANCE_B_THRESHOLD = 15;
 
     mapping(address => uint256) public balanceB;
     mapping(address => uint256) public balanceQ;
@@ -57,13 +56,13 @@ abstract contract TestBaseAsserts is TestBaseUtils {
         assertApproxEqAbs(
             QUOTE.balanceOf(owner),
             _balanceQ,
-            assertEqBalanceQuoteThreshold,
+            ASSERT_EQ_BALANCE_Q_THRESHOLD,
             string.concat("Balance ", quoteName, " not equal")
         );
         assertApproxEqAbs(
             BASE.balanceOf(owner),
             _balanceB,
-            assertEqBalanceBaseThreshold,
+            ASSERT_EQ_BALANCE_B_THRESHOLD,
             string.concat("Balance ", baseName, " not equal")
         );
     }
@@ -124,10 +123,10 @@ abstract contract TestBaseAsserts is TestBaseUtils {
 
     function _assertEqPositionState(uint256 CL, uint256 CS, uint256 DL, uint256 DS) public view {
         ILendingAdapter _leA = ILendingAdapter(hook.lendingAdapter()); // The LA can change in tests
-        assertApproxEqAbs(_leA.getCollateralLong(), CL, assertEqPSThresholdCL, "CL not equal");
-        assertApproxEqAbs(_leA.getCollateralShort(), CS, assertEqPSThresholdCS, "CS not equal");
-        assertApproxEqAbs(_leA.getBorrowedLong(), DL, assertEqPSThresholdDL, "DL not equal");
-        assertApproxEqAbs(_leA.getBorrowedShort(), DS, assertEqPSThresholdDS, "DS not equal");
+        assertApproxEqAbs(_leA.getCollateralLong(), CL, ASSERT_EQ_PS_THRESHOLD_CL, "CL not equal");
+        assertApproxEqAbs(_leA.getCollateralShort(), CS, ASSERT_EQ_PS_THRESHOLD_CS, "CS not equal");
+        assertApproxEqAbs(_leA.getBorrowedLong(), DL, ASSERT_EQ_PS_THRESHOLD_DL, "DL not equal");
+        assertApproxEqAbs(_leA.getBorrowedShort(), DS, ASSERT_EQ_PS_THRESHOLD_DS, "DS not equal");
     }
 
     function assertEqProtocolState(uint256 sqrtPriceCurrent, uint256 tvl) public view {

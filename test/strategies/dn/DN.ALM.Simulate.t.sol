@@ -29,17 +29,17 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = MConstants.uniswap_v3_WETH_USDC_POOL;
-            assertEqPSThresholdCL = 1e5;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
         deployFreshManagerAndRouters();
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
-        create_flash_loan_adapter_euler_WETH_USDC();
+        create_lending_adapter_euler_USDC_WETH();
+        create_flash_loan_adapter_euler_USDC_WETH();
         create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
         init_hook(true, false, 0, 1e18, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 

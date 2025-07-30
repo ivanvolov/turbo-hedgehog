@@ -20,9 +20,6 @@ import {IOracleTest, IChronicleSelfKisser} from "@test/interfaces/IOracleTest.so
 contract OracleTest is ALMTestBase {
     using SafeERC20 for IERC20;
 
-    string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
-    string SEPOLIA_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
-
     function setUp() public {
         uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
@@ -287,7 +284,7 @@ contract OracleTest is ALMTestBase {
 
         console.log("> ETH-R-ALM/ETH-R2-ALM");
         {
-            select_arbitrum_fork(360360800);
+            _select_arbitrum_fork(360360800);
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x5b0cf2b36a65a6BB085D501B971e4c102B9Cd473), // WETH
                 AggregatorV3Interface(0x4eadC6ee74b7Ceb09A4ad90a33eA2915fbefcf76), // USDT
@@ -304,7 +301,7 @@ contract OracleTest is ALMTestBase {
 
         console.log("> BTCALMTest");
         {
-            select_sepolia_fork(8817967);
+            _select_sepolia_fork(8817967);
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0xa4183Cbf2eE868dDFccd325531C4f53F737FFF68), // cbBTC
                 AggregatorV3Interface(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f), // USDC
@@ -327,7 +324,7 @@ contract OracleTest is ALMTestBase {
 
         console.log("> UNICORD-R");
         {
-            select_sepolia_fork(8818009);
+            _select_sepolia_fork(8818009);
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0x85b6dD270538325A9E0140bd6052Da4ecc18A85c), //DAI
                 AggregatorV3Interface(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f), // USDC
@@ -361,7 +358,7 @@ contract OracleTest is ALMTestBase {
 
     function test_strategy_oracles_chronicle() public {
         IOracle mock_oracle;
-        select_sepolia_fork(8818766);
+        _select_sepolia_fork(8818766);
 
         console.log("> DN/ETHALM");
         {
@@ -522,14 +519,14 @@ contract OracleTest is ALMTestBase {
         (price, ) = mock_oracle.poolPrice();
     }
 
-    function select_arbitrum_fork(uint256 block_number) internal {
+    function _select_arbitrum_fork(uint256 block_number) internal {
         uint256 fork = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(fork);
         vm.rollFork(block_number);
         _create_accounts();
     }
 
-    function select_sepolia_fork(uint256 block_number) internal {
+    function _select_sepolia_fork(uint256 block_number) internal {
         uint256 fork = vm.createFork(SEPOLIA_RPC_URL);
         vm.selectFork(fork);
         vm.rollFork(block_number);

@@ -44,12 +44,11 @@ contract UNICORDALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_USDT_POOL;
-            assertEqPSThresholdCL = 1e1;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e1;
-            minStepSize = 1 ether;
-            slippageTolerance = 1e15;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+            SLIPPAGE_TOLERANCE_V3 = 1e15;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);

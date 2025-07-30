@@ -106,7 +106,7 @@ abstract contract TestBaseMorpho is TestBaseEuler {
         setURD();
     }
 
-    function create_lending_adapter_morpho_earn_dai_usdc() internal {
+    function create_lending_adapter_morpho_earn_usdc_dai() internal {
         vm.prank(deployer.addr);
         lendingAdapter = new MorphoLendingAdapter(
             BASE,

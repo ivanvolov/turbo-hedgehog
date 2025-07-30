@@ -40,6 +40,37 @@ abstract contract TestBaseUtils is Deployers {
 
     string UNICHAIN_RPC_URL = vm.envString("UNICHAIN_RPC_URL");
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
+    string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
+    string SEPOLIA_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
+
+    uint256 mainnetFork;
+    uint256 arbitrumFork;
+    uint256 sepoliaFork;
+    uint256 unichainFork;
+
+    function select_mainnet_fork(uint256 block_number) internal {
+        mainnetFork = vm.createFork(MAINNET_RPC_URL);
+        vm.selectFork(mainnetFork);
+        vm.rollFork(block_number);
+    }
+
+    function select_arbitrum_fork(uint256 block_number) internal {
+        arbitrumFork = vm.createFork(ARBITRUM_RPC_URL);
+        vm.selectFork(arbitrumFork);
+        vm.rollFork(block_number);
+    }
+
+    function select_sepolia_fork(uint256 block_number) internal {
+        sepoliaFork = vm.createFork(SEPOLIA_RPC_URL);
+        vm.selectFork(sepoliaFork);
+        vm.rollFork(block_number);
+    }
+
+    function select_unichain_fork(uint256 block_number) internal {
+        unichainFork = vm.createFork(UNICHAIN_RPC_URL);
+        vm.selectFork(unichainFork);
+        vm.rollFork(block_number);
+    }
 
     address public TARGET_SWAP_POOL;
 
@@ -68,7 +99,6 @@ abstract contract TestBaseUtils is Deployers {
     TestAccount zero;
     TestAccount treasury;
 
-    uint256 almId;
     uint256 tempGas;
 
     uint256 constant WAD = 1e18;

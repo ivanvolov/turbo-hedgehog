@@ -21,21 +21,35 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 abstract contract TestBaseEuler is TestBaseShortcuts {
     using SafeERC20 for IERC20;
 
-    function create_lending_adapter_euler_WETH_USDC() internal {
+    function create_lending_adapter_euler_USDC_WETH() internal {
         create_lending_adapter_euler(MConstants.eulerUSDCVault1, 0, MConstants.eulerWETHVault1, 0);
     }
 
-    function create_flash_loan_adapter_euler_WETH_USDC() internal {
+    function create_flash_loan_adapter_euler_USDC_WETH() internal {
         create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerWETHVault2, 0);
     }
 
-    function create_lending_adapter_euler_WETH_USDC_unichain() internal returns (ILendingAdapter) {
+    function create_lending_adapter_euler_USDC_WETH_unichain() internal returns (ILendingAdapter) {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(
             BASE,
             QUOTE,
             UConstants.EULER_VAULT_CONNECT,
             UConstants.eulerUSDCVault1,
+            UConstants.eulerWETHVault1,
+            UConstants.merklRewardsDistributor,
+            UConstants.rEUL
+        );
+        return lendingAdapter;
+    }
+
+    function create_lending_adapter_euler_USDT_WETH_unichain() internal returns (ILendingAdapter) {
+        vm.prank(deployer.addr);
+        lendingAdapter = new EulerLendingAdapter(
+            BASE,
+            QUOTE,
+            UConstants.EULER_VAULT_CONNECT,
+            UConstants.eulerUSDTVault1,
             UConstants.eulerWETHVault1,
             UConstants.merklRewardsDistributor,
             UConstants.rEUL

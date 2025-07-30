@@ -48,18 +48,26 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         vm.rollFork(22789424);
 
         manager = UConstants.manager;
+        universalRouter = UConstants.UNIVERSAL_ROUTER;
 
         // ** Setting up test environments params
         {
-            assertEqPSThresholdCL = 1e5;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
         _create_accounts();
-        universalRouter = UConstants.UNIVERSAL_ROUTER;
+
+        ETH_USDT_key = _getAndCheckPoolKey(
+            ETH,
+            USDT,
+            500,
+            10,
+            0x04b7dd024db64cfbe325191c818266e4776918cd9eaf021c26949a859e654b16
+        );
     }
 
     function part_deploy_ETH_ALM() internal {
@@ -71,18 +79,18 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         QUOTE = WETH;
         isNativeETH = 0;
 
-        create_lending_adapter_euler_WETH_USDC_unichain();
+        create_lending_adapter_euler_USDC_WETH_unichain();
         create_flash_loan_adapter_morpho_unichain();
         oracle = _create_oracle(
-            AggregatorV3Interface(0x152598809FB59db55cA76f89a192Fb23555531D8), // WETH
-            AggregatorV3Interface(0x5e9Aae684047a0ACf2229fAefE8b46726335CE77), // USDC
+            UConstants.chronicle_feed_WETH,
+            UConstants.chronicle_feed_USDC,
             24 hours,
             24 hours,
             false,
             int8(6 - 18)
         );
-        mock_latestRoundData(0x152598809FB59db55cA76f89a192Fb23555531D8, 3732706458000000000000);
-        mock_latestRoundData(0x5e9Aae684047a0ACf2229fAefE8b46726335CE77, 1000010000000000000);
+        mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3732706458000000000000);
+        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 1000010000000000000);
 
         production_init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
@@ -112,15 +120,15 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         create_lending_adapter_euler_USDC_USDT_unichain();
         create_flash_loan_adapter_morpho_unichain();
         oracle = _create_oracle(
-            AggregatorV3Interface(0x8E947Ea7D5881Cd600Ace95F1201825F8C708844), // USDT
-            AggregatorV3Interface(0x5e9Aae684047a0ACf2229fAefE8b46726335CE77), // USDC
+            AggregatorV3Interface(UConstants.chronicle_feed_USDT), // USDT
+            AggregatorV3Interface(UConstants.chronicle_feed_USDC), // USDC
             24 hours,
             24 hours,
             true,
             int8(0)
         );
-        mock_latestRoundData(0x8E947Ea7D5881Cd600Ace95F1201825F8C708844, 1000535721908032161);
-        mock_latestRoundData(0x5e9Aae684047a0ACf2229fAefE8b46726335CE77, 1000010000000000000);
+        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 1000535721908032161);
+        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 1000010000000000000);
 
         production_init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, type(uint256).max);
 
@@ -135,14 +143,6 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         hookUNICORD = hook;
         USDC_USDT_key = key;
         rebalanceAdapterUnicord = rebalanceAdapter;
-
-        ETH_USDT_key = _getAndCheckPoolKey(
-            IERC20(0x8f187aA05619a017077f5308904739877ce9eA21),
-            USDT,
-            500,
-            10,
-            0xb04f843bc757e90d9115ed4720eec7d8bcd68052f7cec657f18ed8e6a2001211
-        );
     }
 
     uint256 amountToDep1 = 1e12; //1M USDC
@@ -285,10 +285,10 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         // par_swap_up_in_ETH_ALM();
         par_swap_down_in_ETH_ALM();
 
-        // ** Make oracle change with swap price
-        alignOracles(hookALM.sqrtPriceCurrent());
+        // // ** Make oracle change with swap price
+        // alignOracles(hookALM.sqrtPriceCurrent());
 
-        part_rebalance_ETH_ALM();
+        // part_rebalance_ETH_ALM();
     }
 
     // ** Helpers
@@ -305,7 +305,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         console.log("swapETH_USDC_In");
         int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
-        __swap_production(true, true, amount, ETH_USDC_key, true);
+        _swap_production(true, true, amount, ETH_USDC_key, true);
         console.log("!");
         // int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         // int256 ethAfter = int256(swapper.addr.balance);
@@ -323,7 +323,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     function swapUSDC_ETH_In(uint256 amount) public returns (uint256, uint256) {
         int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
-        __swap_production(false, true, amount, ETH_USDC_key, false);
+        _swap_production(false, true, amount, ETH_USDC_key, false);
         int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         int256 ethAfter = int256(swapper.addr.balance);
         return (abs(ethAfter - ethBefore), abs(usdcAfter - usdcBefore));

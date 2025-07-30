@@ -182,7 +182,7 @@ contract RewardsAdaptersTest is ALMTestBase {
     function test_lending_adapter_euler_rewards_and_claim() public {
         vm.rollFork(22469023);
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_lending_adapter_euler_USDC_WETH();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
         uint256 amount = 183012673785523122481;
@@ -308,7 +308,7 @@ contract RewardsAdaptersTest is ALMTestBase {
     function test_lending_adapter_merkle_rewards_and_claim_UNI() public {
         vm.rollFork(22469023);
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_lending_adapter_euler_USDC_WETH();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
         uint256 amount = 183012673785523122481;

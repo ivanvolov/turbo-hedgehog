@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
-import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {ISwapRouter} from "@uniswap-v3/ISwapRouter.sol";
 import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {IEthereumVaultConnector as IEVC} from "@euler-interfaces/IEVC.sol";
@@ -41,4 +41,9 @@ library Constants {
     // ** Uniswap
     IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3); // https://docs.uniswap.org/contracts/v4/deployments
     IPermit2 constant PERMIT_2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // https://docs.uniswap.org/contracts/v4/deployments
+
+    // ** Chronicle
+    IAggV3 constant chronicle_feed_WETH = IAggV3(0x152598809FB59db55cA76f89a192Fb23555531D8);
+    IAggV3 constant chronicle_feed_USDC = IAggV3(0x5e9Aae684047a0ACf2229fAefE8b46726335CE77);
+    IAggV3 constant chronicle_feed_USDT = IAggV3(0x8E947Ea7D5881Cd600Ace95F1201825F8C708844);
 }

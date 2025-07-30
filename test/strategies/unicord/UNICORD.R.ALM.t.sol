@@ -44,19 +44,18 @@ contract UNICORDRALMTest is ALMTestBase {
         // ** Setting up test environments params
         {
             TARGET_SWAP_POOL = MConstants.uniswap_v3_DAI_USDC_POOL;
-            assertEqPSThresholdCL = 1e1;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e1;
-            minStepSize = 1 ether;
-            slippageTolerance = 1e15;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+            SLIPPAGE_TOLERANCE_V3 = 1e15;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.DAI, 18, "DAI");
-        create_lending_adapter_morpho_earn_dai_usdc();
+        create_lending_adapter_morpho_earn_usdc_dai();
         create_flash_loan_adapter_morpho();
         create_oracle(false, MConstants.chainlink_feed_DAI, MConstants.chainlink_feed_USDC, 10 hours, 10 hours);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
