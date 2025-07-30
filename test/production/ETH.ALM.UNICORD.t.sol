@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
 import {ALM} from "@src/ALM.sol";
+import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -27,10 +28,14 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     IERC20 USDC = IERC20(UConstants.USDC);
     IERC20 USDT = IERC20(UConstants.USDT);
 
-    ALM hook1;
-    ALM hook2;
+    PoolKey ETH_USDT_key;
+
+    ALM hookALM;
+    ALM hookUNICORD;
     PoolKey USDC_USDT_key;
     PoolKey ETH_USDC_key;
+    SRebalanceAdapter rebalanceAdapterUnicord;
+    SRebalanceAdapter rebalanceAdapterALM;
 
     uint24 feeLP = 500; //0.05%
 
@@ -42,6 +47,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         vm.selectFork(fork);
         vm.rollFork(22789424);
 
+        manager = UConstants.manager;
+
         // ** Setting up test environments params
         {
             assertEqPSThresholdCL = 1e5;
@@ -52,7 +59,6 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
 
         initialSQRTPrice = SQRT_PRICE_1_1;
         _create_accounts();
-        manager = UConstants.manager;
         universalRouter = UConstants.UNIVERSAL_ROUTER;
     }
 
@@ -90,8 +96,9 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
-        hook2 = hook;
+        hookALM = hook;
         ETH_USDC_key = key;
+        rebalanceAdapterALM = rebalanceAdapter;
     }
 
     function part_deploy_UNICORD() internal {
@@ -125,8 +132,17 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             rebalanceAdapter.setRebalanceConstraints(2, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
         }
-        hook1 = hook;
+        hookUNICORD = hook;
         USDC_USDT_key = key;
+        rebalanceAdapterUnicord = rebalanceAdapter;
+
+        ETH_USDT_key = _getAndCheckPoolKey(
+            IERC20(0x8f187aA05619a017077f5308904739877ce9eA21),
+            USDT,
+            500,
+            10,
+            0xb04f843bc757e90d9115ed4720eec7d8bcd68052f7cec657f18ed8e6a2001211
+        );
     }
 
     uint256 amountToDep1 = 1e12; //1M USDC
@@ -135,8 +151,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         deal(address(USDT), address(alice.addr), amountToDep1);
 
         vm.startPrank(alice.addr);
-        USDT.approve(address(hook), type(uint256).max);
-        uint256 shares = hook.deposit(alice.addr, amountToDep1, 0);
+        USDT.approve(address(hookUNICORD), type(uint256).max);
+        uint256 shares = hookUNICORD.deposit(alice.addr, amountToDep1, 0);
         vm.stopPrank();
 
         assertApproxEqAbs(shares, amountToDep1, 1);
@@ -148,8 +164,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     function part_deposit_ETHALM() public {
         deal(address(WETH), address(alice.addr), amountToDep2);
         vm.startPrank(alice.addr);
-        WETH.approve(address(hook), type(uint256).max);
-        uint256 shares = hook.deposit(alice.addr, amountToDep2, 0);
+        WETH.approve(address(hookALM), type(uint256).max);
+        uint256 shares = hookALM.deposit(alice.addr, amountToDep2, 0);
         vm.stopPrank();
 
         assertApproxEqAbs(shares, amountToDep2, 1);
@@ -158,22 +174,22 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
 
     function part_rebalance_UNICORD() public {
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(10e14);
+        rebalanceAdapterUnicord.rebalance(10e14);
     }
 
     function part_rebalance_ETH_ALM() public {
         vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(15e14);
+        rebalanceAdapterALM.rebalance(15e14);
     }
 
     function par_swap_up_in_ETH_ALM() public {
         uint256 usdcToSwap = 10000e6; // 100k USDC
         deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-        uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
         (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_In(usdcToSwap);
 
-        (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
 
         console.log("deltaUSDC %s", deltaUSDC);
         console.log("deltaETH %s", deltaETH);
@@ -189,10 +205,10 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         uint256 ethToSwap = 1e18 / 2;
         deal(address(swapper.addr), ethToSwap);
 
-        uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
         (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_In(ethToSwap);
 
-        (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
 
         console.log("deltaUSDC %s", deltaUSDC);
         console.log("deltaETH %s", deltaETH);
@@ -228,13 +244,6 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
 
         // USDC->USDT->ETH->WETH
         {
-            PoolKey memory ETH_USDT_key = _getAndCheckPoolKey(
-                IERC20(0x8f187aA05619a017077f5308904739877ce9eA21),
-                USDT,
-                500,
-                10,
-                0xb04f843bc757e90d9115ed4720eec7d8bcd68052f7cec657f18ed8e6a2001211
-            );
             PathKey[] memory path = new PathKey[](2);
             path[0] = PathKey(
                 USDC_USDT_key.currency0,
@@ -259,8 +268,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         part_deposit_ETHALM();
 
         vm.startPrank(deployer.addr);
-        rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
-        hook.setNextLPFee(feeLP);
+        rebalanceAdapterALM.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
+        hookALM.setNextLPFee(feeLP);
         vm.stopPrank();
 
         part_rebalance_ETH_ALM();
@@ -270,13 +279,14 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             vm.startPrank(swapper.addr);
             USDC.forceApprove(address(UConstants.PERMIT_2), type(uint256).max);
             UConstants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
-
-            // Can't approve ETH to permit.
+            // Can't approve ETH to permit. And don't need to.
         }
 
-        //par_swap_up_in_ETH_ALM();
+        // par_swap_up_in_ETH_ALM();
         par_swap_down_in_ETH_ALM();
-        console.log("SWAP DONE");
+
+        // ** Make oracle change with swap price
+        alignOracles(hookALM.sqrtPriceCurrent());
 
         part_rebalance_ETH_ALM();
     }

@@ -188,7 +188,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             uint256 quoteBalance = quoteBalanceUnwr();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
         } else {
+            console.log("1");
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
+            console.log("2");
             uint256 baseBalance = baseBalanceUnwr();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
             uint256 quoteBalance = quoteBalanceUnwr();

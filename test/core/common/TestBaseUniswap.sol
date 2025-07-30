@@ -9,19 +9,22 @@ import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {PoolSwapTest} from "@test/libraries/v4-forks/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId} from "v4-core/types/PoolId.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {IV4Router} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
 import {Actions} from "v4-periphery/src/libraries/Actions.sol";
 import {Commands} from "@universal-router/Commands.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 
 // ** contracts
 import {TestBaseAsserts} from "@test/core/common/TestBaseAsserts.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {Oracle} from "@src/core/oracles/Oracle.sol";
+import {ALM} from "@src/ALM.sol";
 
 // ** libraries
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
@@ -39,6 +42,8 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 abstract contract TestBaseUniswap is TestBaseAsserts {
     using PRBMathUD60x18 for uint256;
+    using PoolIdLibrary for PoolKey;
+    using StateLibrary for IPoolManager;
 
     function setSwapAdapterToV3SingleSwap(address pool) internal {
         IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
@@ -151,6 +156,15 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         setV3PoolPrice(newSqrtPrice);
     }
 
+    function alignOraclesAndPoolsV4(ALM _hook, PoolKey memory _poolKey) public {
+        // uint256 sqrPriceBefore = _hook.sqrtPriceCurrent();
+        // console.log("sqrtPriceBefore %s", sqrPriceBefore);
+        // uint160 newSqrtPrice = getV4PoolSQRTPrice(_poolKey);
+        // console.log("newSqrtPrice");
+        // console.log(newSqrtPrice);
+        alignOracles(_hook.sqrtPriceCurrent());
+    }
+
     function alignOracles(uint160 newSqrtPrice) public {
         uint256 _poolPrice = TestLib.getPriceFromSqrtPriceX96(newSqrtPrice);
 
@@ -174,9 +188,15 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         return _sqrtPriceToOraclePrice(getV3PoolSQRTPrice(pool));
     }
 
+    function getV4PoolPrice(PoolKey memory _poolKey) public view returns (uint256) {}
+
     function getV3PoolSQRTPrice(address pool) public view returns (uint160) {
         (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
         return sqrtPriceX96;
+    }
+
+    function getV4PoolSQRTPrice(PoolKey memory _poolKey) public view returns (uint160 sqrtPriceX96) {
+        (sqrtPriceX96, , , ) = manager.getSlot0(_poolKey.toId());
     }
 
     function getV3PoolTick(address pool) public view returns (int24) {
