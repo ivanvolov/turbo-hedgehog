@@ -215,7 +215,12 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
     uint256 SLIPPAGE_TOLERANCE_V4 = 1e6; // 1% acceptable price difference
 
     function setV4PoolPrice(ALM hook, PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
+        console.log("START: setV4PoolPrice");
+
         uint160 sqrtCurrent = getV4PoolSQRTPrice(_poolKey);
+        console.log("sqrtTarget %s", targetSqrtPriceX96);
+        console.log("sqrtCurrent %s", sqrtCurrent);
+
         if (sqrtCurrent == targetSqrtPriceX96) return;
         approveUniversalRouter(Currency.unwrap(_poolKey.currency0));
         approveUniversalRouter(Currency.unwrap(_poolKey.currency1));
@@ -223,6 +228,12 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         // ── 0. quick exit if already in band ────────────────────────────────
         uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
         uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
+
+        console.log("priceTarget %s", priceTarget);
+        console.log("priceCurrent %s", priceCurrent);
+
+        console.log("diff %s", ALMMathLib.absSub(priceTarget, priceCurrent));
+
         if (ALMMathLib.absSub(priceTarget, priceCurrent) <= SLIPPAGE_TOLERANCE_V4) return;
 
         // ── 1. direction + liquidity snapshot ──────────────────────────────

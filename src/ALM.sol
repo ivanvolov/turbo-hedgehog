@@ -220,6 +220,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         SwapParams calldata,
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
+        console.log("> START: _beforeSwap");
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         lendingAdapter.syncPositions();
 
@@ -234,6 +235,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             }),
             ""
         );
+        console.log("> END: _beforeSwap");
         return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
@@ -244,6 +246,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         BalanceDelta,
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, int128) {
+        console.log("> START: _afterSwap");
         Ticks memory _activeTicks = activeTicks;
 
         (, BalanceDelta feesAccrued) = poolManager.modifyLiquidity(
@@ -268,45 +271,55 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         );
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
-        console.log("(1)");
-        console.log("unichain balance", address(poolManager).balance);
-        console.log("USDC", key.currency1.balanceOf(address(poolManager)));
+        console.log("PM balance currency0", key.currency0.balanceOf(address(poolManager)));
+        console.log("PM balance currency1", key.currency1.balanceOf(address(poolManager)));
+        console.log("> END: _afterSwap");
         return (IHooks.afterSwap.selector, 0);
     }
 
     function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
-        console.log("_settleDeltas");
+        console.log("> START: _settleDeltas");
         console.log("token0", Currency.unwrap(key.currency0));
         console.log("token1", Currency.unwrap(key.currency1));
 
         if (zeroForOne) {
+            console.log("> zeroForOne");
             uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
             console.log("token0 amount", token0);
             console.log("token1 amount", token1);
 
-            console.log("!");
+            console.log("(1)");
             key.currency0.take(poolManager, address(this), token0, false);
-            console.log("!");
+            console.log("(2)");
             if (isNativeETH == 0) WETH9.deposit{value: token0}();
-            console.log("!");
+            console.log("(3)");
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
-            console.log("!");
+            console.log("(4)");
             if (isNativeETH == 1) WETH9.withdraw(token1);
-            console.log("!");
+            console.log("(5)");
             key.currency1.settle(poolManager, address(this), token1, false);
-            console.log("_settleDeltas done");
         } else {
+            console.log("> !zeroForOne");
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
 
+            console.log("token0 amount", token0);
+            console.log("token1 amount", token1);
+
+            console.log("(1)");
             key.currency1.take(poolManager, address(this), token1, false);
+            console.log("(2)");
             if (isNativeETH == 1) WETH9.deposit{value: token1}();
+            console.log("(3)");
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
+            console.log("(4)");
             if (isNativeETH == 0) WETH9.withdraw(token0);
+            console.log("(5)");
             key.currency0.settle(poolManager, address(this), token0, false);
         }
+        console.log("> END: _settleDeltas");
     }
 
     function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up, uint160 sqrtPrice) internal {

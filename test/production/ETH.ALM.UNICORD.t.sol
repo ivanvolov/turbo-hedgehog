@@ -199,6 +199,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         assertApproxEqAbs(deltaETH, deltaY, 1);
         assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
+
+        console.log("sqrtPriceAfter %s", hookALM.sqrtPriceCurrent());
     }
 
     function par_swap_down_in_ETH_ALM() public {
@@ -206,6 +208,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         deal(address(swapper.addr), ethToSwap);
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
+        console.log("preSqrtPrice %s", hookALM.sqrtPriceCurrent());
+
         (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_In(ethToSwap);
 
         (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
@@ -218,6 +222,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         // assertApproxEqAbs(deltaETH, deltaX, 0);
         assertApproxEqAbs((ethToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
+
+        console.log("sqrtPriceAfter %s", hookALM.sqrtPriceCurrent());
     }
 
     function test_lifecycle() public {
@@ -264,7 +270,6 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             setSwapAdapterToV4MultihopSwap(abi.encode(true, path), false);
             vm.stopPrank();
         }
-
         part_deposit_ETHALM();
 
         vm.startPrank(deployer.addr);
@@ -273,7 +278,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         vm.stopPrank();
 
         part_rebalance_ETH_ALM(20e14);
-
+        console.log("oracle.price()", oracle.price());
+        console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
         // Permit2 approvals
         {
             vm.startPrank(swapper.addr);
@@ -282,12 +288,20 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             // Can't approve ETH to permit. And don't need to.
         }
 
-        // par_swap_up_in_ETH_ALM();
+        //par_swap_up_in_ETH_ALM();
         par_swap_down_in_ETH_ALM();
+        console.log("oracle.price()", oracle.price());
+        console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
+        // console.log("getV4PoolSQRTPrice %s", getV4PoolSQRTPrice(ETH_USDT_key));
 
+        console.log("SWAP DONE");
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
 
+        // console.log("oracle.price()", oracle.price());
+        // console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
+        // console.log("getV4PoolSQRTPrice %s", getV4PoolSQRTPrice(ETH_USDT_key));
+        console.log("REBALANCE");
         part_rebalance_ETH_ALM(3e14);
     }
 

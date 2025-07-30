@@ -189,11 +189,14 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
 
         uint256 ethBalance = address(this).balance;
         console.log("> START: router.execute");
+        console.log("ethBalance %s", ethBalance);
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
         console.log("> END: router.execute");
 
         // If routers returns ETH, we need to wrap it.
         ethBalance = address(this).balance;
+        console.log("ethBalance after %s", ethBalance);
+
         if (ethBalance > 0) WETH9.deposit{value: ethBalance}();
     }
 
@@ -224,6 +227,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             // IERC20 currencyIn;
             (unwrapBefore, path) = abi.decode(route, (bool, PathKey[]));
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN) : uint8(Actions.SWAP_EXACT_OUT);
+            console.log("AMOUNT %s", amount);
+            console.log("isBaseToQuote %s", isBaseToQuote);
 
             // Currency cur = adjustForEth(isBaseToQuote == true ? BASE : QUOTE);
             Currency cur = adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE);
