@@ -219,16 +219,9 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             );
     }
 
-    uint256 MAX_ITER_V4 = 80; // binary-search depth
-    uint256 MIN_IN_V4 = 3e9; // 3000 USDC   (token1)  or 0.000003 WETH (token0)
-    uint256 SLIPPAGE_TOLERANCE_V4 = 1e6; // 1% acceptable price difference
-
     function setV4PoolPrice(ALM hook, PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
         console.log("START: setV4PoolPrice");
-
         uint160 sqrtCurrent = getV4PoolSQRTPrice(_poolKey);
-        console.log("sqrtTarget %s", targetSqrtPriceX96);
-        console.log("sqrtCurrent %s", sqrtCurrent);
 
         if (sqrtCurrent == targetSqrtPriceX96) return;
         approveUniversalRouter(Currency.unwrap(_poolKey.currency0));
@@ -238,64 +231,24 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
         uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
 
-        console.log("priceTarget %s", priceTarget);
-        console.log("priceCurrent %s", priceCurrent);
-
-        console.log("diff %s", ALMMathLib.absSub(priceTarget, priceCurrent));
-
-        if (ALMMathLib.absSub(priceTarget, priceCurrent) <= SLIPPAGE_TOLERANCE_V4) return;
-
         // ── 1. direction + liquidity snapshot ──────────────────────────────
         bool zeroForOne = priceCurrent > priceTarget; // pool price must drop
         if (isInvertedPool) zeroForOne = !zeroForOne; // flip when quoting inverted
-        uint128 L = hook.liquidity();
+        uint128 L = manager.getLiquidity(_poolKey.toId());
 
-        // Use binary search on the delta-amount rather than on price itself:
-        // upper = “enough to overshoot”, lower = 0.  Each step halves the gap.
-        uint256 hi;
-        uint256 lo = 0;
-
+        uint256 amountIn;
         // upper bound:  move **whole** way in one go (worst case)
         if (zeroForOne) {
             // token0 in
-            hi = SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true);
+            amountIn = SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true);
         } else {
             // token1 in
-            hi = SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
+            amountIn = SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
         }
 
-        if (hi < MIN_IN_V4) hi = MIN_IN_V4;
-
-        // ── 2. iterative refinement ──────────────────────────
-        for (uint8 i; i < MAX_ITER_V4; ++i) {
-            uint256 mid = (hi + lo) >> 1; // round-down
-            if (mid < MIN_IN_V4) mid = MIN_IN_V4;
-
-            // do the trial swap
-            _doV4InputSwapInPool(zeroForOne, mid, _poolKey);
-
-            // compute new price
-            sqrtCurrent = getV4PoolSQRTPrice(_poolKey);
-            priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
-
-            // good enough?
-            uint256 diff = ALMMathLib.absSub(priceCurrent, priceTarget);
-            if (diff <= SLIPPAGE_TOLERANCE_V4) {
-                console.log("setV4PoolPrice: converged in %s iterations", i);
-                return;
-            }
-
-            bool nowAbove = priceCurrent > priceTarget;
-            if (nowAbove == (isInvertedPool ? !zeroForOne : zeroForOne)) {
-                // we are still on the start side – need more input
-                lo = mid;
-            } else {
-                // we overshot – mid was too large
-                hi = mid;
-            }
-        }
-
-        revert("setV4PoolPrice: cannot converge");
+        _doV4InputSwapInPool(zeroForOne, amountIn, _poolKey);
+        console.log("priceCurrent after %s", _sqrtPriceToOraclePrice(getV4PoolSQRTPrice(_poolKey)));
+        assertApproxEqAbs(getV4PoolSQRTPrice(_poolKey), targetSqrtPriceX96, 1e20, "SQRT PRICE MISS");
     }
 
     function approveUniversalRouter(address token) internal {
