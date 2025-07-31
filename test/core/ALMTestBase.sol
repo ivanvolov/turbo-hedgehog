@@ -36,6 +36,7 @@ abstract contract ALMTestBase is TestBaseMorpho {
     ) internal {
         console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
+        WETH9 = MConstants.WETH9;
         deploy_hook_contract(_isInvertedAssets, MConstants.WETH9);
         isInvertedAssets = _isInvertedAssets;
 

@@ -3,9 +3,12 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-// ** V4 imports
+// ** External imports
 import {Currency} from "v4-core/types/Currency.sol";
 import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
 
 // ** contracts
 import {TestBaseMorpho} from "./common/TestBaseMorpho.sol";
@@ -21,6 +24,8 @@ import {RouterParameters} from "@universal-router/contracts/types/RouterParamete
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 abstract contract ALMTestBaseUnichain is TestBaseMorpho {
+    using SafeERC20 for IERC20;
+
     function production_init_hook(
         bool _isInvertedAssets,
         bool _isNova,
@@ -32,6 +37,7 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
         uint256 _swapPriceThreshold
     ) internal {
         vm.startPrank(deployer.addr);
+        WETH9 = UConstants.WETH9;
         deploy_hook_contract(_isInvertedAssets, UConstants.WETH9);
         isInvertedAssets = _isInvertedAssets;
 
@@ -61,7 +67,7 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
         vm.stopPrank();
     }
 
-    function deployMockUniversalRouter() internal returns (UniversalRouter) {
+    function deployMockUniversalRouter() internal {
         RouterParameters memory params = RouterParameters({
             permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3,
             weth9: 0x4200000000000000000000000000000000000006,
@@ -74,5 +80,28 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
             v4PositionManager: 0x4529A01c7A0410167c5740C487A8DE60232617bf
         });
         universalRouter = IUniversalRouter(address(new UniversalRouter(params)));
+    }
+
+    function deployMockV4Quoter() internal {
+        quoter = new V4Quoter(manager);
+    }
+
+    function approve_accounts() public virtual override {
+        super.approve_accounts();
+
+        _approvePermitIfNotEth(BASE, marketMaker.addr);
+        _approvePermitIfNotEth(QUOTE, marketMaker.addr);
+
+        _approvePermitIfNotEth(BASE, swapper.addr);
+        _approvePermitIfNotEth(QUOTE, swapper.addr);
+    }
+
+    function _approvePermitIfNotEth(IERC20 TOKEN, address user) private {
+        if (address(TOKEN) == address(ETH)) return;
+        console.log("_approvePermitIfNotEth: %s", address(TOKEN));
+        vm.startPrank(user);
+        TOKEN.forceApprove(address(UConstants.PERMIT_2), type(uint256).max);
+        UConstants.PERMIT_2.approve(address(TOKEN), address(universalRouter), type(uint160).max, type(uint48).max);
+        vm.stopPrank();
     }
 }

@@ -3,11 +3,12 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-// ** V4 imports
+// ** External imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Deployers} from "@test/libraries/v4-forks/Deployers.sol";
-import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
+import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
 import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
@@ -32,11 +33,12 @@ abstract contract TestBaseUtils is Deployers {
     using PRBMathUD60x18 for uint256;
 
     PoolKey unauthorizedKey;
-    V4Quoter quoter;
+    IV4Quoter quoter;
     IUniversalRouter universalRouter;
     uint160 initialSQRTPrice;
     ALM hook;
     SRebalanceAdapter rebalanceAdapter;
+    IWETH9 WETH9;
 
     string UNICHAIN_RPC_URL = vm.envString("UNICHAIN_RPC_URL");
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");

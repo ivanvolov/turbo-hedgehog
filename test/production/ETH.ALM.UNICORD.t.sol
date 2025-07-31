@@ -48,8 +48,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         vm.rollFork(22789424);
 
         manager = UConstants.manager;
-        // universalRouter = UConstants.UNIVERSAL_ROUTER;
-        deployMockUniversalRouter();
+        deployMockUniversalRouter(); // universalRouter = UConstants.UNIVERSAL_ROUTER;
 
         // ** Setting up test environments params
         {
@@ -351,6 +350,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         part_rebalance_ETH_ALM(20e14);
         console.log("oracle.price()", oracle.price());
         console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
+
         // Permit2 approvals
         {
             vm.startPrank(swapper.addr);
@@ -366,7 +366,9 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         // console.log("getV4PoolSQRTPrice %s", getV4PoolSQRTPrice(ETH_USDT_key));
 
         console.log("SWAP DONE");
+
         // ** Make oracle change with swap price
+        SLIPPAGE_TOLERANCE_V4 = 2e6;
         alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
 
         // console.log("oracle.price()", oracle.price());
@@ -391,11 +393,10 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         console.log("swapETH_USDC_In");
         int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
-        _swap_production(true, true, amount, ETH_USDC_key, true);
-        console.log("!");
-        // int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
-        // int256 ethAfter = int256(swapper.addr.balance);
-        // return (abs(usdcAfter - usdcBefore), abs(ethAfter - ethBefore));
+        _swap_production(true, true, amount, ETH_USDC_key);
+        int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
+        int256 ethAfter = int256(swapper.addr.balance);
+        return (abs(usdcAfter - usdcBefore), abs(ethAfter - ethBefore));
     }
 
     // function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
@@ -409,7 +410,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     function swapUSDC_ETH_In(uint256 amount) public returns (uint256, uint256) {
         int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
-        _swap_production(false, true, amount, ETH_USDC_key, false);
+        _swap_production(false, true, amount, ETH_USDC_key);
         int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         int256 ethAfter = int256(swapper.addr.balance);
         return (abs(ethAfter - ethBefore), abs(usdcAfter - usdcBefore));

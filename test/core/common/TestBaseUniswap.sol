@@ -87,16 +87,34 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
             1,
             protToC(ProtId.V4_SINGLE),
+            abi.encode(true, targetKey, true, bytes(""))
+        );
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
+            2,
+            protToC(ProtId.V4_SINGLE),
             abi.encode(false, targetKey, false, bytes(""))
+        );
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
+            3,
+            protToC(ProtId.V4_SINGLE),
+            abi.encode(true, targetKey, false, bytes(""))
         );
 
         uint256[] memory activeSwapRoute = new uint256[](1);
-        activeSwapRoute[0] = isReversed ? 1 : 0;
+        activeSwapRoute[0] = isReversed ? 2 : 0;
+        if (BASE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute); // exactIn, base => quote
+
+        activeSwapRoute[0] = isReversed ? 2 : 0;
+        if (QUOTE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base
 
-        activeSwapRoute[0] = isReversed ? 0 : 1;
+        activeSwapRoute[0] = isReversed ? 0 : 2;
+        if (BASE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute); // exactOut, base => quote
+
+        activeSwapRoute[0] = isReversed ? 0 : 2;
+        if (QUOTE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
     }
 
@@ -177,7 +195,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             uint160 targetSqrtPriceX96 = hook.sqrtPriceCurrent();
             console.log("sqrtPriceBefore %s", getV4PoolSQRTPrice(_poolKey));
             console.log("targetSqrtPriceX96", targetSqrtPriceX96);
-            setV4PoolPrice(hook, _poolKey, targetSqrtPriceX96);
+            setV4PoolPrice(_poolKey, targetSqrtPriceX96);
             console.log("sqrtPriceAfter %s", getV4PoolSQRTPrice(_poolKey));
         }
     }
@@ -219,11 +237,14 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             );
     }
 
-    function setV4PoolPrice(ALM hook, PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
+    uint256 SLIPPAGE_TOLERANCE_V4 = 0;
+
+    function setV4PoolPrice(PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
         console.log("START: setV4PoolPrice");
         uint160 sqrtCurrent = getV4PoolSQRTPrice(_poolKey);
 
-        if (sqrtCurrent == targetSqrtPriceX96) return;
+        if (sqrtCurrent == targetSqrtPriceX96)
+            revert("Impossible to sqrtCurrent = targetSqrt. If yes - you are using it wrong.");
         approveUniversalRouter(Currency.unwrap(_poolKey.currency0));
         approveUniversalRouter(Currency.unwrap(_poolKey.currency1));
 
@@ -247,8 +268,8 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         }
 
         _doV4InputSwapInPool(zeroForOne, amountIn, _poolKey);
-        console.log("priceCurrent after %s", _sqrtPriceToOraclePrice(getV4PoolSQRTPrice(_poolKey)));
-        assertApproxEqAbs(getV4PoolSQRTPrice(_poolKey), targetSqrtPriceX96, 1e20, "SQRT PRICE MISS");
+        priceCurrent = _sqrtPriceToOraclePrice(getV4PoolSQRTPrice(_poolKey));
+        assertApproxEqAbs(priceCurrent, priceTarget, SLIPPAGE_TOLERANCE_V4, "PRICE MISS");
     }
 
     function approveUniversalRouter(address token) internal {
@@ -256,22 +277,16 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.startPrank(marketMaker.addr);
         IERC20(token).forceApprove(address(UConstants.PERMIT_2), type(uint256).max);
         UConstants.PERMIT_2.approve(token, address(universalRouter), type(uint160).max, type(uint48).max);
-        UConstants.PERMIT_2.approve(token, address(manager), type(uint160).max, type(uint48).max);
         vm.stopPrank();
     }
 
-    function _doV4InputSwapInPool(
-        bool zeroForOne,
-        uint256 amountIn,
-        PoolKey memory _poolKey
-    ) internal returns (uint256 amountOut) {
+    function _doV4InputSwapInPool(bool zeroForOne, uint256 amountIn, PoolKey memory _poolKey) internal {
         address token = address(zeroForOne ? Currency.unwrap(_poolKey.currency0) : Currency.unwrap(_poolKey.currency1));
-        bool isETH = token == address(ETH);
-        if (isETH) deal(address(marketMaker.addr), amountIn);
+        if (token == address(ETH)) deal(address(marketMaker.addr), amountIn);
         else deal(token, address(marketMaker.addr), amountIn);
 
         vm.startPrank(marketMaker.addr);
-        _swap_v4_single_throw_router(zeroForOne, true, amountIn, _poolKey, isETH);
+        _swap_v4_single_throw_router(zeroForOne, true, amountIn, _poolKey);
         vm.stopPrank();
     }
 
@@ -405,16 +420,9 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         return (int256(delta.amount0()), int256(delta.amount1()));
     }
 
-    function _swap_production(
-        bool zeroForOne,
-        bool isExactInput,
-        uint256 amount,
-        PoolKey memory _key,
-        bool isEth
-    ) internal {
+    function _swap_production(bool zeroForOne, bool isExactInput, uint256 amount, PoolKey memory _key) internal {
         vm.startPrank(swapper.addr);
-        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, _key, isEth);
-        console.log("(10)");
+        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, _key);
         vm.stopPrank();
     }
 
@@ -422,15 +430,26 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         bool zeroForOne,
         bool isExactInput,
         uint256 amount,
-        PoolKey memory _key,
-        bool isEth
+        PoolKey memory _key
     ) internal {
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = getV4Input(_key, zeroForOne, isExactInput, amount);
         bytes memory swapCommands;
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.V4_SWAP))));
-        if (isEth) universalRouter.execute{value: amount}(swapCommands, inputs, block.timestamp);
+        console.log("START: _swap_v4_single_throw_router");
+        (, address prankAddress, ) = vm.readCallers();
+
+        uint256 balance = prankAddress.balance;
+        if (isSendETHToRouter(zeroForOne, _key)) console.log("send %s ETH", balance);
+        if (isSendETHToRouter(zeroForOne, _key))
+            universalRouter.execute{value: balance}(swapCommands, inputs, block.timestamp);
         else universalRouter.execute(swapCommands, inputs, block.timestamp);
+        console.log("END: _swap_v4_single_throw_router");
+    }
+
+    function isSendETHToRouter(bool zeroForOne, PoolKey memory _poolKey) internal view returns (bool) {
+        address token = address(zeroForOne ? Currency.unwrap(_poolKey.currency0) : Currency.unwrap(_poolKey.currency1));
+        return token == address(ETH);
     }
 
     function getV4Input(
@@ -448,8 +467,8 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             IV4Router.ExactInputSingleParams({
                 poolKey: poolKey,
                 zeroForOne: zeroForOne,
-                amountIn: uint128(amount),
-                amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max,
+                amountIn: uint128(amount), // or amountOut for ExactOutputSingleParams
+                amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max, // or amountInMaximum for ExactInputSingleParams
                 hookData: ""
             })
         );

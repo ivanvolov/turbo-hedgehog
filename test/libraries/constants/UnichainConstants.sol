@@ -15,6 +15,7 @@ import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniv
 import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
 
 library Constants {
     IPoolManager constant manager = IPoolManager(0x1F98400000000000000000000000000000000004);
@@ -41,6 +42,7 @@ library Constants {
     // ** Uniswap
     IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3); // https://docs.uniswap.org/contracts/v4/deployments
     IPermit2 constant PERMIT_2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // https://docs.uniswap.org/contracts/v4/deployments
+    IV4Quoter constant V4_QUOTER = IV4Quoter(0x333E3C607B141b18fF6de9f258db6e77fE7491E0);
 
     // ** Chronicle
     IAggV3 constant chronicle_feed_WETH = IAggV3(0x152598809FB59db55cA76f89a192Fb23555531D8);
