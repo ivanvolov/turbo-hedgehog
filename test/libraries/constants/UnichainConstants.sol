@@ -6,7 +6,7 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {ISwapRouter} from "@uniswap-v3/ISwapRouter.sol";
+import {ISwapRouter} from "@v3-core/ISwapRouter.sol";
 import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {IEthereumVaultConnector as IEVC} from "@euler-interfaces/IEVC.sol";
 import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";

@@ -48,7 +48,8 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         vm.rollFork(22789424);
 
         manager = UConstants.manager;
-        universalRouter = UConstants.UNIVERSAL_ROUTER;
+        // universalRouter = UConstants.UNIVERSAL_ROUTER;
+        deployMockUniversalRouter();
 
         // ** Setting up test environments params
         {
@@ -204,7 +205,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     }
 
     function par_swap_down_in_ETH_ALM() public {
-        uint256 ethToSwap = 1e18;
+        uint256 ethToSwap = 1e18 / 10;
         deal(address(swapper.addr), ethToSwap);
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
@@ -248,26 +249,96 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
 
         part_deploy_ETH_ALM();
 
-        // USDC->USDT->ETH->WETH
         {
-            PathKey[] memory path = new PathKey[](2);
-            path[0] = PathKey(
-                USDC_USDT_key.currency0,
-                USDC_USDT_key.fee,
-                USDC_USDT_key.tickSpacing,
-                USDC_USDT_key.hooks,
-                abi.encodePacked(uint8(1))
-            );
-            path[1] = PathKey(
-                ETH_USDT_key.currency1,
-                ETH_USDT_key.fee,
-                ETH_USDT_key.tickSpacing,
-                ETH_USDT_key.hooks,
-                abi.encodePacked(uint8(2))
-            );
+            // BASE = USDC, QUOTE = WETH
+            PathKey[] memory path0 = new PathKey[](2);
+            PathKey[] memory path1 = new PathKey[](2);
+            PathKey[] memory path2 = new PathKey[](2);
+            PathKey[] memory path3 = new PathKey[](2);
+
+            // exactIn, base => quote
+            // USDC->USDT->ETH->WETH
+            {
+                path0[0] = PathKey(
+                    USDC_USDT_key.currency1,
+                    USDC_USDT_key.fee,
+                    USDC_USDT_key.tickSpacing,
+                    USDC_USDT_key.hooks,
+                    abi.encodePacked(uint8(1))
+                );
+                path0[1] = PathKey(
+                    ETH_USDT_key.currency1,
+                    ETH_USDT_key.fee,
+                    ETH_USDT_key.tickSpacing,
+                    ETH_USDT_key.hooks,
+                    abi.encodePacked(uint8(2))
+                );
+            }
+
+            // exactOut, quote => base
+            // WETH->ETH->USDT->USDC
+            {
+                path1[0] = PathKey(
+                    ETH_USDT_key.currency0,
+                    ETH_USDT_key.fee,
+                    ETH_USDT_key.tickSpacing,
+                    ETH_USDT_key.hooks,
+                    abi.encodePacked(uint8(2))
+                );
+                path1[1] = PathKey(
+                    USDC_USDT_key.currency1,
+                    USDC_USDT_key.fee,
+                    USDC_USDT_key.tickSpacing,
+                    USDC_USDT_key.hooks,
+                    abi.encodePacked(uint8(1))
+                );
+            }
+
+            // exactOut, base => quote
+            // USDC->USDT->ETH->WETH
+            {
+                path2[0] = PathKey(
+                    USDC_USDT_key.currency0,
+                    USDC_USDT_key.fee,
+                    USDC_USDT_key.tickSpacing,
+                    USDC_USDT_key.hooks,
+                    abi.encodePacked(uint8(1))
+                );
+                path2[1] = PathKey(
+                    ETH_USDT_key.currency1,
+                    ETH_USDT_key.fee,
+                    ETH_USDT_key.tickSpacing,
+                    ETH_USDT_key.hooks,
+                    abi.encodePacked(uint8(2))
+                );
+            }
+
+            // exactIn, quote => base
+            // WETH->ETH->USDT->USDC
+            {
+                path3[0] = PathKey(
+                    ETH_USDT_key.currency1,
+                    ETH_USDT_key.fee,
+                    ETH_USDT_key.tickSpacing,
+                    ETH_USDT_key.hooks,
+                    abi.encodePacked(uint8(2))
+                );
+                path3[1] = PathKey(
+                    USDC_USDT_key.currency0,
+                    USDC_USDT_key.fee,
+                    USDC_USDT_key.tickSpacing,
+                    USDC_USDT_key.hooks,
+                    abi.encodePacked(uint8(1))
+                );
+            }
 
             vm.startPrank(deployer.addr);
-            setSwapAdapterToV4MultihopSwap(abi.encode(true, path), false);
+            setSwapAdapterToV4MultihopSwap(
+                abi.encode(false, path0), // always auto wrap eth
+                abi.encode(true, path1),
+                abi.encode(false, path2),
+                abi.encode(true, path3)
+            );
             vm.stopPrank();
         }
         part_deposit_ETHALM();
@@ -288,7 +359,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             // Can't approve ETH to permit. And don't need to.
         }
 
-        //par_swap_up_in_ETH_ALM();
+        // par_swap_up_in_ETH_ALM();
         par_swap_down_in_ETH_ALM();
         console.log("oracle.price()", oracle.price());
         console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
@@ -303,6 +374,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         // console.log("getV4PoolSQRTPrice %s", getV4PoolSQRTPrice(ETH_USDT_key));
         console.log("REBALANCE");
         part_rebalance_ETH_ALM(3e14);
+        console.log("REBALANCE DONE");
     }
 
     // ** Helpers

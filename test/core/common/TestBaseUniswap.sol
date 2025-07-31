@@ -37,8 +37,8 @@ import {Constants as UConstants} from "@test/libraries/constants/UnichainConstan
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IUniswapSwapAdapter} from "@src/interfaces/swapAdapters/IUniswapSwapAdapter.sol";
-import {ISwapRouter} from "@uniswap-v3/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@uniswap-v3/IUniswapV3Pool.sol";
+import {ISwapRouter} from "@v3-core/ISwapRouter.sol";
+import {IUniswapV3Pool} from "@v3-core/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -100,19 +100,28 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
     }
 
-    function setSwapAdapterToV4MultihopSwap(bytes memory path, bool isReversed) internal {
+    function setSwapAdapterToV4MultihopSwap(
+        bytes memory path0,
+        bytes memory path1,
+        bytes memory path2,
+        bytes memory path3
+    ) internal {
         IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
 
-        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(0, protToC(ProtId.V4_MULTIHOP), path);
-        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(1, protToC(ProtId.V4_MULTIHOP), path);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(0, protToC(ProtId.V4_MULTIHOP), path0);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(1, protToC(ProtId.V4_MULTIHOP), path1);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(2, protToC(ProtId.V4_MULTIHOP), path2);
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(3, protToC(ProtId.V4_MULTIHOP), path3);
 
         uint256[] memory activeSwapRoute = new uint256[](1);
-        activeSwapRoute[0] = isReversed ? 1 : 0;
+        activeSwapRoute[0] = 0;
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute); // exactIn, base => quote
-        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base
+        activeSwapRoute[0] = 1;
+        IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base =!
 
-        activeSwapRoute[0] = isReversed ? 0 : 1;
+        activeSwapRoute[0] = 2;
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute); // exactOut, base => quote
+        activeSwapRoute[0] = 3;
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
     }
 

@@ -188,8 +188,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
-        console.log("> START: router.execute");
         console.log("ethBalance %s", ethBalance);
+        console.log("> START: router.execute");
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
         console.log("> END: router.execute");
 
