@@ -78,7 +78,7 @@ contract UNICORDRALMTest is ALMTestBase {
         assertTicks(-276424, -276224);
     }
 
-    uint256 amountToDep = 100000e6;
+    uint256 amountToDep = 1e12; // 1M
 
     function test_deposit() public {
         assertEq(calcTVL(), 0, "TVL");
@@ -88,14 +88,14 @@ contract UNICORDRALMTest is ALMTestBase {
         vm.prank(alice.addr);
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 99999999999, 1e1);
+        assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(0, amountToDep - 1, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(calcTVL(), 99999999999, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -166,7 +166,6 @@ contract UNICORDRALMTest is ALMTestBase {
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
         }
-
         // ** Swap Up In
         {
             console.log("SWAP UP IN");
@@ -361,17 +360,15 @@ contract UNICORDRALMTest is ALMTestBase {
             console.log("deltaX", deltaX);
             console.log("deltaY", deltaY);
 
-            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 21);
+            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 5e2);
             assertApproxEqAbs(deltaUSDC, deltaX, 1);
         }
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
-
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
 

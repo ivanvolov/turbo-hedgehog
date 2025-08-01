@@ -257,7 +257,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
-
         // ** Withdraw
         {
             console.log("shares before withdraw %s", hook.totalSupply());
@@ -417,7 +416,6 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
-
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);

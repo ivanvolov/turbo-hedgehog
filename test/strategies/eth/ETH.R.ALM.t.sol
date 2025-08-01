@@ -116,7 +116,6 @@ contract ETHRALMTest is ALMTestBase {
 
         // ** Make oracle change with swap price
         alignOraclesAndPools(hook.sqrtPriceCurrent());
-
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -163,7 +162,6 @@ contract ETHRALMTest is ALMTestBase {
                 DS - ((k1 - 1e18) * deltaWETH) / 1e18
             );
         }
-
         // ** Swap Up In
         {
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (

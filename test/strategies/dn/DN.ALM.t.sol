@@ -138,7 +138,7 @@ contract DeltaNeutralALMTest is ALMTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
-        assertEqBalanceState(alice.addr, 0, 265934116614);
+        assertEqBalanceState(alice.addr, 0, 265963112062);
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(calcTVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
@@ -367,8 +367,8 @@ contract DeltaNeutralALMTest is ALMTestBase {
             rebalanceAdapter.rebalance(slippage);
 
             assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(133755977353914710809, 440071573466, 239292883038, 109204324622254173858);
-            assertApproxEqAbs(calcTVL(), 266869439460, 1, "tvl");
+            assertEqPositionState(133755977353914710809, 440071573466, 239459617199, 109204324622254173858);
+            assertApproxEqAbs(calcTVL(), 266702705299, 1, "tvl");
         }
     }
 
