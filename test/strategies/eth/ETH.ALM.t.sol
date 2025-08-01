@@ -227,7 +227,7 @@ contract ETHALMTest is ALMTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
-        assertEqBalanceState(alice.addr, 99980051007089306118, 0);
+        assertEqBalanceState(alice.addr, 99990323993112252626, 0);
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(calcTVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));

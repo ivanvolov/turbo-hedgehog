@@ -224,6 +224,10 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         return sqrtPriceX96;
     }
 
+    function getV3Liquidity(address pool) public view returns (uint128) {
+        return IUniswapV3Pool(pool).liquidity();
+    }
+
     function getV4PoolSQRTPrice(PoolKey memory _poolKey) public view returns (uint160 sqrtPriceX96) {
         (sqrtPriceX96, , , ) = manager.getSlot0(_poolKey.toId());
     }
@@ -237,7 +241,8 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             );
     }
 
-    uint256 SLIPPAGE_TOLERANCE_V4 = 0;
+    uint256 constant SLIPPAGE_TOLERANCE_V4 = 1e14; // 0.01%
+    uint8 constant MAX_ITERATIONS = 5; // safety-valve
 
     function setV4PoolPrice(PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
         console.log("START: setV4PoolPrice");
@@ -248,28 +253,51 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         approveUniversalRouter(Currency.unwrap(_poolKey.currency0));
         approveUniversalRouter(Currency.unwrap(_poolKey.currency1));
 
-        // ── 0. quick exit if already in band ────────────────────────────────
         uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
-        uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
 
-        // ── 1. direction + liquidity snapshot ──────────────────────────────
-        bool zeroForOne = priceCurrent > priceTarget; // pool price must drop
-        if (isInvertedPool) zeroForOne = !zeroForOne; // flip when quoting inverted
-        uint128 L = manager.getLiquidity(_poolKey.toId());
+        // 3. Iterate until deviation ≤ SLIPPAGE_TOLERANCE_V4 or we hit MAX_ITERATIONS
+        for (uint8 i; i < MAX_ITERATIONS; ++i) {
+            // Refresh current price on each pass
+            sqrtCurrent = getV4PoolSQRTPrice(_poolKey);
+            uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
 
-        uint256 amountIn;
-        // upper bound:  move **whole** way in one go (worst case)
-        if (zeroForOne) {
-            // token0 in
-            amountIn = SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true);
-        } else {
-            // token1 in
-            amountIn = SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
+            // Deviation ratio (always ≥ 1 × 1e18)
+            uint256 ratio = priceCurrent > priceTarget
+                ? (priceCurrent * 1e18) / priceTarget
+                : (priceTarget * 1e18) / priceCurrent;
+
+            console.log("iteration %s - deviation %s", i, ratio - 1e18);
+
+            // If within tolerance, we’re done
+            if (ratio - 1e18 <= SLIPPAGE_TOLERANCE_V4) break;
+
+            // Direction of swap
+            bool zeroForOne = priceCurrent > priceTarget; // need price ↓
+            if (isInvertedPool) zeroForOne = !zeroForOne;
+
+            // Liquidity snapshot
+            uint128 L = manager.getLiquidity(_poolKey.toId());
+
+            // Amount needed to push price fully to target (may overshoot, but we’ll
+            // re-check after swap)
+            uint256 amountIn = zeroForOne
+                ? SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true)
+                : SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
+
+            _doV4InputSwapInPool(zeroForOne, amountIn, _poolKey);
         }
 
-        _doV4InputSwapInPool(zeroForOne, amountIn, _poolKey);
-        priceCurrent = _sqrtPriceToOraclePrice(getV4PoolSQRTPrice(_poolKey));
-        assertApproxEqAbs(priceCurrent, priceTarget, SLIPPAGE_TOLERANCE_V4, "PRICE MISS");
+        // 4. Final assertions ─ guarantees for callers/tests
+        uint256 priceAfter = _sqrtPriceToOraclePrice(getV4PoolSQRTPrice(_poolKey));
+
+        uint256 finalRatio = priceAfter > priceTarget
+            ? (priceAfter * 1e18) / priceTarget
+            : (priceTarget * 1e18) / priceAfter;
+
+        console.log("priceAfter %s", priceAfter);
+        console.log("priceTarget %s", priceTarget);
+
+        require(finalRatio - 1e18 <= SLIPPAGE_TOLERANCE_V4, "SQRT PRICE MISS");
     }
 
     function approveUniversalRouter(address token) internal {
@@ -290,70 +318,56 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.stopPrank();
     }
 
-    uint256 MAX_ITER_V3 = 80; // binary-search depth
-    uint256 MIN_IN_V3 = 3e9; // 3000 USDC   (token1)  or 0.000003 WETH (token0)
-    uint256 SLIPPAGE_TOLERANCE_V3 = 1e16; // 1% acceptable price difference
+    uint256 SLIPPAGE_TOLERANCE_V3 = 1e14; // 1% acceptable price difference
 
     function setV3PoolPrice(uint160 targetSqrtPriceX96) public {
         uint160 sqrtCurrent = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        if (sqrtCurrent == targetSqrtPriceX96) return;
+        if (sqrtCurrent == targetSqrtPriceX96)
+            revert("Impossible to sqrtCurrent = targetSqrt. If yes - you are using it wrong.");
 
-        // ── 0. quick exit if already in band ────────────────────────────────
         uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
         uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
-        if (ALMMathLib.absSub(priceTarget, priceCurrent) <= SLIPPAGE_TOLERANCE_V3) return;
 
-        // ── 1. direction + liquidity snapshot ──────────────────────────────
-        bool zeroForOne = priceCurrent > priceTarget; // pool price must drop
-        if (isInvertedPool) zeroForOne = !zeroForOne; // flip when quoting inverted
-        uint128 L = hook.liquidity();
-
-        // Use binary search on the delta-amount rather than on price itself:
-        // upper = “enough to overshoot”, lower = 0.  Each step halves the gap.
-        uint256 hi;
-        uint256 lo = 0;
-
-        // upper bound:  move **whole** way in one go (worst case)
-        if (zeroForOne) {
-            // token0 in
-            hi = SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true);
-        } else {
-            // token1 in
-            hi = SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
-        }
-
-        if (hi < MIN_IN_V3) hi = MIN_IN_V3;
-
-        // ── 2. iterative refinement ──────────────────────────
-        for (uint8 i; i < MAX_ITER_V3; ++i) {
-            uint256 mid = (hi + lo) >> 1; // round-down
-            if (mid < MIN_IN_V3) mid = MIN_IN_V3;
-
-            // do the trial swap
-            _doV3InputSwapInPool(zeroForOne, mid);
-
-            // compute new price
+        for (uint8 i; i < MAX_ITERATIONS; ++i) {
+            // Refresh current price on each pass
             sqrtCurrent = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
             priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
 
-            // good enough?
-            uint256 diff = ALMMathLib.absSub(priceCurrent, priceTarget);
-            if (diff <= SLIPPAGE_TOLERANCE_V3) {
-                console.log("setV3PoolPrice: converged in %s iterations", i);
-                return;
-            }
+            // Deviation ratio (always ≥ 1 × 1e18)
+            uint256 ratio = priceCurrent > priceTarget
+                ? (priceCurrent * 1e18) / priceTarget
+                : (priceTarget * 1e18) / priceCurrent;
 
-            bool nowAbove = priceCurrent > priceTarget;
-            if (nowAbove == (isInvertedPool ? !zeroForOne : zeroForOne)) {
-                // we are still on the start side – need more input
-                lo = mid;
-            } else {
-                // we overshot – mid was too large
-                hi = mid;
-            }
+            console.log("iteration %s - deviation %s", i, ratio - 1e18);
+
+            // If within tolerance, we’re done
+            if (ratio - 1e18 <= SLIPPAGE_TOLERANCE_V3) break;
+
+            // Direction of swap
+            bool zeroForOne = priceCurrent > priceTarget; // need price ↓
+            if (isInvertedPool) zeroForOne = !zeroForOne;
+
+            // Liquidity snapshot
+            uint128 L = getV3Liquidity(TARGET_SWAP_POOL);
+
+            uint256 amountIn = zeroForOne
+                ? SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true)
+                : SqrtPriceMath.getAmount1Delta(sqrtCurrent, targetSqrtPriceX96, L, true);
+
+            _doV3InputSwapInPool(zeroForOne, amountIn);
         }
 
-        revert("setV3PoolPrice: cannot converge");
+        uint256 priceAfter = _sqrtPriceToOraclePrice(getV3PoolSQRTPrice(TARGET_SWAP_POOL));
+
+        uint256 finalRatio = priceAfter > priceTarget
+            ? (priceAfter * 1e18) / priceTarget
+            : (priceTarget * 1e18) / priceAfter;
+
+        console.log("priceAfter %s", priceAfter);
+        console.log("priceTarget %s", priceTarget);
+
+        require(finalRatio - 1e18 <= SLIPPAGE_TOLERANCE_V3, "SQRT PRICE MISS");
+        return;
     }
 
     function _doV3InputSwapInPool(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
