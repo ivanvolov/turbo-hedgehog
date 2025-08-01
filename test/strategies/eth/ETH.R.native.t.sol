@@ -142,7 +142,6 @@ contract ETHR_NATIVE_ALMTest is ALMTestBaseUnichain {
         console.log("DEPOSIT REBALANCE");
 
         // ** Make oracle change with swap price
-        SLIPPAGE_TOLERANCE_V4 = 1e18;
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
@@ -282,7 +281,6 @@ contract ETHR_NATIVE_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        SLIPPAGE_TOLERANCE_V4 = 5e18;
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
 
         // ** Withdraw
@@ -337,7 +335,6 @@ contract ETHR_NATIVE_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        SLIPPAGE_TOLERANCE_V4 = 3e18;
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
 
         // ** Deposit
@@ -478,7 +475,6 @@ contract ETHR_NATIVE_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        SLIPPAGE_TOLERANCE_V4 = 8e18;
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
 
         // ** Rebalance
@@ -489,7 +485,6 @@ contract ETHR_NATIVE_ALMTest is ALMTestBaseUnichain {
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage * 2);
 
         // ** Make oracle change with swap price
-        SLIPPAGE_TOLERANCE_V4 = 9e18;
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
 
         // ** Full withdraw

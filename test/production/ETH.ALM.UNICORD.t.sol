@@ -368,7 +368,6 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         console.log("SWAP DONE");
 
         // ** Make oracle change with swap price
-        SLIPPAGE_TOLERANCE_V4 = 2e6;
         alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
 
         // console.log("oracle.price()", oracle.price());
