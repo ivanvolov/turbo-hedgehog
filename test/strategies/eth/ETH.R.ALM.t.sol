@@ -473,7 +473,7 @@ contract ETHRALMTest is ALMTestBase {
     // ** Helpers
 
     function swapWETH_USDT_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function quoteWETH_USDT_Out(uint256 amount) public returns (uint256) {
@@ -481,11 +481,11 @@ contract ETHRALMTest is ALMTestBase {
     }
 
     function swapWETH_USDT_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
     }
 
     function swapUSDT_WETH_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function quoteUSDT_WETH_Out(uint256 amount) public returns (uint256) {
@@ -493,6 +493,6 @@ contract ETHRALMTest is ALMTestBase {
     }
 
     function swapUSDT_WETH_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 }

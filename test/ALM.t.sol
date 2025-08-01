@@ -84,7 +84,7 @@ contract ALMGeneralTest is ALMTestBase {
                 )
             );
 
-            (address currency0, address currency1) = getTokensInOrder();
+            (address currency0, address currency1) = getHookCurrenciesInOrder();
             key = PoolKey(
                 Currency.wrap(currency0),
                 Currency.wrap(currency1),

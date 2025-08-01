@@ -30,9 +30,9 @@ tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
 
 ten:
-	clear && forge test -vv --match-contract ETH_Native_ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_Native_ALMTest --match-test "test_lifecycle"
 tenl:
-	clear && forge test -vvvv --match-contract ETH_Native_ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_Native_ALMTest --match-test "test_lifecycle"
 
 ter:
 	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"

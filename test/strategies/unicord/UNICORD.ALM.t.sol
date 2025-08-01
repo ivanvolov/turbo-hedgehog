@@ -498,7 +498,7 @@ contract UNICORDALMTest is ALMTestBase {
     // ** Helpers
 
     function swapUSDT_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function quoteUSDT_USDC_Out(uint256 amount) public returns (uint256) {
@@ -506,11 +506,11 @@ contract UNICORDALMTest is ALMTestBase {
     }
 
     function swapUSDT_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 
     function swapUSDC_USDT_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function quoteUSDC_USDT_Out(uint256 amount) public returns (uint256) {
@@ -518,6 +518,6 @@ contract UNICORDALMTest is ALMTestBase {
     }
 
     function swapUSDC_USDT_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
     }
 }

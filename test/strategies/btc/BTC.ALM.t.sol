@@ -440,7 +440,7 @@ contract BTCALMTest is ALMTestBase {
     // ** Helpers
 
     function swapBTC_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function quoteBTC_USDC_Out(uint256 amount) public returns (uint256) {
@@ -448,11 +448,11 @@ contract BTCALMTest is ALMTestBase {
     }
 
     function swapBTC_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 
     function swapUSDC_BTC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function quoteUSDC_BTC_Out(uint256 amount) public returns (uint256) {
@@ -460,6 +460,6 @@ contract BTCALMTest is ALMTestBase {
     }
 
     function swapUSDC_BTC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
     }
 }

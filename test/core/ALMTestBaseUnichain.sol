@@ -98,7 +98,7 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
 
     function _approvePermitIfNotEth(IERC20 TOKEN, address user) private {
         if (address(TOKEN) == address(ETH)) return;
-        console.log("_approvePermitIfNotEth: %s", address(TOKEN));
+        // console.log("_approvePermitIfNotEth: %s", address(TOKEN));
         vm.startPrank(user);
         TOKEN.forceApprove(address(UConstants.PERMIT_2), type(uint256).max);
         UConstants.PERMIT_2.approve(address(TOKEN), address(universalRouter), type(uint160).max, type(uint48).max);

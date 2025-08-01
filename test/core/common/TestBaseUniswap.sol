@@ -177,10 +177,6 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         assertEq(PoolId.unwrap(id), _poolId, "PoolId not equal");
     }
 
-    function getTokensInOrder() internal view returns (address, address) {
-        return !isInvertedPool ? (address(QUOTE), address(BASE)) : (address(BASE), address(QUOTE));
-    }
-
     // --- Oracle Alignment --- //
 
     function alignOraclesAndPools(uint160 newSqrtPrice) public {
@@ -308,7 +304,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.stopPrank();
     }
 
-    function _doV4InputSwapInPool(bool zeroForOne, uint256 amountIn, PoolKey memory _poolKey) internal {
+    function _doV4InputSwapInPool(bool zeroForOne, uint256 amountIn, PoolKey memory _poolKey) private {
         address token = address(zeroForOne ? Currency.unwrap(_poolKey.currency0) : Currency.unwrap(_poolKey.currency1));
         if (token == address(ETH)) deal(address(marketMaker.addr), amountIn);
         else deal(token, address(marketMaker.addr), amountIn);
@@ -370,8 +366,10 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         return;
     }
 
-    function _doV3InputSwapInPool(bool zeroForOne, uint256 amountIn) internal returns (uint256 amountOut) {
-        (address _token0, address _token1) = getTokensInOrder();
+    function _doV3InputSwapInPool(bool zeroForOne, uint256 amountIn) private returns (uint256 amountOut) {
+        address _token0 = IUniswapV3Pool(TARGET_SWAP_POOL).token0();
+        address _token1 = IUniswapV3Pool(TARGET_SWAP_POOL).token1();
+
         deal(zeroForOne ? _token0 : _token1, address(marketMaker.addr), amountIn);
         vm.startPrank(marketMaker.addr);
         amountOut = MConstants.UNISWAP_V3_ROUTER.exactInputSingle(
@@ -402,13 +400,21 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         );
     }
 
-    function _swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (uint256, uint256) {
-        (int256 delta0, int256 delta1) = __swap(zeroForOne, amount, _key);
+    function _swap_v4_single_throw_mock_router(
+        bool zeroForOne,
+        int256 amount,
+        PoolKey memory _key
+    ) internal returns (uint256, uint256) {
+        (int256 delta0, int256 delta1) = _swap_v4_single_throw_mock_router_signed(zeroForOne, amount, _key);
         return (abs(delta0), abs(delta1));
     }
 
-    function __swap(bool zeroForOne, int256 amount, PoolKey memory _key) internal returns (int256, int256) {
-        (address _token0, address _token1) = getTokensInOrder();
+    function _swap_v4_single_throw_mock_router_signed(
+        bool zeroForOne,
+        int256 amount,
+        PoolKey memory _key
+    ) internal returns (int256, int256) {
+        (address _token0, address _token1) = (Currency.unwrap(_key.currency0), Currency.unwrap(_key.currency1));
         uint256 token0Before = IERC20(_token0).balanceOf(swapper.addr);
         uint256 token1Before = IERC20(_token1).balanceOf(swapper.addr);
 
@@ -434,26 +440,20 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         return (int256(delta.amount0()), int256(delta.amount1()));
     }
 
-    function _swap_production(bool zeroForOne, bool isExactInput, uint256 amount, PoolKey memory _key) internal {
-        vm.startPrank(swapper.addr);
-        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, _key);
-        vm.stopPrank();
-    }
-
     function _swap_v4_single_throw_router(
         bool zeroForOne,
         bool isExactInput,
         uint256 amount,
         PoolKey memory _key
     ) internal {
+        console.log("START: _swap_v4_single_throw_router");
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = getV4Input(_key, zeroForOne, isExactInput, amount);
         bytes memory swapCommands;
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.V4_SWAP))));
-        console.log("START: _swap_v4_single_throw_router");
         (, address prankAddress, ) = vm.readCallers();
-
         uint256 balance = prankAddress.balance;
+
         if (isSendETHToRouter(zeroForOne, _key)) console.log("send %s ETH", balance);
         if (isSendETHToRouter(zeroForOne, _key))
             universalRouter.execute{value: balance}(swapCommands, inputs, block.timestamp);

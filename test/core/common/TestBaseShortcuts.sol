@@ -34,13 +34,8 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     function deploy_hook_contract(bool _isInvertedAssets, IWETH9 WETH9) internal {
         address payable hookAddress = create_address_without_collision();
+        (address currency0, address currency1) = getHookCurrenciesInOrder();
 
-        (address currency0, address currency1) = getTokensInOrder();
-        console.log("> currency0: %s", currency0);
-        console.log("> currency1: %s", currency1);
-        (currency0, currency1) = adjustForNativeEth(currency0, currency1);
-        console.log("> currency0: %s", currency0);
-        console.log("> currency1: %s", currency1);
         key = PoolKey(
             Currency.wrap(currency0),
             Currency.wrap(currency1),
@@ -48,33 +43,27 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
             1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
-        console.log(currency0);
-        console.log(currency1);
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
-            abi.encode(
-                key,
-                BASE,
-                QUOTE,
-                WETH9,
-                isInvertedPool,
-                _isInvertedAssets,
-                isNativeETH,
-                manager,
-                "NAME",
-                "SYMBOL"
-            ),
+            abi.encode(key, BASE, QUOTE, WETH9, isInvertedPool, _isInvertedAssets, isNTS, manager, "NAME", "SYMBOL"),
             hookAddress
         );
         hook = ALM(hookAddress);
         vm.label(address(hook), "hook");
     }
 
-    function adjustForNativeEth(address currency0, address currency1) internal view returns (address, address) {
-        if (isNativeETH == 2) return (currency0, currency1);
-        if (isNativeETH == 0) return (address(0), currency1);
-        return (currency0, address(0));
+    function getHookCurrenciesInOrder() internal view returns (address currency0, address currency1) {
+        (currency0, currency1) = (address(BASE), address(QUOTE));
+        if (isNTS != 2) {
+            if (currency0 == address(WETH9)) currency0 = address(ETH);
+            if (currency1 == address(WETH9)) currency1 = address(ETH);
+        }
+
+        if (currency0 >= currency1) (currency0, currency1) = (currency1, currency0);
+
+        console.log(">> key currency0: %s", currency0);
+        console.log(">> key currency1: %s", currency1);
     }
 
     bool public deployedOnce = false;

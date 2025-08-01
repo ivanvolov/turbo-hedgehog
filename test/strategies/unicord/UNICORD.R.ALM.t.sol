@@ -388,7 +388,7 @@ contract UNICORDRALMTest is ALMTestBase {
     // ** Helpers
 
     function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function quoteDAI_USDC_Out(uint256 amount) public returns (uint256) {
@@ -396,11 +396,11 @@ contract UNICORDRALMTest is ALMTestBase {
     }
 
     function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
     }
 
     function swapUSDC_DAI_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 
     function quoteUSDC_DAI_Out(uint256 amount) public returns (uint256) {
@@ -408,6 +408,6 @@ contract UNICORDRALMTest is ALMTestBase {
     }
 
     function swapUSDC_DAI_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 }

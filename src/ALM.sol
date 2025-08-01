@@ -52,18 +52,14 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         IWETH9 _WETH9,
         bool _isInvertedPool,
         bool _isInvertedAssets,
-        uint8 _isNativeETH,
+        uint8 _isNTS,
         IPoolManager _poolManager,
         string memory name,
         string memory symbol
-    )
-        BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _isNativeETH, _poolManager)
-        ERC20(name, symbol)
-    {
+    ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _isNTS, _poolManager) ERC20(name, symbol) {
         authorizedPoolKey = _key;
         authorizedPoolId = PoolId.unwrap(_key.toId());
         WETH9 = _WETH9;
-        console.log("WETH9", address(WETH9));
     }
 
     function _afterInitialize(
@@ -293,11 +289,11 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("(1)");
             key.currency0.take(poolManager, address(this), token0, false);
             console.log("(2)");
-            if (isNativeETH == 0) WETH9.deposit{value: token0}();
+            if (isNTS == 0) WETH9.deposit{value: token0}();
             console.log("(3)");
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
             console.log("(4)");
-            if (isNativeETH == 1) WETH9.withdraw(token1);
+            if (isNTS == 1) WETH9.withdraw(token1);
             console.log("(5)");
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
@@ -311,11 +307,11 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("(1)");
             key.currency1.take(poolManager, address(this), token1, false);
             console.log("(2)");
-            if (isNativeETH == 1) WETH9.deposit{value: token1}();
+            if (isNTS == 1) WETH9.deposit{value: token1}();
             console.log("(3)");
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
             console.log("(4)");
-            if (isNativeETH == 0) WETH9.withdraw(token0);
+            if (isNTS == 0) WETH9.withdraw(token0);
             console.log("(5)");
             key.currency0.settle(poolManager, address(this), token0, false);
         }

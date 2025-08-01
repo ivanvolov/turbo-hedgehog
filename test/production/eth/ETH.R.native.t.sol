@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-import "forge-std/console.sol";
-
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
@@ -42,7 +40,7 @@ contract ETH_R_NATIVE_ALMTest is ALMTestBaseUnichain {
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
-            isNativeETH = 0;
+            isNTS = 0;
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
@@ -397,11 +395,11 @@ contract ETH_R_NATIVE_ALMTest is ALMTestBaseUnichain {
                 lendingAdapter.getBorrowedShort()
             );
 
-            uint256 wethToGetFSwap = 1e18;
-            deal(address(USDT), address(swapper.addr), quoteUSDT_ETH_Out(wethToGetFSwap));
+            uint256 ethToGetFSwap = 1e18;
+            deal(address(USDT), address(swapper.addr), quoteUSDT_ETH_Out(ethToGetFSwap));
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaETH, uint256 deltaUSDT) = swapUSDT_ETH_Out(wethToGetFSwap);
+            (uint256 deltaETH, uint256 deltaUSDT) = swapUSDT_ETH_Out(ethToGetFSwap);
             console.log("SWAP DONE");
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
@@ -439,12 +437,12 @@ contract ETH_R_NATIVE_ALMTest is ALMTestBaseUnichain {
             console.log("CL %s", CL);
             console.log("DL %s", DL);
 
-            uint256 wethToSwap = 10e18;
-            deal(address(swapper.addr), wethToSwap);
+            uint256 ethToSwap = 10e18;
+            deal(address(swapper.addr), ethToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaETH, uint256 deltaUSDT) = swapETH_USDT_In(wethToSwap);
+            (uint256 deltaETH, uint256 deltaUSDT) = swapETH_USDT_In(ethToSwap);
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
             console.log("deltaUSDT %s", deltaUSDT);
@@ -527,7 +525,9 @@ contract ETH_R_NATIVE_ALMTest is ALMTestBaseUnichain {
         int256 usdtBefore = int256(USDT.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
 
-        _swap_production(zeroForOne, isExactInput, amount, key);
+        vm.startPrank(swapper.addr);
+        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, key);
+        vm.stopPrank();
 
         int256 usdtAfter = int256(USDT.balanceOf(swapper.addr));
         int256 ethAfter = int256(swapper.addr.balance);

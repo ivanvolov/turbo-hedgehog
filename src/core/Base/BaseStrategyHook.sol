@@ -35,7 +35,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     /// @notice Indicates which currency should be treated as native ETH if any.
     /// @dev 0 - currency0, 1 - currency1, 2 - not ETH pool.
-    uint8 public immutable isNativeETH;
+    uint8 public immutable isNTS;
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
     bytes32 public immutable authorizedPoolId;
@@ -69,12 +69,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         IERC20 _quote,
         bool _isInvertedPool,
         bool _isInvertedAssets,
-        uint8 _isNativeETH,
+        uint8 _isNTS,
         IPoolManager _poolManager
     ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
-        isNativeETH = _isNativeETH;
+        isNTS = _isNTS;
     }
 
     function setStatus(uint8 _status) external onlyOwner {

@@ -21,6 +21,7 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
+// This test is for routing the swap during rebalance throw one of our hooks.
 contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     using SafeERC20 for IERC20;
 
@@ -77,7 +78,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         uint256 liquidityMultiplier = 2e18;
         BASE = USDC;
         QUOTE = WETH;
-        isNativeETH = 0;
+        isNTS = 0;
 
         create_lending_adapter_euler_USDC_WETH_unichain();
         create_flash_loan_adapter_morpho_unichain();
@@ -420,7 +421,9 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
 
-        _swap_production(zeroForOne, isExactInput, amount, ETH_USDC_key);
+        vm.startPrank(swapper.addr);
+        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, ETH_USDC_key);
+        vm.stopPrank();
 
         int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         int256 ethAfter = int256(swapper.addr.balance);
