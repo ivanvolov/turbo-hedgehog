@@ -220,7 +220,7 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         console.log("deltaY %s", deltaY);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-        // assertApproxEqAbs(deltaETH, deltaX, 0);
+        // assertApproxEqAbs(deltaETH, deltaY, 0);
         assertApproxEqAbs((ethToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
 
         console.log("sqrtPriceAfter %s", hookALM.sqrtPriceCurrent());
@@ -360,58 +360,71 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         }
 
         // par_swap_up_in_ETH_ALM();
-        par_swap_down_in_ETH_ALM();
+        // par_swap_up_out_ETH_ALM();
+        // par_swap_down_in_ETH_ALM();
+        par_swap_down_out_ETH_ALM();
         console.log("oracle.price()", oracle.price());
         console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
-        // console.log("getV4PoolSQRTPrice %s", getV4PoolSQRTPrice(ETH_USDT_key));
 
         console.log("SWAP DONE");
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
 
-        // console.log("oracle.price()", oracle.price());
-        // console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
-        // console.log("getV4PoolSQRTPrice %s", getV4PoolSQRTPrice(ETH_USDT_key));
         console.log("REBALANCE");
         part_rebalance_ETH_ALM(3e14);
         console.log("REBALANCE DONE");
     }
 
+    function par_swap_down_out_ETH_ALM() public {
+        uint256 usdcFromSwap = 373e6;
+        deal(address(swapper.addr), 1e18); // No quoter, just eyeball it.
+
+        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
+        console.log("preSqrtPrice %s", hookALM.sqrtPriceCurrent());
+        (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_Out(usdcFromSwap);
+    }
+
+    function par_swap_up_out_ETH_ALM() public {
+        uint256 ethFromSwap = 2671181763613173696;
+        deal(address(USDC), address(swapper.addr), 11000000000); // No quoter, just eyeball it.
+
+        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
+        (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_Out(ethFromSwap);
+    }
+
     // ** Helpers
-
-    // function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(false, int256(amount), key);
-    // }
-
-    // function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
-    //     return _quoteOutputSwap(false, amount);
-    // }
 
     function swapETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
         console.log("swapETH_USDC_In");
-        int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
-        int256 ethBefore = int256(swapper.addr.balance);
-        _swap_production(true, true, amount, ETH_USDC_key);
-        int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
-        int256 ethAfter = int256(swapper.addr.balance);
-        return (abs(usdcAfter - usdcBefore), abs(ethAfter - ethBefore));
+        return swapAndReturnDeltas(true, true, amount);
     }
 
-    // function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
-    //     return _swap(true, int256(amount), key);
-    // }
-
-    // function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
-    //     return _quoteOutputSwap(true, amount);
-    // }
+    function swapETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        console.log("swapETH_USDC_Out");
+        return swapAndReturnDeltas(true, false, amount);
+    }
 
     function swapUSDC_ETH_In(uint256 amount) public returns (uint256, uint256) {
+        console.log("swapUSDC_ETH_In");
+        return swapAndReturnDeltas(false, true, amount);
+    }
+
+    function swapUSDC_ETH_Out(uint256 amount) public returns (uint256, uint256) {
+        console.log("swapUSDC_ETH_Out");
+        return swapAndReturnDeltas(false, false, amount);
+    }
+
+    function swapAndReturnDeltas(bool zeroForOne, bool isExactInput, uint256 amount) public returns (uint256, uint256) {
+        console.log("START: swapAndReturnDeltas");
         int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
         int256 ethBefore = int256(swapper.addr.balance);
-        _swap_production(false, true, amount, ETH_USDC_key);
+
+        _swap_production(zeroForOne, isExactInput, amount, ETH_USDC_key);
+
         int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         int256 ethAfter = int256(swapper.addr.balance);
+        console.log("END: swapAndReturnDeltas");
         return (abs(ethAfter - ethBefore), abs(usdcAfter - usdcBefore));
     }
 }
