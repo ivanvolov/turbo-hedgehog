@@ -18,7 +18,7 @@ import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // This test illustrates the pool with the reversed order of currencies. The main asset first and the stable next.
-contract ETHR_NATIVE_ALMTest is ALMTestBaseUnichain {
+contract ETH_R_NATIVE_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16; //50%

@@ -322,7 +322,8 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
 
     function setV3PoolPrice(uint160 targetSqrtPriceX96) public {
         uint160 sqrtCurrent = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        if (sqrtCurrent == targetSqrtPriceX96) return;
+        if (sqrtCurrent == targetSqrtPriceX96)
+            revert("Impossible to sqrtCurrent = targetSqrt. If yes - you are using it wrong.");
 
         uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
         uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
