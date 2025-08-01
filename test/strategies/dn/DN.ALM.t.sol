@@ -17,7 +17,7 @@ import {IALM} from "@src/interfaces/IALM.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract DeltaNeutralALMTest is ALMTestBase {
+contract DeltaNeutral_ALMTest is ALMTestBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 3e18;
     uint256 weight = 45e16;

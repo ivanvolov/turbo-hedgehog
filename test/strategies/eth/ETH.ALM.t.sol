@@ -27,7 +27,7 @@ import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 
-contract ETHALMTest is ALMTestBase {
+contract ETH_ALMTest is ALMTestBase {
     using SafeERC20 for IERC20;
 
     uint256 longLeverage = 3e18;

@@ -22,7 +22,7 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
 // This test is for routing the swap during rebalance throw one of our hooks.
-contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
+contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     using SafeERC20 for IERC20;
 
     IERC20 WETH = IERC20(UConstants.WETH);

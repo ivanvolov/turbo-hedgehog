@@ -34,7 +34,7 @@ import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ALMGeneralTest is ALMTestBase {
+contract General_ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
 
     IERC20 WETH = IERC20(MConstants.WETH);

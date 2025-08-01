@@ -15,7 +15,7 @@ import {IALM} from "@src/interfaces/IALM.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract ETHALMSimulationTest is ALMTestSimBase {
+contract ETH_ALMSimulationTest is ALMTestSimBase {
     using SafeERC20 for IERC20;
 
     IERC20 WETH = IERC20(MConstants.WETH);

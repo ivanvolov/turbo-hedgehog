@@ -202,7 +202,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 1816422855);
         }
 
-        console.log("> BTCALMTest");
+        console.log("> BTC_ALMTest");
         {
             mock_oracle = _create_oracle(
                 MConstants.chainlink_feed_cbBTC,
@@ -299,7 +299,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 3683777823);
         }
 
-        console.log("> BTCALMTest");
+        console.log("> BTC_ALMTest");
         {
             _select_sepolia_fork(8817967);
             mock_oracle = _create_oracle(
@@ -396,7 +396,7 @@ contract OracleTest is ALMTestBase {
             assertEq(poolPrice, 3644507977);
         }
 
-        console.log("> BTCALMTest");
+        console.log("> BTC_ALMTest");
         {
             mock_oracle = _create_oracle(
                 AggregatorV3Interface(0xe4f05C62c09a3ec000a3f3895eFD2Ec9a1A11742), // cbBTC

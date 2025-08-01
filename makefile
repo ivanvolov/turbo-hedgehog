@@ -4,30 +4,33 @@ build:
 ta:
 	clear && forge test -vv --no-match-contract "SimulationTest"
 
+tn:
+	clear && forge test -vv --match-contract "UNI_ALMTest"
+
 ts:
-	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_simulation --ffi
+	clear && forge test -vv --match-contract ETH_ALMSimulationTest --match-test test_simulation --ffi
 tsl:
-	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_simulation --ffi
+	clear && forge test -vvvv --match-contract ETH_ALMSimulationTest --match-test test_simulation --ffi
 
 trs:
-	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_rebalance_simulation --ffi
+	clear && forge test -vv --match-contract ETH_ALMSimulationTest --match-test test_rebalance_simulation --ffi
 trsl:
-	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_rebalance_simulation --ffi
+	clear && forge test -vvvv --match-contract ETH_ALMSimulationTest --match-test test_rebalance_simulation --ffi
 
 tss:
-	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
+	clear && forge test -vv --match-contract ETH_ALMSimulationTest --match-test test_swaps_simulation --ffi
 tssl:
-	clear && forge test -vvvv --match-contract ETHALMSimulationTest --match-test test_swaps_simulation --ffi
+	clear && forge test -vvvv --match-contract ETH_ALMSimulationTest --match-test test_swaps_simulation --ffi
 
 teu:
-	clear && forge test -vv --match-contract ETHALM_UNICORDTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_UNICORD_ALMTest --match-test "test_"
 teul:
-	clear && forge test -vvvv --match-contract ETHALM_UNICORDTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_UNICORD_ALMTest --match-test "test_"
 
 te:
-	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_ALMTest --match-test "test_"
 tel:
-	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_ALMTest --match-test "test_"
 
 ten:
 	clear && forge test -vv --match-contract ETH_Native_ALMTest --match-test "test_lifecycle"
@@ -35,43 +38,48 @@ tenl:
 	clear && forge test -vvvv --match-contract ETH_Native_ALMTest --match-test "test_lifecycle"
 
 ter:
-	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_R_ALMTest --match-test "test_"
 terl:
-	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_R_ALMTest --match-test "test_"
 
 tern:
-	clear && forge test -vv --match-contract ETH_R_NATIVE_ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_R_UNI_ALMTest --match-test "test_"
 ternl:
-	clear && forge test -vvvv --match-contract ETH_R_NATIVE_ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_R_UNI_ALMTest --match-test "test_"
+
+ter2n:
+	clear && forge test -vv --match-contract ETH_R2_UNI_ALMTest --match-test "test_"
+tern2l:
+	clear && forge test -vvvv --match-contract ETH_R2_UNI_ALMTest --match-test "test_"
 
 ter2:
-	clear && forge test -vv --match-contract ETHR2ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_R2_ALMTest --match-test "test_"
 ter2l:
-	clear && forge test -vvvv --match-contract ETHR2ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_R2_ALMTest --match-test "test_"
 
 tu:
-	clear && forge test -vv --match-contract UNICORDALMTest --match-test "test_"
+	clear && forge test -vv --match-contract UNICORD_ALMTest --match-test "test_"
 tul:
-	clear && forge test -vvvv --match-contract UNICORDALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract UNICORD_ALMTest --match-test "test_"
 
 tur:
-	clear && forge test -vv --match-contract UNICORDRALMTest --match-test "test_"
+	clear && forge test -vv --match-contract UNICORD_R_ALMTest --match-test "test_"
 turl:
-	clear && forge test -vvvv --match-contract UNICORDRALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract UNICORD_R_ALMTest --match-test "test_"
 
 tb:
-	clear && forge test -vv --match-contract BTCALMTest --match-test "test_"
+	clear && forge test -vv --match-contract BTC_ALMTest --match-test "test_"
 tbl:
-	clear && forge test -vvvv --match-contract BTCALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract BTC_ALMTest --match-test "test_"
 td:
-	clear && forge test -vv --match-contract DeltaNeutralALMTest --match-test "test_"
+	clear && forge test -vv --match-contract DeltaNeutral_ALMTest --match-test "test_"
 tdl:
-	clear && forge test -vvvv --match-contract DeltaNeutralALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract DeltaNeutral_ALMTest --match-test "test_"
 
 tg:
-	clear && forge test -vv --match-contract ALMGeneralTest --match-test "test_"
+	clear && forge test -vv --match-contract General_ALMTest --match-test "test_"
 tgl:
-	clear && forge test -vvvv --match-contract ALMGeneralTest --match-test "test_"
+	clear && forge test -vvvv --match-contract General_ALMTest --match-test "test_"
 
 tla:
 	clear && forge test -vv --match-contract LendingAdaptersTest --match-test "test_"
@@ -99,9 +107,9 @@ format_write:
 	npx prettier --write "src/**/*.sol" "test/**/*.sol"
 
 gas_r:
-	clear && forge test -vv --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"
 gas_s:
-	clear && forge snapshot --match-contract "ETHALMTest\b" --match-test "test_lifecycle"
+	clear && forge snapshot --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"
 
 merkl_data:
 	clear && npm run merkl

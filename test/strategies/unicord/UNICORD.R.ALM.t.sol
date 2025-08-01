@@ -21,7 +21,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract UNICORDRALMTest is ALMTestBase {
+contract UNICORD_R_ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;

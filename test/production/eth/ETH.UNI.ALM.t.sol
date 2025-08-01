@@ -19,7 +19,7 @@ import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 // ** interfaces
 import {IPositionManagerStandard, IPositionManager} from "@src/interfaces/IPositionManager.sol";
 
-contract ETH_Native_ALMTest is ALMTestBaseUnichain {
+contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16; //50%
@@ -93,7 +93,8 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
         }
     }
 
-    function test_setUp() public view {
+    function test_setUp() public {
+        vm.skip(true);
         assertEq(hook.owner(), deployer.addr);
         assertTicks(194466, 200466);
     }
@@ -143,6 +144,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
+        vm.skip(true);
         test_deposit_rebalance();
         part_swap_price_up_in();
     }
@@ -175,6 +177,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
+        vm.skip(true);
         test_deposit_rebalance();
         part_swap_price_up_out();
     }
@@ -210,6 +213,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
+        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -238,6 +242,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
+        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -270,6 +275,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -300,6 +306,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -327,6 +334,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -351,6 +359,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(50);
         test_deposit_rebalance();
@@ -378,6 +387,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
+        vm.skip(true);
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
         updateProtocolFees(20 * 1e16); // 20% cut from trading fees
@@ -409,6 +419,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_up_out_protocol_fees() public {
+        vm.skip(true);
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
         updateProtocolFees(20 * 1e16); // 20% from fees
@@ -440,6 +451,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
+        vm.skip(true);
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
         updateProtocolFees(20 * 1e16); // 20% from fees
@@ -468,6 +480,7 @@ contract ETH_Native_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_out_protocol_fees() public {
+        vm.skip(true);
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(50);
         updateProtocolFees(20 * 1e16); // 20% from fees

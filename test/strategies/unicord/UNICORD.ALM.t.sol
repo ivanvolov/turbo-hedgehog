@@ -21,7 +21,7 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract UNICORDALMTest is ALMTestBase {
+contract UNICORD_ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
