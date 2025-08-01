@@ -227,7 +227,47 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         console.log("sqrtPriceAfter %s", hookALM.sqrtPriceCurrent());
     }
 
-    function test_lifecycle() public {
+    function par_swap_down_out_ETH_ALM() public {
+        uint256 usdcFromSwap = 30e9 - 1;
+
+        assertApproxEqAbs(BASE.balanceOf(swapper.addr), 0, 0);
+        assertApproxEqAbs(swapper.addr.balance, 0, 0);
+        assertEq(address(universalRouter).balance, 0);
+        uint256 ethForSwap = 8100573368222439487;
+        deal(address(swapper.addr), ethForSwap + 1e18); // No quoter, just eyeball it.
+
+        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
+        console.log("preSqrtPrice %s", hookALM.sqrtPriceCurrent());
+        (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_Out(usdcFromSwap);
+
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
+        console.log("postSqrtPrice %s", hookALM.sqrtPriceCurrent());
+
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        assertApproxEqAbs(deltaUSDC, deltaX, 3);
+        assertApproxEqAbs((ethForSwap * (1e18 - testFee)) / 1e18, deltaY, 1e9);
+
+        assertApproxEqAbs(BASE.balanceOf(swapper.addr), deltaUSDC, 0);
+        assertApproxEqAbs(swapper.addr.balance, 1e18, 0);
+        assertEq(address(universalRouter).balance, 0);
+    }
+
+    function par_swap_up_out_ETH_ALM() public {
+        uint256 ethFromSwap = 2671181763613173696;
+        deal(address(USDC), address(swapper.addr), 11000000000); // No quoter, just eyeball it.
+
+        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
+        (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_Out(ethFromSwap);
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
+
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
+        assertApproxEqAbs(ethFromSwap, deltaY, 1);
+    }
+
+    function part_test_lifecycle() public {
         part_deploy_UNICORD();
 
         {
@@ -359,39 +399,38 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
             UConstants.PERMIT_2.approve(address(USDC), address(universalRouter), type(uint160).max, type(uint48).max);
             // Can't approve ETH to permit. And don't need to.
         }
+    }
 
-        // par_swap_up_in_ETH_ALM();
-        // par_swap_up_out_ETH_ALM();
-        // par_swap_down_in_ETH_ALM();
-        par_swap_down_out_ETH_ALM();
-        console.log("oracle.price()", oracle.price());
-        console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
+    function test_lifecycle_0() public {
+        part_test_lifecycle();
 
-        console.log("SWAP DONE");
-
-        // ** Make oracle change with swap price
+        par_swap_up_in_ETH_ALM();
         alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
-
-        console.log("REBALANCE");
         part_rebalance_ETH_ALM(3e14);
-        console.log("REBALANCE DONE");
     }
 
-    function par_swap_down_out_ETH_ALM() public {
-        uint256 usdcFromSwap = 373e6;
-        deal(address(swapper.addr), 1e18); // No quoter, just eyeball it.
+    function test_lifecycle_1() public {
+        part_test_lifecycle();
 
-        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
-        console.log("preSqrtPrice %s", hookALM.sqrtPriceCurrent());
-        (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_Out(usdcFromSwap);
+        par_swap_up_out_ETH_ALM();
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        part_rebalance_ETH_ALM(3e14);
     }
 
-    function par_swap_up_out_ETH_ALM() public {
-        uint256 ethFromSwap = 2671181763613173696;
-        deal(address(USDC), address(swapper.addr), 11000000000); // No quoter, just eyeball it.
+    function test_lifecycle_3() public {
+        part_test_lifecycle();
 
-        uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
-        (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_Out(ethFromSwap);
+        par_swap_down_in_ETH_ALM();
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        part_rebalance_ETH_ALM(3e14);
+    }
+
+    function test_lifecycle_4() public {
+        part_test_lifecycle();
+
+        par_swap_down_out_ETH_ALM();
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        part_rebalance_ETH_ALM(3e14);
     }
 
     // ** Helpers

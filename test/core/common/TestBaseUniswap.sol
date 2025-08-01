@@ -447,13 +447,16 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         PoolKey memory _key
     ) internal {
         console.log("START: _swap_v4_single_throw_router");
-        bytes[] memory inputs = new bytes[](1);
+        (, address prankAddress, ) = vm.readCallers();
+
+        bytes[] memory inputs = new bytes[](2);
         inputs[0] = getV4Input(_key, zeroForOne, isExactInput, amount);
+        inputs[1] = abi.encode(address(0), prankAddress, 0);
         bytes memory swapCommands;
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.V4_SWAP))));
-        (, address prankAddress, ) = vm.readCallers();
-        uint256 balance = prankAddress.balance;
+        swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
 
+        uint256 balance = prankAddress.balance;
         if (isSendETHToRouter(zeroForOne, _key)) console.log("send %s ETH", balance);
         if (isSendETHToRouter(zeroForOne, _key))
             universalRouter.execute{value: balance}(swapCommands, inputs, block.timestamp);
