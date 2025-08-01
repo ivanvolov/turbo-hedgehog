@@ -34,9 +34,9 @@ terl:
 	clear && forge test -vvvv --match-contract ETHRALMTest --match-test "test_"
 
 tern:
-	clear && forge test -vv --match-contract ETHR_NATIVE_ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract ETH_R_NATIVE_ALMTest --match-test "test_"
 ternl:
-	clear && forge test -vvvv --match-contract ETHR_NATIVE_ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract ETH_R_NATIVE_ALMTest --match-test "test_"
 
 ter2:
 	clear && forge test -vv --match-contract ETHR2ALMTest --match-test "test_"
