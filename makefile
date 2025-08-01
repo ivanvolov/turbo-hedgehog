@@ -28,6 +28,12 @@ te:
 	clear && forge test -vv --match-contract ETHALMTest --match-test "test_"
 tel:
 	clear && forge test -vvvv --match-contract ETHALMTest --match-test "test_"
+
+ten:
+	clear && forge test -vv --match-contract ETH_Native_ALMTest --match-test "test_"
+tenl:
+	clear && forge test -vvvv --match-contract ETH_Native_ALMTest --match-test "test_"
+
 ter:
 	clear && forge test -vv --match-contract ETHRALMTest --match-test "test_"
 terl:
