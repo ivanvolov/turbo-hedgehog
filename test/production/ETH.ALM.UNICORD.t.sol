@@ -362,13 +362,11 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
         // par_swap_up_in_ETH_ALM();
         // par_swap_up_out_ETH_ALM();
         // par_swap_down_in_ETH_ALM();
-        par_swap_down_out_ETH_ALM();
-        console.log("oracle.price()", oracle.price());
-        console.log("sqrt price %s", hookALM.sqrtPriceCurrent());
+        par_swap_up_out_ETH_ALM();
 
-        console.log("SWAP DONE");
+        // par_swap_down_out_ETH_ALM();
 
-        // ** Make oracle change with swap price
+        // Make oracle change with swap price
         alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
 
         console.log("REBALANCE");
@@ -377,20 +375,36 @@ contract ETHALM_UNICORDTest is ALMTestBaseUnichain {
     }
 
     function par_swap_down_out_ETH_ALM() public {
-        uint256 usdcFromSwap = 373e6;
-        deal(address(swapper.addr), 1e18); // No quoter, just eyeball it.
+        uint256 usdcFromSwap = 30e9 - 1;
+        uint256 ethForSwap = 8060986890348798357;
+        deal(address(swapper.addr), ethForSwap); // No quoter, just eyeball it.
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
         console.log("preSqrtPrice %s", hookALM.sqrtPriceCurrent());
         (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_Out(usdcFromSwap);
+
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
+        console.log("postSqrtPrice %s", hookALM.sqrtPriceCurrent());
+
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        assertApproxEqAbs(deltaUSDC, deltaX, 3);
+        assertApproxEqAbs((ethForSwap * (1e18 - testFee)) / 1e18, deltaY, 1e9);
     }
 
     function par_swap_up_out_ETH_ALM() public {
         uint256 ethFromSwap = 2671181763613173696;
+        uint256 usdcForSwap = 1e10;
         deal(address(USDC), address(swapper.addr), 11000000000); // No quoter, just eyeball it.
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
         (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_Out(ethFromSwap);
+        (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
+
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
+        assertApproxEqAbs(ethFromSwap, deltaY, 1);
     }
 
     // ** Helpers
