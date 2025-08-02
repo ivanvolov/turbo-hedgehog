@@ -304,7 +304,6 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         } // TODO
 
-        return;
         // ** Swap Up In
         {
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
@@ -458,33 +457,33 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaETH, uint256 deltaUSDT) = swapETH_USDT_In(ethToSwap);
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            // console.log("deltaUSDT %s", deltaUSDT);
-            // console.log("deltaETH %s", deltaETH);
-            // console.log("deltaX %s", deltaX);
-            // console.log("deltaY %s", deltaY);
+            console.log("deltaUSDT %s", deltaUSDT);
+            console.log("deltaETH %s", deltaETH);
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
 
-            // assertApproxEqAbs(deltaUSDT, deltaX, 3);
-            // assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 2);
+            assertApproxEqAbs(deltaUSDT, deltaX, 3);
+            assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 3);
 
-            // uint256 deltaTreasuryFeeQ = (deltaETH * testFee * hook.protocolFee()) / 1e36;
-            // treasuryFeeQ += deltaTreasuryFeeQ;
-            // console.log("deltaETH %s", deltaETH);
-            // console.log("testFee %s", testFee);
-            // console.log("hook.protocolFee() %s", hook.protocolFee());
+            uint256 deltaTreasuryFeeQ = (deltaETH * testFee * hook.protocolFee()) / 1e36;
+            treasuryFeeQ += deltaTreasuryFeeQ;
+            console.log("deltaETH %s", deltaETH);
+            console.log("testFee %s", testFee);
+            console.log("hook.protocolFee() %s", hook.protocolFee());
 
-            // console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
+            console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
 
-            // assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
-            // assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
-            // assertEqPositionState(
-            //     CL + ((deltaETH - deltaTreasuryFeeQ) * k1) / 1e18,
-            //     CS,
-            //     DL + deltaUSDT,
-            //     DS + ((k1 - 1e18) * (deltaETH - deltaTreasuryFeeQ)) / 1e18
-            // );
+            assertEqPositionState(
+                CL + ((deltaETH - deltaTreasuryFeeQ) * k1) / 1e18,
+                CS,
+                DL + deltaUSDT,
+                DS + ((k1 - 1e18) * (deltaETH - deltaTreasuryFeeQ)) / 1e18
+            );
         }
 
         // ** Make oracle change with swap price
