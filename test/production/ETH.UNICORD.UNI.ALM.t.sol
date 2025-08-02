@@ -21,7 +21,7 @@ import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
-// This test is for routing the swap during rebalance throw one of our hooks.
+// This test is for routing the swap during rebalance through one of our hooks.
 contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     using SafeERC20 for IERC20;
 
@@ -202,7 +202,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function par_swap_down_in_ETH_ALM() public {
-        uint256 ethToSwap = 1e18 / 10;
+        uint256 ethToSwap = 10e18;
         deal(address(swapper.addr), ethToSwap);
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
@@ -218,7 +218,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         console.log("deltaY %s", deltaY);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-        // assertApproxEqAbs(deltaETH, deltaY, 0);
+        assertApproxEqAbs(deltaUSDC, deltaX, 1);
         assertApproxEqAbs((ethToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
 
         console.log("sqrtPriceAfter %s", hookALM.sqrtPriceCurrent());
@@ -234,15 +234,21 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         deal(address(swapper.addr), ethForSwap + 1e18); // No quoter, just eyeball it.
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
-        console.log("preSqrtPrice %s", hookALM.sqrtPriceCurrent());
         (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_Out(usdcFromSwap);
 
         (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
-        console.log("postSqrtPrice %s", hookALM.sqrtPriceCurrent());
+
+        console.log("deltaUSDC %s", deltaUSDC);
+        console.log("deltaETH %s", deltaETH);
+        console.log("deltaX %s", deltaX);
+        console.log("deltaY %s", deltaY);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
-        assertApproxEqAbs(deltaUSDC, deltaX, 3);
+        assertApproxEqAbs(deltaUSDC, deltaX, 1);
+        assertApproxEqAbs(usdcFromSwap, deltaUSDC, 1);
+
+        assertApproxEqAbs(ethForSwap, deltaETH, 1);
         assertApproxEqAbs((ethForSwap * (1e18 - testFee)) / 1e18, deltaY, 1e9);
 
         assertApproxEqAbs(BASE.balanceOf(swapper.addr), deltaUSDC, 0);
@@ -259,6 +265,11 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+
+        console.log("deltaUSDC %s", deltaUSDC);
+        console.log("deltaETH %s", deltaETH);
+        console.log("deltaX %s", deltaX);
+        console.log("deltaY %s", deltaY);
 
         assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 1);
         assertApproxEqAbs(ethFromSwap, deltaY, 1);
