@@ -184,6 +184,8 @@ abstract contract TestBaseAsserts is TestBaseUtils {
                 lendingAdapter.getCollateralLong()
             );
         }
+        console.log("liquidityCheck %s", liquidityCheck);
+        console.log("hook.liquidity() %s", hook.liquidity());
 
         assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1, "liquidity");
     }
