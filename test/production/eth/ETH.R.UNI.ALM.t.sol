@@ -123,11 +123,28 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
+
+        (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
+            lendingAdapter.getCollateralLong(),
+            lendingAdapter.getCollateralShort(),
+            lendingAdapter.getBorrowedLong(),
+            lendingAdapter.getBorrowedShort()
+        );
+
+        console.log("CL %s", CL);
+        console.log("CS %s", CS);
+        console.log("DL %s", DL);
+        console.log("DS %s", DS);
+
         assertEqBalanceStateZero(address(hook));
+        console.log("postRebalanceTVL %s", calcTVL());
+        console.log("oraclePrice %s", oracle.price());
+        console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
+
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         console.log("our liquidity %s", hook.liquidity());
-        // assertTicks(-197461 - 3000, -197461 + 3000);
-        // assertApproxEqAbs(hook.sqrtPriceCurrent(), 4086015488346380075686829, 1, "sqrtPrice");
+        assertTicks(-197013, -191013);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4854709515705420064116939, 1, "sqrtPrice");
     }
 
     function test_lifecycle() public {
