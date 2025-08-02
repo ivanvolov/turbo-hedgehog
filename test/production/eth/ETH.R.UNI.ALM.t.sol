@@ -156,7 +156,6 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         part_deposit_rebalance();
         console.log("DEPOSIT REBALANCE");
-
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
 
@@ -207,7 +206,6 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
                 DS - ((k1 - 1e18) * deltaETH) / 1e18
             );
         }
-
         // ** Swap Up In
         {
             (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = (
@@ -352,7 +350,6 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDT_key);
-
         // ** Deposit
         {
             uint256 _amountToDep = 200 ether;
