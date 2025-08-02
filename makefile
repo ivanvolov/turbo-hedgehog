@@ -2,10 +2,13 @@ build:
 	clear && forge clean && forge build
 
 ta:
-	clear && forge test -vv --no-match-contract "SimulationTest"
+	clear && forge test -v --no-match-contract "SimulationTest"
 
-tn:
-	clear && forge test -vv --match-contract "UNI_ALMTest"
+tam:
+	clear && forge test -v --no-match-contract "Simulation|UNI|OracleTest|LendingAdaptersTest"
+
+tau:
+	clear && forge test -v --match-contract "UNI_ALMTest"
 
 ts:
 	clear && forge test -vv --match-contract ETH_ALMSimulationTest --match-test test_simulation --ffi
@@ -71,10 +74,16 @@ tb:
 	clear && forge test -vv --match-contract BTC_ALMTest --match-test "test_"
 tbl:
 	clear && forge test -vvvv --match-contract BTC_ALMTest --match-test "test_"
+
 td:
 	clear && forge test -vv --match-contract DeltaNeutral_ALMTest --match-test "test_"
 tdl:
 	clear && forge test -vvvv --match-contract DeltaNeutral_ALMTest --match-test "test_"
+
+tdu:
+	clear && forge test -vv --match-contract DeltaNeutral_UNI_ALMTest --match-test "test_"
+tdul:
+	clear && forge test -vvvv --match-contract DeltaNeutral_UNI_ALMTest --match-test "test_"
 
 tg:
 	clear && forge test -vv --match-contract General_ALMTest --match-test "test_"

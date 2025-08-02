@@ -37,9 +37,7 @@ contract UNICORD_R_ALMTest is ALMTestBase {
     IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21881352);
+        select_mainnet_fork(21881352);
 
         // ** Setting up test environments params
         {

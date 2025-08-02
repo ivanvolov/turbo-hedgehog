@@ -88,7 +88,9 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
                 10,
                 0x3258f413c7a88cda2fa8709a589d221a80f6574f63df5a5b6774485d8acc39d9
             );
-            setSwapAdapterToV4SingleSwap(ETH_USDC_key, false);
+
+            uint8[4] memory config = [0, 1, 2, 3];
+            setSwapAdapterToV4SingleSwap(ETH_USDC_key, config);
             vm.stopPrank();
         }
     }

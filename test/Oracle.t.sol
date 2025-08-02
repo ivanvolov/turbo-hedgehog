@@ -21,9 +21,7 @@ contract OracleTest is ALMTestBase {
     using SafeERC20 for IERC20;
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22375550);
+        select_mainnet_fork(22375550);
         _create_accounts();
     }
 
@@ -520,16 +518,12 @@ contract OracleTest is ALMTestBase {
     }
 
     function _select_arbitrum_fork(uint256 block_number) internal {
-        uint256 fork = vm.createFork(ARBITRUM_RPC_URL);
-        vm.selectFork(fork);
-        vm.rollFork(block_number);
+        select_arbitrum_fork(block_number);
         _create_accounts();
     }
 
     function _select_sepolia_fork(uint256 block_number) internal {
-        uint256 fork = vm.createFork(SEPOLIA_RPC_URL);
-        vm.selectFork(fork);
-        vm.rollFork(block_number);
+        select_sepolia_fork(block_number);
         _create_accounts();
     }
 

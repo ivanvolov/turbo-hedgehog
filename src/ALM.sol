@@ -108,6 +108,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 minAmountOutB,
         uint256 minAmountOutQ
     ) external notPaused nonReentrant {
+        console.log("> START: withdraw");
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (sharesOut == 0) revert NotZeroShares();
         lendingAdapter.syncPositions();
@@ -150,6 +151,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint128 newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
         emit Withdraw(to, sharesOut, baseOut, quoteOut, totalSupply(), newLiquidity);
+        console.log("> END: withdraw");
     }
 
     function onFlashLoanTwoTokens(
@@ -157,6 +159,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 amountQuote,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
+        console.log("> START: onFlashLoanTwoTokens");
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
         lendingAdapter.updatePosition(
             SafeCast.toInt256(uCL),
@@ -167,6 +170,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
         else _ensureEnoughBalance(amountBase, BASE);
+        console.log("> END: onFlashLoanTwoTokens");
     }
 
     function onFlashLoanSingle(
@@ -174,6 +178,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 amount,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
+        console.log("> START: onFlashLoanSingle");
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         (int256 deltaDL, int256 deltaDS) = isBase
@@ -188,6 +193,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             if (isInvertedAssets) _ensureEnoughBalance(amount, QUOTE);
             else swapAdapter.swapExactInput(true, baseBalance());
         }
+        console.log("> END: onFlashLoanSingle");
     }
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {

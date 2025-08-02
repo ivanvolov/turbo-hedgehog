@@ -29,9 +29,7 @@ contract RewardsAdaptersTest is ALMTestBase {
     IUniversalRewardsDistributor URD = MConstants.universalRewardsDistributor;
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22119929);
+        select_mainnet_fork(22119929);
     }
 
     address targetUser = 0xB4E906060EABc5F30299e8098B61e41496a7233c;

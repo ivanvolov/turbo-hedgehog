@@ -40,9 +40,7 @@ contract SwapAdapterTest is ALMTestBase {
     }
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22490362);
+        select_mainnet_fork(22490362);
 
         vm.label(address(ETH), "ETH");
         vm.label(MConstants.USDC, "USDC");

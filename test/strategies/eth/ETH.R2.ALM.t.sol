@@ -31,9 +31,7 @@ contract ETH_R2_ALMTest is ALMTestBase {
     IERC20 USDT = IERC20(MConstants.USDT);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21817163);
+        select_mainnet_fork(21817163);
 
         // ** Setting up test environments params
         {

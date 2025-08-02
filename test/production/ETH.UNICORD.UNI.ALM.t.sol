@@ -44,10 +44,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 k2 = 1425e15; //1.425
 
     function setUp() public {
-        uint256 fork = vm.createFork(UNICHAIN_RPC_URL);
-        vm.selectFork(fork);
-        vm.rollFork(22789424);
-
+        select_unichain_fork(22789424);
         manager = UConstants.manager;
         deployMockUniversalRouter(); // universalRouter = UConstants.UNIVERSAL_ROUTER;
 
@@ -280,7 +277,8 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             );
 
             vm.startPrank(deployer.addr);
-            setSwapAdapterToV4SingleSwap(_USDC_USDT_key_v2, true);
+            uint8[4] memory config = [2, 2, 0, 0];
+            setSwapAdapterToV4SingleSwap(_USDC_USDT_key_v2, config);
             vm.stopPrank();
         }
 

@@ -30,9 +30,7 @@ contract BTC_ALMTest is ALMTestBase {
     uint256 k2 = 1425e15; //1.425
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21817163);
+        select_mainnet_fork(21817163);
 
         // ** Setting up test environments params
         {

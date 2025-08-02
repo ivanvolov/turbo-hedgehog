@@ -76,7 +76,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute);
     }
 
-    function setSwapAdapterToV4SingleSwap(PoolKey memory targetKey, bool isReversed) internal {
+    function setSwapAdapterToV4SingleSwap(PoolKey memory targetKey, uint8[4] memory config) internal {
         IUniswapSwapAdapter(address(swapAdapter)).setRoutesOperator(deployer.addr);
 
         IUniswapSwapAdapter(address(swapAdapter)).setSwapPath(
@@ -101,20 +101,16 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         );
 
         uint256[] memory activeSwapRoute = new uint256[](1);
-        activeSwapRoute[0] = isReversed ? 2 : 0;
-        if (BASE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
+        activeSwapRoute[0] = config[0];
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, true, activeSwapRoute); // exactIn, base => quote
 
-        activeSwapRoute[0] = isReversed ? 2 : 0;
-        if (QUOTE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
+        activeSwapRoute[0] = config[1];
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, false, activeSwapRoute); // exactOut, quote => base
 
-        activeSwapRoute[0] = isReversed ? 0 : 2;
-        if (BASE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
+        activeSwapRoute[0] = config[2];
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(false, true, activeSwapRoute); // exactOut, base => quote
 
-        activeSwapRoute[0] = isReversed ? 0 : 2;
-        if (QUOTE == WETH9) activeSwapRoute[0]++; // make it a wrap eth before execute swap
+        activeSwapRoute[0] = config[3];
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
     }
 

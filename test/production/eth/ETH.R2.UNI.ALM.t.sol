@@ -86,7 +86,8 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
                 10,
                 0x04b7dd024db64cfbe325191c818266e4776918cd9eaf021c26949a859e654b16
             );
-            setSwapAdapterToV4SingleSwap(ETH_USDT_key, false);
+            uint8[4] memory config = [0, 1, 2, 3];
+            setSwapAdapterToV4SingleSwap(ETH_USDT_key, config);
             vm.stopPrank();
         }
     }
