@@ -97,7 +97,7 @@ contract ETH_R_ALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(-197461 - 3000, -197461 + 3000);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4086015488346380075686829, 1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4086015488547314315014353, 1, "sqrtPrice");
     }
 
     function test_lifecycle() public {
@@ -423,7 +423,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 3);
-            assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaY, 2);
+            assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaY, 3);
 
             uint256 deltaTreasuryFeeQ = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFeeQ;

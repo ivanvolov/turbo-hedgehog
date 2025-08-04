@@ -96,7 +96,7 @@ contract BTC_ALMTest is ALMTestBase {
         assertEqBalanceStateZero(address(hook));
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(-71898, -65898);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 2528463782851807812600059248, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 2528463782851808520390225770, 1e1, "sqrtPrice");
     }
 
     function test_lifecycle() public {

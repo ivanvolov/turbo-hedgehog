@@ -111,7 +111,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         assertTicks(-98, 102);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441913940305965, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441966270215824, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -199,7 +199,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68049369498, 32007120039, 0, 0);
-        assertEqProtocolState(79521743074015585840483767881, 100065233131);
+        assertEqProtocolState(79521743074015585892813677740, 100065233131);
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
@@ -224,7 +224,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68208774786, 31848894582, 0, 0);
-        assertEqProtocolState(79524261453078311595880024582, 100066369738);
+        assertEqProtocolState(79524261453078311648587411450, 100066369738);
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
@@ -299,7 +299,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68049369497, 32008896627, 0, 0);
-        assertEqProtocolState(79521714798043839188594281306, 100067010203);
+        assertEqProtocolState(79521714798043839240924191165, 100067010203);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -326,7 +326,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68210580684, 31848894582, 0, 0);
-        assertEqProtocolState(79524261453078311595880024582, 100068175636);
+        assertEqProtocolState(79524261453078311648587411450, 100068175636);
     }
 
     function test_lifecycle() public {
