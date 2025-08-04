@@ -8,8 +8,8 @@ import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 
 // ** contracts
-import {ALMTestBase} from "./ALMTestBase.sol";
-import {ALMControl} from "@test/core/ALMControl.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
+import {ALMControl} from "@test/core/simulations/ALMControl.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -63,7 +63,8 @@ abstract contract ALMTestSimBase is ALMTestBase {
         hookControl = ALMControl(hookAddress);
         vm.label(address(hookControl), "hookControl");
 
-        (address _token0, address _token1) = getTokensInOrder();
+        (address _token0, address _token1) = getHookCurrenciesInOrder();
+
         // ** Pool deployment
         (keyControl, ) = initPool(
             Currency.wrap(_token0),
@@ -85,20 +86,24 @@ abstract contract ALMTestSimBase is ALMTestBase {
         if (zeroForOne) {
             // ** TOKEN0 => TOKEN1
             if (_in) {
-                (delta0, delta1) = __swap(true, -int256(amount), key);
-                if (swapInControl) (delta0c, delta1c) = __swap(true, -int256(amount), keyControl);
+                (delta0, delta1) = _swap_v4_single_throw_mock_router_signed(true, -int256(amount), key);
+                if (swapInControl)
+                    (delta0c, delta1c) = _swap_v4_single_throw_mock_router_signed(true, -int256(amount), keyControl);
             } else {
-                (delta0, delta1) = __swap(true, int256(amount), key);
-                if (swapInControl) (delta0c, delta1c) = __swap(true, int256(amount), keyControl);
+                (delta0, delta1) = _swap_v4_single_throw_mock_router_signed(true, int256(amount), key);
+                if (swapInControl)
+                    (delta0c, delta1c) = _swap_v4_single_throw_mock_router_signed(true, int256(amount), keyControl);
             }
         } else {
             // ** TOKEN1 => TOKEN0
             if (_in) {
-                (delta0, delta1) = __swap(false, -int256(amount), key);
-                if (swapInControl) (delta0c, delta1c) = __swap(false, -int256(amount), keyControl);
+                (delta0, delta1) = _swap_v4_single_throw_mock_router_signed(false, -int256(amount), key);
+                if (swapInControl)
+                    (delta0c, delta1c) = _swap_v4_single_throw_mock_router_signed(false, -int256(amount), keyControl);
             } else {
-                (delta0, delta1) = __swap(false, int256(amount), key);
-                if (swapInControl) (delta0c, delta1c) = __swap(false, int256(amount), keyControl);
+                (delta0, delta1) = _swap_v4_single_throw_mock_router_signed(false, int256(amount), key);
+                if (swapInControl)
+                    (delta0c, delta1c) = _swap_v4_single_throw_mock_router_signed(false, int256(amount), keyControl);
             }
         }
 

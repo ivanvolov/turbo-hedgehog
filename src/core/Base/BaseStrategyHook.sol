@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -11,6 +13,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** External imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,10 +33,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
 
+    /// @notice Indicates which currency should be treated as native ETH if any.
+    /// @dev 0 - currency0, 1 - currency1, 2 - not ETH pool.
+    uint8 public immutable isNTS;
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
     bytes32 public immutable authorizedPoolId;
     PoolKey public authorizedPoolKey;
+    IWETH9 public immutable WETH9;
 
     /// @notice Current operational status of the contract.
     /// @dev 0 = active, 1 = paused, 2 = shutdown.
@@ -62,10 +69,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         IERC20 _quote,
         bool _isInvertedPool,
         bool _isInvertedAssets,
+        uint8 _isNTS,
         IPoolManager _poolManager
     ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote) {
         isInvertedPool = _isInvertedPool;
         isInvertedAssets = _isInvertedAssets;
+        isNTS = _isNTS;
     }
 
     function setStatus(uint8 _status) external onlyOwner {
@@ -148,6 +157,12 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         bytes calldata
     ) internal view override onlyAuthorizedPool(key) returns (bytes4) {
         revert AddLiquidityThroughHook();
+    }
+
+    receive() external payable {
+        console.log("> receive %s ETH", msg.value);
+        //TODO: maybe restrict to PM
+        // Intentionally empty as the contract need to receive ETH.
     }
 
     /// @notice Updates liquidity and sets new boundaries around the current oracle price.

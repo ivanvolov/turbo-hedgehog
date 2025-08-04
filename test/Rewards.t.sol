@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -22,25 +22,21 @@ import {
 import {ILendingAdapterMorpho} from "./interfaces/ILendingAdapterMorpho.sol";
 import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
 
-contract RewardsAdaptersTest is MorphoTestBase {
+contract RewardsAdaptersTest is ALMTestBase {
     using SafeERC20 for IERC20;
 
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
-    IMerklDistributor MRD = TestLib.merklRewardsDistributor;
-    IUniversalRewardsDistributor URD = TestLib.universalRewardsDistributor;
+    IMerklDistributor MRD = MConstants.merklRewardsDistributor;
+    IUniversalRewardsDistributor URD = MConstants.universalRewardsDistributor;
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22119929);
+        select_mainnet_fork(22119929);
     }
 
     address targetUser = 0xB4E906060EABc5F30299e8098B61e41496a7233c;
     IERC20 constant EUL = IERC20(0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b);
     IERC20 constant MORPHO = IERC20(0x58D97B57BB95320F9a05dC918Aef65434969c2B2);
     IERC20 constant UNI = IERC20(0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984);
-    IrEUL constant rEUL = TestLib.rEUL;
+    IrEUL constant rEUL = MConstants.rEUL;
 
     // ** Euler rewards
 
@@ -119,7 +115,7 @@ contract RewardsAdaptersTest is MorphoTestBase {
     // real-life proof from api call
     function test_rewards_euler_claim_real_time_api() public {
         vm.rollFork(22469023);
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
 
         uint256 totalRewardsAmount = 183012673785523122481;
         uint256 rewardsInFirstClaimedBatch = 170831077052791407402;
@@ -183,8 +179,8 @@ contract RewardsAdaptersTest is MorphoTestBase {
     // claim some rewards and withdraw through adapter
     function test_lending_adapter_euler_rewards_and_claim() public {
         vm.rollFork(22469023);
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
         uint256 amount = 183012673785523122481;
@@ -268,7 +264,7 @@ contract RewardsAdaptersTest is MorphoTestBase {
     // claim some rewards and withdraw through adapter
     function test_lending_adapter_morpho_claim() public {
         vm.rollFork(22476376 - 1);
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_morpho();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
@@ -309,8 +305,8 @@ contract RewardsAdaptersTest is MorphoTestBase {
     // claim UNI token rewards and withdraw through adapter
     function test_lending_adapter_merkle_rewards_and_claim_UNI() public {
         vm.rollFork(22469023);
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
         uint256 amount = 183012673785523122481;

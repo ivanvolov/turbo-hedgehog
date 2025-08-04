@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Currency, CurrencyLibrary} from "v4-core/types/Currency.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
@@ -17,8 +17,7 @@ import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol"
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUniswapSwapAdapter} from "@src/interfaces/swapAdapters/IUniswapSwapAdapter.sol";
-import {IUniswapV3Pool} from "@uniswap-v3/IUniswapV3Pool.sol";
-import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {IUniswapV3Pool} from "@v3-core/IUniswapV3Pool.sol";
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
 contract SwapAdapterTest is ALMTestBase {
@@ -26,21 +25,11 @@ contract SwapAdapterTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
 
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
     IUniswapSwapAdapter uniswapSwapAdapter;
 
     PoolKey poolKeyETH_USDC;
     PoolKey poolKeyETH_USDT;
     PoolKey poolKeyUSDC_USDT;
-
-    enum ProtocolType {
-        V2,
-        V3,
-        V4_SINGLE,
-        V4_MULTIHOP
-    }
-
     enum SwapDirection {
         BASE_QUOTE,
         QUOTE_BASE
@@ -51,17 +40,15 @@ contract SwapAdapterTest is ALMTestBase {
     }
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22490362);
+        select_mainnet_fork(22490362);
 
         vm.label(address(ETH), "ETH");
-        vm.label(TestLib.USDC, "USDC");
-        vm.label(TestLib.USDT, "USDT");
+        vm.label(MConstants.USDC, "USDC");
+        vm.label(MConstants.USDT, "USDT");
 
         poolKeyETH_USDC = _getAndCheckPoolKey(
             ETH,
-            IERC20(TestLib.USDC),
+            IERC20(MConstants.USDC),
             500,
             10,
             0x21c67e77068de97969ba93d4aab21826d33ca12bb9f565d8496e8fda8a82ca27
@@ -69,330 +56,415 @@ contract SwapAdapterTest is ALMTestBase {
 
         poolKeyETH_USDT = _getAndCheckPoolKey(
             ETH,
-            IERC20(TestLib.USDT),
+            IERC20(MConstants.USDT),
             500,
             10,
             0x72331fcb696b0151904c03584b66dc8365bc63f8a144d89a773384e3a579ca73
         );
 
         poolKeyUSDC_USDT = _getAndCheckPoolKey(
-            IERC20(TestLib.USDC),
-            IERC20(TestLib.USDT),
+            IERC20(MConstants.USDC),
+            IERC20(MConstants.USDT),
             100,
             1,
             0xe018f09af38956affdfeab72c2cefbcd4e6fee44d09df7525ec9dba3e51356a5
         );
+
+        testAmount = 1000e6;
     }
 
-    IERC20 ETH = IERC20(address(0));
+    uint256 testAmount;
 
-    uint256 testAmount = 1000e6;
+    function test_swap_eth_ExactInput_V4_SINGLE_BASE_QUOTE() public {
+        BASE = IERC20(MConstants.WETH);
+        QUOTE = IERC20(MConstants.USDT);
+        _create_accounts();
+        testAmount = 1e18;
+
+        part_test_swap(
+            SwapType.EXACT_INPUT,
+            SwapDirection.BASE_QUOTE,
+            2529699535,
+            abi.encode(true, poolKeyETH_USDT, true, bytes("")),
+            ProtId.V4_SINGLE
+        );
+    }
+
+    function test_swap_eth_ExactOutput_V4_SINGLE_BASE_QUOTE() public {
+        BASE = IERC20(MConstants.WETH);
+        QUOTE = IERC20(MConstants.USDT);
+        _create_accounts();
+        testAmount = 2529699535;
+
+        part_test_swap(
+            SwapType.EXACT_OUTPUT,
+            SwapDirection.BASE_QUOTE,
+            999999999619294475,
+            abi.encode(true, poolKeyETH_USDT, true, bytes("")),
+            ProtId.V4_SINGLE
+        );
+    }
+
+    function test_swap_eth_ExactInput_V4_SINGLE_QUOTE_BASE() public {
+        BASE = IERC20(MConstants.WETH);
+        QUOTE = IERC20(MConstants.USDT);
+        _create_accounts();
+        testAmount = 2529699535;
+
+        part_test_swap(
+            SwapType.EXACT_INPUT,
+            SwapDirection.QUOTE_BASE,
+            998306944672183526,
+            abi.encode(false, poolKeyETH_USDT, false, bytes("")),
+            ProtId.V4_SINGLE
+        );
+    }
+
+    function test_swap_eth_ExactOutput_V4_SINGLE_QUOTE_BASE() public {
+        BASE = IERC20(MConstants.WETH);
+        QUOTE = IERC20(MConstants.USDT);
+        _create_accounts();
+        testAmount = 1e18;
+
+        part_test_swap(
+            SwapType.EXACT_OUTPUT,
+            SwapDirection.QUOTE_BASE,
+            2533991212,
+            abi.encode(false, poolKeyETH_USDT, false, bytes("")),
+            ProtId.V4_SINGLE
+        );
+    }
 
     function test_swapExactInput_V4_SINGLE_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         part_test_swap(
             SwapType.EXACT_INPUT,
             SwapDirection.BASE_QUOTE,
             999621885,
-            abi.encode(poolKeyUSDC_USDT, true, bytes("")),
-            ProtocolType.V4_SINGLE
+            abi.encode(false, poolKeyUSDC_USDT, true, bytes("")),
+            ProtId.V4_SINGLE
         );
     }
 
     function test_swapExactOutput_V4_SINGLE_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         part_test_swap(
             SwapType.EXACT_OUTPUT,
             SwapDirection.BASE_QUOTE,
             1000378259,
-            abi.encode(poolKeyUSDC_USDT, true, bytes("")),
-            ProtocolType.V4_SINGLE
+            abi.encode(false, poolKeyUSDC_USDT, true, bytes("")),
+            ProtId.V4_SINGLE
         );
     }
 
     function test_swapExactInput_V4_SINGLE_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         part_test_swap(
             SwapType.EXACT_INPUT,
             SwapDirection.QUOTE_BASE,
             1000176859,
-            abi.encode(poolKeyUSDC_USDT, false, bytes("")),
-            ProtocolType.V4_SINGLE
+            abi.encode(false, poolKeyUSDC_USDT, false, bytes("")),
+            ProtId.V4_SINGLE
         );
     }
 
     function test_swapExactOutput_V4_SINGLE_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         part_test_swap(
             SwapType.EXACT_OUTPUT,
             SwapDirection.QUOTE_BASE,
             999823173,
-            abi.encode(poolKeyUSDC_USDT, false, bytes("")),
-            ProtocolType.V4_SINGLE
+            abi.encode(false, poolKeyUSDC_USDT, false, bytes("")),
+            ProtId.V4_SINGLE
         );
     }
 
     function test_swapExactInput_V4_MULTIHOP_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDC.currency0,
+            poolKeyETH_USDC.currency0, // Intermediate token is ETH
             poolKeyETH_USDC.fee,
             poolKeyETH_USDC.tickSpacing,
             poolKeyETH_USDC.hooks,
             abi.encodePacked(uint8(1))
-        ); // gives out ETH
+        );
         path[1] = PathKey(
-            poolKeyETH_USDT.currency1,
+            poolKeyETH_USDT.currency1, // Intermediate token is USDT
             poolKeyETH_USDT.fee,
             poolKeyETH_USDT.tickSpacing,
             poolKeyETH_USDT.hooks,
             abi.encodePacked(uint8(2))
-        ); // gives out USDT
+        );
 
         part_test_swap(
             SwapType.EXACT_INPUT,
             SwapDirection.BASE_QUOTE,
             998357409,
-            abi.encode(path),
-            ProtocolType.V4_MULTIHOP
+            abi.encode(false, path),
+            ProtId.V4_MULTIHOP
         );
     }
 
     function test_swapExactOutput_V4_MULTIHOP_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDC.currency1,
+            poolKeyETH_USDC.currency1, // Intermediate token is USDC, the tokenIn.
             poolKeyETH_USDC.fee,
             poolKeyETH_USDC.tickSpacing,
             poolKeyETH_USDC.hooks,
             abi.encodePacked(uint8(1))
-        ); // gives out ETH
+        );
         path[1] = PathKey(
-            poolKeyETH_USDT.currency0,
+            poolKeyETH_USDT.currency0, // Intermediate token is ETH, the intermediate token.
             poolKeyETH_USDT.fee,
             poolKeyETH_USDT.tickSpacing,
             poolKeyETH_USDT.hooks,
             abi.encodePacked(uint8(2))
-        ); // gives out USDT
+        );
         // this gos backwards
 
         part_test_swap(
             SwapType.EXACT_OUTPUT,
             SwapDirection.BASE_QUOTE,
             1001645736,
-            abi.encode(path),
-            ProtocolType.V4_MULTIHOP
+            abi.encode(false, path),
+            ProtId.V4_MULTIHOP
         );
     }
 
     function test_swapExactInput_V4_MULTIHOP_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDT.currency0,
+            poolKeyETH_USDT.currency0, // Intermediate token is ETH, the intermediate token.
             poolKeyETH_USDT.fee,
             poolKeyETH_USDT.tickSpacing,
             poolKeyETH_USDT.hooks,
             bytes("")
-        ); // gives out USDT
+        );
         path[1] = PathKey(
-            poolKeyETH_USDC.currency1,
+            poolKeyETH_USDC.currency1, // Intermediate token is USDC, the tokenOut.
             poolKeyETH_USDC.fee,
             poolKeyETH_USDC.tickSpacing,
             poolKeyETH_USDC.hooks,
             bytes("")
-        ); // gives out ETH
+        );
 
         part_test_swap(
             SwapType.EXACT_INPUT,
             SwapDirection.QUOTE_BASE,
             999107408,
-            abi.encode(path),
-            ProtocolType.V4_MULTIHOP
+            abi.encode(false, path),
+            ProtId.V4_MULTIHOP
         );
     }
 
+    //TODO: it's here should fail, why not?. Test all with ETH.
     function test_swapExactOutput_V4_MULTIHOP_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDT.currency1,
+            poolKeyETH_USDT.currency1, // Intermediate token is USDT
             poolKeyETH_USDT.fee,
             poolKeyETH_USDT.tickSpacing,
             poolKeyETH_USDT.hooks,
             bytes("")
-        ); // gives out USDT
+        );
         path[1] = PathKey(
-            poolKeyETH_USDC.currency0,
+            poolKeyETH_USDC.currency0, // Intermediate token is ETH
             poolKeyETH_USDC.fee,
             poolKeyETH_USDC.tickSpacing,
             poolKeyETH_USDC.hooks,
             bytes("")
-        ); // gives out ETH
+        );
         // this goes backwards
 
         part_test_swap(
             SwapType.EXACT_OUTPUT,
             SwapDirection.QUOTE_BASE,
             1000893629,
-            abi.encode(path),
-            ProtocolType.V4_MULTIHOP
+            abi.encode(false, path),
+            ProtId.V4_MULTIHOP
         );
     }
 
     function test_swapExactInput_V3_SINGLE_BASE_QUOTE() public {
-        uint256 fee = IUniswapV3Pool(TestLib.uniswap_v3_USDC_USDT_POOL).fee();
-        bytes memory path = abi.encodePacked(TestLib.USDC, uint24(fee), TestLib.USDT);
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
+        uint256 fee = IUniswapV3Pool(MConstants.uniswap_v3_USDC_USDT_POOL).fee();
+        bytes memory path = abi.encodePacked(MConstants.USDC, uint24(fee), MConstants.USDT);
 
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 999607371, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 999607371, path, ProtId.V3);
     }
 
     function test_swapExactOutput_V3_SINGLE_BASE_QUOTE() public {
-        uint256 fee = IUniswapV3Pool(TestLib.uniswap_v3_USDC_USDT_POOL).fee();
-        bytes memory path = abi.encodePacked(TestLib.USDT, uint24(fee), TestLib.USDC);
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
+        uint256 fee = IUniswapV3Pool(MConstants.uniswap_v3_USDC_USDT_POOL).fee();
+        bytes memory path = abi.encodePacked(MConstants.USDT, uint24(fee), MConstants.USDC);
 
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1000392784, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1000392784, path, ProtId.V3);
     }
 
     function test_swapExactInput_V3_SINGLE_QUOTE_BASE() public {
-        uint256 fee = IUniswapV3Pool(TestLib.uniswap_v3_USDC_USDT_POOL).fee();
-        bytes memory path = abi.encodePacked(TestLib.USDT, uint24(fee), TestLib.USDC);
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
+        uint256 fee = IUniswapV3Pool(MConstants.uniswap_v3_USDC_USDT_POOL).fee();
+        bytes memory path = abi.encodePacked(MConstants.USDT, uint24(fee), MConstants.USDC);
 
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 1000192674, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 1000192674, path, ProtId.V3);
     }
 
     function test_swapExactOutput_V3_SINGLE_QUOTE_BASE() public {
-        uint256 fee = IUniswapV3Pool(TestLib.uniswap_v3_USDC_USDT_POOL).fee();
-        bytes memory path = abi.encodePacked(TestLib.USDC, uint24(fee), TestLib.USDT);
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
+        uint256 fee = IUniswapV3Pool(MConstants.uniswap_v3_USDC_USDT_POOL).fee();
+        bytes memory path = abi.encodePacked(MConstants.USDC, uint24(fee), MConstants.USDT);
 
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 999807364, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 999807364, path, ProtId.V3);
     }
 
     function test_swapExactInput_V3_MULTIHOP_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         bytes memory path = abi.encodePacked(
-            TestLib.USDC,
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
-            address(TestLib.WETH),
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
-            TestLib.USDT
+            MConstants.USDC,
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            address(MConstants.WETH),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
+            MConstants.USDT
         );
 
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 996166709, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 996166709, path, ProtId.V3);
     }
 
     function test_swapExactOutput_V3_MULTIHOP_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         bytes memory path = abi.encodePacked(
-            TestLib.USDT,
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
-            address(TestLib.WETH),
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
-            TestLib.USDC
+            MConstants.USDT,
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
+            address(MConstants.WETH),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            MConstants.USDC
         );
 
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1003848075, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1003848075, path, ProtId.V3);
     }
 
     function test_swapExactInput_V3_MULTIHOP_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         bytes memory path = abi.encodePacked(
-            TestLib.USDT,
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
-            address(TestLib.WETH),
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
-            TestLib.USDC
+            MConstants.USDT,
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
+            address(MConstants.WETH),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            MConstants.USDC
         );
 
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 996819823, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 996819823, path, ProtId.V3);
     }
 
     function test_swapExactOutput_V3_MULTIHOP_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         bytes memory path = abi.encodePacked(
-            TestLib.USDC,
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
-            address(TestLib.WETH),
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
-            TestLib.USDT
+            MConstants.USDC,
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            address(MConstants.WETH),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
+            MConstants.USDT
         );
 
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 1003190350, path, ProtocolType.V3);
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 1003190350, path, ProtId.V3);
     }
 
     function test_swapExactInput_V2_SINGLE_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](2);
-        path[0] = TestLib.USDC;
-        path[1] = TestLib.USDT;
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 994454813, abi.encode(path), ProtocolType.V2);
+        path[0] = MConstants.USDC;
+        path[1] = MConstants.USDT;
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 994454813, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactOutput_V2_SINGLE_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](2);
-        path[0] = TestLib.USDC;
-        path[1] = TestLib.USDT;
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1005579129, abi.encode(path), ProtocolType.V2);
+        path[0] = MConstants.USDC;
+        path[1] = MConstants.USDT;
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1005579129, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactInput_V2_SINGLE_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](2);
-        path[0] = TestLib.USDT;
-        path[1] = TestLib.USDC;
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 998474274, abi.encode(path), ProtocolType.V2);
+        path[0] = MConstants.USDT;
+        path[1] = MConstants.USDC;
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 998474274, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactOutput_V2_SINGLE_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](2);
-        path[0] = TestLib.USDT;
-        path[1] = TestLib.USDC;
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 1001528883, abi.encode(path), ProtocolType.V2);
+        path[0] = MConstants.USDT;
+        path[1] = MConstants.USDC;
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 1001528883, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactInput_V2_MULTIHOP_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](3);
-        path[0] = TestLib.USDC;
-        path[1] = TestLib.WETH;
-        path[2] = TestLib.USDT;
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 995376837, abi.encode(path), ProtocolType.V2);
+        path[0] = MConstants.USDC;
+        path[1] = MConstants.WETH;
+        path[2] = MConstants.USDT;
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.BASE_QUOTE, 995376837, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactOutput_V2_MULTIHOP_BASE_QUOTE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](3);
-        path[0] = TestLib.USDC;
-        path[1] = TestLib.WETH;
-        path[2] = TestLib.USDT;
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1004645217, abi.encode(path), ProtocolType.V2);
+        path[0] = MConstants.USDC;
+        path[1] = MConstants.WETH;
+        path[2] = MConstants.USDT;
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.BASE_QUOTE, 1004645217, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactInput_V2_MULTIHOP_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](3);
-        path[0] = TestLib.USDT;
-        path[1] = TestLib.WETH;
-        path[2] = TestLib.USDC;
+        path[0] = MConstants.USDT;
+        path[1] = MConstants.WETH;
+        path[2] = MConstants.USDC;
 
-        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 992395816, abi.encode(path), ProtocolType.V2);
+        part_test_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, 992395816, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactOutput_V2_MULTIHOP_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         address[] memory path = new address[](3);
-        path[0] = TestLib.USDT;
-        path[1] = TestLib.WETH;
-        path[2] = TestLib.USDC;
+        path[0] = MConstants.USDT;
+        path[1] = MConstants.WETH;
+        path[2] = MConstants.USDC;
 
-        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 1007663413, abi.encode(path), ProtocolType.V2);
+        part_test_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, 1007663413, abi.encode(path), ProtId.V2);
     }
 
     function test_swapExactInput_mixed_routes_QUOTE_BASE() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         _deployAndApproveAdapter();
 
         // ** Add V2 Single route
         {
             address[] memory path = new address[](2);
-            path[0] = TestLib.USDT;
-            path[1] = TestLib.USDC;
+            path[0] = MConstants.USDT;
+            path[1] = MConstants.USDC;
             vm.prank(deployer.addr);
-            uniswapSwapAdapter.setSwapPath(0, _protocolTypeToCommand(ProtocolType.V2), abi.encode(path));
+            uniswapSwapAdapter.setSwapPath(0, protToC(ProtId.V2), abi.encode(path));
         }
 
         // ** Add V3 Single route
         {
-            uint256 fee = IUniswapV3Pool(TestLib.uniswap_v3_USDC_USDT_POOL).fee();
+            uint256 fee = IUniswapV3Pool(MConstants.uniswap_v3_USDC_USDT_POOL).fee();
             vm.prank(deployer.addr);
             uniswapSwapAdapter.setSwapPath(
                 1,
-                _protocolTypeToCommand(ProtocolType.V3),
-                abi.encodePacked(TestLib.USDT, uint24(fee), TestLib.USDC)
+                protToC(ProtId.V3),
+                abi.encodePacked(MConstants.USDT, uint24(fee), MConstants.USDC)
             );
         }
 
@@ -401,8 +473,8 @@ contract SwapAdapterTest is ALMTestBase {
             vm.prank(deployer.addr);
             uniswapSwapAdapter.setSwapPath(
                 2,
-                _protocolTypeToCommand(ProtocolType.V4_SINGLE),
-                abi.encode(poolKeyUSDC_USDT, false, bytes(""))
+                protToC(ProtId.V4_SINGLE),
+                abi.encode(false, poolKeyUSDC_USDT, false, bytes(""))
             );
         }
 
@@ -415,17 +487,17 @@ contract SwapAdapterTest is ALMTestBase {
                 poolKeyETH_USDT.tickSpacing,
                 poolKeyETH_USDT.hooks,
                 bytes("")
-            ); // gives out USDT
+            );
             path[1] = PathKey(
                 poolKeyETH_USDC.currency1,
                 poolKeyETH_USDC.fee,
                 poolKeyETH_USDC.tickSpacing,
                 poolKeyETH_USDC.hooks,
                 bytes("")
-            ); // gives out ETH
+            );
 
             vm.prank(deployer.addr);
-            uniswapSwapAdapter.setSwapPath(3, _protocolTypeToCommand(ProtocolType.V4_MULTIHOP), abi.encode(path));
+            uniswapSwapAdapter.setSwapPath(3, protToC(ProtId.V4_MULTIHOP), abi.encode(false, path));
         }
 
         // ** Activate mix route
@@ -450,8 +522,86 @@ contract SwapAdapterTest is ALMTestBase {
         part_assert_exact_swap(SwapType.EXACT_INPUT, SwapDirection.QUOTE_BASE, testAmount, 999639259);
     }
 
+    function test_swapExactOutput_mixed_routes_QUOTE_BASE() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
+        _deployAndApproveAdapter();
+
+        // ** Add V2 Single route
+        {
+            address[] memory path = new address[](2);
+            path[0] = MConstants.USDT;
+            path[1] = MConstants.USDC;
+            vm.prank(deployer.addr);
+            uniswapSwapAdapter.setSwapPath(0, protToC(ProtId.V2), abi.encode(path));
+        }
+
+        // ** Add V3 Single route
+        {
+            uint256 fee = IUniswapV3Pool(MConstants.uniswap_v3_USDC_USDT_POOL).fee();
+            vm.prank(deployer.addr);
+            uniswapSwapAdapter.setSwapPath(
+                1,
+                protToC(ProtId.V3),
+                abi.encodePacked(MConstants.USDC, uint24(fee), MConstants.USDT)
+            );
+        }
+
+        // ** Add V4 Single route
+        {
+            vm.prank(deployer.addr);
+            uniswapSwapAdapter.setSwapPath(
+                2,
+                protToC(ProtId.V4_SINGLE),
+                abi.encode(false, poolKeyUSDC_USDT, false, bytes(""))
+            );
+        }
+
+        // ** Add V4 Multihop route
+        {
+            PathKey[] memory path = new PathKey[](2);
+            path[0] = PathKey(
+                poolKeyETH_USDT.currency1,
+                poolKeyETH_USDT.fee,
+                poolKeyETH_USDT.tickSpacing,
+                poolKeyETH_USDT.hooks,
+                bytes("")
+            );
+            path[1] = PathKey(
+                poolKeyETH_USDC.currency0,
+                poolKeyETH_USDC.fee,
+                poolKeyETH_USDC.tickSpacing,
+                poolKeyETH_USDC.hooks,
+                bytes("")
+            );
+
+            vm.prank(deployer.addr);
+            uniswapSwapAdapter.setSwapPath(3, protToC(ProtId.V4_MULTIHOP), abi.encode(false, path));
+        }
+
+        // ** Activate mix route
+        {
+            uint256[] memory swapRoute = new uint256[](7);
+            swapRoute[0] = 0;
+            swapRoute[1] = 25e16;
+
+            swapRoute[2] = 1;
+            swapRoute[3] = 25e16;
+
+            swapRoute[4] = 2;
+            swapRoute[5] = 25e16;
+
+            swapRoute[6] = 3;
+            // activeSwapPath[7] = 25e16; The last element is not needed because it can be deduced from previous elements.
+
+            vm.prank(deployer.addr);
+            uniswapSwapAdapter.setSwapRoute(false, false, swapRoute);
+        }
+
+        part_assert_exact_swap(SwapType.EXACT_OUTPUT, SwapDirection.QUOTE_BASE, testAmount, 1000361243);
+    }
+
     function test_swap_key() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         _deployAndApproveAdapter();
 
         assertEq(uniswapSwapAdapter.toSwapKey(true, true), 3); // exact input, base to quote
@@ -461,9 +611,15 @@ contract SwapAdapterTest is ALMTestBase {
     }
 
     function test_routes_operator() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         vm.prank(deployer.addr);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(
+            BASE,
+            QUOTE,
+            MConstants.UNIVERSAL_ROUTER,
+            MConstants.PERMIT_2,
+            MConstants.WETH9
+        );
 
         uniswapSwapAdapter = IUniswapSwapAdapter(address(swapAdapter));
         _fakeSetComponents(address(swapAdapter), alice.addr);
@@ -494,9 +650,8 @@ contract SwapAdapterTest is ALMTestBase {
         SwapDirection direction,
         uint256 amountExpected,
         bytes memory swapRoute,
-        ProtocolType protocolType
+        ProtId protocolType
     ) internal {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
         _deployAndApproveAdapter();
 
         uint256 swapRouteId = 5;
@@ -504,7 +659,7 @@ contract SwapAdapterTest is ALMTestBase {
         activeSwapPath[0] = swapRouteId;
 
         vm.startPrank(deployer.addr);
-        uniswapSwapAdapter.setSwapPath(swapRouteId, _protocolTypeToCommand(protocolType), swapRoute);
+        uniswapSwapAdapter.setSwapPath(swapRouteId, protToC(protocolType), swapRoute);
         uniswapSwapAdapter.setSwapRoute(
             swapType == SwapType.EXACT_INPUT,
             direction == SwapDirection.BASE_QUOTE,
@@ -540,27 +695,15 @@ contract SwapAdapterTest is ALMTestBase {
         assertEq(otherToken(tokenIn).balanceOf(alice.addr), amountOut);
     }
 
-    function _getAndCheckPoolKey(
-        IERC20 token0,
-        IERC20 token1,
-        uint24 fee,
-        int24 tickSpacing,
-        bytes32 _poolId
-    ) internal pure returns (PoolKey memory poolKey) {
-        poolKey = PoolKey(
-            Currency.wrap(address(token0)),
-            Currency.wrap(address(token1)),
-            fee,
-            tickSpacing,
-            IHooks(address(0))
-        );
-        PoolId id = poolKey.toId();
-        assertEq(PoolId.unwrap(id), _poolId, "PoolId not equal");
-    }
-
     function _deployAndApproveAdapter() internal {
         vm.prank(deployer.addr);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, TestLib.UNIVERSAL_ROUTER, TestLib.PERMIT_2);
+        swapAdapter = new UniswapSwapAdapter(
+            BASE,
+            QUOTE,
+            MConstants.UNIVERSAL_ROUTER,
+            MConstants.PERMIT_2,
+            MConstants.WETH9
+        );
 
         uniswapSwapAdapter = IUniswapSwapAdapter(address(swapAdapter));
         vm.prank(deployer.addr);
@@ -571,13 +714,5 @@ contract SwapAdapterTest is ALMTestBase {
         BASE.forceApprove(address(swapAdapter), type(uint256).max);
         vm.prank(alice.addr);
         QUOTE.forceApprove(address(swapAdapter), type(uint256).max);
-    }
-
-    function _protocolTypeToCommand(ProtocolType protocolType) internal pure returns (uint8) {
-        if (protocolType == ProtocolType.V2) return 0;
-        else if (protocolType == ProtocolType.V3) return 1;
-        else if (protocolType == ProtocolType.V4_SINGLE) return 2;
-        else if (protocolType == ProtocolType.V4_MULTIHOP) return 3;
-        else revert("ProtocolType not found");
     }
 }

@@ -15,4 +15,6 @@ interface IOracleTest is IOracle {
 
 interface IChronicleSelfKisser {
     function selfKiss(address oracle, address who) external;
+
+    function kiss(address who) external;
 }

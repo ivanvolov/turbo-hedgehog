@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
@@ -14,6 +16,7 @@ import {TransientStateLibrary} from "v4-core/libraries/TransientStateLibrary.sol
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** External imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -46,14 +49,17 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         PoolKey memory _key,
         IERC20 _base,
         IERC20 _quote,
+        IWETH9 _WETH9,
         bool _isInvertedPool,
         bool _isInvertedAssets,
+        uint8 _isNTS,
         IPoolManager _poolManager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
+    ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _isNTS, _poolManager) ERC20(name, symbol) {
         authorizedPoolKey = _key;
         authorizedPoolId = PoolId.unwrap(_key.toId());
+        WETH9 = _WETH9;
     }
 
     function _afterInitialize(
@@ -102,6 +108,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 minAmountOutB,
         uint256 minAmountOutQ
     ) external notPaused nonReentrant {
+        console.log("> START: withdraw");
         if (liquidityOperator != address(0) && liquidityOperator != msg.sender) revert NotALiquidityOperator();
         if (sharesOut == 0) revert NotZeroShares();
         lendingAdapter.syncPositions();
@@ -144,6 +151,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint128 newLiquidity = _calcLiquidity();
         liquidity = newLiquidity;
         emit Withdraw(to, sharesOut, baseOut, quoteOut, totalSupply(), newLiquidity);
+        console.log("> END: withdraw");
     }
 
     function onFlashLoanTwoTokens(
@@ -151,6 +159,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 amountQuote,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
+        console.log("> START: onFlashLoanTwoTokens");
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
         lendingAdapter.updatePosition(
             SafeCast.toInt256(uCL),
@@ -161,6 +170,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
         else _ensureEnoughBalance(amountBase, BASE);
+        console.log("> END: onFlashLoanTwoTokens");
     }
 
     function onFlashLoanSingle(
@@ -168,6 +178,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         uint256 amount,
         bytes calldata data
     ) external notPaused onlyFlashLoanAdapter {
+        console.log("> START: onFlashLoanSingle");
         (uint256 uCL, uint256 uCS) = abi.decode(data, (uint256, uint256));
 
         (int256 deltaDL, int256 deltaDS) = isBase
@@ -182,6 +193,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             if (isInvertedAssets) _ensureEnoughBalance(amount, QUOTE);
             else swapAdapter.swapExactInput(true, baseBalance());
         }
+        console.log("> END: onFlashLoanSingle");
     }
 
     function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
@@ -210,6 +222,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         SwapParams calldata,
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
+        console.log("> START: _beforeSwap");
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
         lendingAdapter.syncPositions();
 
@@ -224,6 +237,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             }),
             ""
         );
+        console.log("> END: _beforeSwap");
         return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
@@ -234,6 +248,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         BalanceDelta,
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, int128) {
+        console.log("> START: _afterSwap");
         Ticks memory _activeTicks = activeTicks;
 
         (, BalanceDelta feesAccrued) = poolManager.modifyLiquidity(
@@ -258,33 +273,66 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         );
 
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
+        console.log("PM balance currency0", key.currency0.balanceOf(address(poolManager)));
+        console.log("PM balance currency1", key.currency1.balanceOf(address(poolManager)));
+        console.log("> END: _afterSwap");
         return (IHooks.afterSwap.selector, 0);
     }
 
     function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
+        console.log("> START: _settleDeltas");
+        console.log("token0", Currency.unwrap(key.currency0));
+        console.log("token1", Currency.unwrap(key.currency1));
+
         if (zeroForOne) {
+            console.log("> zeroForOne");
             uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
+            console.log("token0 amount", token0);
+            console.log("token1 amount", token1);
+
+            console.log("(1)");
             key.currency0.take(poolManager, address(this), token0, false);
+            console.log("(2)");
+            if (isNTS == 0) WETH9.deposit{value: token0}();
+            console.log("(3)");
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
+            console.log("(4)");
+            if (isNTS == 1) WETH9.withdraw(token1);
+            console.log("(5)");
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
+            console.log("> !zeroForOne");
             uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
 
+            console.log("token0 amount", token0);
+            console.log("token1 amount", token1);
+
+            console.log("(1)");
             key.currency1.take(poolManager, address(this), token1, false);
+            console.log("(2)");
+            if (isNTS == 1) WETH9.deposit{value: token1}();
+            console.log("(3)");
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
+            console.log("(4)");
+            if (isNTS == 0) WETH9.withdraw(token0);
+            console.log("(5)");
             key.currency0.settle(poolManager, address(this), token0, false);
         }
+        console.log("> END: _settleDeltas");
     }
 
     function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up, uint160 sqrtPrice) internal {
         uint256 protocolFeeAmount = protocolFee == 0 ? 0 : mul18(feeAmount, protocolFee);
+        console.log("protocolFeeAmount %s", protocolFeeAmount);
         if (up) {
+            console.log("> up");
             accumulatedFeeB += protocolFeeAmount;
             positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut, sqrtPrice);
         } else {
+            console.log("> down");
             accumulatedFeeQ += protocolFeeAmount;
             positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount), sqrtPrice);
         }
