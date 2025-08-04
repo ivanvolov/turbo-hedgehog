@@ -256,7 +256,7 @@ contract OracleMathTest is ALMTestBase {
 
     /// @dev Tests WSTETH-WETH and ETH-WSTETH with one feed.
     function test_Fuzz_WSTETH_ETH_Chronicle_Api3_Chainlink(uint256 priceWSTETH) public view {
-        uint256 quote_MIN = 5e17; // 0.5ETH for WSTETH.
+        uint256 quote_MIN = 5e17; // 0.01ETH for WSTETH.
         uint256 quote_MAX = 100e18; //  1000ETH USDT.
         priceWSTETH = bound(priceWSTETH, quote_MIN, quote_MAX);
 

@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {UniswapFlashLoanAdapter} from "@src/core/flashLoanAdapters/UniswapFlashLoanAdapter.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -48,7 +49,8 @@ contract BTC_UNI_ALMTest is ALMTestBaseUnichain {
         quoter = UConstants.V4_QUOTER; // deployMockV4Quoter();
 
         create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.WBTC, 8, "WBTC");
-        // Add Aave adapter here.
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new UniswapFlashLoanAdapter(BASE, QUOTE, UConstants.manager);
         create_lending_adapter_euler_USDC_BTC_unichain();
 
         oracle = _create_oracle(

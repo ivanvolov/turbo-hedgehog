@@ -8,6 +8,7 @@ import {Constants as MConstants} from "@test/libraries/constants/MainnetConstant
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
+import {UniswapFlashLoanAdapter} from "@src/core/flashLoanAdapters/UniswapFlashLoanAdapter.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -35,13 +36,13 @@ contract LendingAdaptersTest is ALMTestBase {
     uint256 _extraQuoteBefore;
 
     // ----- Flash loan single tests ----- //
-    function test_lending_adapter_flash_loan_single_morpho() public {
+    function test_flesh_loan_single_morpho() public {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_single();
+        part_flash_loan_adapter_single();
     }
 
-    function test_lending_adapter_flash_loan_single_morpho_earn() public {
+    function test_flesh_loan_single_morpho_earn() public {
         ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
         ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
         ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
@@ -50,18 +51,25 @@ contract LendingAdaptersTest is ALMTestBase {
         ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_single();
+        part_flash_loan_adapter_single();
     }
 
-    function test_lending_adapter_flash_loan_single_euler() public {
+    function test_flesh_loan_single_euler() public {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_euler_USDC_WETH();
-        part_lending_adapter_flash_loan_single();
+        part_flash_loan_adapter_single();
+    }
+
+    function test_flesh_loan_single_uniswap() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new UniswapFlashLoanAdapter(BASE, QUOTE, MConstants.manager);
+        part_flash_loan_adapter_single();
     }
 
     bytes test_payload;
 
-    function part_lending_adapter_flash_loan_single() public {
+    function part_flash_loan_adapter_single() public {
         address testAddress = address(this);
         _fakeSetComponents(address(flashLoanAdapter), testAddress);
 
@@ -84,13 +92,13 @@ contract LendingAdaptersTest is ALMTestBase {
     }
 
     // ----- Flash loan two tokens tests ----- //
-    function test_lending_adapter_flash_loan_two_tokens_morpho() public {
+    function test_flash_loan_two_tokens_morpho() public {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_two_tokens();
+        part_flash_loan_two_tokens();
     }
 
-    function test_lending_adapter_flash_loan_two_tokens_morpho_earn() public {
+    function test_flash_loan_two_tokens_morpho_earn() public {
         ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
         ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
         ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
@@ -99,16 +107,23 @@ contract LendingAdaptersTest is ALMTestBase {
         ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_two_tokens();
+        part_flash_loan_two_tokens();
     }
 
-    function test_lending_adapter_flash_loan_two_tokens_euler() public {
+    function test_flash_loan_two_tokens_euler() public {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_euler_USDC_WETH();
-        part_lending_adapter_flash_loan_two_tokens();
+        part_flash_loan_two_tokens();
     }
 
-    function part_lending_adapter_flash_loan_two_tokens() public {
+    function test_flash_loan_two_tokens_uniswap() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new UniswapFlashLoanAdapter(BASE, QUOTE, MConstants.manager);
+        part_flash_loan_two_tokens();
+    }
+
+    function part_flash_loan_two_tokens() public {
         address testAddress = address(this);
         _fakeSetComponents(address(flashLoanAdapter), testAddress); // ** Enable testAddress to call the adapter
 
