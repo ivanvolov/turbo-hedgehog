@@ -4,18 +4,18 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** contracts
-import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
+import {ALMTestBaseBase} from "@test/core/ALMTestBaseBase.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
+import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.sol";
 
 // ** interfaces
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
+contract BTC_BASE_ALMTest is ALMTestBaseBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;
@@ -23,15 +23,15 @@ contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
     uint256 slippage = 7e15;
     uint24 feeLP = 500; //0.05%
 
-    IERC20 BTC = IERC20(UConstants.WBTC);
-    IERC20 USDC = IERC20(UConstants.USDC);
-    PoolKey WBTC_USDC_key;
+    IERC20 BTC = IERC20(BConstants.CBBTC);
+    IERC20 USDC = IERC20(BConstants.USDC);
+    PoolKey USDC_CBBTC_key;
 
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
 
     function setUp() public {
-        select_unichain_fork(23389917);
+        select_base_fork(33774814);
 
         // ** Setting up test environments params
         {
@@ -43,24 +43,22 @@ contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
-        manager = UConstants.manager;
-        deployMockUniversalRouter(); // universalRouter = UConstants.UNIVERSAL_ROUTER;
-        quoter = UConstants.V4_QUOTER; // deployMockV4Quoter();
+        manager = BConstants.manager;
+        deployMockUniversalRouter(); // universalRouter = BConstants.UNIVERSAL_ROUTER;
+        quoter = BConstants.V4_QUOTER; // deployMockV4Quoter();
 
-        create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.WBTC, 8, "WBTC");
-        // Add Aave adapter here.
-        create_lending_adapter_euler_USDC_BTC_unichain();
+        create_accounts_and_tokens(BConstants.USDC, 6, "USDC", BConstants.CBBTC, 8, "CBBTC");
+        create_flash_loan_adapter_morpho_base();
+        create_lending_adapter_euler_USDC_BTC_base();
 
         oracle = _create_oracle(
-            UConstants.chronicle_feed_WBTC,
-            UConstants.chronicle_feed_USDC,
+            BConstants.chainlink_feed_CBBTC,
+            BConstants.chainlink_feed_USDC,
             24 hours,
             24 hours,
             true,
             int8(6 - 8)
         );
-        mock_latestRoundData(address(UConstants.chronicle_feed_WBTC), 113681400000000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 999880000000000000);
         production_init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -79,15 +77,15 @@ contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for native-token
         {
             vm.startPrank(deployer.addr);
-            WBTC_USDC_key = _getAndCheckPoolKey(
-                BTC,
+            USDC_CBBTC_key = _getAndCheckPoolKey(
                 USDC,
-                3000,
-                60,
-                0xbd0f3a7cf4cf5f48ebe850474c8c0012fa5fe893ab811a8b8743a52b83aa8939
+                BTC,
+                500,
+                10,
+                0x12d76c5c8ec8edffd3c143995b0aa43fe44a6d71eb9113796272909e54b8e078
             );
-            uint8[4] memory config = [2, 0, 2, 0];
-            setSwapAdapterToV4SingleSwap(WBTC_USDC_key, config);
+            uint8[4] memory config = [0, 2, 0, 2];
+            setSwapAdapterToV4SingleSwap(USDC_CBBTC_key, config);
             vm.stopPrank();
         }
     }
@@ -470,7 +468,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
     // ** Helpers
 
     function swapBTC_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
+        return swapAndReturnDeltas(false, false, amount);
     }
 
     function quoteBTC_USDC_Out(uint256 amount) public returns (uint256) {
@@ -478,11 +476,11 @@ contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
     }
 
     function swapBTC_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
+        return swapAndReturnDeltas(false, true, amount);
     }
 
     function swapUSDC_BTC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
+        return swapAndReturnDeltas(true, false, amount);
     }
 
     function quoteUSDC_BTC_Out(uint256 amount) public returns (uint256) {
@@ -490,6 +488,21 @@ contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
     }
 
     function swapUSDC_BTC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
+        return swapAndReturnDeltas(true, true, amount);
+    }
+
+    function swapAndReturnDeltas(bool zeroForOne, bool isExactInput, uint256 amount) public returns (uint256, uint256) {
+        console.log("START: swapAndReturnDeltas");
+        int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
+        int256 btcBefore = int256(BTC.balanceOf(swapper.addr));
+
+        vm.startPrank(swapper.addr);
+        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, key);
+        vm.stopPrank();
+
+        int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
+        int256 btcAfter = int256(BTC.balanceOf(swapper.addr));
+        console.log("END: swapAndReturnDeltas");
+        return (abs(usdcAfter - usdcBefore), abs(btcAfter - btcBefore));
     }
 }

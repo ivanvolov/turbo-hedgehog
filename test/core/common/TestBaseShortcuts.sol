@@ -133,7 +133,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
     // --- Oracles  --- //
 
     function getFeedsData(AggregatorV3Interface feed) internal view returns (uint256 dec, uint256 price) {
-        (, int256 _priceQuote, , uint256 updatedAtBase, ) = feed.latestRoundData();
+        (, int256 _priceQuote, , , ) = feed.latestRoundData();
         return (feed.decimals(), uint256(_priceQuote));
     }
 

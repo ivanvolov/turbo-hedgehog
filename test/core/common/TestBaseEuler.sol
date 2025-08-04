@@ -12,6 +12,7 @@ import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanA
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
+import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.sol";
 
 // ** interfaces
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
@@ -79,16 +80,16 @@ abstract contract TestBaseEuler is TestBaseShortcuts {
         return lendingAdapter;
     }
 
-    function create_lending_adapter_euler_USDC_BTC_unichain() internal returns (ILendingAdapter) {
+    function create_lending_adapter_euler_USDC_BTC_base() internal returns (ILendingAdapter) {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(
             BASE,
             QUOTE,
-            UConstants.EULER_VAULT_CONNECT,
-            UConstants.eulerUSDCVault1,
-            UConstants.eulerWBTCVault1,
-            UConstants.merklRewardsDistributor,
-            UConstants.rEUL
+            BConstants.EULER_VAULT_CONNECT,
+            BConstants.eulerUSDCVault1,
+            BConstants.eulerCBBTCVault1,
+            BConstants.merklRewardsDistributor,
+            BConstants.rEUL
         );
         return lendingAdapter;
     }

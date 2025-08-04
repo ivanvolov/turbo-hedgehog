@@ -44,11 +44,13 @@ abstract contract TestBaseUtils is Deployers {
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
     string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
     string SEPOLIA_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
+    string BASE_RPC_URL = vm.envString("BASE_RPC_URL");
 
     uint256 mainnetFork;
     uint256 arbitrumFork;
     uint256 sepoliaFork;
     uint256 unichainFork;
+    uint256 baseFork;
 
     function select_mainnet_fork(uint256 block_number) internal {
         mainnetFork = vm.createFork(MAINNET_RPC_URL);
@@ -71,6 +73,12 @@ abstract contract TestBaseUtils is Deployers {
     function select_unichain_fork(uint256 block_number) internal {
         unichainFork = vm.createFork(UNICHAIN_RPC_URL);
         vm.selectFork(unichainFork);
+        vm.rollFork(block_number);
+    }
+
+    function select_base_fork(uint256 block_number) internal {
+        baseFork = vm.createFork(BASE_RPC_URL);
+        vm.selectFork(baseFork);
         vm.rollFork(block_number);
     }
 

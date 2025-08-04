@@ -50,9 +50,9 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
     function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual;
 
     function _onFlashLoan(bytes calldata _data) internal {
-        console.log(">> START: _onFlashLoan");
+        // console.log(">> START: _onFlashLoan");
         uint8 loanType = abi.decode(_data, (uint8));
-        console.log("loanType %s", loanType);
+        // console.log("loanType %s", loanType);
 
         if (loanType == 0) {
             (, address sender, bool isBase, uint256 amount, bytes memory data) = abi.decode(
@@ -87,6 +87,6 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
             IFlashLoanReceiver(sender).onFlashLoanTwoTokens(amountBase, amountQuote, data);
             QUOTE.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amountQuote);
         } else revert NotAllowedLoanType(loanType);
-        console.log("END: _onFlashLoan");
+        // console.log("END: _onFlashLoan");
     }
 }

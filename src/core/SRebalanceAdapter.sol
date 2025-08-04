@@ -250,6 +250,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
+        console.log("> Deltas:");
+        console.logInt(-deltaCL);
+        console.logInt(-deltaCS);
+        console.logInt(deltaDL);
+        console.logInt(deltaDS);
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 

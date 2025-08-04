@@ -17,6 +17,7 @@ import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol"
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
+import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -70,6 +71,11 @@ abstract contract TestBaseMorpho is TestBaseEuler {
     function create_flash_loan_adapter_morpho_unichain() internal {
         vm.prank(deployer.addr);
         flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, UConstants.MORPHO);
+    }
+
+    function create_flash_loan_adapter_morpho_base() internal {
+        vm.prank(deployer.addr);
+        flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, BConstants.MORPHO);
     }
 
     function create_lending_adapter_morpho() internal {
