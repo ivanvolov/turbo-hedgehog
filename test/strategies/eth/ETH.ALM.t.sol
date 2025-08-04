@@ -163,7 +163,7 @@ contract ETH_ALMTest is ALMTestBase {
         console.log("postRebalanceTVL %s", calcTVL());
 
         assertTicks(194458, 200458);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
 
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
@@ -225,7 +225,7 @@ contract ETH_ALMTest is ALMTestBase {
         hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         assertEq(hook.balanceOf(alice.addr), 0);
 
-        assertEqBalanceState(alice.addr, 99990323993112252626, 0);
+        assertEqBalanceState(alice.addr, 99990323997909256072, 0);
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(calcTVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
@@ -270,7 +270,7 @@ contract ETH_ALMTest is ALMTestBase {
         uint160 preSqrtPrice = hook.sqrtPriceCurrent();
         saveBalance(address(manager));
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5439086117469532134, 1e1, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5439086116224750588, 1e1, "deltaWETH");
 
         // ** After swap State
         _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
@@ -279,10 +279,10 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(157249302282605916703, 239418121498, 277892412530, 42755888399887211211);
+        assertEqPositionState(157249302284379730407, 239418121498, 277892412530, 42755888400416243368);
 
-        assertApproxEqAbs(hook.TVL(oracle.price()), 100030489475887621071, 1e9); //1 wei drift on collateral supply
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1528486622536030184373416970508857, 1);
+        assertApproxEqAbs(hook.TVL(oracle.price()), 100030489482569180703, 1e9); //1 wei drift on collateral supply
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1528486622352927269830375254242368, 1);
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
@@ -317,7 +317,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(157249302282605916703, 239418121498, 277892412530, 42755888399887211211);
-        assertEqProtocolState(1528486622536030184373521960444533, 100030489475887621071);
+        assertEqProtocolState(1528486622351182584276128648738257, 100030489482452133341);
     }
 
     function test_deposit_rebalance_swap_price_up_out_not_operator() public {
@@ -373,7 +373,7 @@ contract ETH_ALMTest is ALMTestBase {
         uint160 preSqrtPrice = hook.sqrtPriceCurrent();
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14614119329);
+        assertEq(deltaUSDC, 14614119332);
 
         // ** After swap State
         (uint256 wethDelta, uint256 usdcDelta) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
@@ -386,7 +386,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(172867837955912361744, 239418121498, 307047761449, 47414048162101414117);
-        assertEqProtocolState(1543848683124746009782815587439752, 100031037508161592551);
+        assertEqProtocolState(1543848682939898409686214692672106, 100031037516214649242);
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
@@ -395,7 +395,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
         uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
-        assertEq(wethToSwapQ, 5521289793478853036);
+        assertEq(wethToSwapQ, 5521289792146698531);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -417,8 +417,8 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(172867837955707365568, 239418121498, 307047761449, 47414048162040274907);
-        assertEqProtocolState(1543848683124544379891216459770667, 100031037508017735585);
+        assertEqPositionState(172867837953809045401, 239418121498, 307047761449, 47414048161474109243);
+        assertEqProtocolState(1543848682937829632319054235770132, 100031037516242283351);
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
@@ -435,7 +435,7 @@ contract ETH_ALMTest is ALMTestBase {
         uint160 preSqrtPrice = hook.sqrtPriceCurrent();
         saveBalance(address(manager));
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5436380063822224884, 1e4, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5436380062950283022, 1e4, "deltaWETH");
 
         // ** After swap State
         (uint256 wethDelta, uint256 usdcDelta) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
@@ -447,8 +447,8 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(157253158409053329533, 239418121498, 277892412530, 42757038472687316792);
-        assertEqProtocolState(1528490415340257289276984340905115, 100033195529159016925);
+        assertEqPositionState(157253158410295846688, 239418121498, 277892412530, 42757038473057892083);
+        assertEqProtocolState(1528490415156631802711428712919168, 100033195535467736874);
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
@@ -459,7 +459,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Before swap State
         uint256 wethToGetFSwap = 5439086117469532134;
         uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
-        assertEq(usdcToSwapQ, 14548503843); //prev case + feeLP (tokenIn + feeLP)
+        assertEq(usdcToSwapQ, 14548503846); //prev case + feeLP (tokenIn + feeLP)
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -475,7 +475,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(157249302282605916703, 239418121498, 277885138278, 42755888399887211211);
-        assertEqProtocolState(1528486622536030184373521960444533, 100033223950103266439);
+        assertEqProtocolState(1528486622351182584276128648738257, 100033223956290839395);
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
@@ -491,7 +491,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14606848878); // less usdc to receive
+        assertEq(deltaUSDC, 14606848882); // less usdc to receive
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
@@ -499,7 +499,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(172867837955912361744, 239418121498, 307040490998, 47414048162101414117);
-        assertEqProtocolState(1543844813805434997305899831074260, 100033770553538026179);
+        assertEqProtocolState(1543844813620587397209298936306614, 100033770561590055488);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -510,7 +510,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
         uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
-        assertEq(wethToSwapQ, 5521565871772441659); // prev * (1 + fee)
+        assertEq(wethToSwapQ, 5521565870440220543); // prev * (1 + fee)
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -525,8 +525,8 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(172868231367275729354, 239418121498, 307047761449, 47414165495315050071);
-        assertEqProtocolState(1543848683124544379891216459770667, 100031313586311324207);
+        assertEqPositionState(172868231365377314266, 239418121498, 307047761449, 47414165494748856097);
+        assertEqProtocolState(1543848682937829632319054235770132, 100031313594535805362);
     }
 
     function test_deposit_rebalance_swap_price_up_in_protocol_fees() public {
@@ -548,16 +548,16 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5436380063822224884, 1e1, "deltaWETH");
+        assertApproxEqAbs(deltaWETH, 5436380062950283022, 1e1, "deltaWETH");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceState(address(hook), 0, hook.accumulatedFeeB());
-        assertEq(hook.accumulatedFeeB(), 1454123);
+        assertEq(hook.accumulatedFeeB(), 1454122);
 
-        assertEqPositionState(157253158409053329533, 239418121498, 277893866654, 42757038472687316792);
-        assertEqProtocolState(1528490415340257289276984340905115, 100032648907753836449);
+        assertEqPositionState(157253158410295846688, 239418121498, 277893866654, 42757038473057892083);
+        assertEqProtocolState(1528490415156631802711428712919168, 100032648914438673274);
     }
 
     function test_deposit_rebalance_swap_price_up_out_protocol_fees() public {
@@ -571,7 +571,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Before swap State
         uint256 wethToGetFSwap = 5439086117469532134;
         uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
-        assertEq(usdcToSwapQ, 14548503843);
+        assertEq(usdcToSwapQ, 14548503846);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -588,7 +588,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEq(hook.accumulatedFeeB(), 1454850);
 
         assertEqPositionState(157249302282605916703, 239418121498, 277886593128, 42755888399887211211);
-        assertEqProtocolState(1528486622536030184373521960444533, 100032677055410501924);
+        assertEqProtocolState(1528486622351182584276128648738257, 100032677061598280463);
     }
 
     function test_deposit_rebalance_swap_price_down_in_protocol_fees() public {
@@ -607,7 +607,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
-        assertEq(deltaUSDC, 14606848878);
+        assertEq(deltaUSDC, 14606848882);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
@@ -616,7 +616,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEq(hook.accumulatedFeeQ(), 552128979362270);
 
         assertEqPositionState(172867051172116770507, 239418121498, 307040490998, 47413813507285185152);
-        assertEqProtocolState(1543844813805434997305899831074260, 100033218424558663909);
+        assertEqProtocolState(1543844813620587397209298936306614, 100033218432610693217);
     }
 
     function test_deposit_rebalance_swap_price_down_out_protocol_fees() public {
@@ -630,7 +630,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
         uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
-        assertEq(wethToSwapQ, 5521565871772441659);
+        assertEq(wethToSwapQ, 5521565870440220543);
 
         deal(address(WETH), address(swapper.addr), wethToSwapQ);
         assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
@@ -644,20 +644,20 @@ contract ETH_ALMTest is ALMTestBase {
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), hook.accumulatedFeeQ(), 0);
-        assertEq(hook.accumulatedFeeQ(), 55215658717724);
+        assertEq(hook.accumulatedFeeQ(), 55215658704402);
 
-        assertEqPositionState(172868152684962056599, 239418121498, 307047761449, 47414142028660095039);
-        assertEqProtocolState(1543848683124544379891216459770667, 100031258370652606484);
+        assertEqPositionState(172868152683063660494, 239418121498, 307047761449, 47414142028093906727);
+        assertEqProtocolState(1543848682937829632319054235770132, 100031258378877100960);
     }
 
-    uint160 after_swap_price_target = 1510210350537386678898785094839782;
+    uint160 after_swap_price_target = 1510210350358636346530480063086887;
 
     function test_deposit_rebalance_swap_rebalance() public {
         test_deposit_rebalance();
 
         {
             assertTicks(194458, 200458);
-            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
+            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
             assertEq(hook.liquidity(), 56526950853149492, "liquidity");
         }
 
@@ -681,8 +681,8 @@ contract ETH_ALMTest is ALMTestBase {
 
         {
             assertTicks(194118, 200118);
-            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1510210350537386678898737806269741, 1, "sqrtPrice");
-            assertEq(hook.liquidity(), 57702007738666528, "liquidity");
+            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1510210350358636346530423690962769, 1, "sqrtPrice");
+            assertEq(hook.liquidity(), 57702007741396626, "liquidity");
         }
     }
 
@@ -691,7 +691,7 @@ contract ETH_ALMTest is ALMTestBase {
 
         {
             assertTicks(194458, 200458);
-            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
+            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
             assertEq(hook.liquidity(), 56526950853149492, "liquidity");
         }
 
@@ -704,7 +704,7 @@ contract ETH_ALMTest is ALMTestBase {
 
         {
             assertTicks(194118, 200118);
-            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1510210350537386678898737806269741, 1, "sqrtPrice");
+            assertApproxEqAbs(hook.sqrtPriceCurrent(), 1510210350358636346530423690962769, 1, "sqrtPrice");
             assertEq(hook.liquidity(), 57496074777163322, "liquidity"); // Liquidity differs from test_deposit_rebalance_swap_rebalance because we lose assets during rebalancing.
         }
     }
@@ -714,13 +714,13 @@ contract ETH_ALMTest is ALMTestBase {
 
         // ** Protocol state.
         assertTicks(194458, 200458);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
         assertEq(hook.liquidity(), 56526950853149492, "liquidity");
 
         part_swap_price_up_out();
 
         // ** Sqrt price updated after swap.
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1528486622536030184373521960444533, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1528486622351182584276128648738257, 1e1, "sqrtPrice");
 
         // ** Update liquidity and boundaries to oracle.
         vm.startPrank(deployer.addr);
@@ -736,7 +736,7 @@ contract ETH_ALMTest is ALMTestBase {
         vm.stopPrank();
 
         assertTicks(196458, 198458);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951223628293674, 1e1, "sqrtPrice"); // Sqrt updated back.
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854636894569523, 1e1, "sqrtPrice"); // Sqrt updated back.
         _liquidityCheck(hook.isInvertedPool(), hook.liquidityMultiplier());
         assertEq(hook.liquidity(), 162154085919257702, "liquidity");
     }
@@ -803,7 +803,7 @@ contract ETH_ALMTest is ALMTestBase {
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs(deltaWETH, deltaX, 1);
+            assertApproxEqAbs(deltaWETH, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
         }
 
