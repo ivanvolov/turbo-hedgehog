@@ -33,7 +33,7 @@ contract OracleTest is ALMTestBase {
         part_test_oracle_pool_price(
             MConstants.chainlink_feed_USDC, // Base
             MConstants.chainlink_feed_WETH, // Quote, oracle always return Quote in BASE
-            MConstants.uniswap_v3_WETH_USDC_POOL, // pool always returns in it's own order
+            MConstants.uniswap_v3_USDC_WETH_POOL, // pool always returns in it's own order
             true, // false if QUOTE : BASE
             int8(6 - 18) // BDec - QDec
         );
@@ -45,7 +45,7 @@ contract OracleTest is ALMTestBase {
         part_test_oracle_pool_price(
             MConstants.chainlink_feed_WETH, // Base
             MConstants.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
-            MConstants.uniswap_v3_WETH_USDC_POOL, // pool always returns in it's own order
+            MConstants.uniswap_v3_USDC_WETH_POOL, // pool always returns in it's own order
             false, // false if QUOTE : BASE
             int8(18 - 6) // BDec - QDec
         );
@@ -125,7 +125,7 @@ contract OracleTest is ALMTestBase {
         part_test_oracle_pool_price(
             MConstants.chainlink_feed_cbBTC, // Base
             MConstants.chainlink_feed_USDC, // Quote, oracle always return Quote in BASE
-            MConstants.uniswap_v3_cbBTC_USDC_POOL,
+            MConstants.uniswap_v3_USDC_cbBTC_POOL,
             false, // false if QUOTE : BASE
             int8(8 - 6) // BDec - QDec
         );
@@ -136,7 +136,7 @@ contract OracleTest is ALMTestBase {
         part_test_oracle_pool_price(
             MConstants.chainlink_feed_USDC, // Base
             MConstants.chainlink_feed_cbBTC, // Quote, oracle always return Quote in BASE
-            MConstants.uniswap_v3_cbBTC_USDC_POOL,
+            MConstants.uniswap_v3_USDC_cbBTC_POOL,
             true, // false if QUOTE : BASE
             int8(6 - 8) // BDec - QDec
         );

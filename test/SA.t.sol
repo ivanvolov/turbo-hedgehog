@@ -326,7 +326,7 @@ contract SwapAdapterTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         bytes memory path = abi.encodePacked(
             MConstants.USDC,
-            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_USDC_WETH_POOL).fee()),
             address(MConstants.WETH),
             uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
             MConstants.USDT
@@ -341,7 +341,7 @@ contract SwapAdapterTest is ALMTestBase {
             MConstants.USDT,
             uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
             address(MConstants.WETH),
-            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_USDC_WETH_POOL).fee()),
             MConstants.USDC
         );
 
@@ -354,7 +354,7 @@ contract SwapAdapterTest is ALMTestBase {
             MConstants.USDT,
             uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
             address(MConstants.WETH),
-            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_USDC_WETH_POOL).fee()),
             MConstants.USDC
         );
 
@@ -365,7 +365,7 @@ contract SwapAdapterTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         bytes memory path = abi.encodePacked(
             MConstants.USDC,
-            uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(MConstants.uniswap_v3_USDC_WETH_POOL).fee()),
             address(MConstants.WETH),
             uint24(IUniswapV3Pool(MConstants.uniswap_v3_WETH_USDT_POOL).fee()),
             MConstants.USDT

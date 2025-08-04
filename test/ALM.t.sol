@@ -44,7 +44,7 @@ contract General_ALMTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = MConstants.uniswap_v3_WETH_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_WETH_POOL;
             ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;

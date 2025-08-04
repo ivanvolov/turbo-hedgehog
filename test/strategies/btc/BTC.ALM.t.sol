@@ -33,7 +33,7 @@ contract BTC_ALMTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = MConstants.uniswap_v3_cbBTC_USDC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_cbBTC_POOL;
             ASSERT_EQ_PS_THRESHOLD_CL = 1e2;
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
