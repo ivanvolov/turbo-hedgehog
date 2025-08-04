@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** External imports
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 // ** contracts
 import {OracleBase} from "./OracleBase.sol";
@@ -21,22 +23,16 @@ contract Oracle is OracleBase, Ownable {
         uint128 quote;
     }
 
-    AggregatorV3Interface public immutable feedBase;
-    AggregatorV3Interface public immutable feedQuote;
+    IAggV3 public immutable feedBase;
+    IAggV3 public immutable feedQuote;
     StalenessThresholds public stalenessThresholds;
 
     constructor(
-        AggregatorV3Interface _feedBase,
-        AggregatorV3Interface _feedQuote,
+        IAggV3 _feedBase,
+        IAggV3 _feedQuote,
         bool _isInvertedPool,
-        int256 _tokenDecimalsDelta
-    )
-        OracleBase(
-            _isInvertedPool,
-            _tokenDecimalsDelta + int256(int8(_feedBase.decimals())) - int256(int8(_feedQuote.decimals()))
-        )
-        Ownable(msg.sender)
-    {
+        int256 _tokenDecDelta
+    ) OracleBase(_isInvertedPool, calcTotalDecDelta(_tokenDecDelta, _feedBase, _feedQuote)) Ownable(msg.sender) {
         feedBase = _feedBase;
         feedQuote = _feedQuote;
     }
@@ -46,16 +42,27 @@ contract Oracle is OracleBase, Ownable {
         emit StalenessThresholdsSet(thresholdBase, thresholdQuote);
     }
 
+    function calcTotalDecDelta(int256 _tokenDecDel, IAggV3 _feedBase, IAggV3 _feedQuote) public view returns (int256) {
+        console.log("> calcTotalDecDelta");
+        int256 feedBDec = address(_feedBase) == address(0) ? int256(0) : int256(int8(_feedBase.decimals()));
+        int256 feedQDec = address(_feedQuote) == address(0) ? int256(0) : int256(int8(_feedQuote.decimals()));
+        console.logInt(_tokenDecDel + feedBDec - feedQDec);
+        return _tokenDecDel + feedBDec - feedQDec;
+    }
+
     function _fetchAssetsPrices() internal view override returns (uint256, uint256) {
         StalenessThresholds memory thresholds = stalenessThresholds;
+        int256 priceBase = _getOraclePrice(feedBase, thresholds.base);
+        int256 priceQuote = _getOraclePrice(feedQuote, thresholds.quote);
 
-        (, int256 _priceBase, , uint256 updatedAtBase, ) = feedBase.latestRoundData();
-        if (updatedAtBase + thresholds.base < block.timestamp) revert StalenessThresholdExceeded();
+        if (priceBase <= 0 || priceQuote <= 0) revert PriceNotValid();
+        return (uint256(priceBase), uint256(priceQuote));
+    }
 
-        (, int256 _priceQuote, , uint256 updatedAtQuote, ) = feedQuote.latestRoundData();
-        if (updatedAtQuote + thresholds.quote < block.timestamp) revert StalenessThresholdExceeded();
-
-        if (_priceBase <= 0 || _priceQuote <= 0) revert PriceNotValid();
-        return (uint256(_priceBase), uint256(_priceQuote));
+    function _getOraclePrice(IAggV3 feed, uint256 stalenessThreshold) internal view returns (int256) {
+        if (address(feed) == address(0)) return 1e18;
+        (, int256 price, , uint256 updatedAt, ) = feed.latestRoundData();
+        if (updatedAt + stalenessThreshold < block.timestamp) revert StalenessThresholdExceeded();
+        return price;
     }
 }

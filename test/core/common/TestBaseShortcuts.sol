@@ -171,6 +171,21 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
+    function _create_oracle_one_feed(
+        AggregatorV3Interface feedQ,
+        AggregatorV3Interface feedB,
+        uint128 stalenessThreshold,
+        bool _isInvertedPool,
+        int8 decimalsDelta
+    ) internal returns (IOracle _oracle) {
+        isInvertedPool = _isInvertedPool;
+        vm.prank(deployer.addr);
+        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
+        oracle = _oracle;
+        vm.prank(deployer.addr);
+        IOracleTest(address(oracle)).setStalenessThresholds(stalenessThreshold, stalenessThreshold);
+    }
+
     function mock_latestRoundData(address feed, uint256 value) public {
         vm.mockCall(
             address(feed),

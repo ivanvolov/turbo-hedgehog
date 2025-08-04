@@ -80,9 +80,9 @@ tuul:
 	clear && forge test -vvvv --match-contract UNICORD_UNI_ALMTest --match-test "test_"
 
 turu:
-	clear && forge test -vv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_deposit_rebalance"
 turul:
-	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_deposit_rebalance"
 
 tbu:
 	clear && forge test -vv --match-contract BTC_UNI_ALMTest --match-test "test_"
