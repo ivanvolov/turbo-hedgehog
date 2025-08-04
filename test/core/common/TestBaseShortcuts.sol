@@ -107,6 +107,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
         treasury = TestAccountLib.createTestAccount("treasury");
+        mock_empty_oracle = TestAccountLib.createTestAccount("mock_empty_oracle");
     }
 
     function _setComponents(address module) internal {
@@ -129,6 +130,11 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
     }
 
     // --- Oracles  --- //
+
+    function getFeedsData(AggregatorV3Interface feed) internal view returns (uint256 dec, uint256 price) {
+        (, int256 _priceQuote, , uint256 updatedAtBase, ) = feed.latestRoundData();
+        return (feed.decimals(), uint256(_priceQuote));
+    }
 
     function create_oracle(
         bool _isInvertedPool,

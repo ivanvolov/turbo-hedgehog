@@ -341,7 +341,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
         {
@@ -389,7 +389,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -431,7 +431,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -471,7 +471,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
         // uint256 preRebalanceTVL = calcTVL();
@@ -481,7 +481,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {

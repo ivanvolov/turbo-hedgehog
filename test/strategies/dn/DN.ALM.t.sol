@@ -127,7 +127,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw() public {
         test_deposit_rebalance();
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -143,7 +143,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw_revert_min_out() public {
         test_deposit_rebalance();
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -356,7 +356,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Second rebalance
         {
@@ -382,7 +382,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -513,7 +513,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -660,7 +660,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
         vm.prank(deployer.addr);
@@ -668,7 +668,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {

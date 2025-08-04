@@ -100,6 +100,7 @@ abstract contract TestBaseUtils is Deployers {
     TestAccount marketMaker;
     TestAccount zero;
     TestAccount treasury;
+    TestAccount mock_empty_oracle;
 
     uint256 tempGas;
 
@@ -149,10 +150,6 @@ abstract contract TestBaseUtils is Deployers {
         if (token == BASE) return QUOTE;
         if (token == QUOTE) return BASE;
         revert("Token not allowed");
-    }
-
-    function poolPrice() internal view returns (uint256 _poolPrice) {
-        (, _poolPrice) = oracle.poolPrice();
     }
 
     function oraclePriceW() internal view returns (uint256) {

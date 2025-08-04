@@ -89,9 +89,9 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         // Check oracle alignment.
         {
-            (uint256 price, uint256 poolPrice) = oracle.poolPrice();
+            (uint256 price, uint256 sqrtPriceX96) = oracle.poolPrice();
             console.log("price %s", price);
-            console.log("poolPrice %s", ALMMathLib.getSqrtPriceX96FromPrice(poolPrice));
+            console.log("sqrtPrice %s", sqrtPriceX96);
             console.log(getV4PoolSQRTPrice(ETH_wstETH_key));
         }
     }

@@ -93,7 +93,7 @@ contract General_ALMTest is ALMTestBase {
             );
             deployCodeTo(
                 "ALM.sol",
-                abi.encode(key, BASE, QUOTE, isInvertedPool, false, manager, "NAME", "SYMBOL"),
+                abi.encode(key, BASE, QUOTE, WETH9, isInvertedPool, false, false, manager, "NAME", "SYMBOL"),
                 hookAddress
             );
             hook = ALM(hookAddress);

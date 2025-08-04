@@ -181,7 +181,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
 
     // --- Oracle Alignment --- //
 
-    function alignOraclesAndPools(uint160 newSqrtPrice) public {
+    function alignOraclesAndPoolsV3(uint160 newSqrtPrice) public {
         alignOracles(newSqrtPrice);
         setV3PoolPrice(newSqrtPrice);
     }
@@ -189,13 +189,8 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
     function alignOraclesAndPoolsV4(ALM _hook, PoolKey memory _poolKey) public {
         console.log("_alignOraclesAndPoolsV4");
         alignOracles(_hook.sqrtPriceCurrent());
-        {
-            uint160 targetSqrtPriceX96 = hook.sqrtPriceCurrent();
-            console.log("sqrtPriceBefore %s", getV4PoolSQRTPrice(_poolKey));
-            console.log("targetSqrtPriceX96", targetSqrtPriceX96);
-            setV4PoolPrice(_poolKey, targetSqrtPriceX96);
-            console.log("sqrtPriceAfter %s", getV4PoolSQRTPrice(_poolKey));
-        }
+        uint160 targetSqrtPriceX96 = hook.sqrtPriceCurrent();
+        setV4PoolPrice(_poolKey, targetSqrtPriceX96);
     }
 
     function alignOracles(uint160 targetSqrtPriceX96) public {
@@ -209,7 +204,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.mockCall(
             address(oracle),
             abi.encodeWithSelector(IOracle.poolPrice.selector),
-            abi.encode(_price, _poolPrice)
+            abi.encode(_price, ALMMathLib.getSqrtPriceX96FromPrice(_poolPrice))
         );
     }
 

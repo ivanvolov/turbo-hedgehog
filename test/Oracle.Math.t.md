@@ -1,0 +1,40 @@
+# First case
+
+calc sqrtPrice 4663552117771348554241845786706
+cacc sqrtPrice 4663552117771348554305956481705
+
+# Second case
+
+python 4663552117771348968734720
+calc sqrtPrice 4663552117157602615578102
+cacc sqrtPrice 4663552117771348554305956
+
+# Third case
+
+python 1345991548259232732549429092941824
+calc sqrtPrice 1345991548436352586396271745959683
+cacc sqrtPrice 1345991548259232658421686564476326
+
+# Python
+
+q96 = 2 ** 96
+q32 = 2**32
+uint256Max = 2**256-1
+(sqrt/q96)**2
+int(1e18/(sqrt/q96)\*\*2)
+
+- 3464770728 - calc
+- 3464770727 - double calc
+- 3465122625 - fact
+
+# (0)
+
+int(math.sqrt(1e18*q*1e18/b)\*q96/1e18)
+
+# (1)
+
+int((uint256Max/math.sqrt(b\*uint256Max/q))/q32)
+
+# (2)
+
+int(math.sqrt(uint256Max\*q/b)/q32)

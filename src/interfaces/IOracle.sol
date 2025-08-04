@@ -18,5 +18,5 @@ interface IOracle {
 
     function price() external view returns (uint256);
 
-    function poolPrice() external view returns (uint256, uint256);
+    function poolPrice() external view returns (uint256, uint160);
 }

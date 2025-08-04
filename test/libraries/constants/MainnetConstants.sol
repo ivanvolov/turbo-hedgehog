@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** interfaces
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
@@ -17,6 +18,8 @@ import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 import {IMorphoChainlinkOracleV2Factory} from "@morpho-oracles/IMorphoChainlinkOracleV2Factory.sol";
 
 library Constants {
+    IPoolManager constant manager = IPoolManager(0x000000000004444c5dc75cB358380D2e3dE08A90);
+
     // ** ERC20 tokens
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     IWETH9 constant WETH9 = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);

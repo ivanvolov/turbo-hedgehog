@@ -165,7 +165,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertTicks(194458, 200458);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044502721055951302856456188, 1e1, "sqrtPrice");
 
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
         assertEq(hook.liquidity(), 56526950853149492, "liquidity");
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
@@ -193,13 +193,13 @@ contract ETH_ALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw() public {
         test_deposit_rebalance();
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         part_withdraw();
     }
 
     function test_deposit_rebalance_withdraw_not_operator() public {
         test_deposit_rebalance();
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
         hook.setOperators(deployer.addr, deployer.addr);
@@ -234,7 +234,7 @@ contract ETH_ALMTest is ALMTestBase {
     function test_deposit_rebalance_withdraw_on_shutdown() public {
         test_deposit_rebalance();
 
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
         hook.setStatus(2);
@@ -244,7 +244,7 @@ contract ETH_ALMTest is ALMTestBase {
 
     function test_deposit_rebalance_withdraw_revert_min_out() public {
         test_deposit_rebalance();
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         assertEqBalanceStateZero(alice.addr);
 
         uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
@@ -675,7 +675,7 @@ contract ETH_ALMTest is ALMTestBase {
         rebalanceAdapter.rebalance(slippage);
 
         // ** Successful 2nd rebalance
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
@@ -753,7 +753,7 @@ contract ETH_ALMTest is ALMTestBase {
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
@@ -835,7 +835,7 @@ contract ETH_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -876,7 +876,7 @@ contract ETH_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -957,7 +957,7 @@ contract ETH_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // Rebalance
         uint256 preRebalanceTVL = calcTVL();
@@ -967,7 +967,7 @@ contract ETH_ALMTest is ALMTestBase {
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {

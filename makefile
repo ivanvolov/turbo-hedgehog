@@ -46,6 +46,11 @@ td:
 tdl:
 	clear && forge test -vvvv --match-contract DeltaNeutral_ALMTest --match-test "test_"
 
+tt:
+	clear && forge test -vv --match-contract TURBO_ALMTest --match-test "test_"
+ttl:
+	clear && forge test -vvvv --match-contract TURBO_ALMTest --match-test "test_"
+
 
 # Strategies tests Unichain
 
@@ -116,6 +121,11 @@ to:
 	clear && forge test -vv --match-contract OracleTest --match-test "test_"
 tol:
 	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
+
+tom:
+	clear && forge test -vv --match-contract OracleMathTest --match-test "test_"
+toml:
+	clear && forge test -vvvv --match-contract OracleMathTest --match-test "test_"
 
 # Simulations
 

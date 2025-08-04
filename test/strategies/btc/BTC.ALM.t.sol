@@ -114,7 +114,7 @@ contract BTC_ALMTest is ALMTestBase {
         uint256 treasuryFeeQ;
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
         {
@@ -253,7 +253,7 @@ contract BTC_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -281,7 +281,7 @@ contract BTC_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -413,7 +413,7 @@ contract BTC_ALMTest is ALMTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
         vm.prank(deployer.addr);
@@ -421,7 +421,7 @@ contract BTC_ALMTest is ALMTestBase {
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {

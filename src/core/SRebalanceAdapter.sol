@@ -170,7 +170,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator nonReentrant {
-        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
+        (uint256 currentPrice, uint160 currentSqrtPrice) = oracle.poolPrice();
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded(currentPrice);
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();
@@ -201,7 +201,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         checkDeviations(currentPrice);
 
         // ** Update state
-        uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(currentPoolPrice);
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;

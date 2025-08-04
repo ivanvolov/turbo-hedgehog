@@ -29,6 +29,14 @@ abstract contract TestBaseEuler is TestBaseShortcuts {
         create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerWETHVault2, 0);
     }
 
+    function create_lending_adapter_euler_USDT_USDC() internal {
+        create_lending_adapter_euler(MConstants.eulerUSDCVault1, 10e12, MConstants.eulerUSDTVault1, 10e12);
+    }
+
+    function create_flash_loan_adapter_euler_USDT_USDC() internal {
+        create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 10e12, MConstants.eulerUSDTVault2, 10e12);
+    }
+
     function create_lending_adapter_euler_USDC_WETH_unichain() internal returns (ILendingAdapter) {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(
