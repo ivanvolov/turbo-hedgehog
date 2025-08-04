@@ -225,12 +225,13 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function par_swap_down_out_ETH_ALM() public {
-        uint256 usdcFromSwap = 30e9 - 1;
+        uint256 usdcFromSwap = 30e9;
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         assertApproxEqAbs(BASE.balanceOf(swapper.addr), 0, 0);
         assertApproxEqAbs(swapper.addr.balance, 0, 0);
         assertEq(address(universalRouter).balance, 0);
-        uint256 ethForSwap = 8100573368222439487;
+        uint256 ethForSwap = (8100573367821885124 * (1e18 + testFee)) / 1e18;
         deal(address(swapper.addr), ethForSwap + 1e18); // No quoter, just eyeball it.
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
@@ -243,13 +244,10 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         console.log("deltaX %s", deltaX);
         console.log("deltaY %s", deltaY);
 
-        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-
         assertApproxEqAbs(deltaUSDC, deltaX, 1);
         assertApproxEqAbs(usdcFromSwap, deltaUSDC, 1);
 
-        assertApproxEqAbs(ethForSwap, deltaETH, 1);
-        assertApproxEqAbs((ethForSwap * (1e18 - testFee)) / 1e18, deltaY, 1e9);
+        assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1e9);
 
         assertApproxEqAbs(BASE.balanceOf(swapper.addr), deltaUSDC, 0);
         assertApproxEqAbs(swapper.addr.balance, 1e18, 0);

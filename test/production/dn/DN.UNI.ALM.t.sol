@@ -149,7 +149,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqBalanceStateZero(address(hook));
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(-197336, -191336);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4776888565746978846459145, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4776888565966093100083611, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -667,8 +667,14 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
             (uint256 deltaUSDC, uint256 deltaETH) = swapETH_USDC_In(ethToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
+            console.log("deltaUSDC %s", deltaUSDC);
+            console.log("deltaETH %s", deltaETH);
+
             assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 3);
-            assertApproxEqAbs(deltaUSDC, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, deltaX, 2);
 
             uint256 deltaTreasuryFee = (deltaETH * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;

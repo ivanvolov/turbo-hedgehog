@@ -139,7 +139,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
         assertTicks(-197336, -191336);
 
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4776888565746978846459145, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4776888565966093100083611, 1e1, "sqrtPrice");
 
         alignOraclesAndPoolsV4(hook, ETH_USDC_key);
 
@@ -497,7 +497,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Before swap State
         uint256 usdcToGetFSwap = 14614119329;
         uint256 ethToSwapQ = quoteETH_USDC_Out(usdcToGetFSwap);
-        assertEq(ethToSwapQ, 4036963634961013381);
+        assertEq(ethToSwapQ, 4036963634589983313);
 
         deal(address(swapper.addr), ethToSwapQ);
 
@@ -511,10 +511,10 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), hook.accumulatedFeeQ(), 0);
-        assertEq(hook.accumulatedFeeQ(), 403696363496101);
+        assertEq(hook.accumulatedFeeQ(), 403696363458998);
 
-        assertEqPositionState(170752097912501462116, 327170066668, 414415585063, 46783037973766195381);
-        assertEqProtocolState(4759365637035261009038938, 99969013914873250868);
+        assertEqPositionState(170752097911972797140, 327170066668, 414415585063, 46783037973608523371);
+        assertEqProtocolState(4759365637254375262663404, 99969013921104341535);
     }
 
     function test_lifecycle() public {

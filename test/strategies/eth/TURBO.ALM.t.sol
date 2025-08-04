@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
@@ -101,7 +103,6 @@ contract TURBO_ALMTest is ALMTestBase {
 
         test_deposit_rebalance();
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
@@ -124,6 +125,11 @@ contract TURBO_ALMTest is ALMTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
+
+            console.log("deltaUSDC %s", deltaUSDC);
+            console.log("deltaUSDT %s", deltaUSDT);
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);

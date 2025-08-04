@@ -235,7 +235,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
     }
 
     uint256 SLIPPAGE_TOLERANCE_V4 = 1e14; // 0.01%
-    uint8 MAX_ITERATIONS = 5; // safety-valve
+    uint8 MAX_ITERATIONS = 10; // safety-valve
 
     function setV4PoolPrice(PoolKey memory _poolKey, uint160 targetSqrtPriceX96) public {
         console.log("START: setV4PoolPrice");
@@ -311,7 +311,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.stopPrank();
     }
 
-    uint256 SLIPPAGE_TOLERANCE_V3 = 1e14; // 1% acceptable price difference
+    uint256 SLIPPAGE_TOLERANCE_V3 = 1e13; // 0.01% acceptable price difference
 
     function setV3PoolPrice(uint160 targetSqrtPriceX96) public {
         uint160 sqrtCurrent = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -321,13 +321,19 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         uint256 priceTarget = _sqrtPriceToOraclePrice(targetSqrtPriceX96); // 1e18 scale
         uint256 priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
 
+        uint256 ratio = priceCurrent > priceTarget
+            ? (priceCurrent * 1e18) / priceTarget
+            : (priceTarget * 1e18) / priceCurrent;
+
+        if (ratio - 1e18 <= SLIPPAGE_TOLERANCE_V3) return;
+
         for (uint8 i; i < MAX_ITERATIONS; ++i) {
             // Refresh current price on each pass
             sqrtCurrent = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
             priceCurrent = _sqrtPriceToOraclePrice(sqrtCurrent);
 
             // Deviation ratio (always ≥ 1 × 1e18)
-            uint256 ratio = priceCurrent > priceTarget
+            ratio = priceCurrent > priceTarget
                 ? (priceCurrent * 1e18) / priceTarget
                 : (priceTarget * 1e18) / priceCurrent;
 
@@ -352,14 +358,12 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
 
         uint256 priceAfter = _sqrtPriceToOraclePrice(getV3PoolSQRTPrice(TARGET_SWAP_POOL));
 
-        uint256 finalRatio = priceAfter > priceTarget
-            ? (priceAfter * 1e18) / priceTarget
-            : (priceTarget * 1e18) / priceAfter;
+        ratio = priceAfter > priceTarget ? (priceAfter * 1e18) / priceTarget : (priceTarget * 1e18) / priceAfter;
 
         console.log("priceAfter %s", priceAfter);
         console.log("priceTarget %s", priceTarget);
 
-        require(finalRatio - 1e18 <= SLIPPAGE_TOLERANCE_V3, "SQRT PRICE MISS");
+        require(ratio - 1e18 <= SLIPPAGE_TOLERANCE_V3, "SQRT PRICE MISS");
         return;
     }
 

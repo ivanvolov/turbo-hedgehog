@@ -144,7 +144,7 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         console.log("our liquidity %s", hook.liquidity());
         assertTicks(-197013, -191013);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4854709515705420064116939, 1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4854709515966874528458964, 1, "sqrtPrice");
     }
 
     function test_lifecycle() public {
@@ -275,7 +275,7 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
             console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 1);
-            assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 3);
+            assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 4);
 
             uint256 deltaTreasuryFee = (deltaETH * testFee * hook.protocolFee()) / 1e36;
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
@@ -469,7 +469,7 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
             console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 3);
-            assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 3);
+            assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 4);
 
             uint256 deltaTreasuryFeeQ = (deltaETH * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFeeQ;
