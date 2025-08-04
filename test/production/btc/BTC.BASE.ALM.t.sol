@@ -15,7 +15,7 @@ import {Constants as UConstants} from "@test/libraries/constants/UnichainConstan
 import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BTC_UNI_ALMTest is ALMTestBaseUnichain {
+contract BTC_BASE_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 55e16;

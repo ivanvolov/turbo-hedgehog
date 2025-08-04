@@ -84,10 +84,10 @@ turu:
 turul:
 	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
 
-tbu:
-	clear && forge test -vv --match-contract BTC_UNI_ALMTest --match-test "test_"
-tbul:
-	clear && forge test -vvvv --match-contract BTC_UNI_ALMTest --match-test "test_"
+tbb:
+	clear && forge test -vv --match-contract BTC_BASE_ALMTest --match-test "test_"
+tbbl:
+	clear && forge test -vvvv --match-contract BTC_BASE_ALMTest --match-test "test_"
 
 tdu:
 	clear && forge test -vv --match-contract DeltaNeutral_UNI_ALMTest --match-test "test_"
