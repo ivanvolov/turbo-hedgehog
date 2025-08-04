@@ -15,6 +15,8 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {TestBaseUniswap} from "./TestBaseUniswap.sol";
 import {ALM} from "@src/ALM.sol";
 import {Oracle} from "@src/core/oracles/Oracle.sol";
+import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
+import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 
 // ** libraries
 import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol";
@@ -22,6 +24,8 @@ import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {IPositionManagerStandard} from "@test/interfaces/IPositionManagerStandard.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
@@ -32,6 +36,13 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
     using SafeERC20 for IERC20;
 
     // --- Shortcuts  --- //
+
+    function createPositionManager(bool _isNova) internal returns (IPositionManager) {
+        IPositionManager _positionManager;
+        if (_isNova) _positionManager = new UnicordPositionManager(BASE, QUOTE);
+        else _positionManager = new PositionManager(BASE, QUOTE);
+        positionManager = IPositionManagerStandard(address(_positionManager));
+    }
 
     function deploy_hook_contract(bool _isInvertedAssets, IWETH9 WETH9) internal {
         address payable hookAddress = create_address_without_collision();

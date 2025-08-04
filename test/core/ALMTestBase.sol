@@ -7,8 +7,6 @@ import "forge-std/console.sol";
 import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
 
 // ** contracts
-import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
-import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 
@@ -18,7 +16,6 @@ import {Constants as MConstants} from "@test/libraries/constants/MainnetConstant
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-
 import {TestBaseMorpho} from "./common/TestBaseMorpho.sol";
 
 abstract contract ALMTestBase is TestBaseMorpho {
@@ -40,9 +37,7 @@ abstract contract ALMTestBase is TestBaseMorpho {
         deploy_hook_contract(_isInvertedAssets, MConstants.WETH9);
         isInvertedAssets = _isInvertedAssets;
 
-        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
-        else positionManager = new PositionManager(BASE, QUOTE);
-
+        createPositionManager(_isNova);
         swapAdapter = new UniswapSwapAdapter(
             BASE,
             QUOTE,

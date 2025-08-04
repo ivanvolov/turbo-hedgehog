@@ -11,7 +11,6 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** interfaces
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // This test illustrates the pool with the reversed order of currencies. The main asset first and the stable next.
@@ -55,7 +54,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
             // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
-            IPositionManagerStandard(address(positionManager)).setKParams(k1, k2);
+            positionManager.setKParams(k1, k2);
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();

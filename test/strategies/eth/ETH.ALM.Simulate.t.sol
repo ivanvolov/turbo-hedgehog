@@ -12,7 +12,6 @@ import {ALMTestSimBase} from "@test/core/simulations/ALMTestSimBase.sol";
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
 contract ETH_ALMSimulationTest is ALMTestSimBase {
     using SafeERC20 for IERC20;
@@ -46,7 +45,7 @@ contract ETH_ALMSimulationTest is ALMTestSimBase {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
             // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
-            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(6 * 1e17, 3 * 1e18, 2 * 1e18);
             rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();

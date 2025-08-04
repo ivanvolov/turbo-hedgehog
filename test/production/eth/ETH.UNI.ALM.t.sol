@@ -17,7 +17,7 @@ import {Constants as UConstants} from "@test/libraries/constants/UnichainConstan
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
-import {IPositionManagerStandard, IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 
 contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 3e18;
@@ -63,14 +63,14 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3634568623200000000000);
         mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 999820000000000000);
 
-        production_init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
             // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
-            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();

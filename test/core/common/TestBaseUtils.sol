@@ -26,6 +26,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
 import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
+import {IPositionManagerStandard} from "@test/interfaces/IPositionManagerStandard.sol";
 import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
@@ -97,7 +98,7 @@ abstract contract TestBaseUtils is Deployers {
 
     ILendingAdapter lendingAdapter;
     IFlashLoanAdapter flashLoanAdapter;
-    IPositionManager positionManager;
+    IPositionManagerStandard positionManager;
     ISwapAdapter swapAdapter;
     IOracle oracle;
 

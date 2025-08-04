@@ -14,8 +14,6 @@ import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
 import {TestBaseMorpho} from "./common/TestBaseMorpho.sol";
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
-import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {UniversalRouter} from "@universal-router/contracts/UniversalRouter.sol";
 import {RouterParameters} from "@universal-router/contracts/types/RouterParameters.sol";
@@ -26,7 +24,7 @@ import {Constants as UConstants} from "@test/libraries/constants/UnichainConstan
 abstract contract ALMTestBaseUnichain is TestBaseMorpho {
     using SafeERC20 for IERC20;
 
-    function production_init_hook(
+    function init_hook(
         bool _isInvertedAssets,
         bool _isNova,
         uint256 _liquidityMultiplier,
@@ -41,9 +39,7 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
         deploy_hook_contract(_isInvertedAssets, UConstants.WETH9);
         isInvertedAssets = _isInvertedAssets;
 
-        if (_isNova) positionManager = new UnicordPositionManager(BASE, QUOTE);
-        else positionManager = new PositionManager(BASE, QUOTE);
-
+        createPositionManager(_isNova);
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, universalRouter, UConstants.PERMIT_2, UConstants.WETH9);
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, _isInvertedAssets, _isNova);
         hook.setProtocolParams(

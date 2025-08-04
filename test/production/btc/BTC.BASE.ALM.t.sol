@@ -3,17 +3,16 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-// ** contracts
-import {ALMTestBaseBase} from "@test/core/ALMTestBaseBase.sol";
+// ** External imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.sol";
 
-// ** interfaces
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// ** contracts
+import {ALMTestBaseBase} from "@test/core/ALMTestBaseBase.sol";
 
 contract BTC_BASE_ALMTest is ALMTestBaseBase {
     uint256 longLeverage = 3e18;
@@ -23,12 +22,12 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
     uint256 slippage = 7e15;
     uint24 feeLP = 500; //0.05%
 
+    uint256 k1 = 1425e15; //1.425
+    uint256 k2 = 1425e15; //1.425
+
     IERC20 BTC = IERC20(BConstants.CBBTC);
     IERC20 USDC = IERC20(BConstants.USDC);
     PoolKey USDC_CBBTC_key;
-
-    uint256 k1 = 1425e15; //1.425
-    uint256 k2 = 1425e15; //1.425
 
     function setUp() public {
         select_base_fork(33774814);
@@ -59,14 +58,14 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             true,
             int8(6 - 8)
         );
-        production_init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
             // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
-            IPositionManagerStandard(address(positionManager)).setKParams(k1, k2); // 1.425 1.425
+            positionManager.setKParams(k1, k2); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 2e17, 2e17); // 0.2 (2%), 0.2 (2%)
             vm.stopPrank();

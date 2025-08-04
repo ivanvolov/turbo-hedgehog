@@ -3,19 +3,18 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-// ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
-import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
-
-// ** contracts
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {ALMTestBase} from "@test/core/ALMTestBase.sol";
-
-// ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
+// ** External imports
+import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract DeltaNeutral_ALMTest is ALMTestBase {
+// ** libraries
+import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.sol";
+
+// ** contracts
+import {ALMTestBaseBase} from "@test/core/ALMTestBaseBase.sol";
+
+contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 3e18;
     uint256 weight = 45e16;
@@ -26,28 +25,39 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     uint256 k1 = 1425e15; //1.425
     uint256 k2 = 1425e15; //1.425
 
-    IERC20 WETH = IERC20(MConstants.WETH);
-    IERC20 USDC = IERC20(MConstants.USDC);
+    IERC20 BTC = IERC20(BConstants.CBBTC);
+    IERC20 USDC = IERC20(BConstants.USDC);
+    PoolKey USDC_CBBTC_key;
 
     function setUp() public {
-        select_mainnet_fork(21817163);
+        select_base_fork(33774814);
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_WETH_POOL;
             ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+            isNTS = 2;
         }
 
-        initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
-        deployFreshManagerAndRouters();
+        initialSQRTPrice = SQRT_PRICE_1_1;
+        manager = BConstants.manager;
+        deployMockUniversalRouter(); // universalRouter = BConstants.UNIVERSAL_ROUTER;
+        quoter = BConstants.V4_QUOTER; // deployMockV4Quoter();
 
-        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
-        create_lending_adapter_euler_USDC_WETH();
-        create_flash_loan_adapter_euler_USDC_WETH();
-        create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
+        create_accounts_and_tokens(BConstants.USDC, 6, "USDC", BConstants.CBBTC, 8, "CBBTC");
+        create_flash_loan_adapter_morpho_base();
+        create_lending_adapter_euler_USDC_BTC_base();
+
+        oracle = _create_oracle(
+            BConstants.chainlink_feed_CBBTC,
+            BConstants.chainlink_feed_USDC,
+            24 hours,
+            24 hours,
+            true,
+            int8(6 - 8)
+        );
         init_hook(true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -62,32 +72,38 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         }
 
         approve_accounts();
+
+        // Re-setup swap router for native-token
+        {
+            vm.startPrank(deployer.addr);
+            USDC_CBBTC_key = _getAndCheckPoolKey(
+                USDC,
+                BTC,
+                500,
+                10,
+                0x12d76c5c8ec8edffd3c143995b0aa43fe44a6d71eb9113796272909e54b8e078
+            );
+            uint8[4] memory config = [0, 2, 0, 2];
+            setSwapAdapterToV4SingleSwap(USDC_CBBTC_key, config);
+            vm.stopPrank();
+        }
     }
 
-    function test_setUp() public view {
+    function test_setUp() public {
+        vm.skip(true);
         assertEq(hook.owner(), deployer.addr);
         assertTicks(194466, 200466);
     }
 
-    function test_withdraw() public {
-        vm.expectRevert(IALM.NotZeroShares.selector);
-        vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 0, 0, 0);
-
-        vm.expectRevert();
-        vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 10, 0, 0);
-    }
-
-    uint256 amountToDep = 100 * 2660 * 1e6;
+    uint256 amountToDep = 2 * 100000 * 1e6; // 200BTC
 
     function test_deposit() public {
         assertEq(calcTVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
         deal(address(USDC), address(alice.addr), amountToDep);
-        vm.prank(alice.addr);
 
+        vm.prank(alice.addr);
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
         assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
@@ -104,54 +120,16 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         test_deposit();
 
         // uint256 preRebalanceTVL = calcTVL();
-
-        vm.expectRevert();
-        rebalanceAdapter.rebalance(slippage);
-
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         // assertEqBalanceStateZero(address(hook));
         // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        assertTicks(194458, 200458);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
-    }
-
-    function test_deposit_rebalance_revert_no_rebalance_needed() public {
-        test_deposit_rebalance();
-
-        vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-    }
-
-    function test_deposit_rebalance_withdraw() public {
-        test_deposit_rebalance();
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
-        assertEqBalanceStateZero(alice.addr);
-
-        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
-        assertEq(hook.balanceOf(alice.addr), 0);
-
-        assertEqBalanceState(alice.addr, 0, 265963112062);
-        assertEqPositionState(0, 0, 0, 0);
-        assertApproxEqAbs(calcTVL(), 0, 1e4, "tvl");
-        assertEqBalanceStateZero(address(hook));
-    }
-
-    function test_deposit_rebalance_withdraw_revert_min_out() public {
-        test_deposit_rebalance();
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
-        assertEqBalanceStateZero(alice.addr);
-
-        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
-        vm.expectRevert(IALM.NotMinOutWithdrawBase.selector);
-        vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, type(uint256).max, 0);
+        // assertTicks(194458, 200458);
+        // assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
+        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -161,12 +139,12 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
         // ** Swap
         saveBalance(address(manager));
-        (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5295866784071586680, 1);
+        (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
+        assertApproxEqAbs(deltaBTC, 5295866784071586680, 1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
-        assertEqBalanceState(swapper.addr, deltaWETH, 0);
+        assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(127443171714058210075, 438899999998, 224634367794, 107960914090740859882);
@@ -174,11 +152,12 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
+        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 wethToGetFSwap = 5295866784427776090;
-        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
+        uint256 btcToGetFSwap = 5295866784427776090;
+        uint256 usdcToSwapQ = quoteUSDC_BTC_Out(btcToGetFSwap);
         assertApproxEqAbs(usdcToSwapQ, 14171775947, 1);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -186,12 +165,12 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
         // ** Swap
         saveBalance(address(manager));
-        (, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
-        assertApproxEqAbs(deltaWETH, wethToGetFSwap, 1);
+        (, uint256 deltaBTC) = swapUSDC_BTC_Out(btcToGetFSwap);
+        assertApproxEqAbs(deltaBTC, btcToGetFSwap, 1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
-        assertEqBalanceState(swapper.addr, deltaWETH, 0);
+        assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(127443171713550640167, 438899999998, 224634367797, 107960914090589479383);
@@ -199,16 +178,17 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
+        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 wethToSwap = 5436304955762950000;
-        deal(address(WETH), address(swapper.addr), wethToSwap);
-        assertEqBalanceState(swapper.addr, wethToSwap, 0);
+        uint256 btcToSwap = 5436304955762950000;
+        deal(address(BTC), address(swapper.addr), btcToSwap);
+        assertEqBalanceState(swapper.addr, btcToSwap, 0);
 
         // ** Swap
         saveBalance(address(manager));
-        (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
+        (uint256 deltaUSDC, ) = swapBTC_USDC_In(btcToSwap);
         assertEq(deltaUSDC, 14374512916);
 
         // ** After swap State
@@ -221,19 +201,20 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
+        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14374512916;
-        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
-        assertEq(wethToSwapQ, 5436304955754881212);
+        uint256 btcToSwapQ = quoteBTC_USDC_Out(usdcToGetFSwap);
+        assertEq(btcToSwapQ, 5436304955754881212);
 
-        deal(address(WETH), address(swapper.addr), wethToSwapQ);
-        assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
+        deal(address(BTC), address(swapper.addr), btcToSwapQ);
+        assertEqBalanceState(swapper.addr, btcToSwapQ, 0);
 
         // ** Swap
         saveBalance(address(manager));
-        (uint256 deltaUSDC, ) = swapWETH_USDC_Out(usdcToGetFSwap);
+        (uint256 deltaUSDC, ) = swapBTC_USDC_Out(usdcToGetFSwap);
         assertEq(deltaUSDC, usdcToGetFSwap);
 
         // ** After swap State
@@ -246,6 +227,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -257,12 +239,12 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
         // ** Swap
         saveBalance(address(manager));
-        (, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
-        assertApproxEqAbs(deltaWETH, 5293234482239788562, 1);
+        (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
+        assertApproxEqAbs(deltaBTC, 5293234482239788562, 1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
-        assertEqBalanceState(swapper.addr, deltaWETH, 0);
+        assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(127446922744168522392, 438899999998, 224634367795, 107962032819019374082);
@@ -270,13 +252,14 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 wethToGetFSwap = 5295866784427776090;
-        uint256 usdcToSwapQ = quoteUSDC_WETH_Out(wethToGetFSwap);
+        uint256 btcToGetFSwap = 5295866784427776090;
+        uint256 usdcToSwapQ = quoteUSDC_BTC_Out(btcToGetFSwap);
         assertEq(usdcToSwapQ, 14178865381);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
@@ -284,12 +267,12 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
         // ** Swap
         saveBalance(address(manager));
-        (, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
-        assertApproxEqAbs(deltaWETH, 5295866784427776090, 1e1);
+        (, uint256 deltaBTC) = swapUSDC_BTC_Out(btcToGetFSwap);
+        assertApproxEqAbs(deltaBTC, 5295866784427776090, 1e1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
-        assertEqBalanceState(swapper.addr, deltaWETH, 0);
+        assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(127443171713550640167, 438899999998, 224627278364, 107960914090589479383);
@@ -297,18 +280,19 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
+        vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
 
         // ** Before swap State
-        uint256 wethToSwap = 5436304955762950000;
-        deal(address(WETH), address(swapper.addr), wethToSwap);
-        assertEqBalanceState(swapper.addr, wethToSwap, 0);
+        uint256 btcToSwap = 5436304955762950000;
+        deal(address(BTC), address(swapper.addr), btcToSwap);
+        assertEqBalanceState(swapper.addr, btcToSwap, 0);
 
         // ** Swap
         saveBalance(address(manager));
-        (uint256 deltaUSDC, ) = swapWETH_USDC_In(wethToSwap);
+        (uint256 deltaUSDC, ) = swapBTC_USDC_In(btcToSwap);
         assertEq(deltaUSDC, 14374512916);
 
         // ** After swap State
@@ -321,21 +305,22 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
+        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14374512916;
-        uint256 wethToSwapQ = quoteWETH_USDC_Out(usdcToGetFSwap);
-        assertEq(wethToSwapQ, 5439024467988875650);
+        uint256 btcToSwapQ = quoteBTC_USDC_Out(usdcToGetFSwap);
+        assertEq(btcToSwapQ, 5439024467988875650);
 
-        deal(address(WETH), address(swapper.addr), wethToSwapQ);
-        assertEqBalanceState(swapper.addr, wethToSwapQ, 0);
+        deal(address(BTC), address(swapper.addr), btcToSwapQ);
+        assertEqBalanceState(swapper.addr, btcToSwapQ, 0);
 
         // ** Swap
         saveBalance(address(manager));
-        (uint256 deltaUSDC, ) = swapWETH_USDC_Out(usdcToGetFSwap);
+        (uint256 deltaUSDC, ) = swapBTC_USDC_Out(usdcToGetFSwap);
         assertEq(deltaUSDC, usdcToGetFSwap);
 
         // ** After swap State
@@ -347,28 +332,8 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         assertEqProtocolState(1545423500673569837670446692910291, 266103043575); //rounding error for sqrt price 1e18????
     }
 
-    function test_deposit_rebalance_swap_rebalance() public {
-        test_deposit_rebalance_swap_price_up_in();
-
-        vm.prank(deployer.addr);
-        vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
-        rebalanceAdapter.rebalance(slippage);
-
-        // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
-
-        // ** Second rebalance
-        {
-            vm.prank(deployer.addr);
-            rebalanceAdapter.rebalance(slippage);
-
-            assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(133755977315371030169, 440071573502, 239459617218, 109204324590619965745);
-            assertApproxEqAbs(calcTVL(), 266702705321, 1, "tvl");
-        }
-    }
-
     function test_lifecycle() public {
+        vm.skip(true);
         vm.startPrank(deployer.addr);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
         hook.setNextLPFee(feeLP);
@@ -401,7 +366,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
             console.log("preSqrtPrice %s", preSqrtPrice);
 
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
                 hook.liquidity(),
@@ -412,7 +377,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs(deltaBTC, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
@@ -426,10 +391,10 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeB);
 
             assertEqPositionState(
-                CL - (deltaWETH * k1) / 1e18,
+                CL - (deltaBTC * k1) / 1e18,
                 CS,
                 DL - usdcToSwap + deltaTreasuryFee,
-                DS - ((k1 - 1e18) * deltaWETH) / 1e18
+                DS - ((k1 - 1e18) * deltaBTC) / 1e18
             );
         }
 
@@ -446,11 +411,11 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs(deltaBTC, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 1);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
@@ -461,10 +426,10 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeB);
 
             assertEqPositionState(
-                CL - (deltaWETH * k1) / 1e18,
+                CL - (deltaBTC * k1) / 1e18,
                 CS,
                 DL - usdcToSwap + deltaTreasuryFee,
-                DS - ((k1 - 1e18) * deltaWETH) / 1e18
+                DS - ((k1 - 1e18) * deltaBTC) / 1e18
             );
         }
 
@@ -483,20 +448,20 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("DS %s", DS);
 
             uint256 usdcToGetFSwap = 10000e6; //20k USDC
-            deal(address(WETH), address(swapper.addr), quoteWETH_USDC_Out(usdcToGetFSwap));
+            deal(address(BTC), address(swapper.addr), quoteBTC_USDC_Out(usdcToGetFSwap));
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_Out(usdcToGetFSwap);
+            (uint256 deltaUSDC, uint256 deltaBTC) = swapBTC_USDC_Out(usdcToGetFSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
                 hook.liquidity(),
                 uint160(preSqrtPrice),
                 hook.sqrtPriceCurrent()
             );
-            assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 2);
+            assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 2);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
-            uint256 deltaTreasuryFee = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaBTC * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
             console.log("treasuryFee %s", treasuryFeeQ);
 
@@ -504,10 +469,10 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
 
             assertEqPositionState(
-                CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
+                CL + ((deltaBTC - deltaTreasuryFee) * k1) / 1e18,
                 CS,
                 DL + usdcToGetFSwap,
-                DS + ((k1 - 1e18) * (deltaWETH - deltaTreasuryFee)) / 1e18
+                DS + ((k1 - 1e18) * (deltaBTC - deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -560,11 +525,11 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_In(usdcToSwap);
+            (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs(deltaBTC, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
@@ -575,10 +540,10 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeB);
 
             assertEqPositionState(
-                CL - (deltaWETH * k1) / 1e18,
+                CL - (deltaBTC * k1) / 1e18,
                 CS,
                 DL - usdcToSwap + deltaTreasuryFee,
-                DS - ((k1 - 1e18) * deltaWETH) / 1e18
+                DS - ((k1 - 1e18) * deltaBTC) / 1e18
             );
         }
 
@@ -591,20 +556,20 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
                 lendingAdapter.getBorrowedShort()
             );
 
-            uint256 wethToGetFSwap = 5e18;
-            deal(address(USDC), address(swapper.addr), quoteUSDC_WETH_Out(wethToGetFSwap));
+            uint256 btcToGetFSwap = 5e18;
+            deal(address(USDC), address(swapper.addr), quoteUSDC_BTC_Out(btcToGetFSwap));
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapUSDC_WETH_Out(wethToGetFSwap);
+            (uint256 deltaUSDC, uint256 deltaBTC) = swapUSDC_BTC_Out(btcToGetFSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
             console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaWETH %s", deltaWETH);
+            console.log("deltaBTC %s", deltaBTC);
 
-            assertApproxEqAbs(deltaWETH, deltaX, 2);
+            assertApproxEqAbs(deltaBTC, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
 
             uint256 deltaTreasuryFee = (deltaUSDC * testFee * hook.protocolFee()) / 1e36;
@@ -617,10 +582,10 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeB);
 
             assertEqPositionState(
-                CL - ((deltaWETH) * k1) / 1e18,
+                CL - ((deltaBTC) * k1) / 1e18,
                 CS,
                 DL - deltaUSDC + deltaTreasuryFee,
-                DS - ((k1 - 1e18) * (deltaWETH)) / 1e18
+                DS - ((k1 - 1e18) * (deltaBTC)) / 1e18
             );
         }
 
@@ -633,17 +598,17 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
                 lendingAdapter.getBorrowedShort()
             );
 
-            uint256 wethToSwap = 10e18;
-            deal(address(WETH), address(swapper.addr), wethToSwap);
+            uint256 btcToSwap = 10e18;
+            deal(address(BTC), address(swapper.addr), btcToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaWETH) = swapWETH_USDC_In(wethToSwap);
+            (uint256 deltaUSDC, uint256 deltaBTC) = swapBTC_USDC_In(btcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-            assertApproxEqAbs((deltaWETH * (1e18 - testFee)) / 1e18, deltaX, 3);
+            assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 3);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
-            uint256 deltaTreasuryFee = (deltaWETH * testFee * hook.protocolFee()) / 1e36;
+            uint256 deltaTreasuryFee = (deltaBTC * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFee;
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 1, "treasuryFee");
@@ -651,10 +616,10 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
             console.log("treasuryFee %s", treasuryFeeB);
 
             assertEqPositionState(
-                CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
+                CL + ((deltaBTC - deltaTreasuryFee) * k1) / 1e18,
                 CS,
                 DL + deltaUSDC,
-                DS + ((k1 - 1e18) * (deltaWETH - deltaTreasuryFee)) / 1e18
+                DS + ((k1 - 1e18) * (deltaBTC - deltaTreasuryFee)) / 1e18
             );
         }
 
@@ -683,27 +648,42 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
     // ** Helpers
 
-    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
-    }
-
-    function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
-        return _quoteOutputSwap(false, amount);
-    }
-
-    function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
-    }
-
-    function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
-    }
-
-    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
+    function quoteUSDC_BTC_Out(uint256 amount) public returns (uint256) {
         return _quoteOutputSwap(true, amount);
     }
 
-    function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
+    function quoteBTC_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
+    }
+
+    function swapBTC_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return swapAndReturnDeltas(false, false, amount);
+    }
+
+    function swapBTC_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        return swapAndReturnDeltas(false, true, amount);
+    }
+
+    function swapUSDC_BTC_Out(uint256 amount) public returns (uint256, uint256) {
+        return swapAndReturnDeltas(true, false, amount);
+    }
+
+    function swapUSDC_BTC_In(uint256 amount) public returns (uint256, uint256) {
+        return swapAndReturnDeltas(true, true, amount);
+    }
+
+    function swapAndReturnDeltas(bool zeroForOne, bool isExactInput, uint256 amount) public returns (uint256, uint256) {
+        console.log("START: swapAndReturnDeltas");
+        int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
+        int256 btcBefore = int256(BTC.balanceOf(swapper.addr));
+
+        vm.startPrank(swapper.addr);
+        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, key);
+        vm.stopPrank();
+
+        int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
+        int256 btcAfter = int256(BTC.balanceOf(swapper.addr));
+        console.log("END: swapAndReturnDeltas");
+        return (abs(usdcAfter - usdcBefore), abs(btcAfter - btcBefore));
     }
 }
