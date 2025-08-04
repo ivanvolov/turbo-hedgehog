@@ -28,7 +28,7 @@ contract LendingAdaptersTest is MorphoTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_USDC_WETH_POOL;
             assertEqPSThresholdCL = 1e5;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;

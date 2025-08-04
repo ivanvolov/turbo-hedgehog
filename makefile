@@ -2,7 +2,7 @@ build:
 	clear && forge clean && forge build
 
 ta:
-	clear && forge test -vv --no-match-contract "SimulationTest"
+	clear && forge test -v --no-match-contract "SimulationTest"
 
 ts:
 	clear && forge test -vv --match-contract ETHALMSimulationTest --match-test test_simulation --ffi
@@ -82,6 +82,11 @@ to:
 	clear && forge test -vv --match-contract OracleTest --match-test "test_"
 tol:
 	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
+
+tom:
+	clear && forge test -vv --match-contract OracleMathTest --match-test "test_"
+tol:
+	clear && forge test -vvvv --match-contract OracleMathTest --match-test "test_"
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"

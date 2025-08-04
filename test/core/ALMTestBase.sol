@@ -66,7 +66,7 @@ abstract contract ALMTestBase is Deployers {
     ALM hook;
     SRebalanceAdapter rebalanceAdapter;
 
-    address public TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+    address public TARGET_SWAP_POOL = TestLib.uniswap_v3_USDC_WETH_POOL;
 
     IERC20 BASE;
     IERC20 QUOTE;
@@ -92,6 +92,7 @@ abstract contract ALMTestBase is Deployers {
     TestAccount marketMaker;
     TestAccount zero;
     TestAccount treasury;
+    TestAccount mock_empty_oracle;
 
     uint256 almId;
     uint256 tempGas;
@@ -126,6 +127,7 @@ abstract contract ALMTestBase is Deployers {
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
         treasury = TestAccountLib.createTestAccount("treasury");
+        mock_empty_oracle = TestAccountLib.createTestAccount("mock_empty_oracle");
     }
 
     function create_lending_adapter_euler_WETH_USDC() internal {
@@ -413,7 +415,7 @@ abstract contract ALMTestBase is Deployers {
         vm.mockCall(
             address(oracle),
             abi.encodeWithSelector(IOracle.poolPrice.selector),
-            abi.encode(_price, _poolPrice)
+            abi.encode(_price, ALMMathLib.getSqrtPriceX96FromPrice(_poolPrice))
         );
     }
 
@@ -857,10 +859,6 @@ abstract contract ALMTestBase is Deployers {
         if (token == BASE) return QUOTE;
         if (token == QUOTE) return BASE;
         revert("Token not allowed");
-    }
-
-    function poolPrice() internal view returns (uint256 _poolPrice) {
-        (, _poolPrice) = oracle.poolPrice();
     }
 
     function oraclePriceW() internal view returns (uint256) {

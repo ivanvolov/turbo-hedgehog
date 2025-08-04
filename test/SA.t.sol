@@ -265,7 +265,7 @@ contract SwapAdapterTest is ALMTestBase {
     function test_swapExactInput_V3_MULTIHOP_BASE_QUOTE() public {
         bytes memory path = abi.encodePacked(
             TestLib.USDC,
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(TestLib.uniswap_v3_USDC_WETH_POOL).fee()),
             address(TestLib.WETH),
             uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
             TestLib.USDT
@@ -279,7 +279,7 @@ contract SwapAdapterTest is ALMTestBase {
             TestLib.USDT,
             uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
             address(TestLib.WETH),
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(TestLib.uniswap_v3_USDC_WETH_POOL).fee()),
             TestLib.USDC
         );
 
@@ -291,7 +291,7 @@ contract SwapAdapterTest is ALMTestBase {
             TestLib.USDT,
             uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
             address(TestLib.WETH),
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(TestLib.uniswap_v3_USDC_WETH_POOL).fee()),
             TestLib.USDC
         );
 
@@ -301,7 +301,7 @@ contract SwapAdapterTest is ALMTestBase {
     function test_swapExactOutput_V3_MULTIHOP_QUOTE_BASE() public {
         bytes memory path = abi.encodePacked(
             TestLib.USDC,
-            uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDC_POOL).fee()),
+            uint24(IUniswapV3Pool(TestLib.uniswap_v3_USDC_WETH_POOL).fee()),
             address(TestLib.WETH),
             uint24(IUniswapV3Pool(TestLib.uniswap_v3_WETH_USDT_POOL).fee()),
             TestLib.USDT

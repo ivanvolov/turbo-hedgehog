@@ -36,7 +36,7 @@ contract BTCALMTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_cbBTC_USDC_POOL;
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_USDC_cbBTC_POOL;
             assertEqPSThresholdCL = 1e2;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;

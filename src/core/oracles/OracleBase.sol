@@ -47,11 +47,13 @@ abstract contract OracleBase is Ownable, IOracle {
     /// @notice Returns both standard price and Uniswap V3 style pool price.
     /// Pool price is inverted (1/price) if token0 eq base and token1 eq quote.
     /// @return _price The standard price (quote in terms of base).
-    /// @return _poolPrice The pool-compatible price.
-    function poolPrice() external view returns (uint256 _price, uint256 _poolPrice) {
+    /// @return _sqrtPriceX96 The Uniswap V4 pool-compatible sqrt price.
+    function poolPrice() external view returns (uint256 _price, uint160 _sqrtPriceX96) {
         _price = price();
-        _poolPrice = isInvertedPool ? ALMMathLib.div18(ALMMathLib.WAD, _price) : _price;
-        if (_poolPrice == 0) revert PriceZero();
+        _sqrtPriceX96 = ALMMathLib.getSqrtPriceX96FromPrice(
+            isInvertedPool ? ALMMathLib.div18(ALMMathLib.WAD, _price) : _price
+        );
+        if (_sqrtPriceX96 == 0) revert PriceZero();
     }
 
     function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {}

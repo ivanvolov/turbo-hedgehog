@@ -17,15 +17,12 @@ import {toBalanceDelta} from "v4-core/types/BalanceDelta.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMath} from "@test/libraries/PRBMath.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {Base} from "@src/core/base/Base.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALM} from "@src/ALM.sol";
-import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
@@ -47,7 +44,7 @@ contract ALMGeneralTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
+            TARGET_SWAP_POOL = TestLib.uniswap_v3_USDC_WETH_POOL;
             assertEqPSThresholdCL = 1e5;
             assertEqPSThresholdCS = 1e1;
             assertEqPSThresholdDL = 1e1;
