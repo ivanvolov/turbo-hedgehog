@@ -25,6 +25,7 @@ import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
 
 abstract contract TestBaseShortcuts is TestBaseUniswap {
     using TestAccountLib for TestAccount;
@@ -167,7 +168,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
         oracle = _oracle;
         vm.prank(deployer.addr);
-        oracle.setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
+        IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
     function mock_latestRoundData(address feed, uint256 value) public {

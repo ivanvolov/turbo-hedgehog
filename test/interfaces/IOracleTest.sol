@@ -11,6 +11,8 @@ interface IOracleTest is IOracle {
     function feedBase() external view returns (AggregatorV3Interface);
 
     function feedQuote() external view returns (AggregatorV3Interface);
+
+    function setStalenessThresholds(uint128 thresholdBase, uint128 thresholdQuote) external;
 }
 
 interface IChronicleSelfKisser {
