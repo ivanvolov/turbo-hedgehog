@@ -38,3 +38,10 @@ int((uint256Max/math.sqrt(b\*uint256Max/q))/q32)
 # (2)
 
 int(math.sqrt(uint256Max\*q/b)/q32)
+
+# TODO:
+
+- Fuzz all oracles existing (on mainnet + unichain) + all production needed oracles on unichain and base. Merge this test with just get one value test. (Needed to check it exist + API and Chronicle). And Fuzz them. One oracle support throw code address(0). Oracle tasks from notion to prod.
+- Fix all tests
+- Make simulations from existing fazzing.
+- Clean Code.

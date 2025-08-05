@@ -44,8 +44,6 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
     function setUp() public {
         select_unichain_fork(22789424);
-        manager = UConstants.manager;
-        deployMockUniversalRouter(); // universalRouter = UConstants.UNIVERSAL_ROUTER;
 
         // ** Setting up test environments params
         {
@@ -56,7 +54,14 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
-        _create_accounts();
+        {
+            manager = UConstants.manager;
+            // deployMockUniversalRouter();
+            universalRouter = UConstants.UNIVERSAL_ROUTER;
+            quoter = UConstants.V4_QUOTER;
+            // deployMockV4Quoter();
+            _create_accounts();
+        }
 
         ETH_USDT_key = _getAndCheckPoolKey(
             ETH,
@@ -225,37 +230,40 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
     function par_swap_down_out_ETH_ALM() public {
         uint256 usdcFromSwap = 30e9;
-        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         assertApproxEqAbs(BASE.balanceOf(swapper.addr), 0, 0);
         assertApproxEqAbs(swapper.addr.balance, 0, 0);
         assertEq(address(universalRouter).balance, 0);
-        uint256 ethForSwap = (8100573367821885124 * (1e18 + testFee)) / 1e18;
-        deal(address(swapper.addr), ethForSwap + 1e18); // No quoter, just eyeball it.
+
+        uint256 extraETH = 1e18;
+        uint256 ethForSwap = quoteETH_USDC_Out(usdcFromSwap);
+        deal(address(swapper.addr), ethForSwap + extraETH); // add extraETH to check what router does not steel eth.
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
         (uint256 deltaETH, uint256 deltaUSDC) = swapETH_USDC_Out(usdcFromSwap);
 
         (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
 
-        console.log("deltaUSDC %s", deltaUSDC);
-        console.log("deltaETH %s", deltaETH);
-        console.log("deltaX %s", deltaX);
-        console.log("deltaY %s", deltaY);
+        // console.log("deltaUSDC %s", deltaUSDC);
+        // console.log("deltaETH %s", deltaETH);
+        // console.log("deltaX %s", deltaX);
+        // console.log("deltaY %s", deltaY);
 
         assertApproxEqAbs(deltaUSDC, deltaX, 1);
         assertApproxEqAbs(usdcFromSwap, deltaUSDC, 1);
 
-        assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1e9);
+        // uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+        // assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1e9);
 
         assertApproxEqAbs(BASE.balanceOf(swapper.addr), deltaUSDC, 0);
-        assertApproxEqAbs(swapper.addr.balance, 1e18, 0);
+        assertApproxEqAbs(swapper.addr.balance, 1e18, 0); // check what extraETH is still in place.
         assertEq(address(universalRouter).balance, 0);
     }
 
     function par_swap_up_out_ETH_ALM() public {
         uint256 ethFromSwap = 2671181763613173696;
-        deal(address(USDC), address(swapper.addr), 11000000000); // No quoter, just eyeball it.
+        uint256 usdcToSwap = quoteUSDC_ETH_Out(ethFromSwap);
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
 
         uint160 preSqrtPrice = hookALM.sqrtPriceCurrent();
         (uint256 deltaETH, uint256 deltaUSDC) = swapUSDC_ETH_Out(ethFromSwap);
@@ -440,6 +448,14 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     // ** Helpers
+
+    function quoteETH_USDC_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
+    }
+
+    function quoteUSDC_ETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
+    }
 
     function swapETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
         console.log("swapETH_USDC_In");

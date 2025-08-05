@@ -16,15 +16,15 @@ import {IOracle} from "../../interfaces/IOracle.sol";
 /// @notice Abstract contract that serves as a base for all oracles. Holds functions to calculate price in different formats.
 abstract contract OracleBase is IOracle {
     bool public immutable isInvertedPool;
-    int256 public immutable totalDecimalsDelta;
+    int256 public immutable totalDecDelta;
     uint256 public immutable scaleFactor;
 
-    constructor(bool _isInvertedPool, int256 _totalDecimalsDelta) {
+    constructor(bool _isInvertedPool, int256 _totalDecDelta) {
         isInvertedPool = _isInvertedPool;
-        if (_totalDecimalsDelta < -18) revert TotalDecimalsDeltaNotValid();
+        if (_totalDecDelta < -18) revert TotalDecimalsDeltaNotValid();
 
-        totalDecimalsDelta = _totalDecimalsDelta;
-        scaleFactor = 10 ** uint256(_totalDecimalsDelta + 18);
+        totalDecDelta = _totalDecDelta;
+        scaleFactor = 10 ** uint256(_totalDecDelta + 18);
     }
 
     /// @notice Returns the price as a 1e18 fixed-point number (UD60x18).
@@ -45,10 +45,10 @@ abstract contract OracleBase is IOracle {
         _price = mulDiv(_priceQuote, scaleFactor, _priceBase);
         if (_price == 0) revert PriceZero();
 
-        if (totalDecimalsDelta < 0) {
-            _priceBase = _priceBase * 10 ** uint256(-totalDecimalsDelta);
-        } else if (totalDecimalsDelta > 0) {
-            _priceQuote = _priceQuote * 10 ** uint256(totalDecimalsDelta);
+        if (totalDecDelta < 0) {
+            _priceBase = _priceBase * 10 ** uint256(-totalDecDelta);
+        } else if (totalDecDelta > 0) {
+            _priceQuote = _priceQuote * 10 ** uint256(totalDecDelta);
         }
         bool invert = _priceBase <= _priceQuote;
         (uint256 lowP, uint256 highP) = invert ? (_priceBase, _priceQuote) : (_priceQuote, _priceBase);

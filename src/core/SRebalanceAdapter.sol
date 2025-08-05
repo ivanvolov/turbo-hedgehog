@@ -214,6 +214,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amount,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
+        console.log("> START: onFlashLoanSingle");
+        console.log("isBase %s", isBase);
+        console.log("amount %s", amount);
         _managePositionDeltas(data);
         uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);

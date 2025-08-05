@@ -14,6 +14,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
@@ -24,6 +25,7 @@ contract OracleMathTest is ALMTestBase {
     PoolKey public ETH_USDC_key;
     PoolKey public ETH_USDT_key;
     PoolKey public ETH_WSTETH_key;
+    PoolKey public ETH_WSTETH_key_unichain;
 
     function setUp() public {
         select_mainnet_fork(23059745);
@@ -48,6 +50,14 @@ contract OracleMathTest is ALMTestBase {
         ETH_WSTETH_key = _getAndCheckPoolKey(
             IERC20(address(0)),
             IERC20(0xc02fE7317D4eb8753a02c35fe019786854A92001),
+            100,
+            1,
+            0xd10d359f50ba8d1e0b6c30974a65bf06895fba4bf2b692b2c75d987d3b6b863d
+        );
+
+        ETH_WSTETH_key_unichain = _getAndCheckPoolKey(
+            IERC20(address(0)),
+            IERC20(UConstants.WSTETH),
             100,
             1,
             0xd10d359f50ba8d1e0b6c30974a65bf06895fba4bf2b692b2c75d987d3b6b863d
@@ -107,10 +117,6 @@ contract OracleMathTest is ALMTestBase {
                 ETH_USDT_key
             );
         }
-
-        //TODO: after one feed oracle. Also add fuzz test for it.
-        console.log("\n> ETH-WSTETH V4");
-        {}
 
         console.log("\n> DN/ETHALM");
         {
@@ -206,11 +212,58 @@ contract OracleMathTest is ALMTestBase {
                 MConstants.uniswap_v3_USDC_USDT_POOL
             );
         }
+
+        console.log("\n> WSTETH-WETH V3 with one feed");
+        {
+            uint256 priceBase = 1e18;
+            uint256 priceQuote = 1210060639502791600;
+            (uint256 priceO, uint256 sqrtPriceO) = oracleGetPrices(priceQuote, priceBase, int256(0), true);
+            (uint256 priceN, uint256 sqrtPriceN) = newOracleGetPrices(priceQuote, priceBase, int256(0), true);
+
+            console.log("priceO", priceO);
+            console.log("priceN", priceN);
+            console.log(" price", uint256(828080831151776512));
+            console.log("sqrtPriceO", sqrtPriceO);
+            console.log("sqrtPriceN", sqrtPriceN);
+            uint256 poolSQRT = getV3PoolSQRTPrice(MConstants.uniswap_v3_WSTETH_WETH_POOL);
+            console.log("poolSQRT  ", poolSQRT);
+        }
+
+        // Feed only exist on unichain, so need to re-setup the test to get the real time oracle data.
+        select_unichain_fork(23567130);
+        _create_accounts();
+        manager = UConstants.manager;
+        console.log("\n> ETH-WSTETH V4 with one feed");
+        {
+            uint256 priceBase = 1e18;
+            uint256 priceQuote = 1210060639502791600;
+            (uint256 priceO, uint256 sqrtPriceO) = oracleGetPrices(priceBase, priceQuote, int256(0), true);
+            (uint256 priceN, uint256 sqrtPriceN) = newOracleGetPrices(priceBase, priceQuote, int256(0), true);
+
+            console.log("priceO", priceO);
+            console.log("priceN", priceN);
+            console.log(" price", uint256(1210060639502791424));
+            console.log("sqrtPriceO", sqrtPriceO);
+            console.log("sqrtPriceN", sqrtPriceN);
+            uint256 poolSQRT = getV4PoolSQRTPrice(ETH_WSTETH_key_unichain);
+            console.log("poolSQRT  ", poolSQRT);
+        }
     }
 
     // TODO: read WTF is fuzzing and what is the coverage.
     /// @notice Chronicle feeds are always 18. Api3 always have 18 decimals. https://docs.api3.org/dapps/integration/contract-integration.html#using-value.
     ///         Chainlink feeds are 8 for USDT, USDC, DAI, ETH, BTC, WBTC, CBBTC, WSTETH.
+
+    /// @dev Tests WSTETH-WETH and ETH-WSTETH with one feed.
+    function test_Fuzz_WSTETH_ETH_Chronicle_Api3_Chainlink(uint256 priceWSTETH) public view {
+        uint256 quote_MIN = 5e17; // 0.5ETH for WSTETH.
+        uint256 quote_MAX = 100e18; //  1000ETH USDT.
+        priceWSTETH = bound(priceWSTETH, quote_MIN, quote_MAX);
+
+        // We will construct totalDecDel = 0 in one feed oracle.
+        newOracleGetPrices(priceWSTETH, 1e18, int256(0), true);
+        newOracleGetPrices(1e18, priceWSTETH, int256(0), true);
+    }
 
     /// @dev Tests ETH/USDC, USDC/ETH, ETH/USDT, USDT/ETH for for both V4 and V3 oracles (with native and not).
     function test_Fuzz_ETH_USDC_T_Chronicle_Api3_Chainlink(uint256 priceUSD, uint256 priceETH) public view {

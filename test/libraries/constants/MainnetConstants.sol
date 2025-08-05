@@ -66,6 +66,7 @@ library Constants {
     address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
     address constant uniswap_v3_USDE_USDT_POOL = 0x435664008F38B0650fBC1C9fc971D0A3Bc2f1e47;
+    address constant uniswap_v3_WSTETH_WETH_POOL = 0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa;
 
     // ** Chainlink // https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     IAggV3 constant chainlink_feed_WETH = IAggV3(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
@@ -74,4 +75,5 @@ library Constants {
     IAggV3 constant chainlink_feed_cbBTC = IAggV3(0x2665701293fCbEB223D11A08D826563EDcCE423A);
     IAggV3 constant chainlink_feed_DAI = IAggV3(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
     IAggV3 constant chainlink_feed_USDE = IAggV3(0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961);
+    IAggV3 constant zero_feed = IAggV3(address(0));
 }
