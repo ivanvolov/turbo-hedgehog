@@ -129,7 +129,6 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         marketMaker = TestAccountLib.createTestAccount("marketMaker");
         zero = TestAccountLib.createTestAccount("zero");
         treasury = TestAccountLib.createTestAccount("treasury");
-        mock_empty_oracle = TestAccountLib.createTestAccount("mock_empty_oracle");
     }
 
     function approve_accounts() public virtual {

@@ -8,6 +8,7 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // ** contracts
 import {TestBaseShortcuts} from "./TestBaseShortcuts.sol";
@@ -110,9 +111,9 @@ abstract contract TestBaseOracles is TestBaseShortcuts {
 
     // --- Oracles  --- //
 
-    function getFeedsData(IAggV3 feed) internal view returns (uint256 dec, uint256 price) {
-        (, int256 _priceQuote, , , ) = feed.latestRoundData();
-        return (feed.decimals(), uint256(_priceQuote));
+    function getFeedPrice(IAggV3 feed) internal view returns (uint256) {
+        (, int256 price, , , ) = feed.latestRoundData();
+        return SafeCast.toUint256(price);
     }
 
     function create_oracle(
@@ -141,6 +142,22 @@ abstract contract TestBaseOracles is TestBaseShortcuts {
         IOracleTest(address(oracle)).setStalenessThresholds(stallThreshB, stallThreshQ);
     }
 
+    function __create_oracle(
+        IAggV3 feedB,
+        IAggV3 feedQ,
+        uint128 stallThreshB,
+        uint128 stallThreshQ,
+        bool _isInvertedPool,
+        int256 decimalsDelta
+    ) internal returns (IOracle _oracle) {
+        isInvertedPool = _isInvertedPool;
+        vm.prank(deployer.addr);
+        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
+        oracle = _oracle;
+        vm.prank(deployer.addr);
+        IOracleTest(address(oracle)).setStalenessThresholds(stallThreshB, stallThreshQ);
+    }
+
     function _create_oracle_one_feed(
         IAggV3 feedQ,
         IAggV3 feedB,
@@ -156,7 +173,7 @@ abstract contract TestBaseOracles is TestBaseShortcuts {
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThreshold, stalenessThreshold);
     }
 
-    function mock_latestRoundData(address feed, uint256 value) public {
+    function mock_latestRoundData(IAggV3 feed, uint256 value) public {
         vm.mockCall(
             address(feed),
             abi.encodeWithSelector(IAggV3.latestRoundData.selector),

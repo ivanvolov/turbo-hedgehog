@@ -54,8 +54,8 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             true,
             int8(0)
         );
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 999620000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 999735368664584522);
+        mock_latestRoundData(UConstants.chronicle_feed_USDT, 999620000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 999735368664584522);
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
 
         // ** Setting up strategy params

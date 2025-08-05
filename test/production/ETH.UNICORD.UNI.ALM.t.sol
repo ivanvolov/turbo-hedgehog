@@ -81,8 +81,8 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             false,
             int8(6 - 18)
         );
-        mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3732706458000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 1000010000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_WETH, 3732706458000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
@@ -119,8 +119,8 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             true,
             int8(0)
         );
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 1000535721908032161);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 1000010000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDT, 1000535721908032161);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, type(uint256).max);
 

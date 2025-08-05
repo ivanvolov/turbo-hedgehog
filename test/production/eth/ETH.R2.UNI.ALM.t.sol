@@ -57,8 +57,8 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
             false,
             int8(6 - 18)
         );
-        mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3754570000000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 999983595619733749);
+        mock_latestRoundData(UConstants.chronicle_feed_WETH, 3754570000000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDT, 999983595619733749);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

@@ -53,7 +53,7 @@ library Constants {
 
     // ** Chronicle
     IAggV3 constant chronicle_feed_WETH = IAggV3(0x152598809FB59db55cA76f89a192Fb23555531D8);
-    IAggV3 constant chainlink_feed_WSTETH = IAggV3(0x74661a9ea74fD04975c6eBc6B155Abf8f885636c);
+    IAggV3 constant chronicle_feed_WSTETH = IAggV3(0x74661a9ea74fD04975c6eBc6B155Abf8f885636c);
     IAggV3 constant chronicle_feed_USDC = IAggV3(0x5e9Aae684047a0ACf2229fAefE8b46726335CE77);
     IAggV3 constant chronicle_feed_USDT = IAggV3(0x8E947Ea7D5881Cd600Ace95F1201825F8C708844);
     IAggV3 constant chronicle_feed_WBTC = IAggV3(0x1F852F2Fe663c90f454476dd62491C5717F506F2);

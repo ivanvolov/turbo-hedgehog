@@ -178,7 +178,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.mockCall(
             address(oracle),
             abi.encodeWithSelector(IOracle.poolPrice.selector),
-            abi.encode(_price, ALMMathLib.getSqrtPriceX96FromPrice(_poolPrice))
+            abi.encode(_price, TestLib.getSqrtPriceX96FromPrice(_poolPrice))
         );
     }
 

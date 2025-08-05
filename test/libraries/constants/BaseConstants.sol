@@ -44,4 +44,5 @@ library Constants {
     // ** Chainlink // https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     IAggV3 constant chainlink_feed_CBBTC = IAggV3(0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D);
     IAggV3 constant chainlink_feed_USDC = IAggV3(0x7e860098F58bBFC8648a4311b374B1D669a2bc6B);
+    IAggV3 constant chainlink_feed_WSTETH = IAggV3(0x43a5C292A453A3bF3606fa856197f09D7B74251a);
 }

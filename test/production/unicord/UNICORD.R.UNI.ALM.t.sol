@@ -49,13 +49,13 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         create_flash_loan_adapter_morpho_unichain();
         oracle = _create_oracle_one_feed(
             UConstants.zero_feed,
-            UConstants.chainlink_feed_WSTETH,
+            UConstants.chronicle_feed_WSTETH,
             24 hours,
-            true,
+            false,
             int8(-18)
         );
         isInvertedPool = true; // TODO: remove.
-        mock_latestRoundData(address(UConstants.chainlink_feed_WSTETH), 1210060639502791600);
+        mock_latestRoundData(UConstants.chronicle_feed_WSTETH, 1210060639502791600);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -79,10 +79,11 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         // Check oracle alignment.
         {
+            console.log("Oracle alignment");
             (uint256 price, uint256 sqrtPriceX96) = oracle.poolPrice();
-            console.log("price %s", price);
-            console.log("sqrtPrice %s", sqrtPriceX96);
-            console.log(getV4PoolSQRTPrice(ETH_WSTETH_key_unichain));
+            console.log("price", price);
+            console.log("sqrtPrice", sqrtPriceX96);
+            console.log("pool Sqrt", getV4PoolSQRTPrice(ETH_WSTETH_key_unichain));
         }
     }
 

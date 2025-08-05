@@ -109,7 +109,6 @@ abstract contract TestBaseUtils is Deployers {
     TestAccount marketMaker;
     TestAccount zero;
     TestAccount treasury;
-    TestAccount mock_empty_oracle;
 
     uint256 tempGas;
 

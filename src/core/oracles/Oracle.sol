@@ -43,10 +43,10 @@ contract Oracle is OracleBase, Ownable {
     }
 
     function calcTotalDecDelta(int256 _tokenDecDel, IAggV3 _feedBase, IAggV3 _feedQuote) public view returns (int256) {
-        console.log("> calcTotalDecDelta");
+        // console.log("> calcTotalDecDelta");
         int256 feedBDec = address(_feedBase) == address(0) ? int256(0) : int256(int8(_feedBase.decimals()));
         int256 feedQDec = address(_feedQuote) == address(0) ? int256(0) : int256(int8(_feedQuote.decimals()));
-        console.logInt(_tokenDecDel + feedBDec - feedQDec);
+        // console.logInt(_tokenDecDel + feedBDec - feedQDec);
         return _tokenDecDel + feedBDec - feedQDec;
     }
 

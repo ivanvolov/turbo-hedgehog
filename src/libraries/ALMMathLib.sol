@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {UD60x18, ud} from "@prb-math/UD60x18.sol";
+import {UD60x18} from "@prb-math/UD60x18.sol";
 import {SD59x18, sd} from "@prb-math/SD59x18.sol";
 import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -99,15 +99,10 @@ library ALMMathLib {
 
     // ** Helpers
 
-    function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
-        return SafeCast.toUint160(ud(price).sqrt().mul(Q96).unwrap());
-    }
-
     function getSqrtPriceX96FromTick(int24 tick) internal pure returns (uint160) {
         return TickMath.getSqrtPriceAtTick(tick);
     }
 
-    // TODO: move to test Lib.
     function getTickFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (int24) {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
