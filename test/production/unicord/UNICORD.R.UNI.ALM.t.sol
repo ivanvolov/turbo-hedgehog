@@ -57,7 +57,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         );
         isInvertedPool = true; // TODO: remove.
         mock_latestRoundData(address(UConstants.chainlink_feed_WSTETH), 1210060639502790000);
-        init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
+        init_hook(false, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
         {
@@ -106,7 +106,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         assertEq(calcTVL(), 0, "TVL");
         assertEq(hook.liquidity(), 0, "liquidity");
 
-        deal(address(WETH), address(alice.addr), amountToDep);
+        deal(address(WSTETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
@@ -115,7 +115,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(0, amountToDep - 1, 0, 0);
+        assertEqPositionState(amountToDep - 1, 0, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
         assertApproxEqAbs(calcTVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
@@ -142,10 +142,10 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         hook.setNextLPFee(feeLP);
         updateProtocolFees(20 * 1e16); // 20% from fees
         vm.stopPrank();
-        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
 
         test_deposit_rebalance();
 
+        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
         // ** Make oracle change with swap price
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
@@ -259,6 +259,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             console.log("postBalance %s", WSTETH.balanceOf(alice.addr));
             console.log("postBalance %s", WETH.balanceOf(alice.addr));
         }
+
         // ** Swap Down In
         {
             console.log("SWAP UP IN");
@@ -329,16 +330,15 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Swap Down out
         {
-            console.log("SWAP UP OUT");
-
             uint256 wstethToGetFSwap = 3e18; //1k WSTETH
             uint256 ethToSwapQ = quoteETH_WSTETH_Out(wstethToGetFSwap);
-
+            console.log("ETH balance pre %s", WETH9.balanceOf(address(this)));
             console.log("ethToSwapQ", ethToSwapQ);
             deal(address(WETH), address(swapper.addr), ethToSwapQ);
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            console.log("ETH balance after %s", WETH9.balanceOf(address(this)));
 
-            (uint256 deltaWSTETH, uint256 deltaETH) = swapETH_WSTETH_Out(ethToSwapQ);
+            (uint256 deltaWSTETH, uint256 deltaETH) = swapETH_WSTETH_Out(wstethToGetFSwap - 1);
 
             // console.log("deltaWSTETH", deltaWSTETH);
             // console.log("deltaETH", deltaETH);
@@ -361,7 +361,6 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             // assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
         return;
-
         // ** Swap Up In
         {
             uint256 wstethToSwap = 2000e18;

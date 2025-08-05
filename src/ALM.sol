@@ -227,6 +227,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         lendingAdapter.syncPositions();
 
         Ticks memory _activeTicks = activeTicks;
+
+        console.logInt(poolManager.currencyDelta(address(this), key.currency0));
+        console.logInt(-poolManager.currencyDelta(address(this), key.currency1));
+
         poolManager.modifyLiquidity(
             key,
             ModifyLiquidityParams({
@@ -237,6 +241,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             }),
             ""
         );
+
+        console.log("token0 amount", uint256(poolManager.currencyDelta(address(this), key.currency0)));
+        console.log("token1 amount", uint256(-poolManager.currencyDelta(address(this), key.currency1)));
+
         console.log("> END: _beforeSwap");
         return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
@@ -301,6 +309,11 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("(4)");
             if (isNTS == 1) WETH9.withdraw(token1);
             console.log("(5)");
+
+            console.log("BASE balance %s", BASE.balanceOf(address(this)));
+            console.log("QUOTE balance %s", QUOTE.balanceOf(address(this)));
+            console.log("ETH balance %s", address(this).balance);
+
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
             console.log("> !zeroForOne");
