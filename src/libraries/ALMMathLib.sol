@@ -107,6 +107,7 @@ library ALMMathLib {
         return TickMath.getSqrtPriceAtTick(tick);
     }
 
+    // TODO: move to test Lib.
     function getTickFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (int24) {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }

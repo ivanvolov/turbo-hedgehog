@@ -28,7 +28,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
     PoolKey ETH_wstETH_key;
 
     function setUp() public {
-        select_unichain_fork(23413185);
+        select_unichain_fork(23567130);
 
         // ** Setting up test environments params
         {
@@ -45,20 +45,18 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         deployMockUniversalRouter(); // universalRouter = UConstants.UNIVERSAL_ROUTER;
         quoter = UConstants.V4_QUOTER; // deployMockV4Quoter();
 
-        create_accounts_and_tokens(UConstants.WETH, 18, "WETH", UConstants.WSTETH, 18, "WSTETH");
+        create_accounts_and_tokens(UConstants.WETH, 18, "WETH", UConstants.WSTETH, 18, "WSTETH"); // isReversePool = true if pool is BASE:QUOTE.
         create_lending_adapter_euler_WETH_WSTETH_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_USDT, // TODO: got feed from mainnet, change it to one feed oracle.
-            UConstants.chronicle_feed_WETH,
-            24 hours,
+        oracle = _create_oracle_one_feed(
+            UConstants.zero_feed,
+            UConstants.chainlink_feed_WSTETH,
             24 hours,
             true,
-            int8(0)
+            int8(-18)
         );
-        isInvertedPool = false; // Reset to false, it's not aligned with oracle for some reason.
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 4097384474484004341377); // TODO: got feed from mainnet, change it to one feed oracle.
-        mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3378300000000000000000);
+        isInvertedPool = true; // TODO: remove.
+        mock_latestRoundData(address(UConstants.chainlink_feed_WSTETH), 1210060639502791600);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
