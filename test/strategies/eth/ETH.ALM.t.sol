@@ -1117,12 +1117,16 @@ contract ETH_ALMTest is ALMTestBase {
 
     // ** Helpers
 
-    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
+    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
         return _quoteOutputSwap(false, amount);
+    }
+
+    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -1131,10 +1135,6 @@ contract ETH_ALMTest is ALMTestBase {
 
     function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap_v4_single_throw_mock_router(true, int256(amount), key);
-    }
-
-    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
-        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {

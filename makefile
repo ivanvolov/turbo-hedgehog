@@ -4,10 +4,10 @@ ta:
 	clear && forge test -v --no-match-contract "SimulationTest"
 
 tam:
-	clear && forge test -v --no-match-contract "Simulation|UNI|OracleTest|LendingAdaptersTest"
+	clear && forge test -v --no-match-contract "Simulation|UNI_ALMTest|BASE_ALMTest|OracleTest|LendingAdaptersTest"
 
 tau:
-	clear && forge test -v --match-contract "UNI_ALMTest"
+	clear && forge test -v --match-contract "UNI_ALMTest|BASE_ALMTest"
 
 # Strategies tests Mainnet
 
@@ -32,9 +32,9 @@ tul:
 	clear && forge test -vvvv --match-contract UNICORD_ALMTest --match-test "test_"
 
 tur:
-	clear && forge test -vv --match-contract UNICORD_R_ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract UNICORD_R_ALMTest --match-test "test_lifecycle"
 turl:
-	clear && forge test -vvvv --match-contract UNICORD_R_ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract UNICORD_R_ALMTest --match-test "test_lifecycle"
 
 tb:
 	clear && forge test -vv --match-contract BTC_ALMTest --match-test "test_"
