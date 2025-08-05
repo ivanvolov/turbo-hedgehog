@@ -94,6 +94,12 @@ abstract contract LendingBase is Base, ILendingAdapter {
         if (deltaCS > 0) removeCollateralShort(uint256(deltaCS));
 
         console.log("(6)");
+        console.log("deltaDL %s", deltaDL);
+        console.log("deltaDS %s", deltaDS);
+
+        console.log("CL %s", getCollateralLong());
+        console.log("CS %s", getCollateralShort());
+
         if (deltaDL > 0) borrowLong(uint256(deltaDL));
         console.log("(7)");
         if (deltaDS > 0) borrowShort(uint256(deltaDS));
