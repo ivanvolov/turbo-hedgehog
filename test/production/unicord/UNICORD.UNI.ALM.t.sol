@@ -24,7 +24,6 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
     IERC20 USDT = IERC20(UConstants.USDT);
     IERC20 USDC = IERC20(UConstants.USDC);
-    PoolKey USDC_USDT_key;
 
     function setUp() public {
         select_unichain_fork(23404999);
@@ -73,15 +72,8 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for native-token
         {
             vm.startPrank(deployer.addr);
-            USDC_USDT_key = _getAndCheckPoolKey(
-                USDC,
-                USDT,
-                100,
-                1,
-                0x77ea9d2be50eb3e82b62db928a1bcc573064dd2a14f5026847e755518c8659c9
-            );
             uint8[4] memory config = [0, 2, 0, 2];
-            setSwapAdapterToV4SingleSwap(USDC_USDT_key, config);
+            setSwapAdapterToV4SingleSwap(USDC_USDT_key_unichain, config);
             vm.stopPrank();
         }
     }
@@ -358,7 +350,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Swap Up In
         {
@@ -406,7 +398,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Withdraw
         {
@@ -448,7 +440,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Deposit
         {
@@ -488,7 +480,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Rebalance
         {
@@ -500,7 +492,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Full withdraw
         {

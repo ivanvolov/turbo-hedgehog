@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/console.sol";
 
 // ** contracts
-import {TestBaseShortcuts} from "./TestBaseShortcuts.sol";
+import {TestBaseOracles} from "./TestBaseOracles.sol";
 import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
 import {EulerFlashLoanAdapter} from "@src/core/flashLoanAdapters/EulerFlashLoanAdapter.sol";
 
@@ -19,7 +19,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
-abstract contract TestBaseEuler is TestBaseShortcuts {
+abstract contract TestBaseEuler is TestBaseOracles {
     using SafeERC20 for IERC20;
 
     function create_lending_adapter_euler_USDC_WETH() internal {

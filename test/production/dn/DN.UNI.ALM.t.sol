@@ -29,7 +29,6 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
 
     IERC20 WETH = IERC20(UConstants.WETH);
     IERC20 USDC = IERC20(UConstants.USDC);
-    PoolKey ETH_USDC_key;
 
     function setUp() public {
         select_unichain_fork(23302675); // If you decide to change the fork, you need to change the mock_latestRoundData() too.
@@ -79,15 +78,8 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for native-token
         {
             vm.startPrank(deployer.addr);
-            ETH_USDC_key = _getAndCheckPoolKey(
-                ETH,
-                USDC,
-                500,
-                10,
-                0x3258f413c7a88cda2fa8709a589d221a80f6574f63df5a5b6774485d8acc39d9
-            );
             uint8[4] memory config = [0, 1, 2, 1];
-            setSwapAdapterToV4SingleSwap(ETH_USDC_key, config);
+            setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
             vm.stopPrank();
         }
 
@@ -389,7 +381,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         test_deposit_rebalance();
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
         uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -533,7 +525,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
         // ** Withdraw
         {
@@ -691,7 +683,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
         // ** Rebalance
         vm.prank(deployer.addr);
@@ -699,7 +691,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
         // ** Full withdraw
         {

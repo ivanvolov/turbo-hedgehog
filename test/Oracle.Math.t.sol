@@ -22,47 +22,9 @@ import {ud} from "@prb-math/UD60x18.sol";
 import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
 
 contract OracleMathTest is ALMTestBase {
-    PoolKey public ETH_USDC_key;
-    PoolKey public ETH_USDT_key;
-    PoolKey public ETH_WSTETH_key;
-    PoolKey public ETH_WSTETH_key_unichain;
-
     function setUp() public {
         select_mainnet_fork(23059745);
         _create_accounts();
-
-        ETH_USDC_key = _getAndCheckPoolKey(
-            IERC20(address(0)),
-            IERC20(MConstants.USDC),
-            500,
-            10,
-            0x21c67e77068de97969ba93d4aab21826d33ca12bb9f565d8496e8fda8a82ca27
-        );
-
-        ETH_USDT_key = _getAndCheckPoolKey(
-            IERC20(address(0)),
-            IERC20(MConstants.USDT),
-            500,
-            10,
-            0x72331fcb696b0151904c03584b66dc8365bc63f8a144d89a773384e3a579ca73
-        );
-
-        ETH_WSTETH_key = _getAndCheckPoolKey(
-            IERC20(address(0)),
-            IERC20(0xc02fE7317D4eb8753a02c35fe019786854A92001),
-            100,
-            1,
-            0xd10d359f50ba8d1e0b6c30974a65bf06895fba4bf2b692b2c75d987d3b6b863d
-        );
-
-        ETH_WSTETH_key_unichain = _getAndCheckPoolKey(
-            IERC20(address(0)),
-            IERC20(UConstants.WSTETH),
-            100,
-            1,
-            0xd10d359f50ba8d1e0b6c30974a65bf06895fba4bf2b692b2c75d987d3b6b863d
-        );
-
         manager = MConstants.manager;
     }
 

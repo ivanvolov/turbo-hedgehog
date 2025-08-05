@@ -14,7 +14,6 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 // ** contracts
 import {TestBaseUniswap} from "./TestBaseUniswap.sol";
 import {ALM} from "@src/ALM.sol";
-import {Oracle} from "@src/core/oracles/Oracle.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 
@@ -23,19 +22,16 @@ import {TestAccount, TestAccountLib} from "@test/libraries/TestAccountLib.t.sol"
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IPositionManagerStandard} from "@test/interfaces/IPositionManagerStandard.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
 
 abstract contract TestBaseShortcuts is TestBaseUniswap {
     using TestAccountLib for TestAccount;
     using SafeERC20 for IERC20;
 
-    // --- Shortcuts  --- //
+    // --- Deploy  --- //
 
     function createPositionManager(bool _isNova) internal returns (IPositionManager) {
         IPositionManager _positionManager;
@@ -91,6 +87,20 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         deployedOnce = true;
     }
 
+    function _setComponents(address module) internal {
+        IBase(module).setComponents(
+            hook,
+            lendingAdapter,
+            flashLoanAdapter,
+            positionManager,
+            oracle,
+            rebalanceAdapter,
+            swapAdapter
+        );
+    }
+
+    // --- Overrides  --- //
+
     function create_accounts_and_tokens(
         address _base,
         uint8 _bDec,
@@ -122,18 +132,6 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         mock_empty_oracle = TestAccountLib.createTestAccount("mock_empty_oracle");
     }
 
-    function _setComponents(address module) internal {
-        IBase(module).setComponents(
-            hook,
-            lendingAdapter,
-            flashLoanAdapter,
-            positionManager,
-            oracle,
-            rebalanceAdapter,
-            swapAdapter
-        );
-    }
-
     function approve_accounts() public virtual {
         vm.startPrank(alice.addr);
         BASE.forceApprove(address(hook), type(uint256).max);
@@ -141,69 +139,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         vm.stopPrank();
     }
 
-    // --- Oracles  --- //
-
-    function getFeedsData(AggregatorV3Interface feed) internal view returns (uint256 dec, uint256 price) {
-        (, int256 _priceQuote, , , ) = feed.latestRoundData();
-        return (feed.decimals(), uint256(_priceQuote));
-    }
-
-    function create_oracle(
-        bool _isInvertedPool,
-        AggregatorV3Interface feedQ,
-        AggregatorV3Interface feedB,
-        uint128 stalenessThresholdQ,
-        uint128 stalenessThresholdB
-    ) internal returns (IOracle) {
-        return
-            _create_oracle(
-                feedQ,
-                feedB,
-                stalenessThresholdQ,
-                stalenessThresholdB,
-                _isInvertedPool,
-                int8(bDec) - int8(qDec)
-            );
-    }
-
-    function _create_oracle(
-        AggregatorV3Interface feedQ,
-        AggregatorV3Interface feedB,
-        uint128 stalenessThresholdQ,
-        uint128 stalenessThresholdB,
-        bool _isInvertedPool,
-        int8 decimalsDelta
-    ) internal returns (IOracle _oracle) {
-        isInvertedPool = _isInvertedPool;
-        vm.prank(deployer.addr);
-        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
-        oracle = _oracle;
-        vm.prank(deployer.addr);
-        IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
-    }
-
-    function _create_oracle_one_feed(
-        AggregatorV3Interface feedQ,
-        AggregatorV3Interface feedB,
-        uint128 stalenessThreshold,
-        bool _isInvertedPool,
-        int8 decimalsDelta
-    ) internal returns (IOracle _oracle) {
-        isInvertedPool = _isInvertedPool;
-        vm.prank(deployer.addr);
-        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
-        oracle = _oracle;
-        vm.prank(deployer.addr);
-        IOracleTest(address(oracle)).setStalenessThresholds(stalenessThreshold, stalenessThreshold);
-    }
-
-    function mock_latestRoundData(address feed, uint256 value) public {
-        vm.mockCall(
-            address(feed),
-            abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector),
-            abi.encode(uint80(0), int256(value), uint256(0), uint256(block.timestamp), uint80(0))
-        );
-    }
+    // --- Update params  --- //
 
     function updateProtocolFees(uint256 _protocolFee) internal {
         (int24 lower, int24 upper) = hook.tickDeltas();

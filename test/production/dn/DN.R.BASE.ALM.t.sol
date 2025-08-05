@@ -27,7 +27,6 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
 
     IERC20 BTC = IERC20(BConstants.CBBTC);
     IERC20 USDC = IERC20(BConstants.USDC);
-    PoolKey USDC_CBBTC_key;
 
     function setUp() public {
         select_base_fork(33774814);
@@ -76,15 +75,8 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // Re-setup swap router for native-token
         {
             vm.startPrank(deployer.addr);
-            USDC_CBBTC_key = _getAndCheckPoolKey(
-                USDC,
-                BTC,
-                500,
-                10,
-                0x12d76c5c8ec8edffd3c143995b0aa43fe44a6d71eb9113796272909e54b8e078
-            );
             uint8[4] memory config = [0, 2, 0, 2];
-            setSwapAdapterToV4SingleSwap(USDC_CBBTC_key, config);
+            setSwapAdapterToV4SingleSwap(USDC_CBBTC_key_base, config);
             vm.stopPrank();
         }
     }
@@ -346,7 +338,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key_base);
 
         uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -477,7 +469,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key_base);
 
         // ** Withdraw
         {
@@ -624,7 +616,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key_base);
 
         // ** Rebalance
         vm.prank(deployer.addr);
@@ -632,7 +624,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key_base);
 
         // ** Full withdraw
         {

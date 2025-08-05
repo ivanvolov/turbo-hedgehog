@@ -25,7 +25,6 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
     IERC20 WETH = IERC20(UConstants.WETH);
     IERC20 WSTETH = IERC20(UConstants.WSTETH);
-    PoolKey ETH_wstETH_key;
 
     function setUp() public {
         select_unichain_fork(23567130);
@@ -73,15 +72,8 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for v4 swaps.
         {
             vm.startPrank(deployer.addr);
-            ETH_wstETH_key = _getAndCheckPoolKey(
-                ETH,
-                WSTETH,
-                100,
-                1,
-                0xd10d359f50ba8d1e0b6c30974a65bf06895fba4bf2b692b2c75d987d3b6b863d
-            );
             uint8[4] memory config = [1, 2, 1, 2];
-            setSwapAdapterToV4SingleSwap(ETH_wstETH_key, config);
+            setSwapAdapterToV4SingleSwap(ETH_WSTETH_key_unichain, config);
             vm.stopPrank();
         }
 
@@ -90,7 +82,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             (uint256 price, uint256 sqrtPriceX96) = oracle.poolPrice();
             console.log("price %s", price);
             console.log("sqrtPrice %s", sqrtPriceX96);
-            console.log(getV4PoolSQRTPrice(ETH_wstETH_key));
+            console.log(getV4PoolSQRTPrice(ETH_WSTETH_key_unichain));
         }
     }
 
@@ -146,7 +138,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         test_deposit_rebalance();
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
+        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
@@ -241,7 +233,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
+        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
 
         // ** Withdraw
         {
@@ -288,7 +280,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
+        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
 
         // ** Deposit
         {
@@ -381,14 +373,14 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
+        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
 
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
+        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
 
         // ** Full withdraw
         {
