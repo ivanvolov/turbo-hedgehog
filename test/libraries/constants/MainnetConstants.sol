@@ -74,4 +74,22 @@ library Constants {
     IAggV3 constant chainlink_feed_CBBTC = IAggV3(0x2665701293fCbEB223D11A08D826563EDcCE423A);
     IAggV3 constant chainlink_feed_DAI = IAggV3(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
     IAggV3 constant zero_feed = IAggV3(address(0));
+
+    // ** API3
+    IAggV3 constant api3_feed_WETH = IAggV3(0x5b0cf2b36a65a6BB085D501B971e4c102B9Cd473);
+    IAggV3 constant api3_feed_USDC = IAggV3(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f);
+    IAggV3 constant api3_feed_USDT = IAggV3(0x4eadC6ee74b7Ceb09A4ad90a33eA2915fbefcf76);
+
+    // ** API3 Sepolia
+    IAggV3 constant api3_feed_USDT_sepolia = IAggV3(0x4eadC6ee74b7Ceb09A4ad90a33eA2915fbefcf76);
+    IAggV3 constant api3_feed_CBBTC_sepolia = IAggV3(0xa4183Cbf2eE868dDFccd325531C4f53F737FFF68);
+    IAggV3 constant api3_feed_USDC_sepolia = IAggV3(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f);
+    IAggV3 constant api3_feed_DAI_sepolia = IAggV3(0x85b6dD270538325A9E0140bd6052Da4ecc18A85c);
+
+    // ** Chronicle Sepolia
+    IAggV3 constant chronicle_feed_WETH_sepolia = IAggV3(0x3b8Cd6127a6CBEB9336667A3FfCD32B3509Cb5D9);
+    IAggV3 constant chronicle_feed_USDC_sepolia = IAggV3(0xb34d784dc8E7cD240Fe1F318e282dFdD13C389AC);
+    IAggV3 constant chronicle_feed_USDT_sepolia = IAggV3(0x8c852EEC6ae356FeDf5d7b824E254f7d94Ac6824);
+    IAggV3 constant chronicle_feed_CBBTC_sepolia = IAggV3(0xe4f05C62c09a3ec000a3f3895eFD2Ec9a1A11742);
+    IAggV3 constant chronicle_feed_DAI_sepolia = IAggV3(0xaf900d10f197762794C41dac395C5b8112eD13E1);
 }

@@ -1,31 +1,15 @@
-# First case
-
-calc sqrtPrice 4663552117771348554241845786706
-cacc sqrtPrice 4663552117771348554305956481705
-
-# Second case
-
-python 4663552117771348968734720
-calc sqrtPrice 4663552117157602615578102
-cacc sqrtPrice 4663552117771348554305956
-
-# Third case
-
-python 1345991548259232732549429092941824
-calc sqrtPrice 1345991548436352586396271745959683
-cacc sqrtPrice 1345991548259232658421686564476326
-
 # Python
 
-q96 = 2 ** 96
+import math
+q96 = 2**96
 q32 = 2**32
-uint256Max = 2**256-1
-(sqrt/q96)**2
-int(1e18/(sqrt/q96)\*\*2)
+uint256Max = 2\*\*256-1
 
-- 3464770728 - calc
-- 3464770727 - double calc
-- 3465122625 - fact
+### How to get price quote in terms of base out of sqrtPrice
+
+p = (sqrt/q96)\*\*2
+if target_pool B:Q => int(1e18/p)
+if target_pool Q:B => int(1e18\*p)
 
 # (0)
 
@@ -41,7 +25,8 @@ int(math.sqrt(uint256Max\*q/b)/q32)
 
 # TODO:
 
-- Fuzz all oracles existing (on mainnet + unichain) + all production needed oracles on unichain and base. Merge this test with just get one value test. (Needed to check it exist + API and Chronicle). And Fuzz them. One oracle support throw code address(0). Oracle tasks from notion to prod.
+- Fuzz all created oracles.
+- Oracle tasks from notion to prod.
+- Make simulations from existing fuzzing.
 - Fix all tests
-- Make simulations from existing fazzing.
 - Clean Code.

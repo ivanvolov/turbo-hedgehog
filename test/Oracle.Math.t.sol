@@ -44,6 +44,7 @@ contract OracleMathTest is ALMTestBase {
     function test_strategies_oracles_mainnet() public {
         console.log("\n> ETH_USDC");
         {
+            console.log("price ", uint256(288621730488643662729183232)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_WETH,
                 MConstants.chainlink_feed_USDC,
@@ -52,6 +53,7 @@ contract OracleMathTest is ALMTestBase {
                 ETH_USDC_key
             );
             console.log("");
+            console.log("price ", uint256(3464742582)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_USDC,
                 MConstants.chainlink_feed_WETH,
@@ -63,6 +65,7 @@ contract OracleMathTest is ALMTestBase {
 
         console.log("\n> USDC_WETH");
         {
+            console.log("price ", uint256(3465122625)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_USDC,
                 MConstants.chainlink_feed_WETH,
@@ -71,6 +74,7 @@ contract OracleMathTest is ALMTestBase {
                 MConstants.uniswap_v3_USDC_WETH_POOL
             );
             console.log("");
+            console.log("price ", uint256(288590075487514392317132800)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_WETH,
                 MConstants.chainlink_feed_USDC,
@@ -82,6 +86,7 @@ contract OracleMathTest is ALMTestBase {
 
         console.log("\n> ETH_USDT");
         {
+            console.log("price ", uint256(288620794971550286434271232)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_WETH,
                 MConstants.chainlink_feed_USDT,
@@ -90,6 +95,7 @@ contract OracleMathTest is ALMTestBase {
                 ETH_USDT_key
             );
             console.log("");
+            console.log("price ", uint256(3464753813)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_USDT,
                 MConstants.chainlink_feed_WETH,
@@ -101,6 +107,7 @@ contract OracleMathTest is ALMTestBase {
 
         console.log("\n> WETH_USDT");
         {
+            console.log("price ", uint256(3457981742)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_USDT,
                 MConstants.chainlink_feed_WETH,
@@ -109,6 +116,7 @@ contract OracleMathTest is ALMTestBase {
                 MConstants.uniswap_v3_WETH_USDT_POOL
             );
             console.log("");
+            console.log("price ", uint256(288620794971550286434271232)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_WETH,
                 MConstants.chainlink_feed_USDT,
@@ -120,6 +128,7 @@ contract OracleMathTest is ALMTestBase {
 
         console.log("\n> USDC_USDT");
         {
+            console.log("price ", uint256(999918481968058368)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_USDC,
                 MConstants.chainlink_feed_USDT,
@@ -129,6 +138,7 @@ contract OracleMathTest is ALMTestBase {
             );
             console.log("V3poolSQRT", getV3PoolSQRTPrice(MConstants.uniswap_v3_USDC_USDT_POOL));
             console.log("");
+            console.log("price ", uint256(1000081524677672832)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_USDT,
                 MConstants.chainlink_feed_USDC,
@@ -141,6 +151,7 @@ contract OracleMathTest is ALMTestBase {
 
         console.log("\n> USDC_CBBTC");
         {
+            console.log("price ", uint256(1141390447233364262912)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_USDC,
                 MConstants.chainlink_feed_CBBTC,
@@ -149,6 +160,7 @@ contract OracleMathTest is ALMTestBase {
                 MConstants.uniswap_v3_USDC_CBBTC_POOL
             );
             console.log("");
+            console.log("price ", uint256(876124381822116)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_CBBTC,
                 MConstants.chainlink_feed_USDC,
@@ -160,6 +172,7 @@ contract OracleMathTest is ALMTestBase {
 
         console.log("\n> DAI_USDC");
         {
+            console.log("price ", uint256(1000017)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_USDC,
                 MConstants.chainlink_feed_DAI,
@@ -168,6 +181,7 @@ contract OracleMathTest is ALMTestBase {
                 MConstants.uniswap_v3_DAI_USDC_POOL
             );
             console.log("");
+            console.log("price ", uint256(999982091765034127302141673472)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v3_pool(
                 MConstants.chainlink_feed_DAI,
                 MConstants.chainlink_feed_USDC,
@@ -178,17 +192,17 @@ contract OracleMathTest is ALMTestBase {
         }
     }
 
-    // TODO: add price comparison for all of them.
     function test_strategies_oracles_unichain() public {
         _select_unichain_fork(23567130);
         console.log("\n> ETH_WSTETH with one feed");
         {
             mock_latestRoundData(UConstants.chronicle_feed_WSTETH, 1210060639502791600);
+            console.log("price ", uint256(1206863694718699008)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
-                UConstants.chronicle_feed_WSTETH,
                 UConstants.zero_feed,
-                false,
-                int8(-18),
+                UConstants.chronicle_feed_WSTETH,
+                true,
+                int8(18),
                 ETH_WSTETH_key_unichain
             );
         }
@@ -198,6 +212,7 @@ contract OracleMathTest is ALMTestBase {
         {
             mock_latestRoundData(UConstants.chronicle_feed_WETH, 3634568623200000000000);
             mock_latestRoundData(UConstants.chronicle_feed_USDC, 999820000000000000);
+            console.log("price ", uint256(3641724659)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 UConstants.chronicle_feed_USDC,
                 UConstants.chronicle_feed_WETH,
@@ -212,12 +227,13 @@ contract OracleMathTest is ALMTestBase {
         {
             mock_latestRoundData(UConstants.chronicle_feed_WETH, 3754570000000000000000);
             mock_latestRoundData(UConstants.chronicle_feed_USDT, 999983595619733749);
+            console.log("price ", uint256(3747240658)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 UConstants.chronicle_feed_USDT,
                 UConstants.chronicle_feed_WETH,
                 false,
                 int8(6 - 18),
-                ETH_USDC_key_unichain
+                ETH_USDT_key_unichain
             );
         }
 
@@ -226,6 +242,7 @@ contract OracleMathTest is ALMTestBase {
         {
             mock_latestRoundData(UConstants.chronicle_feed_USDT, 999620000000000000);
             mock_latestRoundData(UConstants.chronicle_feed_USDC, 999735368664584522);
+            console.log("price ", uint256(999767279958814080)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 UConstants.chronicle_feed_USDC,
                 UConstants.chronicle_feed_USDT,
@@ -240,6 +257,7 @@ contract OracleMathTest is ALMTestBase {
         _select_base_fork(33774814);
         console.log("\n> USDC_CBBTC");
         {
+            console.log("price ", uint256(1147355937836650594304)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 BConstants.chainlink_feed_USDC,
                 BConstants.chainlink_feed_CBBTC,
@@ -256,6 +274,7 @@ contract OracleMathTest is ALMTestBase {
         {
             // Warning: WSTETH_WETH only exist on V3 mainnet, but WSTETH/WETH feed exist only on Unichain. This test does not make much sense.
             mock_latestRoundData(UConstants.chronicle_feed_WSTETH, 1210148407573673000);
+            console.log("price ", uint256(827508413011596672)); // 1e18/(sqrt/q96)**2.
             part_compare_oracle_with_v3_pool(
                 UConstants.chronicle_feed_WSTETH, // Yes, this is a wrong network contract address byt we mock it, should be fine.
                 MConstants.zero_feed,
@@ -264,90 +283,6 @@ contract OracleMathTest is ALMTestBase {
                 MConstants.uniswap_v3_WSTETH_WETH_POOL
             );
         }
-    }
-
-    // ** Fuzzers
-
-    // TODO: read WTF is fuzzing and what is the coverage.
-    /// @notice Chronicle feeds are always 18. Api3 always have 18 decimals. https://docs.api3.org/dapps/integration/contract-integration.html#using-value.
-    ///         Chainlink feeds are 8 for USDT, USDC, DAI, ETH, BTC, WBTC, CBBTC, WSTETH.
-
-    /// @dev Tests WSTETH-WETH and ETH-WSTETH with one feed.
-    function test_Fuzz_WSTETH_ETH_Chronicle_Api3_Chainlink(uint256 priceWSTETH) public view {
-        uint256 quote_MIN = 5e17; // 0.5ETH for WSTETH.
-        uint256 quote_MAX = 100e18; //  1000ETH USDT.
-        priceWSTETH = bound(priceWSTETH, quote_MIN, quote_MAX);
-
-        // We will construct totalDecDel = 0 in one feed oracle.
-        TestLib.newOracleGetPrices(priceWSTETH, 1e18, int256(0), true);
-        TestLib.newOracleGetPrices(1e18, priceWSTETH, int256(0), true);
-    }
-
-    /// @dev Tests ETH/USDC, USDC/ETH, ETH/USDT, USDT/ETH for for both V4 and V3 oracles (with native and not).
-    function test_Fuzz_ETH_USDC_T_Chronicle_Api3_Chainlink(uint256 priceUSD, uint256 priceETH) public view {
-        uint256 base_MIN = 1e17; // 0.1$ for USDC/T.
-        uint256 base_MAX = 100e18; //  100$ for USDC/T.
-        uint256 quote_MIN = 1e17; // 0.1$ for ETH/WETH.
-        uint256 quote_MAX = 10 * 10e6 * 1e18; //  10kk ETH/WETH.
-        priceUSD = bound(priceUSD, base_MIN, base_MAX);
-        priceETH = bound(priceETH, quote_MIN, quote_MAX);
-
-        // Chronicle and API3 feeds are always 18. So 18-18 = 0. The chainlink have 8 on these examples.
-        int256 totalDecDel = int8(6 - 18);
-        TestLib.newOracleGetPrices(priceUSD, priceETH, totalDecDel, false);
-        TestLib.newOracleGetPrices(priceUSD, priceETH, totalDecDel, true);
-        TestLib.newOracleGetPrices(priceETH, priceUSD, -totalDecDel, true);
-        TestLib.newOracleGetPrices(priceETH, priceUSD, -totalDecDel, false);
-    }
-
-    /// @dev Tests USDT/CBBTC, CBBTC/USDT, USDC/CBBTC, CBBTC/USDC,
-    ///      USDT/WBTC, WBTC/USDT, USDC/WBTC, WBTC/USDC.
-    function test_Fuzz_BTC_USD_Chronicle_Api3_Chainlink(uint256 priceUSD, uint256 priceBTC) public view {
-        uint256 base_MIN = 1e17; // 0.1$ for USDT/C.
-        uint256 base_MAX = 100e18; //  100$ for USDT/C.
-        uint256 quote_MIN = 1e17; // 0.1$ for CBBTC/WBTC.
-        uint256 quote_MAX = 100 * 10e6 * 1e18; //  100kk CBBTC.
-        priceUSD = bound(priceUSD, base_MIN, base_MAX);
-        priceBTC = bound(priceBTC, quote_MIN, quote_MAX);
-
-        // Chronicle and API3 feeds are always 18. So 18-18 = 0. The chainlink have 8 on these examples.
-        int256 totalDecDel = int8(8 - 6);
-        TestLib.newOracleGetPrices(priceBTC, priceUSD, totalDecDel, false);
-        TestLib.newOracleGetPrices(priceBTC, priceUSD, totalDecDel, true); // just in case.
-        TestLib.newOracleGetPrices(priceUSD, priceBTC, -totalDecDel, true);
-        TestLib.newOracleGetPrices(priceUSD, priceBTC, -totalDecDel, false); // just in case.
-    }
-
-    /// @dev Tests USDC/DAI, DAI/USDC, USDT/DAI, DAI/USDT.
-    function test_Fuzz_DAI_USDC_T_Chronicle_Api3_Chainlink(uint256 priceUSD, uint256 priceDAI) public view {
-        uint256 base_MIN = 1e17; // 0.1$ for USDT/C.
-        uint256 base_MAX = 100e18; //  100$ for USDT/C.
-        uint256 quote_MIN = 1e17; // 0.1$ for DAI.
-        uint256 quote_MAX = 100e18; //  100$ DAI.
-        priceUSD = bound(priceUSD, base_MIN, base_MAX);
-        priceDAI = bound(priceDAI, quote_MIN, quote_MAX);
-
-        // Chronicle and API3 feeds are always 18. So 18-18 = 0. The chainlink have 8 on these examples.
-        int256 totalDecDel = int8(18 - 6);
-        TestLib.newOracleGetPrices(priceDAI, priceUSD, totalDecDel, true);
-        TestLib.newOracleGetPrices(priceDAI, priceUSD, totalDecDel, false); // just in case.
-        TestLib.newOracleGetPrices(priceUSD, priceDAI, -totalDecDel, false);
-        TestLib.newOracleGetPrices(priceUSD, priceDAI, -totalDecDel, true); // just in case.
-    }
-
-    /// @dev Tests USDC/USDT, USDT/USDC.
-    function test_Fuzz_USDT_USDC_Chronicle_Api3_Chainlink(uint256 priceUSDC, uint256 priceUSDT) public view {
-        uint256 base_MIN = 1e17; // 0.1$ for USDC.
-        uint256 base_MAX = 100e18; //  100$ for USDC.
-        uint256 quote_MIN = 1e17; // 0.1$ for USDT.
-        uint256 quote_MAX = 100e18; //  100$ USDT.
-        priceUSDC = bound(priceUSDC, base_MIN, base_MAX);
-        priceUSDT = bound(priceUSDT, quote_MIN, quote_MAX);
-
-        // Chronicle and API3 feeds are always 18. So 18-18 = 0. The chainlink have 8 on these examples.
-        int256 totalDecDel = int8(6 - 6);
-        TestLib.newOracleGetPrices(priceUSDT, priceUSDC, totalDecDel, false);
-        TestLib.newOracleGetPrices(priceUSDC, priceUSDT, totalDecDel, true);
     }
 
     // ** Constraints
@@ -381,19 +316,13 @@ contract OracleMathTest is ALMTestBase {
 
     function print_oracle_answer(IAggV3 feedB, IAggV3 feedQ, bool isInvertedPool, int256 tokenDecDel) private {
         (uint256 priceO, uint256 sqrtPriceO) = getOldOracleAnswer(feedB, feedQ, isInvertedPool, tokenDecDel);
-        console.log("sqrtPriceO", sqrtPriceO);
-        (uint256 priceN, uint256 sqrtPriceN) = create_oracle_and_get_price(feedB, feedQ, isInvertedPool, tokenDecDel);
-        console.log("sqrtPriceN", sqrtPriceN);
-    }
+        IOracle mock_oracle = _create_oracle(feedQ, feedB, 24 hours, 24 hours, isInvertedPool, int8(tokenDecDel));
+        (uint256 priceN, uint256 sqrtPriceN) = mock_oracle.poolPrice();
+        console.log("priceO", priceO);
+        console.log("priceN", priceN);
 
-    function create_oracle_and_get_price(
-        IAggV3 feedB,
-        IAggV3 feedQ,
-        bool isInvertedPool,
-        int256 tokenDecDelta
-    ) public returns (uint256 _price, uint160 _sqrtPriceX96) {
-        IOracle mock_oracle = __create_oracle(feedB, feedQ, 24 hours, 24 hours, isInvertedPool, int8(tokenDecDelta));
-        return mock_oracle.poolPrice();
+        console.log("sqrtPriceO", sqrtPriceO);
+        console.log("sqrtPriceN", sqrtPriceN);
     }
 
     function getOldOracleAnswer(

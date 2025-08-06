@@ -33,7 +33,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     // --- Deploy  --- //
 
-    function createPositionManager(bool _isNova) internal returns (IPositionManager) {
+    function createPositionManager(bool _isNova) internal {
         IPositionManager _positionManager;
         if (_isNova) _positionManager = new UnicordPositionManager(BASE, QUOTE);
         else _positionManager = new PositionManager(BASE, QUOTE);

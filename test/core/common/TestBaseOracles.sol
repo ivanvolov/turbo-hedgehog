@@ -142,22 +142,6 @@ abstract contract TestBaseOracles is TestBaseShortcuts {
         IOracleTest(address(oracle)).setStalenessThresholds(stallThreshB, stallThreshQ);
     }
 
-    function __create_oracle(
-        IAggV3 feedB,
-        IAggV3 feedQ,
-        uint128 stallThreshB,
-        uint128 stallThreshQ,
-        bool _isInvertedPool,
-        int256 decimalsDelta
-    ) internal returns (IOracle _oracle) {
-        isInvertedPool = _isInvertedPool;
-        vm.prank(deployer.addr);
-        _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);
-        oracle = _oracle;
-        vm.prank(deployer.addr);
-        IOracleTest(address(oracle)).setStalenessThresholds(stallThreshB, stallThreshQ);
-    }
-
     function _create_oracle_one_feed(
         IAggV3 feedQ,
         IAggV3 feedB,

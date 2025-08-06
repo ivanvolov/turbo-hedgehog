@@ -82,7 +82,7 @@ library TestLib {
         uint256 _priceQuote,
         int256 _totalDecimalsDelta,
         bool _isInvertedPool
-    ) public view returns (uint256 _price, uint160 _sqrtPriceX96) {
+    ) public pure returns (uint256 _price, uint160 _sqrtPriceX96) {
         if (_totalDecimalsDelta < -18) revert("DecimalsDeltaNotValid");
         uint256 scaleFactor = 10 ** SafeCast.toUint256(_totalDecimalsDelta + 18);
         _price = mulDiv(_priceQuote, scaleFactor, _priceBase);
