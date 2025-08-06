@@ -242,9 +242,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             ""
         );
 
-        console.log("token0 amount", uint256(poolManager.currencyDelta(address(this), key.currency0)));
-        console.log("token1 amount", uint256(-poolManager.currencyDelta(address(this), key.currency1)));
-
         console.log("> END: _beforeSwap");
         return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
