@@ -11,6 +11,8 @@ p = (sqrt/q96)\*\*2
 if target_pool B:Q => int(1e18/p)
 if target_pool Q:B => int(1e18\*p)
 
+### How to calculate SQRT price in Solidity
+
 # (0)
 
 int(math.sqrt(1e18*q*1e18/b)\*q96/1e18)
@@ -22,11 +24,3 @@ int((uint256Max/math.sqrt(b\*uint256Max/q))/q32)
 # (2)
 
 int(math.sqrt(uint256Max\*q/b)/q32)
-
-# TODO:
-
-- Fuzz all created oracles.
-- Oracle tasks from notion to prod.
-- Make simulations from existing fuzzing.
-- Fix all tests
-- Clean Code.

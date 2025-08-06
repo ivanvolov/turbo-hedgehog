@@ -14,3 +14,6 @@ prepareCsvFile("withdraws", withdrawsHeaderRow);
 
 const rebalancesHeaderRow = "liquidity, priceT, aTT, bN\n";
 prepareCsvFile("rebalances", rebalancesHeaderRow);
+
+const oraclesHeaderRow = "priceBase, priceQuote, totalDecDel, isInvertedPool, price, sqrtPrice, testCase\n";
+prepareCsvFile("oracles", oraclesHeaderRow);

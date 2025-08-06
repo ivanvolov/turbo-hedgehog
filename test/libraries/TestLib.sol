@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 // ** External imports
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -14,6 +15,8 @@ import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
 
 library TestLib {
     using PRBMathUD60x18 for uint256;
+
+    IAggV3 constant ZERO_FEED = IAggV3(address(0));
 
     // ** Uniswap math
 
@@ -99,8 +102,9 @@ library TestLib {
         if (invert != _isInvertedPool) r = type(uint256).max / r;
         r = r >> 32;
         _sqrtPriceX96 = SafeCast.toUint160(r);
-        require(_price != 0, "PriceZero");
-        require(_sqrtPriceX96 != 0, "SqrtPriceZero");
+        // We don't need constraints for testing.
+        // require(_price != 0, "PriceZero");
+        // require(_sqrtPriceX96 != 0, "SqrtPriceZero");
     }
 
     function oldOracleGetPrices(
@@ -113,5 +117,14 @@ library TestLib {
         _price = mulDiv(_priceQuote, scaleFactor, _priceBase);
         uint256 __price = _isInvertedPool ? ALMMathLib.div18(ALMMathLib.WAD, _price) : _price;
         _sqrtPriceX96 = SafeCast.toUint160(ud(__price).sqrt().mul(ud(2 ** 96)).unwrap());
+    }
+
+    function newOracleGetPrice(
+        uint256 _priceBase,
+        uint256 _priceQuote,
+        int256 _totalDecimalsDelta
+    ) public pure returns (uint256 _price) {
+        uint256 scaleFactor = 10 ** uint256(_totalDecimalsDelta + 18);
+        _price = mulDiv(_priceQuote, scaleFactor, _priceBase);
     }
 }

@@ -40,7 +40,7 @@ contract OracleMathTest is ALMTestBase {
     ///     - This flag must be considered wherever currency and token are used together.
     ///     - ist. BASE:QUOTE = true, QUOTE:BASE = false
 
-    // TODO: check all of them have reversed order.
+    /// @dev All tests here should give the same sqrt price per pair but different QUOTE in terms of BASE price.
     function test_strategies_oracles_mainnet() public {
         console.log("\n> ETH_USDC");
         {
@@ -129,6 +129,7 @@ contract OracleMathTest is ALMTestBase {
         console.log("\n> USDC_USDT");
         {
             console.log("price ", uint256(999918481968058368)); // 1e18/(sqrt/q96)**2
+            console.log("V3 pr ", uint256(999966251147032576)); // 1e18/(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_USDC,
                 MConstants.chainlink_feed_USDT,
@@ -139,6 +140,7 @@ contract OracleMathTest is ALMTestBase {
             console.log("V3poolSQRT", getV3PoolSQRTPrice(MConstants.uniswap_v3_USDC_USDT_POOL));
             console.log("");
             console.log("price ", uint256(1000081524677672832)); // 1e18*(sqrt/q96)**2
+            console.log("V3 pr ", uint256(1000033749991990912)); // 1e18*(sqrt/q96)**2
             part_compare_oracle_with_v4_pool(
                 MConstants.chainlink_feed_USDT,
                 MConstants.chainlink_feed_USDC,
@@ -192,6 +194,7 @@ contract OracleMathTest is ALMTestBase {
         }
     }
 
+    /// @dev All tests here should give the same sqrt price per pair but different QUOTE in terms of BASE price.
     function test_strategies_oracles_unichain() public {
         _select_unichain_fork(23567130);
         console.log("\n> ETH_WSTETH with one feed");
@@ -203,6 +206,14 @@ contract OracleMathTest is ALMTestBase {
                 UConstants.chronicle_feed_WSTETH,
                 true,
                 int8(18),
+                ETH_WSTETH_key_unichain
+            );
+            console.log("price ", uint256(828593986525615360)); // 1e18*(sqrt*q96)**2
+            part_compare_oracle_with_v4_pool(
+                UConstants.chronicle_feed_WSTETH,
+                UConstants.zero_feed,
+                false,
+                int8(-18),
                 ETH_WSTETH_key_unichain
             );
         }
@@ -220,6 +231,14 @@ contract OracleMathTest is ALMTestBase {
                 int8(6 - 18),
                 ETH_USDC_key_unichain
             );
+            console.log("price ", uint256(274595169448541420955631616)); // 1e18/(sqrt/q96)**2
+            part_compare_oracle_with_v4_pool(
+                UConstants.chronicle_feed_WETH,
+                UConstants.chronicle_feed_USDC,
+                true,
+                int8(18 - 6),
+                ETH_USDC_key_unichain
+            );
         }
 
         _select_unichain_fork(23128176);
@@ -233,6 +252,14 @@ contract OracleMathTest is ALMTestBase {
                 UConstants.chronicle_feed_WETH,
                 false,
                 int8(6 - 18),
+                ETH_USDT_key_unichain
+            );
+            console.log("price ", uint256(266863031031690038026960896)); // 1e18/(sqrt/q96)**2
+            part_compare_oracle_with_v4_pool(
+                UConstants.chronicle_feed_WETH,
+                UConstants.chronicle_feed_USDT,
+                true,
+                int8(18 - 6),
                 ETH_USDT_key_unichain
             );
         }
@@ -250,9 +277,18 @@ contract OracleMathTest is ALMTestBase {
                 int8(0),
                 USDC_USDT_key_unichain
             );
+            console.log("price ", uint256(1000232774212410240)); // 1e18*(sqrt/q96)**2
+            part_compare_oracle_with_v4_pool(
+                UConstants.chronicle_feed_USDT,
+                UConstants.chronicle_feed_USDC,
+                false,
+                int8(0),
+                USDC_USDT_key_unichain
+            );
         }
     }
 
+    /// @dev All tests here should give the same sqrt price per pair but different QUOTE in terms of BASE price.
     function test_strategies_oracles_base() public {
         _select_base_fork(33774814);
         console.log("\n> USDC_CBBTC");
@@ -265,9 +301,18 @@ contract OracleMathTest is ALMTestBase {
                 int8(6 - 8),
                 USDC_CBBTC_key_base
             );
+            console.log("price ", uint256(871569115583703)); // 1e18*(sqrt/q96)**2
+            part_compare_oracle_with_v4_pool(
+                BConstants.chainlink_feed_CBBTC,
+                BConstants.chainlink_feed_USDC,
+                false,
+                int8(8 - 6),
+                USDC_CBBTC_key_base
+            );
         }
     }
 
+    /// @dev All tests here should give the same sqrt price per pair but different QUOTE in terms of BASE price.
     function test_other_possible_oracles() public {
         _select_mainnet_fork(23075773);
         console.log("\n> WSTETH_WETH with one feed");
@@ -282,6 +327,25 @@ contract OracleMathTest is ALMTestBase {
                 int256(-18),
                 MConstants.uniswap_v3_WSTETH_WETH_POOL
             );
+            console.log("price ", uint256(1208446928485772288)); // 1e18*(sqrt/q96)**2.
+            part_compare_oracle_with_v3_pool(
+                MConstants.zero_feed,
+                UConstants.chronicle_feed_WSTETH,
+                false,
+                int256(18),
+                MConstants.uniswap_v3_WSTETH_WETH_POOL
+            );
+        }
+
+        _select_base_fork(33774814);
+        // This is experimental, even don't have sqrt price to compare too, so look into price.
+        console.log("\n> WSTETH=>USD");
+        {
+            console.log(" WETH/USD feed price:", getFeedPrice(BConstants.chainlink_feed_WETH));
+            print_oracle_answer(BConstants.chainlink_feed_WETH, BConstants.chainlink_feed_WSTETH, false, int8(10));
+            print_oracle_answer(BConstants.chainlink_feed_WETH, BConstants.chainlink_feed_WSTETH, true, int8(10));
+            print_oracle_answer(BConstants.chainlink_feed_WSTETH, BConstants.chainlink_feed_WETH, false, int8(-10));
+            print_oracle_answer(BConstants.chainlink_feed_WSTETH, BConstants.chainlink_feed_WETH, true, int8(-10));
         }
     }
 
@@ -289,6 +353,9 @@ contract OracleMathTest is ALMTestBase {
 
     //TODO: Retest this constraints in sim. ALMMathLib.getSqrtPriceX96FromPrice(340256786833063481322211904572563530436318729319284211712);
     //TODO: Think about scaleFactor constraints, do wee need them? No we don't.
+    function test_constraints() public {
+        TestLib.newOracleGetPrices(1e18, 1e18, int256(-18), false);
+    }
 
     // ** Helpers
 
