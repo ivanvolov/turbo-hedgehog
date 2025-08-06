@@ -134,6 +134,7 @@ abstract contract TestBaseOracles is TestBaseShortcuts {
         bool _isInvertedPool,
         int8 decimalsDelta
     ) internal returns (IOracle _oracle) {
+        console.log("decimalsDelta %s", decimalsDelta);
         isInvertedPool = _isInvertedPool;
         vm.prank(deployer.addr);
         _oracle = new Oracle(feedB, feedQ, _isInvertedPool, decimalsDelta);

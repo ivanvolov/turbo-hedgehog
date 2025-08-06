@@ -38,7 +38,6 @@ def create_scatter_plot(df):
     plt.xlabel('priceBase')
     plt.ylabel('priceQuote')
     plt.title('Price Points: priceBase vs priceQuote')
-    plt.savefig('../simulations/out/price_points.png', dpi=300, bbox_inches='tight')
     plt.show()
 
 def main():

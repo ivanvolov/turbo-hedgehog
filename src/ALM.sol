@@ -304,6 +304,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             console.log("token1 amount", token1);
 
             console.log("(1)");
+            console.log(key.currency0.balanceOf(address(poolManager)));
             key.currency0.take(poolManager, address(this), token0, false);
             console.log("(2)");
             if (isNTS == 0) WETH9.deposit{value: token0}();

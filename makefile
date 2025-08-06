@@ -80,9 +80,9 @@ tuul:
 	clear && forge test -vvvv --match-contract UNICORD_UNI_ALMTest --match-test "test_"
 
 turu:
-	clear && forge test -vv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
+	clear && forge test -vv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_lifecycle"
 turul:
-	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
+	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_lifecycle"
 
 tdu:
 	clear && forge test -vv --match-contract DeltaNeutral_UNI_ALMTest --match-test "test_"
@@ -124,9 +124,9 @@ tsal:
 	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
 
 to:
-	clear && forge test -vv --match-contract OracleTest --match-test "test_"
+	clear && forge test -vv --match-contract OracleFuzzing --match-test "test_Fuzz" --fuzz-runs 5000
 tol:
-	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
+	clear && forge test -vvvv --match-contract OracleFuzzing --match-test "test_Fuzz" --fuzz-runs 5000
 
 tom:
 	clear && forge test -vv --match-contract OracleMathTest --match-test "test_"

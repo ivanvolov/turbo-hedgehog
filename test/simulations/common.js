@@ -82,6 +82,15 @@ function prepareCsvFile(name, headerRow) {
     console.log(`${filePath} prepared.`);
 }
 
+function emptyButch() {
+    const batchDir = `test/simulations/out/batch`;
+
+    if (fs.existsSync(batchDir)) {
+        fs.rmSync(batchDir, { recursive: true, force: true });
+        console.log(`Removed directory: ${batchDir}`);
+    }
+}
+
 const randomNumber = (randomCap) => Math.floor(Math.random() * randomCap) + 1;
 
 module.exports = {
@@ -89,4 +98,5 @@ module.exports = {
     saveToCSV,
     decodeHexString,
     prepareCsvFile,
+    emptyButch,
 };

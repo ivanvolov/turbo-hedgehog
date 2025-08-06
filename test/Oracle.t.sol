@@ -54,15 +54,31 @@ contract OracleFuzzing is ALMTestBase {
         part_long_tail_long_tail(priceLongTail0, priceLongTail1, false);
     }
 
+    // CSV batch state variables
+    string private csvBatch;
+    uint256 private batchCounter;
+    uint256 private resultCounter;
+    bool private csvHeaderWritten;
+    uint256 private constant BATCH_SIZE = 20;
+    string private constant RESULTS_DIR = "test/simulations/out/batch/";
+
     /// @dev Simulate STABLE-LONG_TAIL pair.
     function test_simulate_stable_long_tail() public {
         clear_snapshots();
+
+        // return;
+
         uint256 stableSTEP = 1000;
         uint256 longTailSTEP = 100000;
         for (uint256 pS = STABLE_MIN; pS <= STABLE_MAX; pS += stableSTEP) {
             for (uint256 pLT = LONG_TAIL_MIN; pLT <= LONG_TAIL_MAX; pLT += longTailSTEP) {
                 part_stable_long_tail(pS, pLT, true);
             }
+        }
+
+        // Flush remaining batch
+        if (bytes(csvBatch).length > 0) {
+            flushCSVBatch();
         }
     }
 
@@ -133,46 +149,71 @@ contract OracleFuzzing is ALMTestBase {
         (uint256 p, uint160 sqrt) = TestLib.newOracleGetPrices(priceBase, priceQuote, totalDecDel, isInvertedPool);
 
         if (testCase != 0) {
-            bytes memory packedData = abi.encodePacked(
-                priceBase,
-                priceQuote,
-                totalDecDel,
-                isInvertedPool,
-                p,
-                sqrt,
-                testCase
+            // Add CSV header only once
+            if (!csvHeaderWritten) {
+                csvBatch = "id,priceBase,priceQuote,totalDecDel,isInvertedPool,p,sqrt,testCase\n";
+                csvHeaderWritten = true;
+            }
+
+            // Build CSV row
+            string memory csvRow = string.concat(
+                vm.toString(resultCounter),
+                ",",
+                vm.toString(priceBase),
+                ",",
+                vm.toString(priceQuote),
+                ",",
+                vm.toString(totalDecDel),
+                ",",
+                isInvertedPool ? "1" : "0",
+                ",",
+                vm.toString(p),
+                ",",
+                vm.toString(sqrt),
+                ",",
+                vm.toString(testCase),
+                "\n"
             );
 
-            string[] memory inputs = new string[](3);
-            inputs[0] = "node";
-            inputs[1] = "test/simulations/logOracle.js";
-            inputs[2] = toHexString(packedData);
-            vm.ffi(inputs);
+            // Add to current batch
+            csvBatch = string.concat(csvBatch, csvRow);
+            resultCounter++;
+
+            // Flush batch when it reaches size limit
+            if (resultCounter % BATCH_SIZE == 0) {
+                flushCSVBatch();
+            }
         }
     }
 
-    function clear_snapshots() internal {
+    function clear_snapshots() public {
+        csvBatch = "";
+        batchCounter = 0;
+        resultCounter = 0;
+        csvHeaderWritten = false;
+
         string[] memory inputs = new string[](2);
         inputs[0] = "node";
         inputs[1] = "test/simulations/clear.js";
         vm.ffi(inputs);
     }
 
-    function toHexString(bytes memory input) public pure returns (string memory) {
-        require(input.length < type(uint256).max / 2 - 1);
-        bytes16 symbols = "0123456789abcdef";
-        bytes memory hex_buffer = new bytes(2 * input.length + 2);
-        hex_buffer[0] = "0";
-        hex_buffer[1] = "x";
+    function flushCSVBatch() private {
+        string memory filename = string.concat(RESULTS_DIR, "oracle_results_", vm.toString(batchCounter), ".csv");
 
-        uint pos = 2;
-        uint256 length = input.length;
-        for (uint i = 0; i < length; ++i) {
-            uint _byte = uint8(input[i]);
-            hex_buffer[pos++] = symbols[_byte >> 4];
-            hex_buffer[pos++] = symbols[_byte & 0xf];
+        string[] memory inputs = new string[](4);
+        inputs[0] = "sh";
+        inputs[1] = "-c";
+        inputs[2] = string.concat("mkdir -p ", RESULTS_DIR, " && echo -e '", csvBatch, "' > ", filename);
+        inputs[3] = "";
+
+        try vm.ffi(inputs) {
+            console.log("Flushed CSV batch", batchCounter, "to", filename);
+        } catch {
+            console.log("Failed to write batch", batchCounter);
         }
-        return string(hex_buffer);
+        csvBatch = "id,priceBase,priceQuote,totalDecDel,isInvertedPool,p,sqrt,testCase\\n";
+        batchCounter++;
     }
 
     function _select_mainnet_fork(uint256 block_number) internal {
