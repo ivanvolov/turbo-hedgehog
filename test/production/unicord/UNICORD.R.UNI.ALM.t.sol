@@ -94,12 +94,6 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
     }
 
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(-276424, -276224);
-    }
-
     uint256 amountToDep = 100e18; // 1M
 
     function test_deposit() public {

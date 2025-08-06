@@ -89,12 +89,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         }
     }
 
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(-71807, -65807);
-    }
-
     uint256 amountToDep = 1 * 1e8;
 
     function test_deposit() public {
@@ -107,7 +101,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1);
-        return;
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));

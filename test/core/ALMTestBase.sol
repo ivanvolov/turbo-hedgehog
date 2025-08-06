@@ -67,8 +67,8 @@ abstract contract ALMTestBase is TestBaseMorpho {
         initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
         // This is needed in order to simulate proper accounting.
-        deal(address(BASE), address(manager), 1000 ether);
-        deal(address(QUOTE), address(manager), 1000 ether);
+        deal(address(BASE), address(manager), 100000 ether);
+        deal(address(QUOTE), address(manager), 100000 ether);
 
         quoter = new V4Quoter(manager);
         vm.stopPrank();

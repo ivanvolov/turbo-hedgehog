@@ -89,12 +89,6 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         }
     }
 
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(194466, 200466);
-    }
-
     uint256 amountToDep = 2 * 100000 * 1e6; // 200BTC
 
     function test_deposit() public {
@@ -122,14 +116,13 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        // assertEqBalanceStateZero(address(hook));
-        // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // assertTicks(194458, 200458);
-        // assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
+        assertEqBalanceStateZero(address(hook));
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        assertTicks(-73458, -67458);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 2338819880825639830372751712, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -140,25 +133,24 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
-        assertApproxEqAbs(deltaBTC, 5295866784071586680, 1);
+        assertApproxEqAbs(deltaBTC, 12187249, 1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(127443171714058210075, 438899999998, 224634367794, 107960914090740859882);
-        assertEqProtocolState(1527037186087795752853430779674447, 266092360230);
+        assertEqPositionState(122062569, 239999999997, 65801318565, 99915331);
+        assertEqProtocolState(2308042746179806544908258638, 199613393074);
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 btcToGetFSwap = 5295866784427776090;
+        uint256 btcToGetFSwap = 1e7;
         uint256 usdcToSwapQ = quoteUSDC_BTC_Out(btcToGetFSwap);
-        assertApproxEqAbs(usdcToSwapQ, 14171775947, 1);
+        assertApproxEqAbs(usdcToSwapQ, 11600600067, 1);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -173,41 +165,39 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(127443171713550640167, 438899999998, 224634367797, 107960914090589479383);
-        assertEqProtocolState(1527037186087185530551846525013708, 266092360229);
+        assertEqPositionState(125179400, 239999999997, 68372494445, 100844912);
+        assertEqProtocolState(2313566329004018638409780145, 199552161234);
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 btcToSwap = 5436304955762950000;
+        uint256 btcToSwap = 1e7;
         deal(address(BTC), address(swapper.addr), btcToSwap);
         assertEqBalanceState(swapper.addr, btcToSwap, 0);
 
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapBTC_USDC_In(btcToSwap);
-        assertEq(deltaUSDC, 14374512916);
+        assertEq(deltaUSDC, 11352758298);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(142736516443322424843, 438899999998, 253180656652, 112522087080170537970);
-        assertEqProtocolState(1545423500673583661086896857941818, 266095809126);
+        assertEqPositionState(153679398, 239999999997, 91325852810, 109344911);
+        assertEqProtocolState(2364073429387963749880181281, 199549484459);
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 14374512916;
         uint256 btcToSwapQ = quoteBTC_USDC_Out(usdcToGetFSwap);
-        assertEq(btcToSwapQ, 5436304955754881212);
+        assertEq(btcToSwapQ, 12698187);
 
         deal(address(BTC), address(swapper.addr), btcToSwapQ);
         assertEqBalanceState(swapper.addr, btcToSwapQ, 0);
@@ -222,12 +212,11 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(142736516443310926820, 438899999998, 253180656656, 112522087080167108735);
-        assertEqProtocolState(1545423500673569837670446692910291, 266095809125); //rounding error for sqrt price 1e18????
+        assertEqPositionState(157524313, 239999999997, 94347607427, 110491640);
+        assertEqProtocolState(2370887307335613150075615808, 199623990385); //rounding error for sqrt price 1e18????
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -240,27 +229,26 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaBTC) = swapUSDC_BTC_In(usdcToSwap);
-        assertApproxEqAbs(deltaBTC, 5293234482239788562, 1);
+        assertApproxEqAbs(deltaBTC, 12181236, 1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(127446922744168522392, 438899999998, 224634367795, 107962032819019374082);
-        assertEqProtocolState(1527041695736983022767290871193298, 266099362682);
+        assertEqPositionState(122071137, 239999999997, 65801318566, 99917886);
+        assertEqProtocolState(2308057932347120013680961962, 199620293195);
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
 
         // ** Before swap State
-        uint256 btcToGetFSwap = 5295866784427776090;
+        uint256 btcToGetFSwap = 1e7;
         uint256 usdcToSwapQ = quoteUSDC_BTC_Out(btcToGetFSwap);
-        assertEq(usdcToSwapQ, 14178865381);
+        assertEq(usdcToSwapQ, 11606403270);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -268,44 +256,42 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaBTC) = swapUSDC_BTC_Out(btcToGetFSwap);
-        assertApproxEqAbs(deltaBTC, 5295866784427776090, 1e1);
+        assertApproxEqAbs(deltaBTC, 10000000, 1e1);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaBTC, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(127443171713550640167, 438899999998, 224627278364, 107960914090589479383);
-        assertEqProtocolState(1527037186087185530551846525013708, 266099449662);
+        assertEqPositionState(125179400, 239999999997, 68366691243, 100844912);
+        assertEqProtocolState(2313566329004018638409780145, 199557964436);
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
-        vm.skip(true);
         test_deposit_rebalance();
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
 
         // ** Before swap State
-        uint256 btcToSwap = 5436304955762950000;
+        uint256 btcToSwap = 1e7;
         deal(address(BTC), address(swapper.addr), btcToSwap);
         assertEqBalanceState(swapper.addr, btcToSwap, 0);
 
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapBTC_USDC_In(btcToSwap);
-        assertEq(deltaUSDC, 14374512916);
+        assertEq(deltaUSDC, 11352758298);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(142736516443322424843, 438899999998, 253180656652, 112522087080170537970);
-        assertEqProtocolState(1545423500673583661086896857941818, 266095809126);
+        assertEqPositionState(153679398, 239999999997, 91325852810, 109344911);
+        assertEqProtocolState(2364073429387963749880181281, 199549484459);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -313,7 +299,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // ** Before swap State
         uint256 usdcToGetFSwap = 14374512916;
         uint256 btcToSwapQ = quoteBTC_USDC_Out(usdcToGetFSwap);
-        assertEq(btcToSwapQ, 5439024467988875650);
+        assertEq(btcToSwapQ, 12704540);
 
         deal(address(BTC), address(swapper.addr), btcToSwapQ);
         assertEqBalanceState(swapper.addr, btcToSwapQ, 0);
@@ -328,8 +314,8 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(142740391748244368893, 438899999998, 253180656656, 112523242872866556371);
-        assertEqProtocolState(1545423500673569837670446692910291, 266103043575); //rounding error for sqrt price 1e18????
+        assertEqPositionState(157533363, 239999999997, 94347607427, 110494339);
+        assertEqProtocolState(2370887307335613150075615808, 199631278374); //rounding error for sqrt price 1e18????
     }
 
     function test_lifecycle() public {
