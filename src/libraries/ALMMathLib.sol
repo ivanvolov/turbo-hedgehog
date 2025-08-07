@@ -2,18 +2,53 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {UD60x18} from "@prb-math/UD60x18.sol";
 import {SD59x18, sd} from "@prb-math/SD59x18.sol";
-import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
+import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
+uint256 constant WAD = 1e18;
+int256 constant WAD_DECIMALS = 18;
+
+function div18(uint256 x, uint256 y) pure returns (uint256) {
+    return mulDiv(x, WAD, y);
+}
+
+function absSub(uint256 a, uint256 b) pure returns (uint256) {
+    return a > b ? a - b : b - a;
+}
+
 /// @title ALM Math Library
 /// @notice Library for all math operations used in the ALM hook.
 library ALMMathLib {
-    uint256 constant WAD = 1e18;
-    UD60x18 constant Q96 = UD60x18.wrap(2 ** 96);
+    function getPrice(
+        uint256 priceBase,
+        uint256 priceQuote,
+        uint256 scaleFactor
+    ) internal pure returns (uint256 price) {
+        return mulDiv(priceQuote, scaleFactor, priceBase);
+    }
+
+    function getSqrtPrice(
+        uint256 priceBase,
+        uint256 priceQuote,
+        int256 totalDecDelta,
+        bool isInvertedPool
+    ) internal pure returns (uint160) {
+        if (totalDecDelta < 0) {
+            priceBase = priceBase * 10 ** uint256(-totalDecDelta);
+        } else if (totalDecDelta > 0) {
+            priceQuote = priceQuote * 10 ** uint256(totalDecDelta);
+        }
+        bool invert = priceBase <= priceQuote;
+        (uint256 lowP, uint256 highP) = invert ? (priceBase, priceQuote) : (priceQuote, priceBase);
+        uint256 res = mulDiv(lowP, type(uint256).max, highP);
+        res = sqrt(res);
+        if (invert != isInvertedPool) res = type(uint256).max / res;
+        res = res >> 32;
+        return SafeCast.toUint160(res);
+    }
 
     function getLiquidity(
         bool isInvertedPool,
@@ -112,25 +147,13 @@ library ALMMathLib {
 
     /// @notice Aligns a given tick with the tickSpacing of the pool.
     ///         Always rounds down.
-    /// @param tick The tick to align
-    /// @param tickSpacing The tick spacing of the pool
+    /// @param tick The tick to align.
+    /// @param tickSpacing The tick spacing of the pool.
     function alignComputedTickWithTickSpacing(int24 tick, int24 tickSpacing) internal pure returns (int24) {
         if (tick < 0) {
-            // If the tick is negative, we round up (negatively) the negative result to round down
             return ((tick - tickSpacing + 1) / tickSpacing) * tickSpacing;
         } else {
-            // Else if positive, we simply round down
             return (tick / tickSpacing) * tickSpacing;
         }
-    }
-
-    // ** Math functions
-
-    function div18(uint256 x, uint256 y) internal pure returns (uint256) {
-        return mulDiv(x, WAD, y);
-    }
-
-    function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a > b ? a - b : b - a;
     }
 }

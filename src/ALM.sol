@@ -25,7 +25,7 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // ** libraries
-import {ALMMathLib} from "./libraries/ALMMathLib.sol";
+import {ALMMathLib, div18, WAD} from "./libraries/ALMMathLib.sol";
 import {CurrencySettler} from "./libraries/CurrencySettler.sol";
 
 // ** contracts
@@ -194,14 +194,17 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
         lendingAdapter.syncPositions();
+        uint256 feeB = accumulatedFeeB;
+        uint256 feeQ = accumulatedFeeQ;
 
-        uint256 _accumulatedFee = accumulatedFeeB;
-        accumulatedFeeB = 0;
-        BASE.safeTransfer(treasury, _accumulatedFee);
-
-        _accumulatedFee = accumulatedFeeQ;
-        accumulatedFeeQ = 0;
-        QUOTE.safeTransfer(treasury, _accumulatedFee);
+        if (feeB > 0) {
+            BASE.safeTransfer(treasury, feeB);
+            accumulatedFeeB = 0;
+        }
+        if (feeQ > 0) {
+            QUOTE.safeTransfer(treasury, feeQ);
+            accumulatedFeeQ = 0;
+        }
     }
 
     // ** Swapping logic
@@ -209,7 +212,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     function _beforeSwap(
         address swapper,
         PoolKey calldata key,
-        SwapParams calldata params,
+        SwapParams calldata,
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
@@ -294,8 +297,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function checkSwapDeviations(uint256 sqrtPriceNext) internal view {
         uint256 sqrtPriceAtLastRebalance = rebalanceAdapter.sqrtPriceAtLastRebalance();
-        uint256 priceThreshold = ALMMathLib.div18(sqrtPriceNext, sqrtPriceAtLastRebalance);
-        if (priceThreshold < ALMMathLib.WAD) priceThreshold = ALMMathLib.div18(sqrtPriceAtLastRebalance, sqrtPriceNext);
+        uint256 priceThreshold = div18(sqrtPriceNext, sqrtPriceAtLastRebalance);
+        if (priceThreshold < WAD) priceThreshold = div18(sqrtPriceAtLastRebalance, sqrtPriceNext);
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 

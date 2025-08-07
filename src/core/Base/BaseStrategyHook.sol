@@ -17,7 +17,7 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
-import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
+import {ALMMathLib, WAD} from "../../libraries/ALMMathLib.sol";
 
 // ** contracts
 import {Base} from "./Base.sol";
@@ -105,8 +105,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         int24 _tickUpperDelta,
         uint256 _swapPriceThreshold
     ) external onlyOwner {
-        if (_protocolFee > ALMMathLib.WAD) revert ProtocolFeeNotValid();
-        if (_liquidityMultiplier > 10 * ALMMathLib.WAD) revert LiquidityMultiplierNotValid();
+        if (_protocolFee > WAD) revert ProtocolFeeNotValid();
+        if (_liquidityMultiplier > 10 * WAD) revert LiquidityMultiplierNotValid();
         if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
 
         liquidityMultiplier = _liquidityMultiplier;

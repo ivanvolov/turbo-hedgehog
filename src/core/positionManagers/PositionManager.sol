@@ -10,6 +10,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // ** contracts
 import {Base} from "../Base/Base.sol";
 
+// ** libraries
+import {WAD} from "../../libraries/ALMMathLib.sol";
+
 // ** interfaces
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 
@@ -33,8 +36,6 @@ contract PositionManager is Base, IPositionManager {
 
         emit KParamsSet(_k1, _k2);
     }
-
-    uint256 constant WAD = 1e18;
 
     function positionAdjustmentPriceUp(
         uint256 deltaBase,

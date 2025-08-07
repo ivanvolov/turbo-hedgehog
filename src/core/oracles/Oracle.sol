@@ -8,6 +8,9 @@ import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/Aggr
 // ** contracts
 import {OracleBase} from "./OracleBase.sol";
 
+// ** libraries
+import {WAD} from "../../libraries/ALMMathLib.sol";
+
 /// @title Oracle
 /// @notice Implementation of the Chainlink based oracle with two feeds.
 contract Oracle is OracleBase, Ownable {
@@ -56,7 +59,7 @@ contract Oracle is OracleBase, Ownable {
     }
 
     function _getOraclePrice(IAggV3 feed, uint256 stalenessThreshold) internal view returns (int256) {
-        if (address(feed) == address(0)) return 1e18;
+        if (address(feed) == address(0)) return int256(WAD);
         (, int256 price, , uint256 updatedAt, ) = feed.latestRoundData();
         if (updatedAt + stalenessThreshold < block.timestamp) revert StalenessThresholdExceeded();
         return price;

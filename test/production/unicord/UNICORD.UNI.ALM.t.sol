@@ -71,7 +71,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
     }
 
-    function test_setUp() public {
+    function test_setUp() public view {
         assertEq(hook.owner(), deployer.addr);
         assertTicks(-100, 100);
     }
@@ -453,9 +453,10 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
-            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
+            // uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaUSDC, uint256 deltaUSDT) =
+            swapUSDC_USDT_Out(usdtToGetFSwap);
+            // uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
             // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
             // assertApproxEqAbs(deltaUSDT, deltaX, 1);

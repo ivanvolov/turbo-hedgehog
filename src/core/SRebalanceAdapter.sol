@@ -9,7 +9,7 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // ** libraries
-import {ALMMathLib} from "../libraries/ALMMathLib.sol";
+import {ALMMathLib, div18, absSub, WAD} from "../libraries/ALMMathLib.sol";
 
 // ** contracts
 import {Base} from "./base/Base.sol";
@@ -154,8 +154,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     /// @return priceThreshold  The current price threshold for the price based rebalance
     function isPriceRebalance(uint256 oraclePrice) public view returns (bool needRebalance, uint256 priceThreshold) {
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance
-            ? ALMMathLib.div18(oraclePrice, oraclePriceAtLastRebalance)
-            : ALMMathLib.div18(oraclePriceAtLastRebalance, oraclePrice);
+            ? div18(oraclePrice, oraclePriceAtLastRebalance)
+            : div18(oraclePriceAtLastRebalance, oraclePrice);
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 
@@ -173,21 +173,21 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();
 
-        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(WAD + slippage, currentPrice);
+        (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = calcFlashLoanParams(WAD + slippage, currentPrice);
 
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
             else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
-            uint256 baseBalance = baseBalance();
-            if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance);
-            uint256 quoteBalance = quoteBalance();
-            if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
+            uint256 balanceBase = getBalanceBase();
+            if (balanceBase != 0) lendingAdapter.addCollateralShort(balanceBase);
+            uint256 balanceQuote = getBalanceQuote();
+            if (balanceQuote != 0) lendingAdapter.addCollateralLong(balanceQuote);
         } else {
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
-            uint256 baseBalance = baseBalance();
-            if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
-            uint256 quoteBalance = quoteBalance();
-            if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance);
+            uint256 balanceBase = getBalanceBase();
+            if (balanceBase != 0) lendingAdapter.repayLong(balanceBase);
+            uint256 balanceQuote = getBalanceQuote();
+            if (balanceQuote != 0) lendingAdapter.repayShort(balanceQuote);
         }
 
         // ** Check max deviation
@@ -208,7 +208,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
-        uint256 balance = isBase ? baseBalance() : quoteBalance();
+        uint256 balance = isBase ? getBalanceBase() : getBalanceQuote();
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
 
@@ -218,12 +218,12 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
-        uint256 baseBalance = BASE.balanceOf(address(this));
 
-        if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
+        uint256 balanceBase = getBalanceBase();
+        if (amountBase > balanceBase) swapAdapter.swapExactOutput(false, amountBase - balanceBase);
         else {
-            uint256 quoteBalance = QUOTE.balanceOf(address(this));
-            if (amountQuote > quoteBalance) swapAdapter.swapExactOutput(true, amountQuote - quoteBalance);
+            uint256 balanceQuote = getBalanceQuote();
+            if (amountQuote > balanceQuote) swapAdapter.swapExactOutput(true, amountQuote - balanceQuote);
         }
     }
 
@@ -239,10 +239,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Math functions
 
-    uint256 constant WAD = ALMMathLib.WAD;
-
-    /// @dev This function is mainly for removing stack too deep error.
-    function _rebalanceCalculations(
+    function calcFlashLoanParams(
         uint256 k,
         uint256 price
     ) internal view returns (uint256 baseToFl, uint256 quoteToFl, bytes memory data) {
@@ -251,7 +248,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         int256 deltaDL;
         int256 deltaDS;
         {
-            (uint256 targetCL, uint256 targetCS, uint256 targetDL, uint256 targetDS) = _calculateTargets(price);
+            (uint256 targetCL, uint256 targetCS, uint256 targetDL, uint256 targetDS) = calculateTargets(price);
             if (isNova) {
                 // Discount to cover slippage
                 targetCL = mul18(targetCL, 2 * WAD - k);
@@ -281,8 +278,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         data = abi.encode(deltaCL, deltaCS, deltaDL, deltaDS);
     }
 
-    /// @dev This function is mainly for removing stack too deep error.
-    function _calculateTargets(
+    function calculateTargets(
         uint256 price
     ) internal view returns (uint256 targetCL, uint256 targetCS, uint256 targetDL, uint256 targetDS) {
         uint256 TVL = alm.TVL(price);
@@ -293,16 +289,16 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             targetCL = mul18(TVL, mul18(weight, longLeverage));
             targetCS = mul18(mul18(mul18(TVL, WAD - weight), shortLeverage), price);
         }
-        targetDL = mul18(targetCL, mul18(price, WAD - ALMMathLib.div18(WAD, longLeverage)));
-        targetDS = mulDiv(targetCS, WAD - ALMMathLib.div18(WAD, shortLeverage), price);
+        targetDL = mul18(targetCL, mul18(price, WAD - div18(WAD, longLeverage)));
+        targetDS = mulDiv(targetCS, WAD - div18(WAD, shortLeverage), price);
     }
 
     function checkDeviations(uint256 price) internal view {
         (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
         (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(price, currentCL, currentCS, DL, DS);
 
-        if (ALMMathLib.absSub(lLeverage, longLeverage) > maxDeviationLong) revert DeviationLongExceeded();
-        if (ALMMathLib.absSub(sLeverage, shortLeverage) > maxDeviationShort) revert DeviationShortExceeded();
+        if (absSub(lLeverage, longLeverage) > maxDeviationLong) revert DeviationLongExceeded();
+        if (absSub(sLeverage, shortLeverage) > maxDeviationShort) revert DeviationShortExceeded();
     }
 
     // ** Modifiers
@@ -314,11 +310,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Helpers
 
-    function baseBalance() internal view returns (uint256) {
+    function getBalanceBase() internal view returns (uint256) {
         return BASE.balanceOf(address(this));
     }
 
-    function quoteBalance() internal view returns (uint256) {
+    function getBalanceQuote() internal view returns (uint256) {
         return QUOTE.balanceOf(address(this));
     }
 }
