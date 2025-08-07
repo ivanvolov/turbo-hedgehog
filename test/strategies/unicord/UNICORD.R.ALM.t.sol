@@ -202,24 +202,24 @@ contract UNICORD_R_ALMTest is ALMTestBase {
 
             console.log("daiToSwapQ %s", daiToSwapQ);
 
-            // deal(address(DAI), address(swapper.addr), daiToSwapQ);
-            // uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            deal(address(DAI), address(swapper.addr), daiToSwapQ);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap - 1);
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap - 1);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            // assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 1);
-            // assertApproxEqAbs(deltaUSDC, deltaX, 1);
+            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaUSDC, deltaX, 1);
 
-            // uint256 deltaTreasuryFee = (deltaDAI * testFee * hook.protocolFee()) / 1e36;
-            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            uint256 deltaTreasuryFee = (deltaDAI * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
-            // treasuryFeeQ += deltaTreasuryFee;
+            treasuryFeeQ += deltaTreasuryFee;
 
-            // assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            // assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
-            // assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
 
         // ** Make oracle change with swap price

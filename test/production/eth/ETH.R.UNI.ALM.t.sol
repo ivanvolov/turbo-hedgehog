@@ -84,12 +84,6 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
     }
 
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(-200488, -194488);
-    }
-
     uint256 amountToDep = 100 ether;
 
     function part_deposit() public {
