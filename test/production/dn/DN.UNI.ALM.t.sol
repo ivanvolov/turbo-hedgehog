@@ -341,16 +341,22 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqProtocolState(4748099553051385808879318, 265938163500); //rounding error for sqrt price 1e18????
     }
 
+    // big swap -> try rebalance without oracle update -> fail -> oracle update -> rebalance good
     function test_deposit_rebalance_swap_rebalance() public {
-        test_deposit_rebalance_swap_price_up_in();
+        test_deposit_rebalance();
 
+        uint256 usdcToSwap = 110000e6; // 110k USDC
+        deal(address(USDC), address(swapper.addr), usdcToSwap);
+
+        swapUSDC_ETH_In(usdcToSwap);
+
+        // ** try first rebalance
         vm.prank(deployer.addr);
         vm.expectRevert(SRebalanceAdapter.RebalanceConditionNotMet.selector);
-
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, ETH_USDC_key);
 
         // ** Second rebalance
         {
@@ -359,8 +365,8 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
             rebalanceAdapter.rebalance(slippage);
 
             assertEqBalanceStateZero(address(hook));
-            assertEqPositionState(133755977353914710809, 440071573466, 239459617199, 109204324622254173858);
-            assertApproxEqAbs(calcTVL(), 266702705299, 1, "tvl");
+            assertEqPositionState(90601754455614480469, 440534711186, 239798117010, 73971299082038221114);
+            assertApproxEqAbs(calcTVL(), 266896898075, 1, "tvl");
         }
     }
 
