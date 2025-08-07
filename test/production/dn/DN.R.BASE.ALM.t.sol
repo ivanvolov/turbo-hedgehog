@@ -89,7 +89,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         }
     }
 
-    uint256 amountToDep = 2 * 100000 * 1e6; // 200BTC
+    uint256 amountToDep = 2 * 100000 * 1e6; // 200k USDC
 
     function test_deposit() public {
         assertEq(calcTVL(), 0, "TVL");
@@ -489,7 +489,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
 
         // ** Deposit
         {
-            uint256 _amountToDep = 200 * 2485 * 1e6; //200 ETH in USDC
+            uint256 _amountToDep = 100 * 1000 * 1e6; //200 ETH in USDC
             deal(address(USDC), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
             hook.deposit(alice.addr, _amountToDep, 0);
@@ -609,12 +609,12 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
         // ** Rebalance
-        //vm.prank(deployer.addr);
-        //rebalanceAdapter.rebalance(slippage);
-        //_liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.rebalance(slippage);
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
-        //alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
 
         // ** Full withdraw
         {
