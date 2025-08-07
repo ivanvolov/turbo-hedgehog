@@ -28,12 +28,10 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     IERC20 USDC = IERC20(UConstants.USDC);
     IERC20 USDT = IERC20(UConstants.USDT);
 
-    PoolKey ETH_USDT_key;
-
     ALM hookALM;
     ALM hookUNICORD;
-    PoolKey USDC_USDT_key;
-    PoolKey ETH_USDC_key;
+    PoolKey USDC_USDT_key_UNICORD;
+    PoolKey ETH_USDC_key_ALM;
     SRebalanceAdapter rebalanceAdapterUnicord;
     SRebalanceAdapter rebalanceAdapterALM;
 
@@ -62,14 +60,6 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             // deployMockV4Quoter();
             _create_accounts();
         }
-
-        ETH_USDT_key = _getAndCheckPoolKey(
-            ETH,
-            USDT,
-            500,
-            10,
-            0x04b7dd024db64cfbe325191c818266e4776918cd9eaf021c26949a859e654b16
-        );
     }
 
     function part_deploy_ETH_ALM() internal {
@@ -77,22 +67,15 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 shortLeverage = 2e18;
         uint256 weight = 55e16; //50%
         uint256 liquidityMultiplier = 2e18;
-        BASE = USDC;
-        QUOTE = WETH;
-        isNTS = 0;
+        IS_NTS = true;
 
+        create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_USDC_WETH_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_WETH,
-            UConstants.chronicle_feed_USDC,
-            24 hours,
-            24 hours,
-            false,
-            int8(6 - 18)
-        );
-        mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3732706458000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 1000010000000000000);
+
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_WETH, false);
+        mock_latestRoundData(UConstants.chronicle_feed_WETH, 3732706458000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
@@ -107,7 +90,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             vm.stopPrank();
         }
         hookALM = hook;
-        ETH_USDC_key = key;
+        ETH_USDC_key_ALM = key;
         rebalanceAdapterALM = rebalanceAdapter;
     }
 
@@ -116,21 +99,13 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 shortLeverage = 1e18;
         uint256 weight = 50e16; //50%
         uint256 liquidityMultiplier = 1e18;
-        BASE = USDC;
-        QUOTE = USDT;
 
+        create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.USDT, 6, "USDT");
         create_lending_adapter_euler_USDC_USDT_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            AggregatorV3Interface(UConstants.chronicle_feed_USDT), // USDT
-            AggregatorV3Interface(UConstants.chronicle_feed_USDC), // USDC
-            24 hours,
-            24 hours,
-            true,
-            int8(0)
-        );
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 1000535721908032161);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 1000010000000000000);
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_USDT, true);
+        mock_latestRoundData(UConstants.chronicle_feed_USDT, 1000535721908032161);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, type(uint256).max);
 
@@ -143,7 +118,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             vm.stopPrank();
         }
         hookUNICORD = hook;
-        USDC_USDT_key = key;
+        USDC_USDT_key_UNICORD = key;
         rebalanceAdapterUnicord = rebalanceAdapter;
     }
 
@@ -244,11 +219,6 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
         (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
 
-        // console.log("deltaUSDC %s", deltaUSDC);
-        // console.log("deltaETH %s", deltaETH);
-        // console.log("deltaX %s", deltaX);
-        // console.log("deltaY %s", deltaY);
-
         assertApproxEqAbs(deltaUSDC, deltaX, 1);
         assertApproxEqAbs(usdcFromSwap, deltaUSDC, 1);
 
@@ -284,17 +254,9 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         part_deploy_UNICORD();
 
         {
-            PoolKey memory _USDC_USDT_key_v2 = _getAndCheckPoolKey(
-                USDC,
-                USDT,
-                100,
-                1,
-                0x77ea9d2be50eb3e82b62db928a1bcc573064dd2a14f5026847e755518c8659c9
-            );
-
             vm.startPrank(deployer.addr);
             uint8[4] memory config = [2, 2, 0, 0];
-            setSwapAdapterToV4SingleSwap(_USDC_USDT_key_v2, config);
+            setSwapAdapterToV4SingleSwap(USDC_USDT_key_unichain, config);
             vm.stopPrank();
         }
 
@@ -314,17 +276,17 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             // USDC->USDT->ETH->WETH
             {
                 path0[0] = PathKey(
-                    USDC_USDT_key.currency1,
-                    USDC_USDT_key.fee,
-                    USDC_USDT_key.tickSpacing,
-                    USDC_USDT_key.hooks,
+                    USDC_USDT_key_UNICORD.currency1,
+                    USDC_USDT_key_UNICORD.fee,
+                    USDC_USDT_key_UNICORD.tickSpacing,
+                    USDC_USDT_key_UNICORD.hooks,
                     abi.encodePacked(uint8(1))
                 );
                 path0[1] = PathKey(
-                    ETH_USDT_key.currency1,
-                    ETH_USDT_key.fee,
-                    ETH_USDT_key.tickSpacing,
-                    ETH_USDT_key.hooks,
+                    ETH_USDT_key_unichain.currency1,
+                    ETH_USDT_key_unichain.fee,
+                    ETH_USDT_key_unichain.tickSpacing,
+                    ETH_USDT_key_unichain.hooks,
                     abi.encodePacked(uint8(2))
                 );
             }
@@ -333,17 +295,17 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             // WETH->ETH->USDT->USDC
             {
                 path1[0] = PathKey(
-                    ETH_USDT_key.currency0,
-                    ETH_USDT_key.fee,
-                    ETH_USDT_key.tickSpacing,
-                    ETH_USDT_key.hooks,
+                    ETH_USDT_key_unichain.currency0,
+                    ETH_USDT_key_unichain.fee,
+                    ETH_USDT_key_unichain.tickSpacing,
+                    ETH_USDT_key_unichain.hooks,
                     abi.encodePacked(uint8(2))
                 );
                 path1[1] = PathKey(
-                    USDC_USDT_key.currency1,
-                    USDC_USDT_key.fee,
-                    USDC_USDT_key.tickSpacing,
-                    USDC_USDT_key.hooks,
+                    USDC_USDT_key_UNICORD.currency1,
+                    USDC_USDT_key_UNICORD.fee,
+                    USDC_USDT_key_UNICORD.tickSpacing,
+                    USDC_USDT_key_UNICORD.hooks,
                     abi.encodePacked(uint8(1))
                 );
             }
@@ -352,17 +314,17 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             // USDC->USDT->ETH->WETH
             {
                 path2[0] = PathKey(
-                    USDC_USDT_key.currency0,
-                    USDC_USDT_key.fee,
-                    USDC_USDT_key.tickSpacing,
-                    USDC_USDT_key.hooks,
+                    USDC_USDT_key_UNICORD.currency0,
+                    USDC_USDT_key_UNICORD.fee,
+                    USDC_USDT_key_UNICORD.tickSpacing,
+                    USDC_USDT_key_UNICORD.hooks,
                     abi.encodePacked(uint8(1))
                 );
                 path2[1] = PathKey(
-                    ETH_USDT_key.currency1,
-                    ETH_USDT_key.fee,
-                    ETH_USDT_key.tickSpacing,
-                    ETH_USDT_key.hooks,
+                    ETH_USDT_key_unichain.currency1,
+                    ETH_USDT_key_unichain.fee,
+                    ETH_USDT_key_unichain.tickSpacing,
+                    ETH_USDT_key_unichain.hooks,
                     abi.encodePacked(uint8(2))
                 );
             }
@@ -371,17 +333,17 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             // WETH->ETH->USDT->USDC
             {
                 path3[0] = PathKey(
-                    ETH_USDT_key.currency1,
-                    ETH_USDT_key.fee,
-                    ETH_USDT_key.tickSpacing,
-                    ETH_USDT_key.hooks,
+                    ETH_USDT_key_unichain.currency1,
+                    ETH_USDT_key_unichain.fee,
+                    ETH_USDT_key_unichain.tickSpacing,
+                    ETH_USDT_key_unichain.hooks,
                     abi.encodePacked(uint8(2))
                 );
                 path3[1] = PathKey(
-                    USDC_USDT_key.currency0,
-                    USDC_USDT_key.fee,
-                    USDC_USDT_key.tickSpacing,
-                    USDC_USDT_key.hooks,
+                    USDC_USDT_key_UNICORD.currency0,
+                    USDC_USDT_key_UNICORD.fee,
+                    USDC_USDT_key_UNICORD.tickSpacing,
+                    USDC_USDT_key_UNICORD.hooks,
                     abi.encodePacked(uint8(1))
                 );
             }
@@ -419,7 +381,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         part_test_lifecycle();
 
         par_swap_up_in_ETH_ALM();
-        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key_unichain);
         part_rebalance_ETH_ALM(3e14);
     }
 
@@ -427,7 +389,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         part_test_lifecycle();
 
         par_swap_up_out_ETH_ALM();
-        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key_unichain);
         part_rebalance_ETH_ALM(3e14);
     }
 
@@ -435,7 +397,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         part_test_lifecycle();
 
         par_swap_down_in_ETH_ALM();
-        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key_unichain);
         part_rebalance_ETH_ALM(3e14);
     }
 
@@ -443,7 +405,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         part_test_lifecycle();
 
         par_swap_down_out_ETH_ALM();
-        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hookALM, ETH_USDT_key_unichain);
         part_rebalance_ETH_ALM(3e14);
     }
 
@@ -483,7 +445,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         int256 ethBefore = int256(swapper.addr.balance);
 
         vm.startPrank(swapper.addr);
-        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, ETH_USDC_key);
+        _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, ETH_USDC_key_ALM);
         vm.stopPrank();
 
         int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));

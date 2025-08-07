@@ -29,7 +29,6 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
 
     IERC20 WETH = IERC20(UConstants.WETH);
     IERC20 USDT = IERC20(UConstants.USDT);
-    PoolKey ETH_USDT_key;
 
     function setUp() public {
         select_unichain_fork(23128176);
@@ -40,7 +39,7 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
-            isNTS = 0;
+            IS_NTS = true;
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
@@ -51,16 +50,10 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         create_accounts_and_tokens(UConstants.USDT, 6, "USDT", UConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_morpho_unichain();
         create_lending_adapter_euler_USDT_WETH_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_WETH,
-            UConstants.chronicle_feed_USDT,
-            24 hours,
-            24 hours,
-            false,
-            int8(6 - 18)
-        );
-        mock_latestRoundData(address(UConstants.chronicle_feed_WETH), 3754570000000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 999983595619733749);
+
+        create_oracle(UConstants.chronicle_feed_USDT, UConstants.chronicle_feed_WETH, false);
+        mock_latestRoundData(UConstants.chronicle_feed_WETH, 3754570000000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDT, 999983595619733749);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -79,23 +72,10 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for native-token
         {
             vm.startPrank(deployer.addr);
-            ETH_USDT_key = _getAndCheckPoolKey(
-                ETH,
-                USDT,
-                500,
-                10,
-                0x04b7dd024db64cfbe325191c818266e4776918cd9eaf021c26949a859e654b16
-            );
             uint8[4] memory config = [0, 1, 2, 3];
-            setSwapAdapterToV4SingleSwap(ETH_USDT_key, config);
+            setSwapAdapterToV4SingleSwap(ETH_USDT_key_unichain, config);
             vm.stopPrank();
         }
-    }
-
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(-200488, -194488);
     }
 
     uint256 amountToDep = 100 ether;
@@ -158,7 +138,7 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         console.log("DEPOSIT REBALANCE");
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDT_key_unichain);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
@@ -297,7 +277,7 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDT_key_unichain);
 
         // ** Withdraw
         {
@@ -351,7 +331,7 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDT_key_unichain);
 
         // ** Deposit
         {
@@ -491,7 +471,7 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDT_key_unichain);
 
         // ** Rebalance
         uint256 preRebalanceTVL = calcTVL();
@@ -501,7 +481,7 @@ contract ETH_R_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage * 2);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDT_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDT_key_unichain);
 
         // ** Full withdraw
         {

@@ -57,7 +57,8 @@ contract ETH_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_USDC_WETH();
         create_flash_loan_adapter_euler_USDC_WETH();
-        create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
+
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_WETH, true);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -749,8 +750,6 @@ contract ETH_ALMTest is ALMTestBase {
         test_deposit_rebalance();
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
-        saveBalance(address(manager));
-
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
@@ -974,8 +973,6 @@ contract ETH_ALMTest is ALMTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     function test_lending_adapter_migration() public {
@@ -1117,12 +1114,16 @@ contract ETH_ALMTest is ALMTestBase {
 
     // ** Helpers
 
-    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
+    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(true, amount);
     }
 
     function quoteWETH_USDC_Out(uint256 amount) public returns (uint256) {
         return _quoteOutputSwap(false, amount);
+    }
+
+    function swapWETH_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function swapWETH_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -1131,10 +1132,6 @@ contract ETH_ALMTest is ALMTestBase {
 
     function swapUSDC_WETH_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap_v4_single_throw_mock_router(true, int256(amount), key);
-    }
-
-    function quoteUSDC_WETH_Out(uint256 amount) public returns (uint256) {
-        return _quoteOutputSwap(true, amount);
     }
 
     function swapUSDC_WETH_In(uint256 amount) public returns (uint256, uint256) {

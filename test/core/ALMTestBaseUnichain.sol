@@ -20,6 +20,7 @@ import {RouterParameters} from "@universal-router/contracts/types/RouterParamete
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 abstract contract ALMTestBaseUnichain is TestBaseMorpho {
     using SafeERC20 for IERC20;
@@ -36,11 +37,18 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
     ) internal {
         vm.startPrank(deployer.addr);
         WETH9 = UConstants.WETH9;
-        deploy_hook_contract(_isInvertedAssets, UConstants.WETH9);
+        deploy_hook_contract(_isInvertedAssets, IS_NTS ? WETH9 : TestLib.ZERO_WETH9);
         isInvertedAssets = _isInvertedAssets;
 
         createPositionManager(_isNova);
-        swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, universalRouter, UConstants.PERMIT_2, UConstants.WETH9);
+        swapAdapter = new UniswapSwapAdapter(
+            BASE,
+            QUOTE,
+            universalRouter,
+            manager,
+            UConstants.PERMIT_2,
+            UConstants.WETH9
+        );
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, _isInvertedAssets, _isNova);
         hook.setProtocolParams(
             _liquidityMultiplier,

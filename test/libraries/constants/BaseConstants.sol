@@ -22,6 +22,7 @@ library Constants {
 
     // ** ERC20 tokens
     IWETH9 constant WETH9 = IWETH9(0x4200000000000000000000000000000000000006);
+    address constant WETH = 0x4200000000000000000000000000000000000006;
     address constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address constant CBBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
 
@@ -33,7 +34,8 @@ library Constants {
     IMerklDistributor constant merklRewardsDistributor = IMerklDistributor(0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae); //https://app.merkl.xyz/status
     IrEUL constant rEUL = IrEUL(0xE08e1f00D388E201e48842E53fA96195568e6813); // https://docs.euler.finance/EUL/addresses
 
-    IEulerVault constant eulerUSDCVault1 = IEulerVault(0x085178078796Da17B191f9081b5E2fCCc79A7eE7); // https://app.euler.finance/?asset=USDT&network=unichain
+    // https://app.euler.finance/?asset=USDT&network=base
+    IEulerVault constant eulerUSDCVault1 = IEulerVault(0x0A1a3b5f2041F33522C4efc754a7D096f880eE16);
     IEulerVault constant eulerCBBTCVault1 = IEulerVault(0x882018411Bc4A020A879CEE183441fC9fa5D7f8B);
 
     // ** Uniswap
@@ -44,4 +46,6 @@ library Constants {
     // ** Chainlink // https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     IAggV3 constant chainlink_feed_CBBTC = IAggV3(0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D);
     IAggV3 constant chainlink_feed_USDC = IAggV3(0x7e860098F58bBFC8648a4311b374B1D669a2bc6B);
+    IAggV3 constant chainlink_feed_WETH = IAggV3(0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70);
+    IAggV3 constant chainlink_feed_WSTETH = IAggV3(0x43a5C292A453A3bF3606fa856197f09D7B74251a);
 }

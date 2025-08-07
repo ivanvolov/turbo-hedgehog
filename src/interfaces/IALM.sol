@@ -25,6 +25,7 @@ interface IALM {
     error TickUpperOutOfBounds(int24 tick);
     error TickDeltasNotValid();
     error LPFeeTooLarge(uint24 fee);
+    error NativeTokenUnsupported();
 
     event StatusSet(uint8 indexed status);
     event OperatorsSet(address indexed liquidityOperator, address indexed swapOperator);

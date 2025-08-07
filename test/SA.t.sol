@@ -27,9 +27,6 @@ contract SwapAdapterTest is ALMTestBase {
 
     IUniswapSwapAdapter uniswapSwapAdapter;
 
-    PoolKey poolKeyETH_USDC;
-    PoolKey poolKeyETH_USDT;
-    PoolKey poolKeyUSDC_USDT;
     enum SwapDirection {
         BASE_QUOTE,
         QUOTE_BASE
@@ -41,34 +38,11 @@ contract SwapAdapterTest is ALMTestBase {
 
     function setUp() public {
         select_mainnet_fork(22490362);
+        manager = MConstants.manager;
 
         vm.label(address(ETH), "ETH");
         vm.label(MConstants.USDC, "USDC");
         vm.label(MConstants.USDT, "USDT");
-
-        poolKeyETH_USDC = _getAndCheckPoolKey(
-            ETH,
-            IERC20(MConstants.USDC),
-            500,
-            10,
-            0x21c67e77068de97969ba93d4aab21826d33ca12bb9f565d8496e8fda8a82ca27
-        );
-
-        poolKeyETH_USDT = _getAndCheckPoolKey(
-            ETH,
-            IERC20(MConstants.USDT),
-            500,
-            10,
-            0x72331fcb696b0151904c03584b66dc8365bc63f8a144d89a773384e3a579ca73
-        );
-
-        poolKeyUSDC_USDT = _getAndCheckPoolKey(
-            IERC20(MConstants.USDC),
-            IERC20(MConstants.USDT),
-            100,
-            1,
-            0xe018f09af38956affdfeab72c2cefbcd4e6fee44d09df7525ec9dba3e51356a5
-        );
 
         testAmount = 1000e6;
     }
@@ -85,7 +59,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_INPUT,
             SwapDirection.BASE_QUOTE,
             2529699535,
-            abi.encode(true, poolKeyETH_USDT, true, bytes("")),
+            abi.encode(true, ETH_USDT_key, true, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -100,7 +74,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_OUTPUT,
             SwapDirection.BASE_QUOTE,
             999999999619294475,
-            abi.encode(true, poolKeyETH_USDT, true, bytes("")),
+            abi.encode(true, ETH_USDT_key, true, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -115,7 +89,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_INPUT,
             SwapDirection.QUOTE_BASE,
             998306944672183526,
-            abi.encode(false, poolKeyETH_USDT, false, bytes("")),
+            abi.encode(false, ETH_USDT_key, false, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -130,7 +104,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_OUTPUT,
             SwapDirection.QUOTE_BASE,
             2533991212,
-            abi.encode(false, poolKeyETH_USDT, false, bytes("")),
+            abi.encode(false, ETH_USDT_key, false, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -141,7 +115,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_INPUT,
             SwapDirection.BASE_QUOTE,
             999621885,
-            abi.encode(false, poolKeyUSDC_USDT, true, bytes("")),
+            abi.encode(false, USDC_USDT_key, true, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -152,7 +126,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_OUTPUT,
             SwapDirection.BASE_QUOTE,
             1000378259,
-            abi.encode(false, poolKeyUSDC_USDT, true, bytes("")),
+            abi.encode(false, USDC_USDT_key, true, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -163,7 +137,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_INPUT,
             SwapDirection.QUOTE_BASE,
             1000176859,
-            abi.encode(false, poolKeyUSDC_USDT, false, bytes("")),
+            abi.encode(false, USDC_USDT_key, false, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -174,7 +148,7 @@ contract SwapAdapterTest is ALMTestBase {
             SwapType.EXACT_OUTPUT,
             SwapDirection.QUOTE_BASE,
             999823173,
-            abi.encode(false, poolKeyUSDC_USDT, false, bytes("")),
+            abi.encode(false, USDC_USDT_key, false, bytes("")),
             ProtId.V4_SINGLE
         );
     }
@@ -183,17 +157,17 @@ contract SwapAdapterTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDC.currency0, // Intermediate token is ETH
-            poolKeyETH_USDC.fee,
-            poolKeyETH_USDC.tickSpacing,
-            poolKeyETH_USDC.hooks,
+            ETH_USDC_key.currency0, // Intermediate token is ETH
+            ETH_USDC_key.fee,
+            ETH_USDC_key.tickSpacing,
+            ETH_USDC_key.hooks,
             abi.encodePacked(uint8(1))
         );
         path[1] = PathKey(
-            poolKeyETH_USDT.currency1, // Intermediate token is USDT
-            poolKeyETH_USDT.fee,
-            poolKeyETH_USDT.tickSpacing,
-            poolKeyETH_USDT.hooks,
+            ETH_USDT_key.currency1, // Intermediate token is USDT
+            ETH_USDT_key.fee,
+            ETH_USDT_key.tickSpacing,
+            ETH_USDT_key.hooks,
             abi.encodePacked(uint8(2))
         );
 
@@ -210,17 +184,17 @@ contract SwapAdapterTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDC.currency1, // Intermediate token is USDC, the tokenIn.
-            poolKeyETH_USDC.fee,
-            poolKeyETH_USDC.tickSpacing,
-            poolKeyETH_USDC.hooks,
+            ETH_USDC_key.currency1, // Intermediate token is USDC, the tokenIn.
+            ETH_USDC_key.fee,
+            ETH_USDC_key.tickSpacing,
+            ETH_USDC_key.hooks,
             abi.encodePacked(uint8(1))
         );
         path[1] = PathKey(
-            poolKeyETH_USDT.currency0, // Intermediate token is ETH, the intermediate token.
-            poolKeyETH_USDT.fee,
-            poolKeyETH_USDT.tickSpacing,
-            poolKeyETH_USDT.hooks,
+            ETH_USDT_key.currency0, // Intermediate token is ETH, the intermediate token.
+            ETH_USDT_key.fee,
+            ETH_USDT_key.tickSpacing,
+            ETH_USDT_key.hooks,
             abi.encodePacked(uint8(2))
         );
         // this gos backwards
@@ -238,17 +212,17 @@ contract SwapAdapterTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDT.currency0, // Intermediate token is ETH, the intermediate token.
-            poolKeyETH_USDT.fee,
-            poolKeyETH_USDT.tickSpacing,
-            poolKeyETH_USDT.hooks,
+            ETH_USDT_key.currency0, // Intermediate token is ETH, the intermediate token.
+            ETH_USDT_key.fee,
+            ETH_USDT_key.tickSpacing,
+            ETH_USDT_key.hooks,
             bytes("")
         );
         path[1] = PathKey(
-            poolKeyETH_USDC.currency1, // Intermediate token is USDC, the tokenOut.
-            poolKeyETH_USDC.fee,
-            poolKeyETH_USDC.tickSpacing,
-            poolKeyETH_USDC.hooks,
+            ETH_USDC_key.currency1, // Intermediate token is USDC, the tokenOut.
+            ETH_USDC_key.fee,
+            ETH_USDC_key.tickSpacing,
+            ETH_USDC_key.hooks,
             bytes("")
         );
 
@@ -266,17 +240,17 @@ contract SwapAdapterTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         PathKey[] memory path = new PathKey[](2);
         path[0] = PathKey(
-            poolKeyETH_USDT.currency1, // Intermediate token is USDT
-            poolKeyETH_USDT.fee,
-            poolKeyETH_USDT.tickSpacing,
-            poolKeyETH_USDT.hooks,
+            ETH_USDT_key.currency1, // Intermediate token is USDT
+            ETH_USDT_key.fee,
+            ETH_USDT_key.tickSpacing,
+            ETH_USDT_key.hooks,
             bytes("")
         );
         path[1] = PathKey(
-            poolKeyETH_USDC.currency0, // Intermediate token is ETH
-            poolKeyETH_USDC.fee,
-            poolKeyETH_USDC.tickSpacing,
-            poolKeyETH_USDC.hooks,
+            ETH_USDC_key.currency0, // Intermediate token is ETH
+            ETH_USDC_key.fee,
+            ETH_USDC_key.tickSpacing,
+            ETH_USDC_key.hooks,
             bytes("")
         );
         // this goes backwards
@@ -474,7 +448,7 @@ contract SwapAdapterTest is ALMTestBase {
             uniswapSwapAdapter.setSwapPath(
                 2,
                 protToC(ProtId.V4_SINGLE),
-                abi.encode(false, poolKeyUSDC_USDT, false, bytes(""))
+                abi.encode(false, USDC_USDT_key, false, bytes(""))
             );
         }
 
@@ -482,17 +456,17 @@ contract SwapAdapterTest is ALMTestBase {
         {
             PathKey[] memory path = new PathKey[](2);
             path[0] = PathKey(
-                poolKeyETH_USDT.currency0,
-                poolKeyETH_USDT.fee,
-                poolKeyETH_USDT.tickSpacing,
-                poolKeyETH_USDT.hooks,
+                ETH_USDT_key.currency0,
+                ETH_USDT_key.fee,
+                ETH_USDT_key.tickSpacing,
+                ETH_USDT_key.hooks,
                 bytes("")
             );
             path[1] = PathKey(
-                poolKeyETH_USDC.currency1,
-                poolKeyETH_USDC.fee,
-                poolKeyETH_USDC.tickSpacing,
-                poolKeyETH_USDC.hooks,
+                ETH_USDC_key.currency1,
+                ETH_USDC_key.fee,
+                ETH_USDC_key.tickSpacing,
+                ETH_USDC_key.hooks,
                 bytes("")
             );
 
@@ -552,7 +526,7 @@ contract SwapAdapterTest is ALMTestBase {
             uniswapSwapAdapter.setSwapPath(
                 2,
                 protToC(ProtId.V4_SINGLE),
-                abi.encode(false, poolKeyUSDC_USDT, false, bytes(""))
+                abi.encode(false, USDC_USDT_key, false, bytes(""))
             );
         }
 
@@ -560,17 +534,17 @@ contract SwapAdapterTest is ALMTestBase {
         {
             PathKey[] memory path = new PathKey[](2);
             path[0] = PathKey(
-                poolKeyETH_USDT.currency1,
-                poolKeyETH_USDT.fee,
-                poolKeyETH_USDT.tickSpacing,
-                poolKeyETH_USDT.hooks,
+                ETH_USDT_key.currency1,
+                ETH_USDT_key.fee,
+                ETH_USDT_key.tickSpacing,
+                ETH_USDT_key.hooks,
                 bytes("")
             );
             path[1] = PathKey(
-                poolKeyETH_USDC.currency0,
-                poolKeyETH_USDC.fee,
-                poolKeyETH_USDC.tickSpacing,
-                poolKeyETH_USDC.hooks,
+                ETH_USDC_key.currency0,
+                ETH_USDC_key.fee,
+                ETH_USDC_key.tickSpacing,
+                ETH_USDC_key.hooks,
                 bytes("")
             );
 
@@ -617,6 +591,7 @@ contract SwapAdapterTest is ALMTestBase {
             BASE,
             QUOTE,
             MConstants.UNIVERSAL_ROUTER,
+            manager,
             MConstants.PERMIT_2,
             MConstants.WETH9
         );
@@ -701,6 +676,7 @@ contract SwapAdapterTest is ALMTestBase {
             BASE,
             QUOTE,
             MConstants.UNIVERSAL_ROUTER,
+            manager,
             MConstants.PERMIT_2,
             MConstants.WETH9
         );

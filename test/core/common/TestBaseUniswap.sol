@@ -6,10 +6,8 @@ import "forge-std/console.sol";
 // ** V4 imports
 import {Currency} from "v4-core/types/Currency.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {PoolSwapTest} from "@test/libraries/v4-forks/PoolSwapTest.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {SqrtPriceMath} from "v4-core/libraries/SqrtPriceMath.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
@@ -44,7 +42,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 abstract contract TestBaseUniswap is TestBaseAsserts {
     using PRBMathUD60x18 for uint256;
-    using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
     using SafeERC20 for IERC20;
 
@@ -156,29 +153,6 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         else revert("ProtId not found");
     }
 
-    function _getAndCheckPoolKey(
-        IERC20 token0,
-        IERC20 token1,
-        uint24 fee,
-        int24 tickSpacing,
-        bytes32 _poolId
-    ) internal pure returns (PoolKey memory poolKey) {
-        _test_currencies_order(address(token0), address(token1));
-        poolKey = PoolKey(
-            Currency.wrap(address(token0)),
-            Currency.wrap(address(token1)),
-            fee,
-            tickSpacing,
-            IHooks(address(0))
-        );
-        PoolId id = poolKey.toId();
-        assertEq(PoolId.unwrap(id), _poolId, "PoolId not equal");
-    }
-
-    function _test_currencies_order(address token0, address token1) internal pure {
-        if (token0 >= token1) revert("Out of order");
-    }
-
     // --- Oracle Alignment --- //
 
     function alignOraclesAndPoolsV3(uint160 newSqrtPrice) public {
@@ -204,7 +178,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         vm.mockCall(
             address(oracle),
             abi.encodeWithSelector(IOracle.poolPrice.selector),
-            abi.encode(_price, ALMMathLib.getSqrtPriceX96FromPrice(_poolPrice))
+            abi.encode(_price, TestLib.getSqrtPriceX96FromPrice(_poolPrice))
         );
     }
 

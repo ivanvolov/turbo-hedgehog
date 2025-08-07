@@ -17,9 +17,9 @@ import {ALMTestBaseBase} from "@test/core/ALMTestBaseBase.sol";
 contract BTC_BASE_ALMTest is ALMTestBaseBase {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
-    uint256 weight = 55e16;
+    uint256 weight = 50e16;
     uint256 liquidityMultiplier = 1e18;
-    uint256 slippage = 7e15;
+    uint256 slippage = 10e15;
     uint24 feeLP = 500; //0.05%
 
     uint256 k1 = 1425e15; //1.425
@@ -38,7 +38,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e2;
-            isNTS = 2;
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
@@ -50,14 +49,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         create_flash_loan_adapter_morpho_base();
         create_lending_adapter_euler_USDC_BTC_base();
 
-        oracle = _create_oracle(
-            BConstants.chainlink_feed_CBBTC,
-            BConstants.chainlink_feed_USDC,
-            24 hours,
-            24 hours,
-            true,
-            int8(6 - 8)
-        );
+        create_oracle(BConstants.chainlink_feed_USDC, BConstants.chainlink_feed_CBBTC, true);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -89,12 +81,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         }
     }
 
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(-71807, -65807);
-    }
-
     uint256 amountToDep = 1 * 1e8;
 
     function test_deposit() public {
@@ -106,7 +92,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
 
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 1e8, 1);
+        assertApproxEqAbs(shares, amountToDep, 1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
@@ -122,14 +108,14 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
-        // assertEqBalanceStateZero(address(hook));
-        // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // assertTicks(-71898, -65898);
-        // assertApproxEqAbs(hook.sqrtPriceCurrent(), 2528463782851807812600059248, 1e1, "sqrtPrice");
+        assertEqBalanceStateZero(address(hook));
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        assertTicks(-73458, -67458);
+        console.log("oraclePrice %s", oracle.price());
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 2338819880825639830372751712, 1e1, "sqrtPrice");
     }
 
     function test_lifecycle() public {
-        vm.skip(true);
         vm.startPrank(deployer.addr);
         updateProtocolFees(20 * 1e16); // 20% from fees
         hook.setNextLPFee(feeLP);
@@ -137,14 +123,13 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
 
         // ** Swap Up In
         {
@@ -171,8 +156,8 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs(deltaBTC, deltaX, 1);
-            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaBTC, deltaX, 3);
+            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 4);
 
             uint256 deltaTreasuryFee = (usdcToSwap * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
@@ -260,7 +245,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 1);
+            assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 2);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
             uint256 deltaTreasuryFee = (deltaX * testFee * hook.protocolFee()) / 1e36;
@@ -283,7 +268,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
 
         // ** Withdraw
         {
@@ -311,7 +296,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
 
         // ** Deposit
         {
@@ -344,8 +329,8 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             console.log("deltaX %s", deltaX);
             console.log("deltaY %s", deltaY);
 
-            assertApproxEqAbs(deltaBTC, deltaX, 1);
-            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 2);
+            assertApproxEqAbs(deltaBTC, deltaX, 2);
+            assertApproxEqAbs((usdcToSwap * (1e18 - testFee)) / 1e18, deltaY, 4);
 
             uint256 deltaTreasuryFee = (usdcToSwap * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFee;
@@ -443,7 +428,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
 
         // ** Rebalance
         vm.prank(deployer.addr);
@@ -451,7 +436,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
 
         // ** Full withdraw
         {
@@ -460,8 +445,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

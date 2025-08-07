@@ -24,7 +24,6 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
     IERC20 USDT = IERC20(UConstants.USDT);
     IERC20 USDC = IERC20(UConstants.USDC);
-    PoolKey USDC_USDT_key;
 
     function setUp() public {
         select_unichain_fork(23404999);
@@ -36,7 +35,6 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
             SLIPPAGE_TOLERANCE_V4 = 1e15;
-            isNTS = 2;
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
@@ -47,16 +45,10 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn_USDC_USDT_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_USDT,
-            UConstants.chronicle_feed_USDC,
-            24 hours,
-            24 hours,
-            true,
-            int8(0)
-        );
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDT), 999620000000000000);
-        mock_latestRoundData(address(UConstants.chronicle_feed_USDC), 999735368664584522);
+
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_USDT, true);
+        mock_latestRoundData(UConstants.chronicle_feed_USDT, 999620000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 999735368664584522);
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
 
         // ** Setting up strategy params
@@ -73,23 +65,15 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for native-token
         {
             vm.startPrank(deployer.addr);
-            USDC_USDT_key = _getAndCheckPoolKey(
-                USDC,
-                USDT,
-                100,
-                1,
-                0x77ea9d2be50eb3e82b62db928a1bcc573064dd2a14f5026847e755518c8659c9
-            );
             uint8[4] memory config = [0, 2, 0, 2];
-            setSwapAdapterToV4SingleSwap(USDC_USDT_key, config);
+            setSwapAdapterToV4SingleSwap(USDC_USDT_key_unichain, config);
             vm.stopPrank();
         }
     }
 
     function test_setUp() public {
-        vm.skip(true);
         assertEq(hook.owner(), deployer.addr);
-        assertTicks(-99, 101);
+        assertTicks(-100, 100);
     }
 
     uint256 amountToDep = 100000e6;
@@ -120,11 +104,10 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         assertTicks(-99, 101);
-        // assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441913940305965, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79232734343355120339899722311, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -135,25 +118,24 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
-        assertApproxEqAbs(deltaUSDT, 17838990902, 1, "USDT");
+        assertApproxEqAbs(deltaUSDT, 17836169721, 1, "USDT");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(32312602163, 67734162297, 0, 0);
-        assertEqProtocolState(78957152480392665472826686309, 100065267844);
+        assertEqPositionState(32302956123, 67742023776, 0, 0);
+        assertEqProtocolState(78950892006377058077331884639, 100052798176);
     }
 
     function test_deposit_rebalance_swap_price_up_out() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
         uint256 usdtToGetFSwap = 17897776432;
         uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
-        assertEq(usdcToSwapQ, 17956966898);
+        assertEq(usdcToSwapQ, 17959817385);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -168,12 +150,11 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceStateZero(address(hook));
 
-        assertEqPositionState(32253816633, 67793352762, 0, 0);
-        assertEqProtocolState(78956223751810304282634447090, 100065688948);
+        assertEqPositionState(32241349412, 67804064729, 0, 0);
+        assertEqProtocolState(78949918513778550882947841077, 100053239579);
     }
 
     function test_deposit_rebalance_swap_price_up_out_revert_deviations() public {
-        vm.skip(true);
         vm.startPrank(deployer.addr);
         updateProtocolPriceThreshold(3 * 1e15);
         vm.stopPrank();
@@ -193,7 +174,6 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance_swap_price_down_in() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
@@ -204,25 +184,24 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapUSDT_USDC_In(usdtToSwap);
-        assertEq(deltaUSDC, 17829265826);
+        assertEq(deltaUSDC, 17832060720);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(68049369498, 32007120039, 0, 0);
-        assertEqProtocolState(79521743074015585840483767881, 100065233131);
+        assertEqPositionState(68036902277, 32012186624, 0, 0);
+        assertEqProtocolState(79515550172922265623323628034, 100052783508);
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
-        vm.skip(true);
         test_deposit_rebalance();
 
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
         uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
-        assertEq(usdtToSwapQ, 18057181721);
+        assertEq(usdtToSwapQ, 18054341510);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
         assertEqBalanceState(swapper.addr, usdtToSwapQ, 0);
@@ -237,12 +216,11 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(68208774786, 31848894582, 0, 0);
-        assertEqProtocolState(79524261453078311595880024582, 100066369738);
+        assertEqPositionState(68193467355, 31856756062, 0, 0);
+        assertEqProtocolState(79518024172000438730060968108, 100053900085);
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -255,19 +233,18 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Swap
         saveBalance(address(manager));
         (, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
-        assertApproxEqAbs(deltaUSDT, 17837213345, 1e4, "USDT");
+        assertApproxEqAbs(deltaUSDT, 17834392448, 1e4, "USDT");
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(32314379719, 67734162296, 0, 0);
-        assertEqProtocolState(78957180563277804775329873055, 100067045399);
+        assertEqPositionState(32304733396, 67742023775, 0, 0);
+        assertEqProtocolState(78950920090370935380564870342, 100054575448);
     }
 
     function test_deposit_rebalance_swap_price_up_out_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -275,7 +252,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Before swap State
         uint256 usdtToGetFSwap = 17897776432;
         uint256 usdcToSwapQ = quoteUSDC_USDT_Out(usdtToGetFSwap);
-        assertEq(usdcToSwapQ, 17958762775);
+        assertEq(usdcToSwapQ, 17961613547);
 
         deal(address(USDC), address(swapper.addr), usdcToSwapQ);
         assertEqBalanceState(swapper.addr, 0, usdcToSwapQ);
@@ -290,12 +267,11 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(32253816633, 67795148638, 0, 0);
-        assertEqProtocolState(78956223751810304282634447090, 100067485315);
+        assertEqPositionState(32241349412, 67805860890, 0, 0);
+        assertEqProtocolState(78949918513778550882947841077, 100055035947);
     }
 
     function test_deposit_rebalance_swap_price_down_in_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -308,19 +284,18 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Swap
         saveBalance(address(manager));
         (uint256 deltaUSDC, ) = swapUSDT_USDC_In(usdtToSwap);
-        assertEq(deltaUSDC, 17827489238);
+        assertEq(deltaUSDC, 17830283856);
 
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(68049369497, 32008896627, 0, 0);
-        assertEqProtocolState(79521714798043839188594281306, 100067010203);
+        assertEqPositionState(68036902276, 32013963489, 0, 0);
+        assertEqProtocolState(79515521891333670851555441055, 100054560577);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
-        vm.skip(true);
         vm.prank(deployer.addr);
         hook.setNextLPFee(feeLP);
         test_deposit_rebalance();
@@ -328,7 +303,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Before swap State
         uint256 usdcToGetFSwap = 17987491283;
         uint256 usdtToSwapQ = quoteUSDT_USDC_Out(usdcToGetFSwap);
-        assertEq(usdtToSwapQ, 18058987620);
+        assertEq(usdtToSwapQ, 18056147125);
 
         deal(address(USDT), address(swapper.addr), usdtToSwapQ);
         assertEqBalanceState(swapper.addr, usdtToSwapQ, 0);
@@ -343,8 +318,8 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
         assertEqBalanceState(address(hook), 0, 0);
 
-        assertEqPositionState(68210580684, 31848894582, 0, 0);
-        assertEqProtocolState(79524261453078311595880024582, 100068175636);
+        assertEqPositionState(68195272969, 31856756062, 0, 0);
+        assertEqProtocolState(79518024172000438730060968108, 100055705699);
     }
 
     function test_lifecycle() public {
@@ -358,7 +333,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Swap Up In
         {
@@ -406,7 +381,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Withdraw
         {
@@ -448,7 +423,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Deposit
         {
@@ -488,7 +463,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Rebalance
         {
@@ -500,7 +475,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, USDC_USDT_key);
+        alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 
         // ** Full withdraw
         {

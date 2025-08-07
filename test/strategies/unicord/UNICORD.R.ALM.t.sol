@@ -55,7 +55,7 @@ contract UNICORD_R_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.DAI, 18, "DAI");
         create_lending_adapter_morpho_earn_USDC_DAI();
         create_flash_loan_adapter_morpho();
-        create_oracle(false, MConstants.chainlink_feed_DAI, MConstants.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_DAI, false);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -127,7 +127,6 @@ contract UNICORD_R_ALMTest is ALMTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -202,26 +201,25 @@ contract UNICORD_R_ALMTest is ALMTestBase {
 
             console.log("daiToSwapQ %s", daiToSwapQ);
 
-            // deal(address(DAI), address(swapper.addr), daiToSwapQ);
-            // uint160 preSqrtPrice = hook.sqrtPriceCurrent();
+            deal(address(DAI), address(swapper.addr), daiToSwapQ);
+            uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap - 1);
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap - 1);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            // assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 1);
-            // assertApproxEqAbs(deltaUSDC, deltaX, 1);
+            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaUSDC, deltaX, 1);
 
-            // uint256 deltaTreasuryFee = (deltaDAI * testFee * hook.protocolFee()) / 1e36;
-            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            uint256 deltaTreasuryFee = (deltaDAI * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
-            // treasuryFeeQ += deltaTreasuryFee;
+            treasuryFeeQ += deltaTreasuryFee;
 
-            // assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            // assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
-            // assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
-        return;
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -379,18 +377,20 @@ contract UNICORD_R_ALMTest is ALMTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
 
-    function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
-    }
-
     function quoteDAI_USDC_Out(uint256 amount) public returns (uint256) {
         return _quoteOutputSwap(true, amount);
+    }
+
+    function quoteUSDC_DAI_Out(uint256 amount) public returns (uint256) {
+        return _quoteOutputSwap(false, amount);
+    }
+
+    function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
@@ -399,10 +399,6 @@ contract UNICORD_R_ALMTest is ALMTestBase {
 
     function swapUSDC_DAI_Out(uint256 amount) public returns (uint256, uint256) {
         return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
-    }
-
-    function quoteUSDC_DAI_Out(uint256 amount) public returns (uint256) {
-        return _quoteOutputSwap(false, amount);
     }
 
     function swapUSDC_DAI_In(uint256 amount) public returns (uint256, uint256) {

@@ -23,7 +23,7 @@ library Constants {
     // ** ERC20 tokens
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     IWETH9 constant WETH9 = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    address constant cbBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
+    address constant CBBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -60,20 +60,36 @@ library Constants {
     IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af);
     IPermit2 constant PERMIT_2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
-    address constant uniswap_v3_USDC_cbBTC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
+    address constant uniswap_v3_USDC_CBBTC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant uniswap_v3_USDC_WETH_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
     address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
     address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
-    address constant uniswap_v3_USDE_USDT_POOL = 0x435664008F38B0650fBC1C9fc971D0A3Bc2f1e47;
     address constant uniswap_v3_WSTETH_WETH_POOL = 0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa;
 
     // ** Chainlink // https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     IAggV3 constant chainlink_feed_WETH = IAggV3(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
     IAggV3 constant chainlink_feed_USDC = IAggV3(0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6);
     IAggV3 constant chainlink_feed_USDT = IAggV3(0x3E7d1eAB13ad0104d2750B8863b489D65364e32D);
-    IAggV3 constant chainlink_feed_cbBTC = IAggV3(0x2665701293fCbEB223D11A08D826563EDcCE423A);
+    IAggV3 constant chainlink_feed_CBBTC = IAggV3(0x2665701293fCbEB223D11A08D826563EDcCE423A);
     IAggV3 constant chainlink_feed_DAI = IAggV3(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
-    IAggV3 constant chainlink_feed_USDE = IAggV3(0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961);
     IAggV3 constant zero_feed = IAggV3(address(0));
+
+    // ** API3
+    IAggV3 constant api3_feed_WETH = IAggV3(0x5b0cf2b36a65a6BB085D501B971e4c102B9Cd473);
+    IAggV3 constant api3_feed_USDC = IAggV3(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f);
+    IAggV3 constant api3_feed_USDT = IAggV3(0x4eadC6ee74b7Ceb09A4ad90a33eA2915fbefcf76);
+
+    // ** API3 Sepolia
+    IAggV3 constant api3_feed_USDT_sepolia = IAggV3(0x4eadC6ee74b7Ceb09A4ad90a33eA2915fbefcf76);
+    IAggV3 constant api3_feed_CBBTC_sepolia = IAggV3(0xa4183Cbf2eE868dDFccd325531C4f53F737FFF68);
+    IAggV3 constant api3_feed_USDC_sepolia = IAggV3(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f);
+    IAggV3 constant api3_feed_DAI_sepolia = IAggV3(0x85b6dD270538325A9E0140bd6052Da4ecc18A85c);
+
+    // ** Chronicle Sepolia
+    IAggV3 constant chronicle_feed_WETH_sepolia = IAggV3(0x3b8Cd6127a6CBEB9336667A3FfCD32B3509Cb5D9);
+    IAggV3 constant chronicle_feed_USDC_sepolia = IAggV3(0xb34d784dc8E7cD240Fe1F318e282dFdD13C389AC);
+    IAggV3 constant chronicle_feed_USDT_sepolia = IAggV3(0x8c852EEC6ae356FeDf5d7b824E254f7d94Ac6824);
+    IAggV3 constant chronicle_feed_CBBTC_sepolia = IAggV3(0xe4f05C62c09a3ec000a3f3895eFD2Ec9a1A11742);
+    IAggV3 constant chronicle_feed_DAI_sepolia = IAggV3(0xaf900d10f197762794C41dac395C5b8112eD13E1);
 }

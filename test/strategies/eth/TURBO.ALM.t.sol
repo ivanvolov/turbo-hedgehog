@@ -44,7 +44,7 @@ contract TURBO_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_euler_USDT_USDC();
         create_flash_loan_adapter_euler_USDT_USDC();
-        create_oracle(true, MConstants.chainlink_feed_USDT, MConstants.chainlink_feed_USDC, 24 hours, 24 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 10, 10, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -269,7 +269,7 @@ contract TURBO_ALMTest is ALMTestBase {
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
-        // Rebalance
+        // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 

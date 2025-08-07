@@ -4,10 +4,10 @@ ta:
 	clear && forge test -v --no-match-contract "SimulationTest"
 
 tam:
-	clear && forge test -v --no-match-contract "Simulation|UNI|OracleTest|LendingAdaptersTest"
+	clear && forge test -v --no-match-contract "Simulation|UNI_ALMTest|BASE_ALMTest|Oracle|LendingAdaptersTest"
 
 tau:
-	clear && forge test -v --match-contract "UNI_ALMTest"
+	clear && forge test -v --match-contract "UNI_ALMTest|BASE_ALMTest"
 
 # Strategies tests Mainnet
 
@@ -124,9 +124,9 @@ tsal:
 	clear && forge test -vvvv --match-contract SwapAdapterTest --match-test "test_"
 
 to:
-	clear && forge test -vv --match-contract OracleTest --match-test "test_"
+	clear && forge test -vv --match-contract OracleFuzzing --match-test "test_Fuzz" --fuzz-runs 5000
 tol:
-	clear && forge test -vvvv --match-contract OracleTest --match-test "test_"
+	clear && forge test -vvvv --match-contract OracleFuzzing --match-test "test_Fuzz" --fuzz-runs 5000
 
 tom:
 	clear && forge test -vv --match-contract OracleMathTest --match-test "test_"
@@ -150,7 +150,16 @@ tess:
 tessl:
 	clear && forge test -vvvv --match-contract ETH_ALMSimulationTest --match-test test_swaps_simulation --ffi
 
-## Maintenance scripts
+## Simulations oracles
+
+run_node:
+	clear && anvil
+deploy_test_contract:
+	clear && forge script scripts/DeployOracleSimulation.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+get_data:
+	clear && node test/simulations/oracleMath/anvilSim.s.js
+
+# Maintenance scripts
 
 build:
 	clear && forge clean && forge build
@@ -169,7 +178,7 @@ morpho_data:
 init_pool_events:
 	clear && npm run init_pool_events
 
-## Gas reports
+# Gas reports
 
 gas_r:
 	clear && forge test -vv --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"

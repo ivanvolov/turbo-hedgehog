@@ -21,7 +21,7 @@ contract BTC_ALMTest is ALMTestBase {
     uint256 slippage = 7e15;
     uint24 feeLP = 500; //0.05%
 
-    IERC20 BTC = IERC20(MConstants.cbBTC);
+    IERC20 BTC = IERC20(MConstants.CBBTC);
     IERC20 USDC = IERC20(MConstants.USDC);
 
     uint256 k1 = 1425e15; //1.425
@@ -32,7 +32,7 @@ contract BTC_ALMTest is ALMTestBase {
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_cbBTC_POOL;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_CBBTC_POOL;
             ASSERT_EQ_PS_THRESHOLD_CL = 1e2;
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
@@ -42,10 +42,10 @@ contract BTC_ALMTest is ALMTestBase {
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.cbBTC, 8, "BTC");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.CBBTC, 8, "BTC");
         create_lending_adapter_euler(MConstants.eulerUSDCVault1, 2000000e6, MConstants.eulerCbBTCVault1, 0);
         create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerCbBTCVault2, 100e8);
-        create_oracle(true, MConstants.chainlink_feed_cbBTC, MConstants.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_CBBTC, true);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -106,7 +106,6 @@ contract BTC_ALMTest is ALMTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
@@ -429,8 +428,6 @@ contract BTC_ALMTest is ALMTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

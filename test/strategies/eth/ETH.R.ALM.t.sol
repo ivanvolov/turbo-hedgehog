@@ -46,7 +46,8 @@ contract ETH_R_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDT, 6, "USDT", MConstants.WETH, 18, "WETH");
         create_lending_adapter_euler(MConstants.eulerUSDTVault1, 3000000 * 1e6, MConstants.eulerWETHVault1, 0);
         create_flash_loan_adapter_euler(MConstants.eulerUSDTVault2, 3000000 * 1e6, MConstants.eulerWETHVault2, 0);
-        create_oracle(false, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDT, 1 hours, 10 hours);
+
+        create_oracle(MConstants.chainlink_feed_USDT, MConstants.chainlink_feed_WETH, false);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -107,9 +108,6 @@ contract ETH_R_ALMTest is ALMTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        console.log("DEPOSIT REBALANCE");
-
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -463,8 +461,6 @@ contract ETH_R_ALMTest is ALMTestBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
