@@ -38,6 +38,7 @@ contract SwapAdapterTest is ALMTestBase {
 
     function setUp() public {
         select_mainnet_fork(22490362);
+        manager = MConstants.manager;
 
         vm.label(address(ETH), "ETH");
         vm.label(MConstants.USDC, "USDC");
@@ -590,6 +591,7 @@ contract SwapAdapterTest is ALMTestBase {
             BASE,
             QUOTE,
             MConstants.UNIVERSAL_ROUTER,
+            manager,
             MConstants.PERMIT_2,
             MConstants.WETH9
         );
@@ -674,6 +676,7 @@ contract SwapAdapterTest is ALMTestBase {
             BASE,
             QUOTE,
             MConstants.UNIVERSAL_ROUTER,
+            manager,
             MConstants.PERMIT_2,
             MConstants.WETH9
         );

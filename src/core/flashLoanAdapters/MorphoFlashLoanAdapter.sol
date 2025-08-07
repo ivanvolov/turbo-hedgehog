@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
-// ** Morpho imports
-import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
-
 // ** External imports
+import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -25,7 +21,6 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
 
     constructor(IERC20 _base, IERC20 _quote, IMorpho _morpho) FlashLoanBase(true, _base, _quote) {
         morpho = _morpho;
-
         BASE.forceApprove(address(morpho), type(uint256).max);
         QUOTE.forceApprove(address(morpho), type(uint256).max);
     }
@@ -37,9 +32,6 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
     }
 
     function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual override {
-        console.log("START: _flashLoanSingle");
-        console.log("token %s", isBase ? address(BASE) : address(QUOTE));
-        console.log("amount %s", amount);
         morpho.flashLoan(isBase ? address(BASE) : address(QUOTE), amount, _data);
     }
 }

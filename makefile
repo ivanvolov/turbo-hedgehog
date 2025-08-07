@@ -32,9 +32,9 @@ tul:
 	clear && forge test -vvvv --match-contract UNICORD_ALMTest --match-test "test_"
 
 tur:
-	clear && forge test -vv --match-contract UNICORD_R_ALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract UNICORD_R_ALMTest --match-test "test_"
 turl:
-	clear && forge test -vvvv --match-contract UNICORD_R_ALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract UNICORD_R_ALMTest --match-test "test_"
 
 tb:
 	clear && forge test -vv --match-contract BTC_ALMTest --match-test "test_"
@@ -80,9 +80,9 @@ tuul:
 	clear && forge test -vvvv --match-contract UNICORD_UNI_ALMTest --match-test "test_"
 
 turu:
-	clear && forge test -vv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_lifecycle"
+	clear && forge test -vv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
 turul:
-	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_lifecycle"
+	clear && forge test -vvvv --match-contract UNICORD_R_UNI_ALMTest --match-test "test_"
 
 tdu:
 	clear && forge test -vv --match-contract DeltaNeutral_UNI_ALMTest --match-test "test_"

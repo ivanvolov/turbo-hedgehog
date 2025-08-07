@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** v4 imports
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {Actions} from "v4-periphery/src/libraries/Actions.sol";
@@ -10,6 +8,7 @@ import {Currency} from "v4-core/types/Currency.sol";
 import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 
 // ** External imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -39,6 +38,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     using SafeERC20 for IERC20;
 
     IUniversalRouter public immutable router;
+    IPoolManager public immutable manager;
     IPermit2 public immutable permit2;
     address public routesOperator;
     IWETH9 public immutable WETH9;
@@ -55,10 +55,12 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         IERC20 _base,
         IERC20 _quote,
         IUniversalRouter _router,
+        IPoolManager _manager,
         IPermit2 _permit2,
         IWETH9 _weth
     ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote) {
         router = _router;
+        manager = _manager;
         permit2 = _permit2;
         WETH9 = _weth;
 
@@ -108,38 +110,24 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
     }
 
     function swapExactInput(bool isBaseToQuote, uint256 amountIn) external onlyModule returns (uint256 amountOut) {
-        console.log("> START: swapExactInput");
-        console.log("isBaseToQuote %s", isBaseToQuote);
-        console.log("amountIn %s", amountIn);
         if (amountIn == 0) return 0;
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
 
-        console.log("tokenIn", address(tokenIn));
-        console.log("tokenOut", address(tokenOut));
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, true, amountIn);
-
         amountOut = tokenOut.balanceOf(address(this));
         tokenOut.safeTransfer(msg.sender, amountOut);
-        console.log("> END: swapExactInput");
     }
 
     function swapExactOutput(bool isBaseToQuote, uint256 amountOut) external onlyModule returns (uint256 amountIn) {
-        console.log("> START:swapExactOutput");
-        console.log("isBaseToQuote %s", isBaseToQuote);
-        console.log("amountOut %s", amountOut);
-
         if (amountOut == 0) return 0;
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
 
-        console.log("tokenIn", address(tokenIn));
-        console.log("tokenOut", address(tokenOut));
         amountIn = tokenIn.balanceOf(msg.sender);
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         executeSwap(isBaseToQuote, false, amountOut);
-
         tokenOut.safeTransfer(msg.sender, amountOut);
 
         uint256 amountExtra = tokenIn.balanceOf(address(this));
@@ -147,7 +135,6 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             tokenIn.safeTransfer(msg.sender, amountExtra);
             amountIn -= amountExtra;
         }
-        console.log("> END: swapExactOutput");
     }
 
     function executeSwap(bool isBaseToQuote, bool isExactInput, uint256 amountTarget) internal {
@@ -187,20 +174,15 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             }
         }
 
-        // Always SWEEP extra ETH from router to adapter.
+        // Always sweep extra ETH from router to adapter.
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
         inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
-        console.log("ethBalance %s", ethBalance);
-        console.log("> START: router.execute");
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
-        console.log("> END: router.execute");
 
         // If routers returns ETH, we need to wrap it.
         ethBalance = address(this).balance;
-        console.log("ethBalance after %s", ethBalance);
-
         if (ethBalance > 0) WETH9.deposit{value: ethBalance}();
     }
 
@@ -220,36 +202,26 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         uint256 amount,
         bytes memory route
     ) internal returns (bytes memory) {
-        console.log("> START: _getV4Input");
         bytes[] memory params = new bytes[](3);
         uint8 swapAction;
         bool unwrapBefore;
 
         if (isMultihop) {
-            console.log("> isMultihop");
             PathKey[] memory path;
-            // IERC20 currencyIn;
             (unwrapBefore, path) = abi.decode(route, (bool, PathKey[]));
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN) : uint8(Actions.SWAP_EXACT_OUT);
-            console.log("AMOUNT %s", amount);
-            console.log("isBaseToQuote %s", isBaseToQuote);
 
-            // Currency cur = adjustForEth(isBaseToQuote == true ? BASE : QUOTE);
-            Currency cur = adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE);
-            if (isExactInput) console.log("currencyIn:", Currency.unwrap(cur));
-            else console.log("currencyOut:", Currency.unwrap(cur));
             params[0] = abi.encode(
                 // We use ExactInputParams structure for both exact input and output swaps
                 // since the parameter structure is identical.
                 IV4Router.ExactInputParams({
-                    currencyIn: cur, // or currencyOut for ExactOutputParams
+                    currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE), // or currencyOut for ExactOutputParams
                     path: path,
                     amountIn: uint128(amount), // or amountOut for ExactOutputParams
                     amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max // or amountInMaximum for ExactOutputParams
                 })
             );
         } else {
-            console.log("> !isMultihop");
             PoolKey memory key;
             bool zeroForOne;
             bytes memory hookData;
@@ -268,26 +240,24 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
                 })
             );
         }
-
         if (unwrapBefore) isExactInput ? WETH9.withdraw(amount) : WETH9.withdraw(WETH9.balanceOf(address(this)));
 
         params[1] = abi.encode(adjustForEth(isBaseToQuote ? BASE : QUOTE), isExactInput ? amount : type(uint256).max);
         params[2] = abi.encode(adjustForEth(isBaseToQuote ? QUOTE : BASE), isExactInput ? 0 : amount);
-
         return abi.encode(abi.encodePacked(swapAction, uint8(Actions.SETTLE_ALL), uint8(Actions.TAKE_ALL)), params);
     }
+
+    receive() external payable {
+        if (msg.sender != address(WETH9) && msg.sender != address(manager) && msg.sender != address(router))
+            revert InvalidNativeTokenSender();
+    }
+
+    // ** Helpers
 
     function adjustForEth(IERC20 token) internal view returns (Currency) {
         if (address(token) == address(WETH9)) return Currency.wrap(address(0));
         return Currency.wrap(address(token));
     }
-
-    receive() external payable {
-        //TODO: restrict by UNIVERSAL_ROUTER
-        // Intentionally empty as the contract need to receive ETH from V4 router.
-    }
-
-    // ** Helpers
 
     function toSwapKey(bool isExactInput, bool isBaseToQuote) public pure returns (uint8) {
         return (isExactInput ? 2 : 0) + (isBaseToQuote ? 1 : 0);

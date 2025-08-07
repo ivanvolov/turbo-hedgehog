@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -30,10 +28,7 @@ contract UnicordPositionManager is Base, IPositionManager {
     }
 
     function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
-        console.log("> START: positionAdjustmentPriceDown");
-        console.log("(1)");
         QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
-        console.log("(2)");
         lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
         BASE.safeTransfer(address(alm), deltaBase);
     }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 // ** External imports
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -17,6 +18,7 @@ library TestLib {
     using PRBMathUD60x18 for uint256;
 
     IAggV3 constant ZERO_FEED = IAggV3(address(0));
+    IWETH9 constant ZERO_WETH9 = IWETH9(address(0));
 
     // ** Uniswap math
 

@@ -67,7 +67,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 shortLeverage = 2e18;
         uint256 weight = 55e16; //50%
         uint256 liquidityMultiplier = 2e18;
-        isNTS = 0;
+        IS_NTS = true;
 
         create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_USDC_WETH_unichain();

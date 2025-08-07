@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
@@ -43,10 +41,8 @@ contract Oracle is OracleBase, Ownable {
     }
 
     function calcTotalDecDelta(int256 _tokenDecDel, IAggV3 _feedBase, IAggV3 _feedQuote) public view returns (int256) {
-        // console.log("> calcTotalDecDelta");
         int256 feedBDec = address(_feedBase) == address(0) ? int256(0) : int256(int8(_feedBase.decimals()));
         int256 feedQDec = address(_feedQuote) == address(0) ? int256(0) : int256(int8(_feedQuote.decimals()));
-        // console.logInt(_tokenDecDel + feedBDec - feedQDec);
         return _tokenDecDel + feedBDec - feedQDec;
     }
 

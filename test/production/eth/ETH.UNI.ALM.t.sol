@@ -39,7 +39,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
-            isNTS = 0; //TODO: native token is always 0?
+            IS_NTS = true;
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;

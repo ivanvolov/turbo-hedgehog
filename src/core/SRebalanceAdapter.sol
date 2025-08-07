@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
 import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -177,23 +175,18 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = _rebalanceCalculations(WAD + slippage, currentPrice);
 
-        console.log("baseToFl %s", baseToFl);
-        console.log("quoteToFl %s", quoteToFl);
-
         if (isNova) {
-            console.log("> isNova");
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
             else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
-            uint256 baseBalance = baseBalanceUnwr();
+            uint256 baseBalance = baseBalance();
             if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance);
-            uint256 quoteBalance = quoteBalanceUnwr();
+            uint256 quoteBalance = quoteBalance();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
         } else {
-            console.log("> !isNova");
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
-            uint256 baseBalance = baseBalanceUnwr();
+            uint256 baseBalance = baseBalance();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
-            uint256 quoteBalance = quoteBalanceUnwr();
+            uint256 quoteBalance = quoteBalance();
             if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance);
         }
 
@@ -214,11 +207,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amount,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
-        console.log("> START: onFlashLoanSingle");
-        console.log("isBase %s", isBase);
-        console.log("amount %s", amount);
         _managePositionDeltas(data);
-        uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
+        uint256 balance = isBase ? baseBalance() : quoteBalance();
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
 
@@ -227,24 +217,14 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amountQuote,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
-        console.log("> START: onFlashLoanTwoTokens");
-        console.log("amountBase %s", amountBase);
-        console.log("amountQuote %s", amountQuote);
-
         _managePositionDeltas(data);
         uint256 baseBalance = BASE.balanceOf(address(this));
 
-        console.log("baseBalance %s", baseBalance);
-        console.log("quoteBalance %s", QUOTE.balanceOf(address(this)));
-        if (amountBase > baseBalance) console.log("(1)");
         if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
         else {
-            console.log("(2)");
             uint256 quoteBalance = QUOTE.balanceOf(address(this));
-            if (amountQuote > quoteBalance) console.log("(3)");
             if (amountQuote > quoteBalance) swapAdapter.swapExactOutput(true, amountQuote - quoteBalance);
         }
-        console.log("> END: onFlashLoanTwoTokens");
     }
 
     /// @dev This function is mainly for removing stack too deep error.
@@ -253,11 +233,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
-        console.log("> Deltas:");
-        console.logInt(-deltaCL);
-        console.logInt(-deltaCS);
-        console.logInt(deltaDL);
-        console.logInt(deltaDS);
+
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
@@ -317,7 +293,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             targetCL = mul18(TVL, mul18(weight, longLeverage));
             targetCS = mul18(mul18(mul18(TVL, WAD - weight), shortLeverage), price);
         }
-
         targetDL = mul18(targetCL, mul18(price, WAD - ALMMathLib.div18(WAD, longLeverage)));
         targetDS = mulDiv(targetCS, WAD - ALMMathLib.div18(WAD, shortLeverage), price);
     }
@@ -339,11 +314,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Helpers
 
-    function baseBalanceUnwr() internal view returns (uint256) {
+    function baseBalance() internal view returns (uint256) {
         return BASE.balanceOf(address(this));
     }
 
-    function quoteBalanceUnwr() internal view returns (uint256) {
+    function quoteBalance() internal view returns (uint256) {
         return QUOTE.balanceOf(address(this));
     }
 }

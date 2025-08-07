@@ -13,6 +13,7 @@ import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 // ** libraries
 import {SafeERC20} from "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
@@ -34,7 +35,7 @@ abstract contract ALMTestBase is TestBaseMorpho {
         console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
         WETH9 = MConstants.WETH9;
-        deploy_hook_contract(_isInvertedAssets, MConstants.WETH9);
+        deploy_hook_contract(_isInvertedAssets, IS_NTS ? WETH9 : TestLib.ZERO_WETH9);
         isInvertedAssets = _isInvertedAssets;
 
         createPositionManager(_isNova);
@@ -42,6 +43,7 @@ abstract contract ALMTestBase is TestBaseMorpho {
             BASE,
             QUOTE,
             MConstants.UNIVERSAL_ROUTER,
+            manager,
             MConstants.PERMIT_2,
             MConstants.WETH9
         );

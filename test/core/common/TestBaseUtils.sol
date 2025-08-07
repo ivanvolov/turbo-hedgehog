@@ -93,8 +93,7 @@ abstract contract TestBaseUtils is Deployers {
     uint8 qDec;
     bool isInvertedPool = true;
     bool isInvertedAssets = true;
-    // 0 - currency0, 1 - currency1, 2 - not ETH pool
-    uint8 isNTS = 2;
+    bool IS_NTS = false;
 
     ILendingAdapter lendingAdapter;
     IFlashLoanAdapter flashLoanAdapter;

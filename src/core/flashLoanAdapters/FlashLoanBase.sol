@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 // ** External imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -41,19 +39,14 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
         uint256 amountQuote,
         bytes calldata data
     ) external onlyModule notPaused {
-        console.log("> START: flashLoanTwoTokens");
         bytes memory _data = abi.encode(uint8(2), msg.sender, amountBase, amountQuote, data);
         _flashLoanSingle(true, amountBase, _data);
-        console.log("> END: flashLoanTwoTokens");
     }
 
     function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual;
 
     function _onFlashLoan(bytes calldata _data) internal {
-        // console.log(">> START: _onFlashLoan");
         uint8 loanType = abi.decode(_data, (uint8));
-        // console.log("loanType %s", loanType);
-
         if (loanType == 0) {
             (, address sender, bool isBase, uint256 amount, bytes memory data) = abi.decode(
                 _data,
@@ -72,11 +65,8 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
             bytes memory __data = abi.encode(uint8(1), sender, amountBase, amountQuote, data);
 
             BASE.safeTransfer(sender, amountBase);
-            console.log("(1)");
             _flashLoanSingle(false, amountQuote, __data);
-            console.log("(2)");
             BASE.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amountBase);
-            console.log("(3)");
         } else if (loanType == 1) {
             (, address sender, uint256 amountBase, uint256 amountQuote, bytes memory data) = abi.decode(
                 _data,
@@ -87,6 +77,5 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
             IFlashLoanReceiver(sender).onFlashLoanTwoTokens(amountBase, amountQuote, data);
             QUOTE.safeTransferFrom(sender, assetReturnSelf ? address(this) : msg.sender, amountQuote);
         } else revert NotAllowedLoanType(loanType);
-        // console.log("END: _onFlashLoan");
     }
 }

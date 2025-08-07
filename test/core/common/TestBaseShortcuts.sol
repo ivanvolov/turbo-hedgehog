@@ -40,7 +40,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         positionManager = IPositionManagerStandard(address(_positionManager));
     }
 
-    function deploy_hook_contract(bool _isInvertedAssets, IWETH9 WETH9) internal {
+    function deploy_hook_contract(bool _isInvertedAssets, IWETH9 _isNTS) internal {
         address payable hookAddress = create_address_without_collision();
         (address currency0, address currency1) = getHookCurrenciesInOrder();
 
@@ -54,7 +54,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
-            abi.encode(key, BASE, QUOTE, WETH9, isInvertedPool, _isInvertedAssets, isNTS, manager, "NAME", "SYMBOL"),
+            abi.encode(key, BASE, QUOTE, _isNTS, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
             hookAddress
         );
         hook = ALM(hookAddress);
@@ -63,7 +63,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     function getHookCurrenciesInOrder() internal view returns (address currency0, address currency1) {
         (currency0, currency1) = (address(BASE), address(QUOTE));
-        if (isNTS != 2) {
+        if (IS_NTS) {
             if (currency0 == address(WETH9)) currency0 = address(ETH);
             if (currency1 == address(WETH9)) currency1 = address(ETH);
         }
