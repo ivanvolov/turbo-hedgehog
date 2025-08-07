@@ -25,6 +25,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
     IERC20 WETH = IERC20(UConstants.WETH);
     IERC20 WSTETH = IERC20(UConstants.WSTETH);
+    PoolKey ETH_wstETH_key;
 
     function setUp() public {
         select_unichain_fork(23567130);
@@ -49,13 +50,13 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         create_flash_loan_adapter_morpho_unichain();
         oracle = _create_oracle_one_feed(
             UConstants.zero_feed,
-            UConstants.chronicle_feed_WSTETH,
+            UConstants.chainlink_feed_WSTETH,
             24 hours,
             false,
             int8(-18)
         );
         isInvertedPool = true; // TODO: remove.
-        mock_latestRoundData(UConstants.chronicle_feed_WSTETH, 1210060639502790000);
+        mock_latestRoundData(address(UConstants.chainlink_feed_WSTETH), 1210060639502790000);
         init_hook(false, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -72,8 +73,15 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         // Re-setup swap router for v4 swaps.
         {
             vm.startPrank(deployer.addr);
+            ETH_wstETH_key = _getAndCheckPoolKey(
+                ETH,
+                WSTETH,
+                100,
+                1,
+                0xd10d359f50ba8d1e0b6c30974a65bf06895fba4bf2b692b2c75d987d3b6b863d
+            );
             uint8[4] memory config = [1, 2, 1, 2];
-            setSwapAdapterToV4SingleSwap(ETH_WSTETH_key_unichain, config);
+            setSwapAdapterToV4SingleSwap(ETH_wstETH_key, config);
             vm.stopPrank();
         }
 
@@ -82,14 +90,8 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             (uint256 price, uint256 sqrtPriceX96) = oracle.poolPrice();
             console.log("price %s", price);
             console.log("sqrtPrice %s", sqrtPriceX96);
-            console.log(getV4PoolSQRTPrice(ETH_WSTETH_key_unichain));
+            console.log(getV4PoolSQRTPrice(ETH_wstETH_key));
         }
-    }
-
-    function test_setUp() public {
-        vm.skip(true);
-        assertEq(hook.owner(), deployer.addr);
-        assertTicks(-276424, -276224);
     }
 
     uint256 amountToDep = 100e18; // 1M
@@ -136,9 +138,9 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
 
+        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
+        // ** Make oracle change with swap price
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
         uint256 treasuryFeeQ;
@@ -235,7 +237,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
+        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
 
         // ** Withdraw
         {
@@ -281,7 +283,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
+        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
 
         // ** Deposit
         {
@@ -332,30 +334,29 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
             (uint256 deltaWSTETH, uint256 deltaETH) = swapETH_WSTETH_Out(wstethToGetFSwap - 1);
 
-            // console.log("deltaWSTETH", deltaWSTETH);
-            // console.log("deltaETH", deltaETH);
+            console.log("deltaWSTETH", deltaWSTETH);
+            console.log("deltaETH", deltaETH);
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
-            // assertApproxEqAbs(deltaWSTETH, deltaX, 1);
-            // assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1);
+            assertApproxEqAbs(deltaWSTETH, deltaX, 1);
+            assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1);
 
-            // uint256 deltaTreasuryFee = (deltaETH * testFee * hook.protocolFee()) / 1e36;
-            // console.log("deltaTreasuryFee %s", deltaTreasuryFee);
+            uint256 deltaTreasuryFee = (deltaETH * testFee * hook.protocolFee()) / 1e36;
+            console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
-            // treasuryFeeB += deltaTreasuryFee;
+            treasuryFeeB += deltaTreasuryFee;
 
-            // console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
-            // console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
+            console.log("hook.accumulatedFeeB() %s", hook.accumulatedFeeB());
+            console.log("hook.accumulatedFeeQ() %s", hook.accumulatedFeeQ());
 
-            // assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            // assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 4, "treasuryFee");
-            // assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
+            assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
+            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 4, "treasuryFee");
+            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
         }
-        return;
         // ** Swap Up In
         {
-            uint256 wstethToSwap = 2000e18;
+            uint256 wstethToSwap = 10e18;
             deal(address(WSTETH), address(swapper.addr), wstethToSwap);
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
@@ -368,19 +369,19 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             console.log("deltaX", deltaX);
             console.log("deltaY", deltaY);
 
-            assertApproxEqAbs((deltaWSTETH * (1e18 - testFee)) / 1e18, deltaY, 5e2);
-            assertApproxEqAbs(deltaETH, deltaX, 1);
+            assertApproxEqAbs((deltaWSTETH * (1e18 - testFee)) / 1e18, deltaX, 1);
+            assertApproxEqAbs(deltaETH, deltaY, 1);
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
+        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
 
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_WSTETH_key_unichain);
+        alignOraclesAndPoolsV4(hook, ETH_wstETH_key);
 
         // ** Full withdraw
         {
