@@ -750,8 +750,6 @@ contract ETH_ALMTest is ALMTestBase {
         test_deposit_rebalance();
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
-        saveBalance(address(manager));
-
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
@@ -975,8 +973,6 @@ contract ETH_ALMTest is ALMTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     function test_lending_adapter_migration() public {

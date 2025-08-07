@@ -269,7 +269,7 @@ contract TURBO_ALMTest is ALMTestBase {
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
-        // Rebalance
+        // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 

@@ -378,7 +378,6 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -677,8 +676,6 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
 
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

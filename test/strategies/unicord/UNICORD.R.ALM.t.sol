@@ -127,7 +127,6 @@ contract UNICORD_R_ALMTest is ALMTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -378,8 +377,6 @@ contract UNICORD_R_ALMTest is ALMTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

@@ -123,7 +123,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
@@ -446,8 +445,6 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

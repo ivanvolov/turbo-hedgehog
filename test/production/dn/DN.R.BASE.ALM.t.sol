@@ -105,7 +105,6 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
     function test_deposit_rebalance() public {
         test_deposit();
 
-        // uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
@@ -307,7 +306,7 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(157533363, 239999999997, 94347607427, 110494339);
-        assertEqProtocolState(2370887307335613150075615808, 199631278374); //rounding error for sqrt price 1e18????
+        assertEqProtocolState(2370887307335613150075615808, 199631278374);
     }
 
     function test_lifecycle() public {
@@ -320,7 +319,6 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, USDC_CBBTC_key);
@@ -617,8 +615,6 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
 
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers

@@ -54,7 +54,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
             false,
             int8(-18)
         );
-        isInvertedPool = true; // TODO: remove.
+        isInvertedPool = true; // Here isInvertedPool in oracles and ALM are not in sync.
         mock_latestRoundData(UConstants.chronicle_feed_WSTETH, 1210060639502790000);
         init_hook(false, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 

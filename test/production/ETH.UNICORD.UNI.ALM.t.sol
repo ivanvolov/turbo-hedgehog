@@ -219,11 +219,6 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
         (uint256 deltaX, uint256 deltaY) = _checkSwap(hookALM.liquidity(), preSqrtPrice, hookALM.sqrtPriceCurrent());
 
-        // console.log("deltaUSDC %s", deltaUSDC);
-        // console.log("deltaETH %s", deltaETH);
-        // console.log("deltaX %s", deltaX);
-        // console.log("deltaY %s", deltaY);
-
         assertApproxEqAbs(deltaUSDC, deltaX, 1);
         assertApproxEqAbs(usdcFromSwap, deltaUSDC, 1);
 
