@@ -50,14 +50,7 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
         create_flash_loan_adapter_morpho_base();
         create_lending_adapter_euler_USDC_BTC_base();
 
-        oracle = _create_oracle(
-            BConstants.chainlink_feed_CBBTC,
-            BConstants.chainlink_feed_USDC,
-            24 hours,
-            24 hours,
-            true,
-            int8(6 - 8)
-        );
+        create_oracle(BConstants.chainlink_feed_USDC, BConstants.chainlink_feed_CBBTC, true);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params

@@ -46,14 +46,8 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn_USDC_USDT_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_USDT,
-            UConstants.chronicle_feed_USDC,
-            24 hours,
-            24 hours,
-            true,
-            int8(0)
-        );
+
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_USDT, true);
         mock_latestRoundData(UConstants.chronicle_feed_USDT, 999620000000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 999735368664584522);
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);

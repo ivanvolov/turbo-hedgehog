@@ -55,7 +55,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         create_flash_loan_adapter_morpho();
-        create_oracle(true, MConstants.chainlink_feed_USDT, MConstants.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
 
         // ** Setting up strategy params

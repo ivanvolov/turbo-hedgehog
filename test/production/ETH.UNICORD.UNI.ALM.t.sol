@@ -67,20 +67,13 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 shortLeverage = 2e18;
         uint256 weight = 55e16; //50%
         uint256 liquidityMultiplier = 2e18;
-        BASE = USDC;
-        QUOTE = WETH;
         isNTS = 0;
 
+        create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_USDC_WETH_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_WETH,
-            UConstants.chronicle_feed_USDC,
-            24 hours,
-            24 hours,
-            false,
-            int8(6 - 18)
-        );
+
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_WETH, false);
         mock_latestRoundData(UConstants.chronicle_feed_WETH, 3732706458000000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 
@@ -106,19 +99,11 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         uint256 shortLeverage = 1e18;
         uint256 weight = 50e16; //50%
         uint256 liquidityMultiplier = 1e18;
-        BASE = USDC;
-        QUOTE = USDT;
 
+        create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.USDT, 6, "USDT");
         create_lending_adapter_euler_USDC_USDT_unichain();
         create_flash_loan_adapter_morpho_unichain();
-        oracle = _create_oracle(
-            AggregatorV3Interface(UConstants.chronicle_feed_USDT), // USDT
-            AggregatorV3Interface(UConstants.chronicle_feed_USDC), // USDC
-            24 hours,
-            24 hours,
-            true,
-            int8(0)
-        );
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_USDT, true);
         mock_latestRoundData(UConstants.chronicle_feed_USDT, 1000535721908032161);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 

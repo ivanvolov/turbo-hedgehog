@@ -58,7 +58,7 @@ contract General_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_euler_USDC_WETH();
         create_flash_loan_adapter_euler_USDC_WETH();
-        create_oracle(true, MConstants.chainlink_feed_WETH, MConstants.chainlink_feed_USDC, 1 hours, 10 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_WETH, true);
     }
 
     /// @dev This test will sometimes need other deploys.

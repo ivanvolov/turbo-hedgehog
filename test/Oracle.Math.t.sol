@@ -383,7 +383,7 @@ contract OracleMathTest is ALMTestBase {
 
     function print_oracle_answer(IAggV3 feedB, IAggV3 feedQ, bool isInvertedPool, int256 tokenDecDel) private {
         (uint256 priceO, uint256 sqrtPriceO) = getOldOracleAnswer(feedB, feedQ, isInvertedPool, tokenDecDel);
-        IOracle mock_oracle = _create_oracle(feedQ, feedB, 24 hours, 24 hours, isInvertedPool, int8(tokenDecDel));
+        IOracle mock_oracle = _create_oracle(feedB, feedQ, 24 hours, 24 hours, isInvertedPool, int8(tokenDecDel));
         (uint256 priceN, uint256 sqrtPriceN) = mock_oracle.poolPrice();
         console.log("priceO", priceO);
         console.log("priceN", priceN);

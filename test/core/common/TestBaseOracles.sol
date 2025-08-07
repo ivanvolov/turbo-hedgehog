@@ -116,21 +116,15 @@ abstract contract TestBaseOracles is TestBaseShortcuts {
         return SafeCast.toUint256(price);
     }
 
-    function create_oracle(
-        bool _isInvertedPool,
-        IAggV3 feedQ,
-        IAggV3 feedB,
-        uint128 stallThreshQ,
-        uint128 stallThreshB
-    ) internal returns (IOracle) {
-        return _create_oracle(feedQ, feedB, stallThreshQ, stallThreshB, _isInvertedPool, int8(bDec) - int8(qDec));
+    function create_oracle(IAggV3 feedB, IAggV3 feedQ, bool _isInvertedPool) internal returns (IOracle) {
+        return _create_oracle(feedB, feedQ, 24 hours, 24 hours, _isInvertedPool, int8(bDec) - int8(qDec));
     }
 
     function _create_oracle(
-        IAggV3 feedQ,
         IAggV3 feedB,
-        uint128 stallThreshQ,
+        IAggV3 feedQ,
         uint128 stallThreshB,
+        uint128 stallThreshQ,
         bool _isInvertedPool,
         int8 decimalsDelta
     ) internal returns (IOracle _oracle) {

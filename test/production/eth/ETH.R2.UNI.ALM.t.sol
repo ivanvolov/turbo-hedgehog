@@ -49,14 +49,7 @@ contract ETH_R2_UNI_ALMTest is ALMTestBaseUnichain {
         create_accounts_and_tokens(UConstants.USDT, 6, "USDT", UConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_morpho_unichain();
         create_lending_adapter_euler_USDT_WETH_unichain();
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_WETH,
-            UConstants.chronicle_feed_USDT,
-            24 hours,
-            24 hours,
-            false,
-            int8(6 - 18)
-        );
+        create_oracle(UConstants.chronicle_feed_USDT, UConstants.chronicle_feed_WETH, false);
         mock_latestRoundData(UConstants.chronicle_feed_WETH, 3754570000000000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDT, 999983595619733749);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);

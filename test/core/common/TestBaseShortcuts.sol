@@ -109,6 +109,18 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         uint8 _qDec,
         string memory _quoteName
     ) public virtual {
+        _create_tokens(_base, _bDec, _baseName, _quote, _qDec, _quoteName);
+        _create_accounts();
+    }
+
+    function _create_tokens(
+        address _base,
+        uint8 _bDec,
+        string memory _baseName,
+        address _quote,
+        uint8 _qDec,
+        string memory _quoteName
+    ) internal {
         BASE = IERC20(_base);
         vm.label(_base, _baseName);
         QUOTE = IERC20(_quote);
@@ -117,8 +129,6 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         quoteName = _quoteName;
         bDec = _bDec;
         qDec = _qDec;
-
-        _create_accounts();
     }
 
     function _create_accounts() internal {

@@ -51,14 +51,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         create_flash_loan_adapter_morpho_unichain();
         create_lending_adapter_euler_USDC_WETH_unichain();
 
-        oracle = _create_oracle(
-            UConstants.chronicle_feed_WETH,
-            UConstants.chronicle_feed_USDC,
-            24 hours,
-            24 hours,
-            false,
-            int8(6 - 18)
-        );
+        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_WETH, false);
         mock_latestRoundData(UConstants.chronicle_feed_WETH, 3634568623200000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 999820000000000000);
 
