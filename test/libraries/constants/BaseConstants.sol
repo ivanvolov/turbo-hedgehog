@@ -35,9 +35,8 @@ library Constants {
     IrEUL constant rEUL = IrEUL(0xE08e1f00D388E201e48842E53fA96195568e6813); // https://docs.euler.finance/EUL/addresses
 
     // https://app.euler.finance/?asset=USDT&network=base
-    // https://app.euler.finance/positions/0x882018411Bc4A020A879CEE183441fC9fa5D7f8B/0x0A1a3b5f2041F33522C4efc754a7D096f880eE16?network=base
-    IEulerVault constant eulerCBBTCVault1 = IEulerVault(0x882018411Bc4A020A879CEE183441fC9fa5D7f8B);
     IEulerVault constant eulerUSDCVault1 = IEulerVault(0x0A1a3b5f2041F33522C4efc754a7D096f880eE16);
+    IEulerVault constant eulerCBBTCVault1 = IEulerVault(0x882018411Bc4A020A879CEE183441fC9fa5D7f8B);
 
     // ** Uniswap
     IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0x6fF5693b99212Da76ad316178A184AB56D299b43); // https://docs.uniswap.org/contracts/v4/deployments

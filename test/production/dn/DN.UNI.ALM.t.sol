@@ -348,7 +348,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key);
+        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
         // ** Second rebalance
         {

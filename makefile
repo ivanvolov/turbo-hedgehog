@@ -4,7 +4,7 @@ ta:
 	clear && forge test -v --no-match-contract "SimulationTest"
 
 tam:
-	clear && forge test -v --no-match-contract "Simulation|UNI_ALMTest|BASE_ALMTest|OracleTest|LendingAdaptersTest"
+	clear && forge test -v --no-match-contract "Simulation|UNI_ALMTest|BASE_ALMTest|Oracle|LendingAdaptersTest"
 
 tau:
 	clear && forge test -v --match-contract "UNI_ALMTest|BASE_ALMTest"
