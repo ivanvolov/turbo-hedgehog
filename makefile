@@ -150,7 +150,16 @@ tess:
 tessl:
 	clear && forge test -vvvv --match-contract ETH_ALMSimulationTest --match-test test_swaps_simulation --ffi
 
-## Maintenance scripts
+## Simulations oracles
+
+run_node:
+	clear && anvil
+deploy_test_contract:
+	clear && forge script scripts/DeployOracleSimulation.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+get_data:
+	clear && node test/simulations/oracleMath/anvilSim.s.js
+
+# Maintenance scripts
 
 build:
 	clear && forge clean && forge build
@@ -169,7 +178,7 @@ morpho_data:
 init_pool_events:
 	clear && npm run init_pool_events
 
-## Gas reports
+# Gas reports
 
 gas_r:
 	clear && forge test -vv --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"

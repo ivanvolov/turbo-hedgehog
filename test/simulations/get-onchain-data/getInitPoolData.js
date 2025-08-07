@@ -3,7 +3,7 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const PoolManagerABI = require("./abi/PoolManagerABI.json");
+const PoolManagerABI = require("../abi/PoolManagerABI.json");
 const INFURA_MAINNET_URL = `https://mainnet.infura.io/v3/YOUR-PROJECT-ID/${process.env.INFURA_MAINNET_PROJECT_ID}`;
 const web3 = new Web3(new Web3.providers.HttpProvider(INFURA_MAINNET_URL));
 const POOL_MANAGER_ADDRESS = "0x000000000004444c5dc75cB358380D2e3dE08A90";

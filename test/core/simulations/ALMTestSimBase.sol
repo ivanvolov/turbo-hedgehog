@@ -114,7 +114,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         {
             string[] memory inputs = new string[](3);
             inputs[0] = "node";
-            inputs[1] = "test/simulations/logSwap.js";
+            inputs[1] = "test/simulations/alm/logSwap.js";
             inputs[2] = toHexString(
                 abi.encodePacked(
                     amount,
@@ -182,7 +182,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
         );
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
-        inputs[1] = "test/simulations/logState.js";
+        inputs[1] = "test/simulations/alm/logState.js";
         inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
@@ -190,7 +190,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
     function clear_snapshots() internal {
         string[] memory inputs = new string[](2);
         inputs[0] = "node";
-        inputs[1] = "test/simulations/clear.js";
+        inputs[1] = "test/simulations/alm/clear.js";
         vm.ffi(inputs);
     }
 
@@ -216,7 +216,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
-        inputs[1] = "test/simulations/logDeposits.js";
+        inputs[1] = "test/simulations/alm/logDeposits.js";
         inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
@@ -243,7 +243,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
-        inputs[1] = "test/simulations/logWithdraws.js";
+        inputs[1] = "test/simulations/alm/logWithdraws.js";
         inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
@@ -254,7 +254,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
-        inputs[1] = "test/simulations/logRebalance.js";
+        inputs[1] = "test/simulations/alm/logRebalance.js";
         inputs[2] = toHexString(packedData);
         vm.ffi(inputs);
     }
@@ -302,7 +302,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
     function random(uint256 randomCap) public returns (uint) {
         string[] memory inputs = new string[](3);
         inputs[0] = "node";
-        inputs[1] = "test/simulations/random.js";
+        inputs[1] = "test/simulations/alm/random.js";
         inputs[2] = toHexString(abi.encodePacked(randomCap));
 
         bytes memory result = vm.ffi(inputs);
