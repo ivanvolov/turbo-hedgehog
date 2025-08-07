@@ -11,6 +11,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** External imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -29,6 +30,10 @@ import {IALM} from "../../interfaces/IALM.sol";
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
+
+    /// @notice WETH9 address to wrap and unwrap ETH during swaps.
+    /// @dev if address is zero, ETH is not supported.
+    IWETH9 public immutable WETH9;
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
@@ -150,10 +155,14 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
+    receive() external payable {
+        if (address(WETH9) == address(0)) revert NativeTokenUnsupported();
+        if (msg.sender != address(WETH9) && msg.sender != address(poolManager)) revert InvalidNativeTokenSender();
+    }
+
     /// @notice Updates liquidity and sets new boundaries around the current oracle price.
     function updateLiquidityAndBoundariesToOracle() external override onlyOwner onlyActive {
-        (, uint256 oraclePoolPrice) = oracle.poolPrice();
-        uint160 oracleSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(oraclePoolPrice);
+        (, uint160 oracleSqrtPrice) = oracle.poolPrice();
         _updateLiquidityAndBoundaries(oracleSqrtPrice);
     }
 
@@ -226,7 +235,6 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
             revert TickUpperOutOfBounds(newTickUpper);
 
         activeTicks = Ticks(newTickLower, newTickUpper);
-
         emit SqrtPriceUpdated(_sqrtPrice);
         emit BoundariesUpdated(newTickLower, newTickUpper);
     }

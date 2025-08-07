@@ -2,70 +2,66 @@
 pragma solidity ^0.8.0;
 
 // ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract LendingAdaptersTest is MorphoTestBase {
+contract LendingAdaptersTest is ALMTestBase {
     using SafeERC20 for IERC20;
 
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
-    IERC20 USDT = IERC20(TestLib.USDT);
+    IERC20 WETH = IERC20(MConstants.WETH);
+    IERC20 USDC = IERC20(MConstants.USDC);
+    IERC20 USDT = IERC20(MConstants.USDT);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(22119929);
+        select_mainnet_fork(22119929);
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
-            assertEqPSThresholdCL = 1e5;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e5;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_WETH_POOL;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
         }
     }
 
     uint256 _extraQuoteBefore;
 
     // ----- Flash loan single tests ----- //
-    function test_lending_adapter_flash_loan_single_morpho() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+    function test_flesh_loan_single_morpho() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_single();
+        part_flash_loan_adapter_single();
     }
 
-    function test_lending_adapter_flash_loan_single_morpho_earn() public {
-        assertEqPSThresholdCL = 1e1;
-        assertEqPSThresholdCS = 1e1;
-        assertEqPSThresholdDL = 1e1;
-        assertEqPSThresholdDS = 1e1;
-        assertEqBalanceQuoteThreshold = 1e1;
-        assertEqBalanceBaseThreshold = 1e1;
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+    function test_flesh_loan_single_morpho_earn() public {
+        ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+        ASSERT_EQ_BALANCE_Q_THRESHOLD = 1e1;
+        ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_single();
+        part_flash_loan_adapter_single();
     }
 
-    function test_lending_adapter_flash_loan_single_euler() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_flash_loan_adapter_euler_WETH_USDC();
-        part_lending_adapter_flash_loan_single();
+    function test_flesh_loan_single_euler() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_flash_loan_adapter_euler_USDC_WETH();
+        part_flash_loan_adapter_single();
     }
 
     bytes test_payload;
 
-    function part_lending_adapter_flash_loan_single() public {
+    function part_flash_loan_adapter_single() public {
         address testAddress = address(this);
         _fakeSetComponents(address(flashLoanAdapter), testAddress);
 
@@ -88,31 +84,31 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     // ----- Flash loan two tokens tests ----- //
-    function test_lending_adapter_flash_loan_two_tokens_morpho() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+    function test_flash_loan_two_tokens_morpho() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_two_tokens();
+        part_flash_loan_two_tokens();
     }
 
-    function test_lending_adapter_flash_loan_two_tokens_morpho_earn() public {
-        assertEqPSThresholdCL = 1e1;
-        assertEqPSThresholdCS = 1e1;
-        assertEqPSThresholdDL = 1e1;
-        assertEqPSThresholdDS = 1e1;
-        assertEqBalanceQuoteThreshold = 1e1;
-        assertEqBalanceBaseThreshold = 1e1;
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+    function test_flash_loan_two_tokens_morpho_earn() public {
+        ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+        ASSERT_EQ_BALANCE_Q_THRESHOLD = 1e1;
+        ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_flash_loan_adapter_morpho();
-        part_lending_adapter_flash_loan_two_tokens();
+        part_flash_loan_two_tokens();
     }
 
-    function test_lending_adapter_flash_loan_two_tokens_euler() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_flash_loan_adapter_euler_WETH_USDC();
-        part_lending_adapter_flash_loan_two_tokens();
+    function test_flash_loan_two_tokens_euler() public {
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_flash_loan_adapter_euler_USDC_WETH();
+        part_flash_loan_two_tokens();
     }
 
-    function part_lending_adapter_flash_loan_two_tokens() public {
+    function part_flash_loan_two_tokens() public {
         address testAddress = address(this);
         _fakeSetComponents(address(flashLoanAdapter), testAddress); // ** Enable testAddress to call the adapter
 
@@ -136,14 +132,14 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     // ----- Long tests ----- //
     function test_lending_adapter_long_morpho() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_morpho();
         part_lending_adapter_long();
     }
 
     function test_lending_adapter_long_euler() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
         part_lending_adapter_long();
     }
 
@@ -191,14 +187,14 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     // ----- Short tests ----- //
     function test_lending_adapter_short_morpho() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_morpho();
         part_lending_adapter_short();
     }
 
     function test_lending_adapter_short_euler() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
         part_lending_adapter_short();
     }
 
@@ -246,14 +242,14 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     // ----- In parallel tests ----- //
     function test_lending_adapter_in_parallel_morpho() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
         create_lending_adapter_morpho();
         part_lending_adapter_in_parallel();
     }
 
     function test_lending_adapter_in_parallel_euler() public {
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
         part_lending_adapter_in_parallel();
     }
 
@@ -319,13 +315,13 @@ contract LendingAdaptersTest is MorphoTestBase {
 
     // ----- Morpho earn tests ----- //
     function test_unicord_morpho_earn_in_borrow_reverts() public {
-        assertEqPSThresholdCL = 1e1;
-        assertEqPSThresholdCS = 1e1;
-        assertEqPSThresholdDL = 1e1;
-        assertEqPSThresholdDS = 1e1;
-        assertEqBalanceQuoteThreshold = 1e1;
-        assertEqBalanceBaseThreshold = 1e1;
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+        ASSERT_EQ_BALANCE_Q_THRESHOLD = 1e1;
+        ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
@@ -346,13 +342,13 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function test_unicord_morpho_earn_in_parallel() public {
-        assertEqPSThresholdCL = 1e1;
-        assertEqPSThresholdCS = 1e1;
-        assertEqPSThresholdDL = 1e1;
-        assertEqPSThresholdDS = 1e1;
-        assertEqBalanceQuoteThreshold = 1e1;
-        assertEqBalanceBaseThreshold = 1e1;
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+        ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+        ASSERT_EQ_BALANCE_Q_THRESHOLD = 1e1;
+        ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
@@ -395,10 +391,10 @@ contract LendingAdaptersTest is MorphoTestBase {
     }
 
     function test_unicord_euler_earn_in_parallel() public {
-        assertEqBalanceQuoteThreshold = 1e1;
-        assertEqBalanceBaseThreshold = 1e1;
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
+        ASSERT_EQ_BALANCE_Q_THRESHOLD = 1e1;
+        ASSERT_EQ_BALANCE_B_THRESHOLD = 1e1;
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
         _fakeSetComponents(address(lendingAdapter), alice.addr); // ** Enable Alice to call the adapter
 
         // ** Approve to LA

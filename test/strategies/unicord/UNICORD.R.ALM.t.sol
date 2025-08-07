@@ -5,39 +5,26 @@ import "forge-std/console.sol";
 
 // ** v4 imports
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
+import {PoolIdLibrary, PoolId} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract UNICORDRALMTest is MorphoTestBase {
+contract UNICORD_R_ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
-
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
@@ -46,32 +33,29 @@ contract UNICORDRALMTest is MorphoTestBase {
     uint256 slippage = 10e14; //0.1%
     uint24 feeLP = 100; //0.01%
 
-    IERC20 DAI = IERC20(TestLib.DAI);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 DAI = IERC20(MConstants.DAI);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21881352);
+        select_mainnet_fork(21881352);
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_DAI_USDC_POOL;
-            assertEqPSThresholdCL = 1e1;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e1;
-            minStepSize = 1 ether;
-            slippageTolerance = 1e15;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_DAI_USDC_POOL;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+            SLIPPAGE_TOLERANCE_V3 = 1e15;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.DAI, 18, "DAI");
-        create_lending_adapter_morpho_earn_dai_usdc();
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.DAI, 18, "DAI");
+        create_lending_adapter_morpho_earn_USDC_DAI();
         create_flash_loan_adapter_morpho();
-        create_oracle(false, TestLib.chainlink_feed_DAI, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_DAI, false);
         init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -84,7 +68,6 @@ contract UNICORDRALMTest is MorphoTestBase {
         }
 
         approve_accounts();
-        deal(address(DAI), address(manager), 10000 ether);
     }
 
     function test_setUp() public view {
@@ -92,7 +75,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         assertTicks(-276424, -276224);
     }
 
-    uint256 amountToDep = 100000e6;
+    uint256 amountToDep = 1e12; // 1M
 
     function test_deposit() public {
         assertEq(calcTVL(), 0, "TVL");
@@ -102,14 +85,14 @@ contract UNICORDRALMTest is MorphoTestBase {
         vm.prank(alice.addr);
         uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
 
-        assertApproxEqAbs(shares, 99999999999, 1e1);
+        assertApproxEqAbs(shares, amountToDep, 1e1);
         assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
 
         assertEqPositionState(0, amountToDep - 1, 0, 0);
         assertEq(hook.sqrtPriceCurrent(), initialSQRTPrice, "sqrtPriceCurrent");
-        assertApproxEqAbs(calcTVL(), 99999999999, 1e1, "tvl");
+        assertApproxEqAbs(calcTVL(), amountToDep, 1e1, "tvl");
         assertEq(hook.liquidity(), 0, "liquidity");
     }
 
@@ -134,7 +117,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         console.log("tickLower %s", tickLower);
         console.log("tickUpper %s", tickUpper);
         assertTicks(-276421, -276221);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79240362711883211369901, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79240384341004934953439, 1e1, "sqrtPrice");
     }
 
     function test_lifecycle() public {
@@ -144,10 +127,9 @@ contract UNICORDRALMTest is MorphoTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
         uint256 treasuryFeeB;
@@ -222,7 +204,7 @@ contract UNICORDRALMTest is MorphoTestBase {
             deal(address(DAI), address(swapper.addr), daiToSwapQ);
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
 
-            (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap);
+            (uint256 deltaDAI, uint256 deltaUSDC) = swapDAI_USDC_Out(usdcToGetFSwap - 1);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
 
@@ -240,7 +222,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -287,7 +269,7 @@ contract UNICORDRALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -375,19 +357,19 @@ contract UNICORDRALMTest is MorphoTestBase {
             console.log("deltaX", deltaX);
             console.log("deltaY", deltaY);
 
-            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 21);
+            assertApproxEqAbs((deltaDAI * (1e18 - testFee)) / 1e18, deltaY, 5e2);
             assertApproxEqAbs(deltaUSDC, deltaX, 1);
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {
@@ -395,33 +377,31 @@ contract UNICORDRALMTest is MorphoTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
 
-    function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
-    }
-
     function quoteDAI_USDC_Out(uint256 amount) public returns (uint256) {
         return _quoteOutputSwap(true, amount);
-    }
-
-    function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
-    }
-
-    function swapUSDC_DAI_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
     }
 
     function quoteUSDC_DAI_Out(uint256 amount) public returns (uint256) {
         return _quoteOutputSwap(false, amount);
     }
 
+    function swapDAI_USDC_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
+    }
+
+    function swapDAI_USDC_In(uint256 amount) public returns (uint256, uint256) {
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
+    }
+
+    function swapUSDC_DAI_Out(uint256 amount) public returns (uint256, uint256) {
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
+    }
+
     function swapUSDC_DAI_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 }

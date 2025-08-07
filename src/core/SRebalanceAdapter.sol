@@ -168,7 +168,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function rebalance(uint256 slippage) external onlyActive onlyRebalanceOperator nonReentrant {
-        (uint256 currentPrice, uint256 currentPoolPrice) = oracle.poolPrice();
+        (uint256 currentPrice, uint160 currentSqrtPrice) = oracle.poolPrice();
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded(currentPrice);
         if (!isRebalance) revert RebalanceConditionNotMet();
         alm.refreshReservesAndTransferFees();
@@ -178,15 +178,15 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
             else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
-            uint256 baseBalance = baseBalanceUnwr();
+            uint256 baseBalance = baseBalance();
             if (baseBalance != 0) lendingAdapter.addCollateralShort(baseBalance);
-            uint256 quoteBalance = quoteBalanceUnwr();
+            uint256 quoteBalance = quoteBalance();
             if (quoteBalance != 0) lendingAdapter.addCollateralLong(quoteBalance);
         } else {
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
-            uint256 baseBalance = baseBalanceUnwr();
+            uint256 baseBalance = baseBalance();
             if (baseBalance != 0) lendingAdapter.repayLong(baseBalance);
-            uint256 quoteBalance = quoteBalanceUnwr();
+            uint256 quoteBalance = quoteBalance();
             if (quoteBalance != 0) lendingAdapter.repayShort(quoteBalance);
         }
 
@@ -194,7 +194,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         checkDeviations(currentPrice);
 
         // ** Update state
-        uint160 currentSqrtPrice = ALMMathLib.getSqrtPriceX96FromPrice(currentPoolPrice);
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
@@ -209,7 +208,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
-        uint256 balance = isBase ? baseBalanceUnwr() : quoteBalanceUnwr();
+        uint256 balance = isBase ? baseBalance() : quoteBalance();
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
 
@@ -219,8 +218,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
         _managePositionDeltas(data);
-
         uint256 baseBalance = BASE.balanceOf(address(this));
+
         if (amountBase > baseBalance) swapAdapter.swapExactOutput(false, amountBase - baseBalance);
         else {
             uint256 quoteBalance = QUOTE.balanceOf(address(this));
@@ -234,6 +233,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             data,
             (int256, int256, int256, int256)
         );
+
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
@@ -293,7 +293,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             targetCL = mul18(TVL, mul18(weight, longLeverage));
             targetCS = mul18(mul18(mul18(TVL, WAD - weight), shortLeverage), price);
         }
-
         targetDL = mul18(targetCL, mul18(price, WAD - ALMMathLib.div18(WAD, longLeverage)));
         targetDS = mulDiv(targetCS, WAD - ALMMathLib.div18(WAD, shortLeverage), price);
     }
@@ -315,11 +314,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Helpers
 
-    function baseBalanceUnwr() internal view returns (uint256) {
+    function baseBalance() internal view returns (uint256) {
         return BASE.balanceOf(address(this));
     }
 
-    function quoteBalanceUnwr() internal view returns (uint256) {
+    function quoteBalance() internal view returns (uint256) {
         return QUOTE.balanceOf(address(this));
     }
 }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {UD60x18, ud} from "@prb-math/UD60x18.sol";
+import {UD60x18} from "@prb-math/UD60x18.sol";
 import {SD59x18, sd} from "@prb-math/SD59x18.sol";
 import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -42,13 +42,16 @@ library ALMMathLib {
     }
 
     /**
-     * @notice Calculates the Total Value Locked in a protocol.
+     * @notice Calculates the Total Value Locked (TVL) in the protocol.
      * @param quoteBalance The total amount of quote tokens held by the protocol.
      * @param baseBalance The total amount of base tokens held by the protocol.
      * @param collateralLong The total value of collateral supporting long positions.
      * @param collateralShort The total value of collateral supporting short positions.
      * @param debtLong The total amount of debt held in long positions.
      * @param debtShort The total amount of debt held in short positions.
+     * @param price The price of one quote token in base token units, expressed as an integer with 18-decimal precision.
+     * @param returnInBase If true, result is denominated in base token, otherwise in quote token.
+     * @return The total value locked, denominated in base or quote units.
      */
     function getTVL(
         uint256 quoteBalance,
@@ -58,16 +61,16 @@ library ALMMathLib {
         uint256 debtLong,
         uint256 debtShort,
         uint256 price,
-        bool isStable
+        bool returnInBase
     ) internal pure returns (uint256) {
-        int256 baseValue = SafeCast.toInt256(quoteBalance + collateralLong) - SafeCast.toInt256(debtShort);
-        int256 variableValue = SafeCast.toInt256(collateralShort + baseBalance) - SafeCast.toInt256(debtLong);
+        int256 quoteValue = SafeCast.toInt256(quoteBalance + collateralLong) - SafeCast.toInt256(debtShort);
+        int256 baseValue = SafeCast.toInt256(collateralShort + baseBalance) - SafeCast.toInt256(debtLong);
 
         SD59x18 _price = sd(SafeCast.toInt256(price));
         return
-            isStable
-                ? SafeCast.toUint256(sd(baseValue).mul(_price).unwrap() + variableValue)
-                : SafeCast.toUint256(sd(variableValue).div(_price).unwrap() + baseValue);
+            returnInBase
+                ? SafeCast.toUint256(sd(quoteValue).mul(_price).unwrap() + baseValue)
+                : SafeCast.toUint256(sd(baseValue).div(_price).unwrap() + quoteValue);
     }
 
     function getUserAmounts(
@@ -98,10 +101,6 @@ library ALMMathLib {
     }
 
     // ** Helpers
-
-    function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
-        return SafeCast.toUint160(ud(price).sqrt().mul(Q96).unwrap());
-    }
 
     function getSqrtPriceX96FromTick(int24 tick) internal pure returns (uint160) {
         return TickMath.getSqrtPriceAtTick(tick);

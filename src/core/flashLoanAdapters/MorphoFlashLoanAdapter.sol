@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** Morpho imports
-import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
-
 // ** External imports
+import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -23,7 +21,6 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
 
     constructor(IERC20 _base, IERC20 _quote, IMorpho _morpho) FlashLoanBase(true, _base, _quote) {
         morpho = _morpho;
-
         BASE.forceApprove(address(morpho), type(uint256).max);
         QUOTE.forceApprove(address(morpho), type(uint256).max);
     }

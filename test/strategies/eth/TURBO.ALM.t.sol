@@ -1,34 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "forge-std/console.sol";
+
 // ** contracts
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
-import {ALMMathLib} from "../../../src/libraries/ALMMathLib.sol";
+import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
 
-contract TURBOALMTest is MorphoTestBase {
-    using SafeERC20 for IERC20;
-
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
+contract TURBO_ALMTest is ALMTestBase {
     uint256 longLeverage = 2e18;
     uint256 shortLeverage = 2e18;
     uint256 weight = 50e16; //50%
@@ -36,30 +23,28 @@ contract TURBOALMTest is MorphoTestBase {
     uint256 slippage = 5e14; //0.05%
     uint24 feeLP = 5; //0.05%
 
-    IERC20 USDT = IERC20(TestLib.USDT);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 USDT = IERC20(MConstants.USDT);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21817163);
+        select_mainnet_fork(21817163);
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_USDC_USDT_POOL;
-            assertEqPSThresholdCL = 1e5;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e5;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_USDT_POOL;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_euler_USDT_USDC();
         create_flash_loan_adapter_euler_USDT_USDC();
-        create_oracle(true, TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 24 hours, 24 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
         init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 10, 10, TestLib.sqrt_price_10per);
 
         // ** Setting up strategy params
@@ -67,7 +52,7 @@ contract TURBOALMTest is MorphoTestBase {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
             // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
-            IPositionManagerStandard(address(positionManager)).setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
+            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
             rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
             rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
             vm.stopPrank();
@@ -117,11 +102,10 @@ contract TURBOALMTest is MorphoTestBase {
 
         test_deposit_rebalance();
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
@@ -140,6 +124,11 @@ contract TURBOALMTest is MorphoTestBase {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
+
+            console.log("deltaUSDC %s", deltaUSDC);
+            console.log("deltaUSDT %s", deltaUSDT);
+            console.log("deltaX %s", deltaX);
+            console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs(deltaUSDT, deltaX, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
@@ -188,7 +177,7 @@ contract TURBOALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -227,7 +216,7 @@ contract TURBOALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -278,14 +267,14 @@ contract TURBOALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
-        // Rebalance
+        // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {
@@ -300,7 +289,7 @@ contract TURBOALMTest is MorphoTestBase {
     // ** Helpers
 
     function swapUSDT_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function quoteUSDT_USDC_Out(uint256 amount) public returns (uint256) {
@@ -308,11 +297,11 @@ contract TURBOALMTest is MorphoTestBase {
     }
 
     function swapUSDT_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 
     function swapUSDC_USDT_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function quoteUSDC_USDT_Out(uint256 amount) public returns (uint256) {
@@ -320,6 +309,6 @@ contract TURBOALMTest is MorphoTestBase {
     }
 
     function swapUSDC_USDT_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
     }
 }

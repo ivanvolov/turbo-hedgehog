@@ -294,5 +294,7 @@ contract Deployers is Test {
     }
 
     // to receive refunds of spare eth from test helpers
-    receive() external payable {}
+    receive() external payable {
+        console.log("Deployers: received eth");
+    }
 }

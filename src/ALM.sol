@@ -14,6 +14,7 @@ import {TransientStateLibrary} from "v4-core/libraries/TransientStateLibrary.sol
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** External imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -46,6 +47,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         PoolKey memory _key,
         IERC20 _base,
         IERC20 _quote,
+        IWETH9 _WETH9,
         bool _isInvertedPool,
         bool _isInvertedAssets,
         IPoolManager _poolManager,
@@ -54,6 +56,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
         authorizedPoolKey = _key;
         authorizedPoolId = PoolId.unwrap(_key.toId());
+        WETH9 = _WETH9;
     }
 
     function _afterInitialize(
@@ -158,7 +161,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             -SafeCast.toInt256(amountBase),
             -SafeCast.toInt256(amountQuote)
         );
-
         if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
         else _ensureEnoughBalance(amountBase, BASE);
     }
@@ -207,7 +209,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     function _beforeSwap(
         address swapper,
         PoolKey calldata key,
-        SwapParams calldata,
+        SwapParams calldata params,
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
         if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
@@ -235,7 +237,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         bytes calldata
     ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, int128) {
         Ticks memory _activeTicks = activeTicks;
-
         (, BalanceDelta feesAccrued) = poolManager.modifyLiquidity(
             key,
             ModifyLiquidityParams({
@@ -256,7 +257,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             SafeCast.toUint256(int256(feesAccrued.amount0() + feesAccrued.amount1())),
             sqrtPrice
         );
-
         emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
         return (IHooks.afterSwap.selector, 0);
     }
@@ -267,6 +267,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
 
             key.currency0.take(poolManager, address(this), token0, false);
+            if (address(WETH9) != address(0)) WETH9.deposit{value: token0}();
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
@@ -275,6 +276,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
             key.currency1.take(poolManager, address(this), token1, false);
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
+            if (address(WETH9) != address(0)) WETH9.withdraw(token0);
             key.currency0.settle(poolManager, address(this), token0, false);
         }
     }

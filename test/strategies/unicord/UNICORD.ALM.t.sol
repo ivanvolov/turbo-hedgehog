@@ -3,41 +3,28 @@ pragma solidity ^0.8.0;
 
 import "forge-std/console.sol";
 
-// ** v4 imports
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {Hooks} from "v4-core/libraries/Hooks.sol";
-import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
-
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
+import {PoolIdLibrary, PoolId} from "v4-core/types/PoolId.sol";
+import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 
 // ** contracts
-import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
-import {MorphoTestBase} from "@test/core/MorphoTestBase.sol";
-import {EulerLendingAdapter} from "@src/core/lendingAdapters/EulerLendingAdapter.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPositionManagerStandard} from "@src/interfaces/IPositionManager.sol";
 
-contract UNICORDALMTest is MorphoTestBase {
+contract UNICORD_ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
-
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     uint256 longLeverage = 1e18;
     uint256 shortLeverage = 1e18;
@@ -46,32 +33,29 @@ contract UNICORDALMTest is MorphoTestBase {
     uint256 slippage = 30e14; //0.3%
     uint24 feeLP = 100; //0.01%
 
-    IERC20 USDT = IERC20(TestLib.USDT);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 USDT = IERC20(MConstants.USDT);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21881352);
+        select_mainnet_fork(21881352);
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_USDC_USDT_POOL;
-            assertEqPSThresholdCL = 1e1;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e1;
-            minStepSize = 1 ether;
-            slippageTolerance = 1e15;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_USDT_POOL;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e1;
+            SLIPPAGE_TOLERANCE_V3 = 1e15;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.USDT, 6, "USDT");
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_morpho_earn();
         create_flash_loan_adapter_morpho();
-        create_oracle(true, TestLib.chainlink_feed_USDT, TestLib.chainlink_feed_USDC, 10 hours, 10 hours);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
         init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
 
         // ** Setting up strategy params
@@ -127,7 +111,7 @@ contract UNICORDALMTest is MorphoTestBase {
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
         assertTicks(-98, 102);
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441913940305965, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441966270215824, 1e1, "sqrtPrice");
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -215,7 +199,7 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68049369498, 32007120039, 0, 0);
-        assertEqProtocolState(79521743074015585840483767881, 100065233131);
+        assertEqProtocolState(79521743074015585892813677740, 100065233131);
     }
 
     function test_deposit_rebalance_swap_price_down_out() public {
@@ -240,7 +224,7 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68208774786, 31848894582, 0, 0);
-        assertEqProtocolState(79524261453078311595880024582, 100066369738);
+        assertEqProtocolState(79524261453078311648587411450, 100066369738);
     }
 
     function test_deposit_rebalance_swap_price_up_in_fees() public {
@@ -315,7 +299,7 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68049369497, 32008896627, 0, 0);
-        assertEqProtocolState(79521714798043839188594281306, 100067010203);
+        assertEqProtocolState(79521714798043839240924191165, 100067010203);
     }
 
     function test_deposit_rebalance_swap_price_down_out_fees() public {
@@ -342,7 +326,7 @@ contract UNICORDALMTest is MorphoTestBase {
         assertEqBalanceState(address(hook), 0, 0);
 
         assertEqPositionState(68210580684, 31848894582, 0, 0);
-        assertEqProtocolState(79524261453078311595880024582, 100068175636);
+        assertEqProtocolState(79524261453078311648587411450, 100068175636);
     }
 
     function test_lifecycle() public {
@@ -352,12 +336,10 @@ contract UNICORDALMTest is MorphoTestBase {
         vm.stopPrank();
 
         test_deposit_rebalance();
-        saveBalance(address(manager));
-
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Swap Up In
         {
@@ -405,7 +387,7 @@ contract UNICORDALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -447,7 +429,7 @@ contract UNICORDALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -487,7 +469,7 @@ contract UNICORDALMTest is MorphoTestBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
         // uint256 preRebalanceTVL = calcTVL();
@@ -497,7 +479,7 @@ contract UNICORDALMTest is MorphoTestBase {
         // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
-        alignOraclesAndPools(hook.sqrtPriceCurrent());
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {
@@ -505,14 +487,12 @@ contract UNICORDALMTest is MorphoTestBase {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
-
-        // assertBalanceNotChanged(address(manager), 1e1);
     }
 
     // ** Helpers
 
     function swapUSDT_USDC_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, int256(amount), key);
     }
 
     function quoteUSDT_USDC_Out(uint256 amount) public returns (uint256) {
@@ -520,11 +500,11 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function swapUSDT_USDC_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(false, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(false, -int256(amount), key);
     }
 
     function swapUSDC_USDT_Out(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, int256(amount), key);
     }
 
     function quoteUSDC_USDT_Out(uint256 amount) public returns (uint256) {
@@ -532,6 +512,6 @@ contract UNICORDALMTest is MorphoTestBase {
     }
 
     function swapUSDC_USDT_In(uint256 amount) public returns (uint256, uint256) {
-        return _swap(true, -int256(amount), key);
+        return _swap_v4_single_throw_mock_router(true, -int256(amount), key);
     }
 }

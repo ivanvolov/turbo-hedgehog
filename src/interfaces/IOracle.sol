@@ -3,20 +3,11 @@ pragma solidity ^0.8.0;
 
 /// @notice Defines the interface for an Oracle.
 interface IOracle {
-    error TokenDecimalsDeltaNotValid();
-    error FeedDecimalsDeltaNotValid();
+    error TotalDecimalsDeltaNotValid();
     error PriceZero();
-
-    event StalenessThresholdsSet(uint256 stalenessThresholdB, uint256 stalenessThresholdQ);
-
-    struct StalenessThresholds {
-        uint128 base;
-        uint128 quote;
-    }
-
-    function setStalenessThresholds(uint128, uint128) external;
+    error SqrtPriceNotValid();
 
     function price() external view returns (uint256);
 
-    function poolPrice() external view returns (uint256, uint256);
+    function poolPrice() external view returns (uint256, uint160);
 }

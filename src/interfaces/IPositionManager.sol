@@ -7,8 +7,3 @@ interface IPositionManager {
 
     function positionAdjustmentPriceDown(uint256 deltaUSDC, uint256 deltaWETH, uint160 sqrtPrice) external;
 }
-
-/// @notice Interface for all standard position manager setters.
-interface IPositionManagerStandard is IPositionManager {
-    function setKParams(uint256 _k1, uint256 _k2) external;
-}

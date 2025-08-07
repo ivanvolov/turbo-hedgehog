@@ -10,9 +10,6 @@ node_modules
 /broadcast/**/dry-run/
 /lib/**
 
-# Docs
-docs/
-
 # Dotenv file
 .env
 .DS_Store
