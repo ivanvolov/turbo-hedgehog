@@ -103,15 +103,13 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
     function test_deposit_rebalance() public {
         test_deposit();
 
-        // uint256 preRebalanceTVL = calcTVL();
-
         vm.expectRevert();
         rebalanceAdapter.rebalance(slippage);
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        // assertEqBalanceStateZero(address(hook));
-        // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        assertEqBalanceStateZero(address(hook));
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(194458, 200458);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1536110044317873455854701961688542, 1e1, "sqrtPrice");
     }
