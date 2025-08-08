@@ -489,7 +489,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
             // ** small deviation is allowed
             require(ratioCS < (slippage * 12e17) / 1e18);
         }
-        return;
+
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
 

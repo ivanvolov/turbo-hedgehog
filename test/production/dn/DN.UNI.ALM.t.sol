@@ -103,7 +103,6 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
     function test_deposit_rebalance() public {
         test_deposit();
 
-        uint256 preRebalanceTVL = calcTVL();
         console.log("oraclePrice %s", oracle.price());
 
         vm.expectRevert();
