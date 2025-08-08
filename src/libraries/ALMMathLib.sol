@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {SD59x18, sd} from "@prb-math/SD59x18.sol";
 import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
@@ -85,7 +85,7 @@ library ALMMathLib {
      * @param debtLong The total amount of debt held in long positions.
      * @param debtShort The total amount of debt held in short positions.
      * @param price The price of one quote token in base token units, expressed as an integer with 18-decimal precision.
-     * @param returnInBase If true, result is denominated in base token, otherwise in quote token.
+     * @param returnInBase If true, the result is denominated in base tokens, otherwise in quote tokens.
      * @return The total value locked, denominated in base or quote units.
      */
     function getTVL(
@@ -149,6 +149,7 @@ library ALMMathLib {
     ///         Always rounds down.
     /// @param tick The tick to align.
     /// @param tickSpacing The tick spacing of the pool.
+    /// @return The aligned tick value.
     function alignComputedTickWithTickSpacing(int24 tick, int24 tickSpacing) internal pure returns (int24) {
         if (tick < 0) {
             return ((tick - tickSpacing + 1) / tickSpacing) * tickSpacing;

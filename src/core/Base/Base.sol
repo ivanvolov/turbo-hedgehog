@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -12,7 +12,7 @@ import {IFlashLoanAdapter} from "../../interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 import {IOracle} from "../../interfaces/IOracle.sol";
 import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
+import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
 import {IBase} from "../../interfaces/IBase.sol";
 
 /// @title Base
@@ -140,8 +140,8 @@ abstract contract Base is IBase {
         _;
     }
 
-    /// @notice Restricts function execution to active state only.
-    /// @dev Only allows execution when status equals 0 (active).
+    /// @notice Restricts function execution when contract is not active.
+    /// @dev Allows execution when status equals 0 (active).
     /// @dev Reverts with ContractNotActive when status is paused (1) or shutdown (2).
     modifier onlyActive() {
         if (alm.status() != 0) revert ContractNotActive();

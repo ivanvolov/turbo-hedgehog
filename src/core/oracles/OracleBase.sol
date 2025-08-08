@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 
 // ** libraries
@@ -11,7 +11,7 @@ import {ALMMathLib, WAD_DECIMALS} from "../../libraries/ALMMathLib.sol";
 import {IOracle} from "../../interfaces/IOracle.sol";
 
 /// @title Oracle Base
-/// @notice Abstract contract that serves as a base for all oracles. Holds functions to calculate price in different formats.
+/// @notice Abstract contract that serves as a base for all oracles.
 abstract contract OracleBase is IOracle {
     bool public immutable isInvertedPool;
     int256 public immutable totalDecDelta;
@@ -37,7 +37,7 @@ abstract contract OracleBase is IOracle {
     /// @notice Calculates both standard price and Uniswap V4 compatible sqrt price.
     /// @dev Returns the standard price as a 1e18 fixed-point number (UD60x18 format).
     /// The sqrt price is calculated as either sqrt(priceBase/priceQuote) * 2^96 or
-    /// sqrt(priceQuote/priceBase) * 2^96 depending on token ordering and pool configuration.
+    /// sqrt(priceQuote/priceBase) * 2^96 depending, on token ordering and pool configuration.
     /// @return currentPrice The standard price ratio (quote denominated in base token units).
     /// @return sqrtPriceX96 The square root price in Uniswap V4 Q64.96 format.
     function poolPrice() external view returns (uint256 currentPrice, uint160 sqrtPriceX96) {
@@ -51,6 +51,6 @@ abstract contract OracleBase is IOracle {
     }
 
     function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {
-        // Intentionally empty as to be implemented by derived contracts.
+        // Intentionally empty to be implemented by derived contracts.
     }
 }

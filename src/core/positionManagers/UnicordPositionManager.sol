@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,7 +13,7 @@ import {Base} from "../base/Base.sol";
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
 
 /// @title Unicord Position Manager
-/// @notice Holds rehypothecation flow for position adjustment, then price moves up or down. Calculates swap fees.
+/// @notice Holds rehypothecation flow for position adjustment when the price moves up or down.
 contract UnicordPositionManager is Base, IPositionManager {
     using SafeERC20 for IERC20;
 

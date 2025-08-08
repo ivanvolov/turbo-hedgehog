@@ -22,7 +22,7 @@ import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/swapAdapters/ISwapAdapter.sol";
+import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 

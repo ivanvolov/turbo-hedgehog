@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -14,7 +14,6 @@ contract EulerFlashLoanAdapter is FlashLoanBase {
     error NotAllowedEulerVault(address vault);
     error FlashLoanAssetNotAllowed(address asset);
 
-    // ** EulerV2
     IEulerVault public immutable flVaultBase;
     IEulerVault public immutable flVaultQuote;
 
@@ -28,14 +27,14 @@ contract EulerFlashLoanAdapter is FlashLoanBase {
         flVaultQuote = _flVaultQuote;
     }
 
-    function onFlashLoan(bytes calldata _data) external notPaused returns (bytes32) {
+    function onFlashLoan(bytes calldata data) external notPaused returns (bytes32) {
         if (msg.sender != address(flVaultBase) && msg.sender != address(flVaultQuote))
             revert NotAllowedEulerVault(msg.sender);
-        _onFlashLoan(_data);
+        _onFlashLoan(data);
         return bytes32(0);
     }
 
-    function _flashLoanSingle(bool isBase, uint256 amount, bytes memory _data) internal virtual override {
-        isBase ? flVaultBase.flashLoan(amount, _data) : flVaultQuote.flashLoan(amount, _data);
+    function _flashLoanSingle(bool isBase, uint256 amount, bytes memory data) internal virtual override {
+        isBase ? flVaultBase.flashLoan(amount, data) : flVaultQuote.flashLoan(amount, data);
     }
 }

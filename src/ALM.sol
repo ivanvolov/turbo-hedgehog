@@ -17,7 +17,7 @@ import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
-// ** External imports
+// ** external imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -35,7 +35,7 @@ import {CurrencySettler} from "./libraries/CurrencySettler.sol";
 /// @title Automated Liquidity Manager
 /// @author Ivan Volovyk <https://github.com/ivanvolov>
 /// @custom:contact ivan@lumis.fi
-/// @notice The main hook contract handling liquidity management and swap flow.
+/// @notice The main hook contract that handles liquidity management and swap flow.
 contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using CurrencySettler for Currency;
@@ -45,7 +45,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using LPFeeLibrary for uint24;
 
     constructor(
-        PoolKey memory _key,
+        PoolKey memory key,
         IERC20 _base,
         IERC20 _quote,
         IWETH9 _WETH9,
@@ -55,8 +55,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         string memory name,
         string memory symbol
     ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
-        authorizedPoolKey = _key;
-        authorizedPoolId = PoolId.unwrap(_key.toId());
+        authorizedPoolKey = key;
+        authorizedPoolId = PoolId.unwrap(key.toId());
         WETH9 = _WETH9;
     }
 
@@ -162,8 +162,8 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             -SafeCast.toInt256(amountBase),
             -SafeCast.toInt256(amountQuote)
         );
-        if (isInvertedAssets) _ensureEnoughBalance(amountQuote, QUOTE);
-        else _ensureEnoughBalance(amountBase, BASE);
+        if (isInvertedAssets) ensureEnoughBalance(amountQuote, QUOTE);
+        else ensureEnoughBalance(amountBase, BASE);
     }
 
     function onFlashLoanSingle(
@@ -180,14 +180,14 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         if (isBase) {
             if (isInvertedAssets) swapAdapter.swapExactInput(false, getBalanceQuote());
-            else _ensureEnoughBalance(amount, BASE);
+            else ensureEnoughBalance(amount, BASE);
         } else {
-            if (isInvertedAssets) _ensureEnoughBalance(amount, QUOTE);
+            if (isInvertedAssets) ensureEnoughBalance(amount, QUOTE);
             else swapAdapter.swapExactInput(true, getBalanceBase());
         }
     }
 
-    function _ensureEnoughBalance(uint256 targetBalance, IERC20 token) internal {
+    function ensureEnoughBalance(uint256 targetBalance, IERC20 token) internal {
         uint256 balance = token == BASE ? getBalanceBase() : getBalanceQuote();
         if (targetBalance >= balance) swapAdapter.swapExactOutput(token == QUOTE, targetBalance - balance);
         else swapAdapter.swapExactInput(token == BASE, balance - targetBalance);
@@ -257,13 +257,13 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         // We assume that fees are positive and only one token accrued fees during a single swap.
         uint128 feesAccrued0 = SafeCastLib.toUint128(feesAccrued.amount0());
         uint128 feesAccrued1 = SafeCastLib.toUint128(feesAccrued.amount1());
-        _settleDeltas(key, params.zeroForOne, feesAccrued0 + feesAccrued1, sqrtPrice);
+        settleDeltas(key, params.zeroForOne, feesAccrued0 + feesAccrued1, sqrtPrice);
 
         emit HookFee(authorizedPoolId, swapper, feesAccrued0, feesAccrued1);
         return (IHooks.afterSwap.selector, 0);
     }
 
-    function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
+    function settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
         if (zeroForOne) {
             uint256 token0 = SafeCast.toUint256(poolManager.currencyDelta(address(this), key.currency0));
             uint256 token1 = SafeCast.toUint256(-poolManager.currencyDelta(address(this), key.currency1));

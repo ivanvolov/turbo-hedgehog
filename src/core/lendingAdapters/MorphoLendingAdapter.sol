@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** Morpho imports
+// ** morpho imports
 import {IMorpho, Id, Position} from "@morpho-blue/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 
-// ** External imports
+// ** external imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
@@ -23,11 +23,12 @@ contract MorphoLendingAdapter is LendingBase {
 
     using SafeERC20 for IERC20;
 
-    // ** Morpho
     IMorpho immutable morpho;
     IUniversalRewardsDistributor public URD;
+
     Id public immutable longMId;
     Id public immutable shortMId;
+
     IERC4626 public immutable earnQuote;
     IERC4626 public immutable earnBase;
     bool public immutable isEarn;

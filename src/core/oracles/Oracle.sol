@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
@@ -12,10 +12,10 @@ import {OracleBase} from "./OracleBase.sol";
 import {WAD} from "../../libraries/ALMMathLib.sol";
 
 /// @title Oracle
-/// @notice Implementation of the Chainlink based oracle with two feeds.
+/// @notice Implementation of the Chainlink-based oracle with two feeds.
 contract Oracle is OracleBase, Ownable {
-    error StalenessThresholdExceeded();
     error PriceNotValid();
+    error StalenessThresholdExceeded();
 
     event StalenessThresholdsSet(uint256 stalenessThresholdB, uint256 stalenessThresholdQ);
 
