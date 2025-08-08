@@ -112,15 +112,15 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
 
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        // assertEqBalanceStateZero(address(hook));
-        // console.log("tvl %s", calcTVL());
+        assertEqBalanceStateZero(address(hook));
+        console.log("tvl %s", calcTVL());
 
-        // console.log("liquidity %s", hook.liquidity());
-        // (int24 tickLower, int24 tickUpper) = hook.activeTicks();
-        // console.log("tickLower %s", tickLower);
-        // console.log("tickUpper %s", tickUpper);
-        // assertTicks(-276421, -276221);
-        // assertApproxEqAbs(hook.sqrtPriceCurrent(), 79240362711883211369901, 1e1, "sqrtPrice");
+        console.log("liquidity %s", hook.liquidity());
+        (int24 tickLower, int24 tickUpper) = hook.activeTicks();
+        console.log("tickLower %s", tickLower);
+        console.log("tickUpper %s", tickUpper);
+        assertTicks(-2007, -1807);
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 72023797561498541009787625775, 1e1, "sqrtPrice");
     }
 
     function test_lifecycle() public {

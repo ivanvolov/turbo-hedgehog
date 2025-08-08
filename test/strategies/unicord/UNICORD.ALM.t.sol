@@ -472,14 +472,33 @@ contract UNICORD_ALMTest is ALMTestBase {
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        // uint256 preRebalanceTVL = calcTVL();
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        {
+            uint256 preRebalanceTVL = hook.TVL(oracle.price());
+            vm.prank(deployer.addr);
+            rebalanceAdapter.rebalance(slippage);
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
-        // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+            // ** Make oracle change with swap price
+            alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+
+            uint256 calcCL = (preRebalanceTVL * weight) / 1e18;
+            uint256 afterCL = lendingAdapter.getCollateralLong();
+            uint256 ratioCL = afterCL > calcCL
+                ? ((afterCL * 1e18) / calcCL - 1e18)
+                : ((calcCL * 1e18) / afterCL - 1e18);
+
+            // small deviation is allowed
+            require(ratioCL < (slippage * 11e17) / 1e18);
+
+            uint256 calcCS = (preRebalanceTVL * (1e18 - weight)) / 1e18;
+            uint256 afterCS = lendingAdapter.getCollateralShort();
+            uint256 ratioCS = afterCS > calcCS
+                ? ((afterCS * 1e18) / calcCS - 1e18)
+                : ((calcCS * 1e18) / afterCS - 1e18);
+
+            // small deviation is allowed
+            require(ratioCS < (slippage * 11e17) / 1e18);
+        }
 
         // ** Full withdraw
         {

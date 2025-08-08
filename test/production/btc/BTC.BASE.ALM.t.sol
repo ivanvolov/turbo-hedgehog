@@ -401,23 +401,20 @@ contract BTC_BASE_ALMTest is ALMTestBaseBase {
             (uint256 deltaUSDC, uint256 deltaBTC) = swapBTC_USDC_In(btcToSwap);
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
-            console.log("deltaX %s", deltaX);
+
             assertApproxEqAbs((deltaBTC * (1e18 - testFee)) / 1e18, deltaX, 1);
             assertApproxEqAbs(deltaUSDC, deltaY, 1);
 
             uint256 deltaTreasuryFeeQ = (deltaX * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFeeQ;
 
-            //treasuryFeeB += deltaTreasuryFeeB;
             console.log("treasuryFeeB %s", hook.accumulatedFeeB());
-            console.log("deltaTreasuryFeeB %s", deltaTreasuryFeeQ);
+            console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 3, "treasuryFee");
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-
-            //console.log("deltaTreasuryFeeQ %s", treasuryFeeB);
 
             assertEqPositionState(
                 CL + ((deltaBTC - deltaTreasuryFeeQ) * k1) / 1e18,

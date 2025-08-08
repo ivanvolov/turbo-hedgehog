@@ -674,7 +674,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Rebalance
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
-        // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
@@ -685,7 +685,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
 
-            // _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
     }
 
