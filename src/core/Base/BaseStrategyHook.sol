@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** v4 imports
+// ** External imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
-
-// ** External imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
@@ -179,7 +177,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         // Unlocks to enable the swap, which updates the pool's sqrt price to the target.
         poolManager.unlock(abi.encode(_sqrtPrice));
         _updatePriceAndBoundaries(_sqrtPrice);
-        newLiquidity = _calcLiquidity();
+        newLiquidity = calcLiquidity();
         liquidity = newLiquidity;
         emit LiquidityUpdated(newLiquidity);
     }
@@ -196,7 +194,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         return "";
     }
 
-    function _calcLiquidity() internal view returns (uint128) {
+    function calcLiquidity() internal view returns (uint128) {
         Ticks memory _activeTicks = activeTicks;
         return
             ALMMathLib.getLiquidity(

@@ -50,5 +50,7 @@ abstract contract OracleBase is IOracle {
             revert SqrtPriceNotValid();
     }
 
-    function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {}
+    function _fetchAssetsPrices() internal view virtual returns (uint256, uint256) {
+        // Intentionally empty as to be implemented by derived contracts.
+    }
 }

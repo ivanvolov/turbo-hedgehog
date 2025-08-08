@@ -11,7 +11,7 @@ import {FlashLoanBase} from "./FlashLoanBase.sol";
 /// @title Euler Flash Loan Adapter
 /// @notice Implementation of the flash loan adapter using Euler V2.
 contract EulerFlashLoanAdapter is FlashLoanBase {
-    error NotAllowedEulerVault(address account);
+    error NotAllowedEulerVault(address vault);
     error FlashLoanAssetNotAllowed(address asset);
 
     // ** EulerV2

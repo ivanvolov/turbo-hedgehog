@@ -151,6 +151,6 @@ contract EulerLendingAdapter is LendingBase {
     // ** Helpers
 
     function syncPositions() external {
-        // Intentionally empty as no synchronization is needed for long positions.
+        // Intentionally empty as no synchronization is needed for Euler positions.
     }
 }

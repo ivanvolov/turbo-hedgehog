@@ -5,9 +5,6 @@ pragma solidity ^0.8.0;
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// ** libraries
-import {ALMMathLib} from "../../libraries/ALMMathLib.sol";
-
 // ** interfaces
 import {IALM} from "../../interfaces/IALM.sol";
 import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
@@ -92,6 +89,7 @@ abstract contract Base is IBase {
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
+        if (owner == newOwner) return;
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }

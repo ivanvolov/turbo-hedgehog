@@ -9,6 +9,7 @@ import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // ** External imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
@@ -217,7 +218,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
                 IV4Router.ExactInputParams({
                     currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE), // or currencyOut for ExactOutputParams
                     path: path,
-                    amountIn: uint128(amount), // or amountOut for ExactOutputParams
+                    amountIn: SafeCast.toUint128(amount), // or amountOut for ExactOutputParams
                     amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max // or amountInMaximum for ExactOutputParams
                 })
             );
@@ -234,7 +235,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
                 IV4Router.ExactInputSingleParams({
                     poolKey: key,
                     zeroForOne: zeroForOne,
-                    amountIn: uint128(amount), // or amountOut for ExactOutputSingleParams
+                    amountIn: SafeCast.toUint128(amount), // or amountOut for ExactOutputSingleParams
                     amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max, // or amountInMaximum for ExactInputSingleParams
                     hookData: hookData
                 })

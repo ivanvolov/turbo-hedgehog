@@ -92,7 +92,7 @@ contract MorphoLendingAdapter is LendingBase {
     function getCollateralLong() public view override returns (uint256) {
         if (isEarn) return earnQuote.convertToAssets(earnQuote.balanceOf(address(this)));
         Position memory p = morpho.position(longMId, address(this));
-        return uint256(p.collateral);
+        return p.collateral;
     }
 
     function borrowLong(uint256 amount) public override onlyModule onlyActive isBorrowMode {
@@ -125,7 +125,7 @@ contract MorphoLendingAdapter is LendingBase {
     function getCollateralShort() public view override returns (uint256) {
         if (isEarn) return earnBase.convertToAssets(earnBase.balanceOf(address(this)));
         Position memory p = morpho.position(shortMId, address(this));
-        return uint256(p.collateral);
+        return p.collateral;
     }
 
     function borrowShort(uint256 amount) public override onlyModule onlyActive isBorrowMode {

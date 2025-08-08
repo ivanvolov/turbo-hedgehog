@@ -30,7 +30,7 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
     }
 
     function flashLoanSingle(bool isBase, uint256 amount, bytes calldata data) external onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(0), msg.sender, isBase, amount, data);
+        bytes memory _data = abi.encode(0, msg.sender, isBase, amount, data);
         _flashLoanSingle(isBase, amount, _data);
     }
 
@@ -39,7 +39,7 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
         uint256 amountQuote,
         bytes calldata data
     ) external onlyModule notPaused {
-        bytes memory _data = abi.encode(uint8(2), msg.sender, amountBase, amountQuote, data);
+        bytes memory _data = abi.encode(2, msg.sender, amountBase, amountQuote, data);
         _flashLoanSingle(true, amountBase, _data);
     }
 
@@ -62,7 +62,7 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
                 _data,
                 (uint8, address, uint256, uint256, bytes)
             );
-            bytes memory __data = abi.encode(uint8(1), sender, amountBase, amountQuote, data);
+            bytes memory __data = abi.encode(1, sender, amountBase, amountQuote, data);
 
             BASE.safeTransfer(sender, amountBase);
             _flashLoanSingle(false, amountQuote, __data);

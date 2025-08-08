@@ -18,7 +18,7 @@ contract UnicordPositionManager is Base, IPositionManager {
     using SafeERC20 for IERC20;
 
     constructor(IERC20 _base, IERC20 _quote) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote) {
-        // Intentionally empty as all initialization is handled by the parent Base contract
+        // Intentionally empty as all initialization is handled by the parent Base contract.
     }
 
     function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {

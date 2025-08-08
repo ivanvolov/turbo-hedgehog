@@ -137,6 +137,19 @@ contract General_ALMTest is ALMTestBase {
         assertEq(oracle.price(), 2660201350, "price should eq");
     }
 
+    function test_transfer_ownership() public {
+        _part_init_hook();
+        assertEq(address(hook.owner()), deployer.addr);
+
+        vm.expectRevert();
+        hook.transferOwnership(address(0));
+
+        vm.prank(deployer.addr);
+        hook.transferOwnership(address(0));
+
+        assertEq(address(hook.owner()), address(0));
+    }
+
     function test_accessability() public {
         _part_init_hook();
 

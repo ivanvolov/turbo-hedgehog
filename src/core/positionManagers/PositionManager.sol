@@ -27,13 +27,12 @@ contract PositionManager is Base, IPositionManager {
     uint256 public k2;
 
     constructor(IERC20 _base, IERC20 _quote) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote) {
-        // Intentionally empty as all initialization is handled by the parent Base contract
+        // Intentionally empty as all initialization is handled by the parent Base contract.
     }
 
     function setKParams(uint256 _k1, uint256 _k2) external onlyOwner {
         k1 = _k1;
         k2 = _k2;
-
         emit KParamsSet(_k1, _k2);
     }
 

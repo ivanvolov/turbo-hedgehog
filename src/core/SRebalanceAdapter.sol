@@ -2,17 +2,16 @@
 pragma solidity ^0.8.0;
 
 // ** External imports
-import {UD60x18, ud, unwrap as uw} from "@prb-math/UD60x18.sol";
 import {mulDiv, mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-// ** libraries
-import {ALMMathLib, div18, absSub, WAD} from "../libraries/ALMMathLib.sol";
-
 // ** contracts
 import {Base} from "./base/Base.sol";
+
+// ** libraries
+import {ALMMathLib, div18, absSub, WAD} from "../libraries/ALMMathLib.sol";
 
 // ** interfaces
 import {IRebalanceAdapter} from "../interfaces/IRebalanceAdapter.sol";
@@ -137,19 +136,21 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     // ** Logic
 
-    /// @notice Computes when the next rebalance can be triggered
-    /// @return needRebalance   True if rebalance is allowed, false otherwise
-    /// @return priceThreshold  The current price threshold for the price based rebalance
-    /// @return triggerTime     The exact timestamp when a time-based rebalance is allowed
+    /// @notice Computes if the next rebalance can be triggered.
+    /// @param oraclePrice The current oracle price.
+    /// @return needRebalance   True if rebalance is allowed, false otherwise.
+    /// @return priceThreshold  The current price threshold for the price based rebalance.
+    /// @return triggerTime     The exact timestamp when a time-based rebalance can be triggered.
     function isRebalanceNeeded(uint256 oraclePrice) public view returns (bool, uint256, uint256) {
         (bool _isPriceRebalance, uint256 _priceThreshold) = isPriceRebalance(oraclePrice);
         (bool _isTimeRebalance, uint256 _triggerTime) = isTimeRebalance();
         return (_isPriceRebalance || _isTimeRebalance, _priceThreshold, _triggerTime);
     }
 
-    /// @notice Computes when the next price‐based rebalance can be triggered
-    /// @return needRebalance   True if rebalance is allowed, false otherwise
-    /// @return priceThreshold  The current price threshold for the price based rebalance
+    /// @notice Computes if the next price‐based rebalance can be triggered.
+    /// @param oraclePrice The current oracle price.
+    /// @return needRebalance   True if rebalance is allowed, false otherwise.
+    /// @return priceThreshold  The current price threshold for the price based rebalance.
     function isPriceRebalance(uint256 oraclePrice) public view returns (bool needRebalance, uint256 priceThreshold) {
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance
             ? div18(oraclePrice, oraclePriceAtLastRebalance)
@@ -157,9 +158,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         needRebalance = priceThreshold >= rebalancePriceThreshold;
     }
 
-    /// @notice Computes when the next time‐based rebalance can be triggered
-    /// @return needRebalance  True if rebalance is allowed, false otherwise
-    /// @return triggerTime    The exact timestamp when a time-based rebalance is allowed
+    /// @notice Computes when the next time‐based rebalance can be triggered.
+    /// @return needRebalance  True if rebalance is allowed, false otherwise.
+    /// @return triggerTime    The exact timestamp when a time-based rebalance can be triggered.
     function isTimeRebalance() public view returns (bool needRebalance, uint256 triggerTime) {
         triggerTime = timeAtLastRebalance + rebalanceTimeThreshold;
         needRebalance = block.timestamp >= triggerTime;

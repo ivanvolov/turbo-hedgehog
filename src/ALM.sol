@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/types/BeforeSwapDelta.sol";
+import {SafeCast as SafeCastLib} from "v4-core/libraries/SafeCast.sol";
 import {Currency} from "v4-core/types/Currency.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
@@ -24,12 +25,12 @@ import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+// ** contracts
+import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
+
 // ** libraries
 import {ALMMathLib, div18, WAD} from "./libraries/ALMMathLib.sol";
 import {CurrencySettler} from "./libraries/CurrencySettler.sol";
-
-// ** contracts
-import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
 
 /// @title Automated Liquidity Manager
 /// @author Ivan Volovyk <https://github.com/ivanvolov>
@@ -144,7 +145,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             QUOTE.safeTransfer(to, quoteOut);
         }
 
-        uint128 newLiquidity = _calcLiquidity();
+        uint128 newLiquidity = calcLiquidity();
         liquidity = newLiquidity;
         emit Withdraw(to, sharesOut, baseOut, quoteOut, totalSupply(), newLiquidity);
     }
@@ -251,31 +252,29 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             ""
         );
         uint160 sqrtPrice = sqrtPriceCurrent();
-        checkSwapDeviations(uint256(sqrtPrice));
+        checkSwapDeviations(sqrtPrice);
 
-        // We assume what fees are positive and only one token accrued fees during a single swap.
-        _settleDeltas(
-            key,
-            params.zeroForOne,
-            SafeCast.toUint256(int256(feesAccrued.amount0() + feesAccrued.amount1())),
-            sqrtPrice
-        );
-        emit HookFee(authorizedPoolId, swapper, uint128(feesAccrued.amount0()), uint128(feesAccrued.amount1()));
+        // We assume that fees are positive and only one token accrued fees during a single swap.
+        uint128 feesAccrued0 = SafeCastLib.toUint128(feesAccrued.amount0());
+        uint128 feesAccrued1 = SafeCastLib.toUint128(feesAccrued.amount1());
+        _settleDeltas(key, params.zeroForOne, feesAccrued0 + feesAccrued1, sqrtPrice);
+
+        emit HookFee(authorizedPoolId, swapper, feesAccrued0, feesAccrued1);
         return (IHooks.afterSwap.selector, 0);
     }
 
     function _settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
         if (zeroForOne) {
-            uint256 token0 = uint256(poolManager.currencyDelta(address(this), key.currency0));
-            uint256 token1 = uint256(-poolManager.currencyDelta(address(this), key.currency1));
+            uint256 token0 = SafeCast.toUint256(poolManager.currencyDelta(address(this), key.currency0));
+            uint256 token1 = SafeCast.toUint256(-poolManager.currencyDelta(address(this), key.currency1));
 
             key.currency0.take(poolManager, address(this), token0, false);
             if (address(WETH9) != address(0)) WETH9.deposit{value: token0}();
             updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
             key.currency1.settle(poolManager, address(this), token1, false);
         } else {
-            uint256 token0 = uint256(-poolManager.currencyDelta(address(this), key.currency0));
-            uint256 token1 = uint256(poolManager.currencyDelta(address(this), key.currency1));
+            uint256 token0 = SafeCast.toUint256(-poolManager.currencyDelta(address(this), key.currency0));
+            uint256 token1 = SafeCast.toUint256(poolManager.currencyDelta(address(this), key.currency1));
 
             key.currency1.take(poolManager, address(this), token1, false);
             updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
