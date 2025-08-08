@@ -222,8 +222,8 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         assertApproxEqAbs(deltaUSDC, deltaX, 1);
         assertApproxEqAbs(usdcFromSwap, deltaUSDC, 1);
 
-        // uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
-        // assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1e9);
+        uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
+        assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 1e9);
 
         assertApproxEqAbs(BASE.balanceOf(swapper.addr), deltaUSDC, 0);
         assertApproxEqAbs(swapper.addr.balance, 1e18, 0); // check what extraETH is still in place.
