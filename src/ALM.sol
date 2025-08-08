@@ -85,10 +85,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
         if (isInvertedAssets) {
             BASE.safeTransferFrom(msg.sender, address(this), amountIn);
-            lendingAdapter.addCollateralShort(baseBalance());
+            lendingAdapter.addCollateralShort(getBalanceBase());
         } else {
             QUOTE.safeTransferFrom(msg.sender, address(this), amountIn);
-            lendingAdapter.addCollateralLong(quoteBalance());
+            lendingAdapter.addCollateralLong(getBalanceQuote());
         }
         uint256 tvlAfter = TVL(price);
         if (tvlAfter > tvlCap) revert TVLCapExceeded();
@@ -127,19 +127,19 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             else if (uCL != 0) lendingAdapter.removeCollateralLong(uCL);
             else if (uCS != 0) lendingAdapter.removeCollateralShort(uCS);
 
-            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance());
-            else swapAdapter.swapExactInput(true, baseBalance());
+            if (isInvertedAssets) swapAdapter.swapExactInput(false, getBalanceQuote());
+            else swapAdapter.swapExactInput(true, getBalanceBase());
         } else if (uDL > 0) flashLoanAdapter.flashLoanSingle(true, uDL, abi.encode(uCL, uCS));
         else revert NotAValidPositionState();
 
         uint256 baseOut;
         uint256 quoteOut;
         if (isInvertedAssets) {
-            baseOut = baseBalance();
+            baseOut = getBalanceBase();
             if (baseOut < minAmountOutB) revert NotMinOutWithdrawBase();
             BASE.safeTransfer(to, baseOut);
         } else {
-            quoteOut = quoteBalance();
+            quoteOut = getBalanceQuote();
             if (quoteOut < minAmountOutQ) revert NotMinOutWithdrawQuote();
             QUOTE.safeTransfer(to, quoteOut);
         }
@@ -178,18 +178,18 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         lendingAdapter.updatePosition(SafeCast.toInt256(uCL), SafeCast.toInt256(uCS), deltaDL, deltaDS);
 
         if (isBase) {
-            if (isInvertedAssets) swapAdapter.swapExactInput(false, quoteBalance());
+            if (isInvertedAssets) swapAdapter.swapExactInput(false, getBalanceQuote());
             else _ensureEnoughBalance(amount, BASE);
         } else {
             if (isInvertedAssets) _ensureEnoughBalance(amount, QUOTE);
-            else swapAdapter.swapExactInput(true, baseBalance());
+            else swapAdapter.swapExactInput(true, getBalanceBase());
         }
     }
 
-    function _ensureEnoughBalance(uint256 balance, IERC20 token) internal {
-        uint256 _balance = token == BASE ? baseBalance() : quoteBalance();
-        if (balance >= _balance) swapAdapter.swapExactOutput(token == QUOTE, balance - _balance);
-        else swapAdapter.swapExactInput(token == BASE, _balance - balance);
+    function _ensureEnoughBalance(uint256 targetBalance, IERC20 token) internal {
+        uint256 balance = token == BASE ? getBalanceBase() : getBalanceQuote();
+        if (targetBalance >= balance) swapAdapter.swapExactOutput(token == QUOTE, targetBalance - balance);
+        else swapAdapter.swapExactInput(token == BASE, balance - targetBalance);
     }
 
     function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
@@ -306,16 +306,16 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
 
     function TVL(uint256 price) public view returns (uint256) {
         (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        return ALMMathLib.getTVL(quoteBalance(), baseBalance(), CL, CS, DL, DS, price, isInvertedAssets);
+        return ALMMathLib.getTVL(getBalanceQuote(), getBalanceBase(), CL, CS, DL, DS, price, isInvertedAssets);
     }
 
     // ** Helpers
 
-    function baseBalance() internal view returns (uint256) {
+    function getBalanceBase() internal view returns (uint256) {
         return BASE.balanceOf(address(this)) - accumulatedFeeB;
     }
 
-    function quoteBalance() internal view returns (uint256) {
+    function getBalanceQuote() internal view returns (uint256) {
         return QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
     }
 }

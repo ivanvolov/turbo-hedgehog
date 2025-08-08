@@ -93,7 +93,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         oraclePriceAtLastRebalance = _oraclePriceAtLastRebalance;
         sqrtPriceAtLastRebalance = _sqrtPriceAtLastRebalance;
         timeAtLastRebalance = _timeAtLastRebalance;
-
         emit LastRebalanceSnapshotSet(_oraclePriceAtLastRebalance, _sqrtPriceAtLastRebalance, _timeAtLastRebalance);
     }
 
@@ -128,7 +127,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         weight = _weight;
         longLeverage = _longLeverage;
         shortLeverage = _shortLeverage;
-
         emit RebalanceParamsSet(_weight, _longLeverage, _shortLeverage);
     }
 
@@ -207,7 +205,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amount,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
-        _managePositionDeltas(data);
+        managePositionDeltas(data);
         uint256 balance = isBase ? getBalanceBase() : getBalanceQuote();
         if (amount > balance) swapAdapter.swapExactOutput(!isBase, amount - balance);
     }
@@ -217,7 +215,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         uint256 amountQuote,
         bytes calldata data
     ) external onlyActive onlyFlashLoanAdapter {
-        _managePositionDeltas(data);
+        managePositionDeltas(data);
 
         uint256 balanceBase = getBalanceBase();
         if (amountBase > balanceBase) swapAdapter.swapExactOutput(false, amountBase - balanceBase);
@@ -227,13 +225,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         }
     }
 
-    /// @dev This function is mainly for removing stack too deep error.
-    function _managePositionDeltas(bytes calldata data) internal {
+    function managePositionDeltas(bytes calldata data) internal {
         (int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) = abi.decode(
             data,
             (int256, int256, int256, int256)
         );
-
         lendingAdapter.updatePosition(-deltaCL, -deltaCS, deltaDL, deltaDS);
     }
 
@@ -294,8 +290,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     function checkDeviations(uint256 price) internal view {
-        (uint256 currentCL, uint256 currentCS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
-        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(price, currentCL, currentCS, DL, DS);
+        (uint256 CL, uint256 CS, uint256 DL, uint256 DS) = lendingAdapter.getPosition();
+        (uint256 lLeverage, uint256 sLeverage) = ALMMathLib.getLeverages(price, CL, CS, DL, DS);
 
         if (absSub(lLeverage, longLeverage) > maxDeviationLong) revert DeviationLongExceeded();
         if (absSub(sLeverage, shortLeverage) > maxDeviationShort) revert DeviationShortExceeded();

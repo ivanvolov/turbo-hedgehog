@@ -66,24 +66,13 @@ abstract contract Base is IBase {
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        if (
-            componentType == ComponentType.ALM ||
-            componentType == ComponentType.REBALANCE_ADAPTER ||
-            componentType == ComponentType.POSITION_MANAGER
-        ) {
-            _approveSingle(BASE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
-            _approveSingle(QUOTE, address(lendingAdapter), address(_lendingAdapter), type(uint256).max);
-
-            _approveSingle(BASE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
-            _approveSingle(QUOTE, address(flashLoanAdapter), address(_flashLoanAdapter), type(uint256).max);
-
-            _approveSingle(BASE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
-            _approveSingle(QUOTE, address(swapAdapter), address(_swapAdapter), type(uint256).max);
-
-            if (componentType == ComponentType.ALM) {
-                _approveSingle(BASE, address(positionManager), address(_positionManager), type(uint256).max);
-                _approveSingle(QUOTE, address(positionManager), address(_positionManager), type(uint256).max);
-            }
+        if (componentType == ComponentType.POSITION_MANAGER) {
+            switchApproval(address(lendingAdapter), address(_lendingAdapter));
+        } else if (componentType == ComponentType.ALM || componentType == ComponentType.REBALANCE_ADAPTER) {
+            switchApproval(address(lendingAdapter), address(_lendingAdapter));
+            switchApproval(address(flashLoanAdapter), address(_flashLoanAdapter));
+            switchApproval(address(swapAdapter), address(_swapAdapter));
+            if (componentType == ComponentType.ALM) switchApproval(address(positionManager), address(_positionManager));
         }
 
         lendingAdapter = _lendingAdapter;
@@ -92,10 +81,14 @@ abstract contract Base is IBase {
         positionManager = _positionManager;
     }
 
-    function _approveSingle(IERC20 token, address moduleOld, address moduleNew, uint256 amount) internal {
+    function switchApproval(address moduleOld, address moduleNew) internal {
         if (moduleOld == moduleNew) return;
-        if (moduleOld != address(0)) token.forceApprove(moduleOld, 0);
-        token.forceApprove(moduleNew, amount);
+        if (moduleOld != address(0)) {
+            BASE.forceApprove(moduleOld, 0);
+            QUOTE.forceApprove(moduleOld, 0);
+        }
+        BASE.forceApprove(moduleNew, type(uint256).max);
+        QUOTE.forceApprove(moduleNew, type(uint256).max);
     }
 
     function transferOwnership(address newOwner) public virtual onlyOwner {

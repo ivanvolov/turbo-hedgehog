@@ -19,6 +19,7 @@ import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 /// @notice Implementation of the lending adapter using Morpho.
 contract MorphoLendingAdapter is LendingBase {
     error NotInBorrowMode();
+    error InvalidEarnConfig();
 
     using SafeERC20 for IERC20;
 
@@ -51,11 +52,11 @@ contract MorphoLendingAdapter is LendingBase {
             earnBase = _earnBase;
             BASE.forceApprove(address(earnBase), type(uint256).max);
             QUOTE.forceApprove(address(earnQuote), type(uint256).max);
-        } else {
+        } else if (address(_earnQuote) == address(0) && address(_earnBase) == address(0)) {
             isEarn = false;
             longMId = _longMId;
             shortMId = _shortMId;
-        }
+        } else revert InvalidEarnConfig();
     }
 
     // ** Morpho rewards support
