@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** Morpho imports
+// ** morpho imports
 import {IMorpho, Id, Position} from "@morpho-blue/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 
-// ** External imports
+// ** external imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
@@ -19,14 +19,16 @@ import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 /// @notice Implementation of the lending adapter using Morpho.
 contract MorphoLendingAdapter is LendingBase {
     error NotInBorrowMode();
+    error InvalidEarnConfig();
 
     using SafeERC20 for IERC20;
 
-    // ** Morpho
     IMorpho immutable morpho;
     IUniversalRewardsDistributor public URD;
+
     Id public immutable longMId;
     Id public immutable shortMId;
+
     IERC4626 public immutable earnQuote;
     IERC4626 public immutable earnBase;
     bool public immutable isEarn;
@@ -51,11 +53,11 @@ contract MorphoLendingAdapter is LendingBase {
             earnBase = _earnBase;
             BASE.forceApprove(address(earnBase), type(uint256).max);
             QUOTE.forceApprove(address(earnQuote), type(uint256).max);
-        } else {
+        } else if (address(_earnQuote) == address(0) && address(_earnBase) == address(0)) {
             isEarn = false;
             longMId = _longMId;
             shortMId = _shortMId;
-        }
+        } else revert InvalidEarnConfig();
     }
 
     // ** Morpho rewards support
@@ -91,7 +93,7 @@ contract MorphoLendingAdapter is LendingBase {
     function getCollateralLong() public view override returns (uint256) {
         if (isEarn) return earnQuote.convertToAssets(earnQuote.balanceOf(address(this)));
         Position memory p = morpho.position(longMId, address(this));
-        return uint256(p.collateral);
+        return p.collateral;
     }
 
     function borrowLong(uint256 amount) public override onlyModule onlyActive isBorrowMode {
@@ -124,7 +126,7 @@ contract MorphoLendingAdapter is LendingBase {
     function getCollateralShort() public view override returns (uint256) {
         if (isEarn) return earnBase.convertToAssets(earnBase.balanceOf(address(this)));
         Position memory p = morpho.position(shortMId, address(this));
-        return uint256(p.collateral);
+        return p.collateral;
     }
 
     function borrowShort(uint256 amount) public override onlyModule onlyActive isBorrowMode {

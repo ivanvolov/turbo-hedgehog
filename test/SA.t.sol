@@ -16,7 +16,7 @@ import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol"
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IUniswapSwapAdapter} from "@src/interfaces/swapAdapters/IUniswapSwapAdapter.sol";
+import {IUniswapSwapAdapter} from "@test/interfaces/IUniswapSwapAdapter.sol";
 import {IUniswapV3Pool} from "@v3-core/IUniswapV3Pool.sol";
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 

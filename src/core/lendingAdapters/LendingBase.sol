@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
@@ -14,7 +14,7 @@ import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
 
 /// @title Lending Base
 /// @notice Abstract contract that serves as the base for all lending adapters.
-/// @dev Implements the claim rewards functionality using Merkl and updatePosition flow.
+/// @dev Implements the updatePosition flow and the claim rewards functionality using Merkl.
 abstract contract LendingBase is Base, ILendingAdapter {
     using SafeERC20 for IERC20;
 
@@ -44,14 +44,14 @@ abstract contract LendingBase is Base, ILendingAdapter {
         address[] memory users = new address[](1);
         address[] memory tokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
-        bytes32[][] memory _proofs = new bytes32[][](1);
+        bytes32[][] memory proofs = new bytes32[][](1);
 
         users[0] = address(this);
         tokens[0] = address(rewardToken);
         amounts[0] = claimable;
-        _proofs[0] = proof;
+        proofs[0] = proof;
 
-        merklRewardsDistributor.claim(users, tokens, amounts, _proofs);
+        merklRewardsDistributor.claim(users, tokens, amounts, proofs);
         // The `balanceOf` is necessary because the amount received is not always equal `claimable`.
         // The `to != address(this)` check is necessary to skip transfer for tokens like rEUL, which are locked.
         if (to != address(this)) rewardToken.safeTransfer(to, rewardToken.balanceOf(address(this)));
@@ -63,12 +63,10 @@ abstract contract LendingBase is Base, ILendingAdapter {
         return (getCollateralLong(), getCollateralShort(), getBorrowedLong(), getBorrowedShort());
     }
 
-    /**
-     * @notice Updates the position by adjusting collateral and debt for both long and short sides.
-     * @dev The order of operations is critical to avoid "phantom under-collateralization":
-     *      - Collateral is added and debt is repaid first, to ensure the account is not temporarily under-collateralized.
-     *      - Now collateral is removed and debt is borrowed if needed.
-     */
+    /// @notice Updates the position by adjusting collateral and debt for both long and short sides.
+    /// @dev The order of operations is critical to avoid `phantom under-collateralization`:
+    ///      - Collateral is added and debt is repaid first, to ensure the account is not temporarily under-collateralized.
+    ///      - Now, collateral is removed and debt is borrowed if needed.
     function updatePosition(
         int256 deltaCL,
         int256 deltaCS,
@@ -88,7 +86,7 @@ abstract contract LendingBase is Base, ILendingAdapter {
         if (deltaDS > 0) borrowShort(uint256(deltaDS));
     }
 
-    // ** Long and short markets unimplemented functions
+    // ** Long and short market functions to be implemented by derived contracts
 
     function addCollateralLong(uint256 amount) public virtual;
 

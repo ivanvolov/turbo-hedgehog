@@ -9,8 +9,9 @@ import {IV4Router, PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-// ** External imports
+// ** external imports
 import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Commands} from "@universal-router/Commands.sol";
@@ -21,10 +22,10 @@ import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
 import {Base} from "../base/Base.sol";
 
 // ** interfaces
-import {ISwapAdapter} from "../../interfaces/swapAdapters/ISwapAdapter.sol";
+import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
 
 /// @title Uniswap Swap Adapter
-/// @notice Provides swap functionality for Uniswap V2, V3, and V4 using Uniswap UniversalRouterV2.
+/// @notice Provides swap functionality with Uniswap V2, V3, and V4 using UniversalRouter.
 contract UniswapSwapAdapter is Base, ISwapAdapter {
     error InvalidSwapRoute();
     error InvalidProtocolType();
@@ -57,12 +58,12 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         IUniversalRouter _router,
         IPoolManager _manager,
         IPermit2 _permit2,
-        IWETH9 _weth
+        IWETH9 _WETH9
     ) Base(ComponentType.EXTERNAL_ADAPTER, msg.sender, _base, _quote) {
         router = _router;
         manager = _manager;
         permit2 = _permit2;
-        WETH9 = _weth;
+        WETH9 = _WETH9;
 
         BASE.forceApprove(address(permit2), type(uint256).max);
         permit2.approve(address(BASE), address(router), type(uint160).max, type(uint48).max);
@@ -80,33 +81,32 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
      * @notice Sets the swap route for a given swap key based on input/output and base/quote direction.
      * @param isExactInput Indicates whether the swap is for an exact input amount (true) or an exact output amount (false).
      * @param isBaseToQuote Indicates the direction of the swap: true for base-to-quote, false for quote-to-base.
-     * @param _swapRoute An array representing path IDs and their corresponding multipliers.
+     * @param swapRoute An array containing path IDs and their corresponding multipliers.
      * For example, [1, 35e18, 3] means 35% of the amount is routed through path 1 and the remaining 65% through path 3.
      * The array must have an odd number of elements, where even indices are path IDs and odd indices are multipliers (in 1e18 precision).
      */
     function setSwapRoute(
         bool isExactInput,
         bool isBaseToQuote,
-        uint256[] calldata _swapRoute
+        uint256[] calldata swapRoute
     ) external onlyRoutesOperator {
-        if (_swapRoute.length % 2 == 0) revert InvalidSwapRoute();
-
+        if (swapRoute.length % 2 == 0) revert InvalidSwapRoute();
         uint8 swapKey = toSwapKey(isExactInput, isBaseToQuote);
-        swapRoutes[swapKey] = _swapRoute;
-        emit SwapRouteSet(swapKey, _swapRoute);
+        swapRoutes[swapKey] = swapRoute;
+        emit SwapRouteSet(swapKey, swapRoute);
     }
 
     /**
      * @notice Sets the swap path details for a given swap path ID.
      * @dev Defines the protocol and input data used for a specific swap path.
-     * @param _swapPathId The unique identifier for the swap path.
-     * @param _protocolType The protocol type to use:
+     * @param swapPathId The unique identifier for the swap path.
+     * @param protocolType The protocol type to use:
      * 0 = Uniswap V2, 1 = Uniswap V3, 2 = Uniswap V4 (single swap), 3 = Uniswap V4 (multihop swap).
-     * @param _input Encoded input data required by the specified protocol for the swap path.
+     * @param input Encoded input data required by the specified protocol for the swap path.
      */
-    function setSwapPath(uint256 _swapPathId, uint8 _protocolType, bytes calldata _input) external onlyRoutesOperator {
-        swapPaths[_swapPathId] = SwapPath({protocolType: _protocolType, input: _input});
-        emit SwapPathSet(_swapPathId, _protocolType, _input);
+    function setSwapPath(uint256 swapPathId, uint8 protocolType, bytes calldata input) external onlyRoutesOperator {
+        swapPaths[swapPathId] = SwapPath({protocolType: protocolType, input: input});
+        emit SwapPathSet(swapPathId, protocolType, input);
     }
 
     function swapExactInput(bool isBaseToQuote, uint256 amountIn) external onlyModule returns (uint256 amountOut) {
@@ -174,14 +174,14 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             }
         }
 
-        // Always sweep extra ETH from router to adapter.
+        // Always sweep extra ETH from the router to the adapter.
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
         inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
 
-        // If routers returns ETH, we need to wrap it.
+        // If routers return ETH, we need to wrap it.
         ethBalance = address(this).balance;
         if (ethBalance > 0) WETH9.deposit{value: ethBalance}();
     }
@@ -212,13 +212,13 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN) : uint8(Actions.SWAP_EXACT_OUT);
 
             params[0] = abi.encode(
-                // We use ExactInputParams structure for both exact input and output swaps
+                // We use the ExactInputParams structure for both exact input and output swaps
                 // since the parameter structure is identical.
                 IV4Router.ExactInputParams({
-                    currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE), // or currencyOut for ExactOutputParams
+                    currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE), // or currencyOut for ExactOutputParams.
                     path: path,
-                    amountIn: uint128(amount), // or amountOut for ExactOutputParams
-                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max // or amountInMaximum for ExactOutputParams
+                    amountIn: SafeCast.toUint128(amount), // or amountOut for ExactOutputParams.
+                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max // or amountInMaximum for ExactOutputParams.
                 })
             );
         } else {
@@ -229,13 +229,13 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN_SINGLE) : uint8(Actions.SWAP_EXACT_OUT_SINGLE);
 
             params[0] = abi.encode(
-                // We use ExactInputSingleParams structure for both exact input and output swaps
+                // We use the ExactInputSingleParams structure for both exact input and output swaps
                 // since the parameter structure is identical.
                 IV4Router.ExactInputSingleParams({
                     poolKey: key,
                     zeroForOne: zeroForOne,
-                    amountIn: uint128(amount), // or amountOut for ExactOutputSingleParams
-                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max, // or amountInMaximum for ExactInputSingleParams
+                    amountIn: SafeCast.toUint128(amount), // or amountOut for ExactOutputSingleParams.
+                    amountOutMinimum: isExactInput ? uint128(0) : type(uint128).max, // or amountInMaximum for ExactInputSingleParams.
                     hookData: hookData
                 })
             );

@@ -6,7 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 test_case = "-12_false"
 
 def read_oracle_csv(file_path):
-    """Read and filter CSV data for the specified test case"""
     df = pd.read_csv(file_path)
     # Trim whitespace from column names
     df.columns = df.columns.str.strip()
@@ -16,7 +15,6 @@ def read_oracle_csv(file_path):
     return df
 
 def remove_duplicates(df):
-    """Remove duplicate rows and report statistics"""
     initial_count = len(df)
     df_cleaned = df.drop_duplicates()
     final_count = len(df_cleaned)
@@ -26,78 +24,58 @@ def remove_duplicates(df):
     print(f"After removing duplicates: {final_count}")
     return df_cleaned
 
-def analyze_original_p(df):
-    """Analyze the original p values from the CSV with detailed statistics"""
-    # Convert to numeric values as float
-    p_numeric = pd.to_numeric(df['p'], errors='coerce').astype(float)
-    
-    print(f"\n=== ORIGINAL P ANALYSIS ===")
-    print(f"P - Min: {p_numeric.min()}")
-    print(f"P - Max: {p_numeric.max()}")
-    print(f"P - Mean: {p_numeric.mean()}")
-    print(f"P - Std: {p_numeric.std()}")
-    print(f"P - Unique values: {p_numeric.nunique()}")
-    
-    # Show percentiles for better understanding of distribution
-    percentiles = [10, 25, 50, 75, 90, 95, 99]
-    for p in percentiles:
-        print(f"P - {p}th percentile: {p_numeric.quantile(p/100):.6f}")
-    
-    # Show some sample values
-    print(f"First 10 P values: {p_numeric.head(10).tolist()}")
-    
-    return p_numeric
-
-def analyze_coordinates(df):
-    """Analyze the coordinate ranges for price0 and price1"""
-    print("\n=== COORDINATE ANALYSIS ===")
-    print(f"First column (price0) - Min: {df['price0'].min()}")
-    print(f"First column (price0) - Max: {df['price0'].max()}")
-    print(f"Second column (price1) - Min: {df['price1'].min()}")
-    print(f"Second column (price1) - Max: {df['price1'].max()}")
-
-def create_scatter_plot(df):
-    """Create a 2D scatter plot with percentile-based coloring for better color distribution"""
+def create_scatter_plot(df, color_variable='p'):
     plt.figure(figsize=(14, 10))
-    
-    # Use original p values from CSV
-    p_values = analyze_original_p(df)
-    
-    # Convert coordinates to numeric for plotting
     price0_numeric = df['price0'].astype(float)
     price1_numeric = df['price1'].astype(float)
+    if color_variable == 'p':
+        color_values = pd.to_numeric(df['p'], errors='coerce').astype(float)
+        color_label = 'P Value'
+    elif color_variable == 'diffSqrt':
+        color_values = df['diffSqrt']
+        color_label = 'diffSqrt (% difference)'
+    elif color_variable == 'sqrtCalc':
+        color_values = df['sqrtCalc']
+        color_label = 'sqrtCalc'
+    else:
+        # Default to p values
+        color_values = pd.to_numeric(df['p'], errors='coerce').astype(float)
+        color_label = 'P Value'
     
-    # Create percentile-based coloring for better color distribution
-    # This ensures colors are evenly distributed regardless of P value clustering
-    p_percentiles = p_values.rank(pct=True) * 100  # Convert to percentile (0-100)
-    
-    print(f"\n=== PERCENTILE ANALYSIS ===")
-    print(f"Percentile range: {p_percentiles.min():.2f} to {p_percentiles.max():.2f}")
-    print(f"Percentile distribution:")
+    # Use original values directly instead of percentiles
+    print(f"\n=== {color_variable.upper()} ORIGINAL VALUES ANALYSIS ===")
+    print(f"Value range: {color_values.min():.6f} to {color_values.max():.6f}")
+    print(f"Value distribution:")
     for p in [10, 25, 50, 75, 90]:
-        count = (p_percentiles <= p).sum()
-        print(f"  {p}th percentile: {count} points")
+        percentile_value = color_values.quantile(p/100)
+        count = (color_values <= percentile_value).sum()
+        print(f"  {p}th percentile: {percentile_value:.6f} ({count} points)")
     
-    # Create scatter plot with percentile-based coloring
+    # Create scatter plot with original values for coloring
     scatter = plt.scatter(price0_numeric, price1_numeric, 
-                         c=p_percentiles,  # Use percentiles instead of raw values
+                         c=color_values,  # Use original values instead of percentiles
                          cmap='plasma',     # Plasma colormap for better contrast
                          s=30,             # Point size
                          alpha=0.7,        # Transparency for better visibility
                          edgecolors='black', # Black edges for definition
                          linewidth=0.5)
     
-    # Add colorbar with percentile labels
-    cbar = plt.colorbar(scatter, label='P Value Percentile', shrink=0.8)
-    cbar.set_label('P Value Percentile (%)', size=12)
+    # Add colorbar with original value labels
+    cbar = plt.colorbar(scatter, label=f'{color_label}', shrink=0.8)
+    cbar.set_label(f'{color_label}', size=12)
     
-    # Add percentile tick marks to colorbar for better readability
-    cbar.set_ticks([0, 25, 50, 75, 100])
-    cbar.set_ticklabels(['0%', '25%', '50%', '75%', '100%'])
+    # Add tick marks to colorbar for better readability
+    # Use actual min/max values and some intermediate values
+    min_val = color_values.min()
+    max_val = color_values.max()
+    cbar.set_ticks([min_val, min_val + (max_val - min_val) * 0.25, 
+                    min_val + (max_val - min_val) * 0.5, 
+                    min_val + (max_val - min_val) * 0.75, max_val])
+    cbar.set_ticklabels([f'{min_val:.6f}', '', '', '', f'{max_val:.6f}'])
     
     plt.xlabel('price0', fontsize=12)
     plt.ylabel('price1', fontsize=12)
-    plt.title(f'Price Points: price0 vs price1 (colored by P Value Percentile)\nTest Case: {test_case}', fontsize=14)
+    plt.title(f'Price Points: price0 vs price1 (colored by {color_label})\nTest Case: {test_case}', fontsize=14)
     
     # Add grid for better readability
     plt.grid(True, alpha=0.3)
@@ -111,13 +89,12 @@ def create_scatter_plot(df):
                 # Calculate distances to all points
                 distances = ((price0_numeric - x)**2 + (price1_numeric - y)**2)**0.5
                 closest_idx = distances.idxmin()
-                closest_p = p_values.iloc[closest_idx]
-                closest_percentile = p_percentiles.iloc[closest_idx]
+                closest_color = color_values.iloc[closest_idx]
                 closest_price0 = price0_numeric.iloc[closest_idx]
                 closest_price1 = price1_numeric.iloc[closest_idx]
                 
                 # Update annotation with comprehensive point information
-                annot.set_text(f'P: {closest_p:.6f}\nPercentile: {closest_percentile:.1f}%\nprice0: {closest_price0:.6f}\nprice1: {closest_price1:.6f}')
+                annot.set_text(f'{color_label}: {closest_color:.6f}\nprice0: {closest_price0:.6f}\nprice1: {closest_price1:.6f}')
                 annot.xy = (x, y)
                 annot.set_visible(True)
                 plt.draw()
@@ -142,40 +119,40 @@ def create_3d_plot(df):
     fig = plt.figure(figsize=(16, 12))
     ax = fig.add_subplot(111, projection='3d')
     
-    # Prepare data
-    p_values = pd.to_numeric(df['p'], errors='coerce').astype(float)
+    # Prepare data - use diffSqrt instead of p values
+    diff_sqrt_values = df['diffSqrt'].astype(float)
     price0_numeric = df['price0'].astype(float)
     price1_numeric = df['price1'].astype(float)
     
     # Filter out points where price0 equals 1000000000000000000
     filter_mask = price0_numeric != 1000000000000000000
-    p_values_filtered = p_values[filter_mask]
+    diff_sqrt_filtered = diff_sqrt_values[filter_mask]
     price0_filtered = price0_numeric[filter_mask]
     price1_filtered = price1_numeric[filter_mask]
     
     print(f"\n=== 3D PLOT FILTERING ===")
-    print(f"Original points: {len(p_values)}")
-    print(f"Points after filtering price0 != 1000000000000000000: {len(p_values_filtered)}")
-    print(f"Filtered out: {len(p_values) - len(p_values_filtered)} points")
+    print(f"Original points: {len(diff_sqrt_values)}")
+    print(f"Points after filtering price0 != 1000000000000000000: {len(diff_sqrt_filtered)}")
+    print(f"Filtered out: {len(diff_sqrt_values) - len(diff_sqrt_filtered)} points")
     
-    # Create 3D scatter plot with actual P values on Z-axis
-    scatter = ax.scatter(price0_filtered, price1_filtered, p_values_filtered,  # Use actual P values for Z-axis
-                        c=p_values_filtered,  # Color by actual P values, not percentiles
+    # Create 3D scatter plot with actual diffSqrt values on Z-axis
+    scatter = ax.scatter(price0_filtered, price1_filtered, diff_sqrt_filtered,  # Use actual diffSqrt values for Z-axis
+                        c=diff_sqrt_filtered,  # Color by actual diffSqrt values
                         cmap='plasma',
                         s=20,
                         alpha=0.6,
                         edgecolors='black',
                         linewidth=0.3)
     
-    # Add colorbar for actual P values
+    # Add colorbar for actual diffSqrt values
     cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=20)
-    cbar.set_label('P Value', size=12)
+    cbar.set_label('diffSqrt (% difference)', size=12)
     
     # Set labels and title
     ax.set_xlabel('price0', fontsize=12)
     ax.set_ylabel('price1', fontsize=12)
-    ax.set_zlabel('P Value', fontsize=12)
-    ax.set_title(f'3D Price Points: price0 vs price1 vs P Value\nTest Case: {test_case} (Filtered)', fontsize=14)
+    ax.set_zlabel('diffSqrt (% difference)', fontsize=12)
+    ax.set_title(f'3D Price Points: price0 vs price1 vs diffSqrt\nTest Case: {test_case} (Filtered)', fontsize=14)
     
     # Add grid for better orientation
     ax.grid(True, alpha=0.3)
@@ -190,12 +167,12 @@ def create_3d_plot(df):
                 # This is a simplified approach - in practice you might want more sophisticated 3D picking
                 distances = ((price0_filtered - x)**2 + (price1_filtered - y)**2)**0.5
                 closest_idx = distances.idxmin()
-                closest_p = p_values_filtered.iloc[closest_idx]
+                closest_diff_sqrt = diff_sqrt_filtered.iloc[closest_idx]
                 closest_price0 = price0_filtered.iloc[closest_idx]
                 closest_price1 = price1_filtered.iloc[closest_idx]
                 
                 # Update annotation
-                annot_3d.set_text(f'P: {closest_p:.6f}\nprice0: {closest_price0:.6f}\nprice1: {closest_price1:.6f}')
+                annot_3d.set_text(f'diffSqrt: {closest_diff_sqrt:.6f}%\nprice0: {closest_price0:.6f}\nprice1: {closest_price1:.6f}')
                 annot_3d.xy = (x, y)
                 annot_3d.set_visible(True)
                 plt.draw()
@@ -269,24 +246,40 @@ def create_percentile_plots(df):
     plt.tight_layout()
     plt.show()
 
+def populate_additional_columns(df):
+    price0_numeric = pd.to_numeric(df['price0'], errors='coerce').astype(float)
+    price1_numeric = pd.to_numeric(df['price1'], errors='coerce').astype(float)
+    sqrt_numeric = pd.to_numeric(df['sqrt'], errors='coerce').astype(float)
+    totalDecDel_numeric = pd.to_numeric(df['totalDecDel'], errors='coerce').astype(float)
+    
+    scale_factor = 10**(totalDecDel_numeric)
+    price0_numeric = price0_numeric / scale_factor
+    
+    # Q96 = 2^96
+    Q96 = 2**96
+    
+    df['sqrtCalc'] = np.where(
+        df['isInverted'],
+        np.sqrt(price0_numeric / price1_numeric) * Q96,
+        np.sqrt(price1_numeric / price0_numeric) * Q96
+    )
+    
+    # df['diffSqrt'] = ((sqrt_numeric - df['sqrtCalc']) / df['sqrtCalc']) * 100
+    df['diffSqrt'] = sqrt_numeric * sqrt_numeric - df['sqrtCalc'] * df['sqrtCalc']
+    return df
+
 def main():
-    """Main function to run the oracle fuzzing analysis"""
-    csv_file_path = "../simulations/out/oracle_results.csv"
-    print("Reading oracle CSV data...")
-    df = read_oracle_csv(csv_file_path)
-    
+    csv_file_path = "test/simulations/out/oracle_results_test.csv"
+    df = read_oracle_csv(csv_file_path)    
     df_cleaned = remove_duplicates(df)
-    analyze_coordinates(df_cleaned)
     
-    # Create multiple visualization types for comprehensive analysis
-    print("\n=== CREATING 2D SCATTER PLOT ===")
-    create_scatter_plot(df_cleaned)
+    df_cleaned = df_cleaned[df_cleaned['price0'] != '1000000000000000000']
     
-    print("\n=== CREATING 3D INTERACTIVE PLOT ===")
+    df_cleaned = populate_additional_columns(df_cleaned)
+    
+    # create_scatter_plot(df_cleaned, 'diffSqrt')
+    # create_scatter_plot(df_cleaned, 'sqrtCalc')
     create_3d_plot(df_cleaned)
-    
-    print("\n=== CREATING PERCENTILE ANALYSIS PLOTS ===")
-    create_percentile_plots(df_cleaned)
 
 if __name__ == "__main__":
     main()

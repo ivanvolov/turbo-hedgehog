@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// ** Euler imports
+// ** euler imports
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {IEVC as EVCLib, IEthereumVaultConnector as IEVC} from "@euler-interfaces/IEVC.sol";
 import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
 
-// ** External imports
+// ** external imports
 import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,11 +19,12 @@ import {LendingBase} from "../lendingAdapters/LendingBase.sol";
 contract EulerLendingAdapter is LendingBase {
     using SafeERC20 for IERC20;
 
-    // ** EulerV2
     IEVC immutable evc;
+    IrEUL public immutable rEUL;
+
     IEulerVault public immutable vault0;
     IEulerVault public immutable vault1;
-    IrEUL public immutable rEUL;
+
     address public immutable subAccount0 = getSubAccountAddress(1);
     address public immutable subAccount1 = getSubAccountAddress(2);
 
@@ -151,6 +152,6 @@ contract EulerLendingAdapter is LendingBase {
     // ** Helpers
 
     function syncPositions() external {
-        // Intentionally empty as no synchronization is needed for long positions.
+        // Intentionally empty as no synchronization is needed for Euler positions.
     }
 }

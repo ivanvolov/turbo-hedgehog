@@ -154,10 +154,15 @@ tessl:
 
 run_node:
 	clear && anvil
+
 deploy_test_contract:
 	clear && forge script scripts/DeployOracleSimulation.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+
 get_data:
-	clear && node test/simulations/oracleMath/anvilSim.s.js
+	clear && node --max-old-space-size=16384 --expose-gc test/simulations/oracleMath/anvilSim.s.js
+
+viz_data:
+	clear && python3 test/simulations/analytics/oracleFuzzing.py
 
 # Maintenance scripts
 

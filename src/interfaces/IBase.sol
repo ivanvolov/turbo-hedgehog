@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** External imports
+// ** external imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** interfaces
@@ -11,7 +11,7 @@ import {IFlashLoanAdapter} from "./IFlashLoanAdapter.sol";
 import {IPositionManager} from "./IPositionManager.sol";
 import {IOracle} from "./IOracle.sol";
 import {IRebalanceAdapter} from "./IRebalanceAdapter.sol";
-import {ISwapAdapter} from "./swapAdapters/ISwapAdapter.sol";
+import {ISwapAdapter} from "./ISwapAdapter.sol";
 
 /// @notice Defines the interface for a Base contract.
 interface IBase {

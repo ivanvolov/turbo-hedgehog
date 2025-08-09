@@ -391,16 +391,13 @@ contract BTC_ALMTest is ALMTestBase {
             uint256 deltaTreasuryFeeQ = (deltaX * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeQ += deltaTreasuryFeeQ;
 
-            //treasuryFeeB += deltaTreasuryFeeB;
             console.log("treasuryFeeB %s", hook.accumulatedFeeB());
-            console.log("deltaTreasuryFeeB %s", deltaTreasuryFeeQ);
+            console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
 
             assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
             assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 3, "treasuryFee");
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-
-            //console.log("deltaTreasuryFeeQ %s", treasuryFeeB);
 
             assertEqPositionState(
                 CL + ((deltaBTC - deltaTreasuryFeeQ) * k1) / 1e18,

@@ -71,7 +71,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         }
     }
 
-    function test_setUp() public {
+    function test_setUp() public view {
         assertEq(hook.owner(), deployer.addr);
         assertTicks(-100, 100);
     }
@@ -455,11 +455,10 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
             uint160 preSqrtPrice = hook.sqrtPriceCurrent();
             (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDC_USDT_Out(usdtToGetFSwap);
-            uint160 postSqrtPrice = hook.sqrtPriceCurrent();
 
-            // (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, postSqrtPrice);
-            // assertApproxEqAbs(deltaUSDT, deltaX, 1);
-            // assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 2);
+            (uint256 deltaX, uint256 deltaY) = _checkSwap(hook.liquidity(), preSqrtPrice, hook.sqrtPriceCurrent());
+            assertApproxEqAbs(deltaUSDT, deltaX, 1);
+            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 3);
         }
 
         // ** Make oracle change with swap price
@@ -467,11 +466,28 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Rebalance
         {
-            // uint256 preRebalanceTVL = calcTVL();
+            uint256 preRebalanceTVL = calcTVL();
             vm.prank(deployer.addr);
             rebalanceAdapter.rebalance(slippage);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-            // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+
+            uint256 calcCL = (preRebalanceTVL * weight) / 1e18;
+            uint256 afterCL = lendingAdapter.getCollateralLong();
+            uint256 ratioCL = afterCL > calcCL
+                ? ((afterCL * 1e18) / calcCL - 1e18)
+                : ((calcCL * 1e18) / afterCL - 1e18);
+
+            // ** small deviation is allowed
+            require(ratioCL < (slippage * 12e17) / 1e18);
+
+            uint256 calcCS = (preRebalanceTVL * (1e18 - weight)) / 1e18;
+            uint256 afterCS = lendingAdapter.getCollateralShort();
+            uint256 ratioCS = afterCS > calcCS
+                ? ((afterCS * 1e18) / calcCS - 1e18)
+                : ((calcCS * 1e18) / afterCS - 1e18);
+
+            // ** small deviation is allowed
+            require(ratioCS < (slippage * 12e17) / 1e18);
         }
 
         // ** Make oracle change with swap price

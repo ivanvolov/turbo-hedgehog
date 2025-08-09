@@ -34,7 +34,7 @@ import {Constants as UConstants} from "@test/libraries/constants/UnichainConstan
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IUniswapSwapAdapter} from "@src/interfaces/swapAdapters/IUniswapSwapAdapter.sol";
+import {IUniswapSwapAdapter} from "@test/interfaces/IUniswapSwapAdapter.sol";
 import {ISwapRouter} from "@v3-core/ISwapRouter.sol";
 import {IUniswapV3Pool} from "@v3-core/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";

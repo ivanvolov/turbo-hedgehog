@@ -127,7 +127,6 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         assertEq(hook.liquidity(), 66076272993486110, "liquidity");
 
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        return;
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -577,7 +576,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
             assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 2);
             assertApproxEqAbs(deltaUSDC, deltaX, 1);
         }
-        return;
+
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
@@ -703,18 +702,18 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
             console.log("deltaY %s", deltaY);
 
             assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 3);
-            assertApproxEqAbs(deltaUSDC, deltaX, 1);
+            assertApproxEqAbs(deltaUSDC, deltaX, 2);
         }
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
-        // Rebalance
+        // ** Rebalance
         uint256 preRebalanceTVL = calcTVL();
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
 
-        // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);

@@ -34,7 +34,7 @@ contract OracleFuzzing is ALMTestBase {
     uint256 constant LONG_TAIL_MAX = 10e6; // 10kk$ for LONG-TAIL.
 
     /// @dev Test STABLE-LONG-TAIL pair.
-    function test_Fuzz_STABLE_LONG_TAIL(uint256 priceStable, uint256 priceLongTail) public {
+    function test_Fuzz_STABLE_LONG_TAIL(uint256 priceStable, uint256 priceLongTail) public pure {
         priceStable = bound(priceStable, STABLE_MIN, STABLE_MAX);
         priceLongTail = bound(priceLongTail, LONG_TAIL_MIN, LONG_TAIL_MAX);
 
@@ -56,7 +56,7 @@ contract OracleFuzzing is ALMTestBase {
     }
 
     /// @dev Test STABLE-STABLE pair.
-    function test_Fuzz_STABLE_STABLE_TAIL(uint256 priceStable0, uint256 priceStable1) public {
+    function test_Fuzz_STABLE_STABLE_TAIL(uint256 priceStable0, uint256 priceStable1) public pure {
         priceStable0 = bound(priceStable0, STABLE_MIN, STABLE_MAX);
         priceStable1 = bound(priceStable1, STABLE_MIN, STABLE_MAX);
 
@@ -70,7 +70,7 @@ contract OracleFuzzing is ALMTestBase {
     }
 
     /// @dev Test LONG_TAIL-LONG_TAIL pair.
-    function test_Fuzz_LONG_TAIL_LONG_TAIL(uint256 priceLongTail0, uint256 priceLongTail1) public {
+    function test_Fuzz_LONG_TAIL_LONG_TAIL(uint256 priceLongTail0, uint256 priceLongTail1) public pure {
         priceLongTail0 = bound(priceLongTail0, LONG_TAIL_MIN, LONG_TAIL_MAX);
         priceLongTail1 = bound(priceLongTail1, LONG_TAIL_MIN, LONG_TAIL_MAX);
 
@@ -83,7 +83,7 @@ contract OracleFuzzing is ALMTestBase {
         call_all_combinations(priceLongTail0 * 1e8, 1e18, int256(18)); // Zero feed always returns 18 decimals.
     }
 
-    function call_all_combinations(uint256 price0, uint256 price1, int256 totalDecDel) public {
+    function call_all_combinations(uint256 price0, uint256 price1, int256 totalDecDel) public pure {
         TestLib.newOracleGetPrices(price0, price1, totalDecDel, false);
         TestLib.newOracleGetPrices(price0, price1, -totalDecDel, false);
         TestLib.newOracleGetPrices(price0, price1, totalDecDel, true);

@@ -353,7 +353,7 @@ contract OracleMathTest is ALMTestBase {
 
     //TODO: Retest this constraints in sim. ALMMathLib.getSqrtPriceX96FromPrice(340256786833063481322211904572563530436318729319284211712);
     //TODO: Think about scaleFactor constraints, do wee need them? No we don't.
-    function test_constraints() public {
+    function test_constraints() public pure {
         TestLib.newOracleGetPrices(1e18, 1e18, int256(-18), false);
     }
 
