@@ -609,10 +609,10 @@ contract DeltaNeutral_R_BASE_ALMTest is ALMTestBaseBase {
 
         // ** Full withdraw
         {
+            setProtocolStatus(2);
             uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
             vm.prank(alice.addr);
             hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
-
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
     }

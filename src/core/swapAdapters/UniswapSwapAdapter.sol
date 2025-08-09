@@ -109,7 +109,10 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         emit SwapPathSet(swapPathId, protocolType, input);
     }
 
-    function swapExactInput(bool isBaseToQuote, uint256 amountIn) external onlyModule returns (uint256 amountOut) {
+    function swapExactInput(
+        bool isBaseToQuote,
+        uint256 amountIn
+    ) external onlyModule notPaused returns (uint256 amountOut) {
         if (amountIn == 0) return 0;
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
@@ -120,7 +123,10 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         tokenOut.safeTransfer(msg.sender, amountOut);
     }
 
-    function swapExactOutput(bool isBaseToQuote, uint256 amountOut) external onlyModule returns (uint256 amountIn) {
+    function swapExactOutput(
+        bool isBaseToQuote,
+        uint256 amountOut
+    ) external onlyModule notPaused returns (uint256 amountIn) {
         if (amountOut == 0) return 0;
         IERC20 tokenIn = isBaseToQuote ? BASE : QUOTE;
         IERC20 tokenOut = isBaseToQuote ? QUOTE : BASE;
@@ -174,14 +180,14 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             }
         }
 
-        // Always sweep extra ETH from the router to the adapter.
+        // Always sweep extra ETH from router to adapter.
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
         inputs[inputs.length - 1] = abi.encode(address(0), address(this), 0);
 
         uint256 ethBalance = address(this).balance;
         router.execute{value: ethBalance}(swapCommands, inputs, block.timestamp);
 
-        // If routers return ETH, we need to wrap it.
+        // If router returns ETH, we need to wrap it.
         ethBalance = address(this).balance;
         if (ethBalance > 0) WETH9.deposit{value: ethBalance}();
     }
@@ -212,8 +218,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN) : uint8(Actions.SWAP_EXACT_OUT);
 
             params[0] = abi.encode(
-                // We use the ExactInputParams structure for both exact input and output swaps
-                // since the parameter structure is identical.
+                // We use ExactInputParams structure for both exact input and output swaps
+                // since parameter structure is identical.
                 IV4Router.ExactInputParams({
                     currencyIn: adjustForEth(isBaseToQuote == isExactInput ? BASE : QUOTE), // or currencyOut for ExactOutputParams.
                     path: path,
@@ -229,8 +235,8 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
             swapAction = isExactInput ? uint8(Actions.SWAP_EXACT_IN_SINGLE) : uint8(Actions.SWAP_EXACT_OUT_SINGLE);
 
             params[0] = abi.encode(
-                // We use the ExactInputSingleParams structure for both exact input and output swaps
-                // since the parameter structure is identical.
+                // We use ExactInputSingleParams structure for both exact input and output swaps
+                // since parameter structure is identical.
                 IV4Router.ExactInputSingleParams({
                     poolKey: key,
                     zeroForOne: zeroForOne,
@@ -247,7 +253,7 @@ contract UniswapSwapAdapter is Base, ISwapAdapter {
         return abi.encode(abi.encodePacked(swapAction, uint8(Actions.SETTLE_ALL), uint8(Actions.TAKE_ALL)), params);
     }
 
-    receive() external payable {
+    receive() external payable notPaused {
         if (msg.sender != address(WETH9) && msg.sender != address(manager) && msg.sender != address(router))
             revert InvalidNativeTokenSender();
     }

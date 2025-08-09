@@ -59,7 +59,7 @@ contract EulerLendingAdapter is LendingBase {
 
     // ** rEUL unlocking support
 
-    function unlockRewardEUL(address to, uint256 lockTimestamp) external notPaused onlyOwner {
+    function unlockRewardEUL(address to, uint256 lockTimestamp) external onlyOwner {
         rEUL.withdrawToByLockTimestamp(to, lockTimestamp, true);
     }
 

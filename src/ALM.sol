@@ -193,18 +193,18 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         else swapAdapter.swapExactInput(token == BASE, balance - targetBalance);
     }
 
-    function refreshReservesAndTransferFees() external onlyRebalanceAdapter {
+    function refreshReservesAndTransferFees() external onlyActive onlyRebalanceAdapter {
         lendingAdapter.syncPositions();
         uint256 feeB = accumulatedFeeB;
         uint256 feeQ = accumulatedFeeQ;
 
         if (feeB > 0) {
-            BASE.safeTransfer(treasury, feeB);
             accumulatedFeeB = 0;
+            BASE.safeTransfer(treasury, feeB);
         }
         if (feeQ > 0) {
-            QUOTE.safeTransfer(treasury, feeQ);
             accumulatedFeeQ = 0;
+            QUOTE.safeTransfer(treasury, feeQ);
         }
     }
 

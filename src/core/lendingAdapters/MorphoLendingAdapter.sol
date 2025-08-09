@@ -76,9 +76,9 @@ contract MorphoLendingAdapter is LendingBase {
         IERC20 rewardToken,
         uint256 claimable,
         bytes32[] calldata proof
-    ) external notPaused onlyOwner {
+    ) external onlyOwner {
         URD.claim(address(this), address(rewardToken), claimable, proof);
-        // The `balanceOf` is necessary because the amount received is not always equal `claimable`.
+        // The `balanceOf` is necessary because amount received is not always equal `claimable`.
         // This happens in case some rewards were already claimed.
         rewardToken.safeTransfer(to, rewardToken.balanceOf(address(this)));
     }
@@ -151,7 +151,7 @@ contract MorphoLendingAdapter is LendingBase {
 
     // ** Helpers
 
-    function syncPositions() external {
+    function syncPositions() external onlyModule {
         if (!isEarn) {
             morpho.accrueInterest(morpho.idToMarketParams(longMId));
             morpho.accrueInterest(morpho.idToMarketParams(shortMId));

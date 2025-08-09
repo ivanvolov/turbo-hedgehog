@@ -88,7 +88,7 @@ abstract contract Base is IBase {
         QUOTE.forceApprove(moduleNew, type(uint256).max);
     }
 
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         if (owner == newOwner) return;
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;

@@ -28,8 +28,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     error DeviationShortExceeded();
 
     /// @notice Emitted when the rebalance is triggered.
-    /// @param slippage                The execution slippage, as a UD60x18 value.
-    /// @param oraclePriceAtRebalance  The oracle’s price at last rebalance, as a UD60x18 value.
+    /// @param slippage The execution slippage, as a UD60x18 value.
+    /// @param oraclePriceAtRebalance The oracle’s price at last rebalance, as a UD60x18 value.
     event Rebalance(
         uint256 indexed priceThreshold,
         uint256 indexed auctionTriggerTime,
@@ -54,16 +54,16 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     uint256 public timeAtLastRebalance;
 
     // ** Parameters
-    /// @notice The target portfolio weight for long vs short, encoded as a UD60x18 value.
-    ///         (i.e. real_weight × 1e18, where 1 = 100%).
+    /// @notice The target portfolio weight for long vs short positions, encoded as a UD60x18 value.
+    /// @dev A value of 0.5e18 represents 50%, 1e18 represents 100%, etc.
     uint256 public weight;
 
     /// @notice The leverage multiplier applied to long positions, encoded as a UD60x18 value.
-    ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage).
+    /// @dev A value of 1e18 represents 1x leverage, 2e18 represents 2x leverage, etc.
     uint256 public longLeverage;
 
     /// @notice The leverage multiplier applied to short positions, encoded as a UD60x18 value.
-    ///         (i.e. real_leverage × 1e18, where 2 = 2×leverage).
+    /// @dev A value of 1e18 represents 1x leverage, 2e18 represents 2x leverage, etc.
     uint256 public shortLeverage;
 
     uint256 public rebalancePriceThreshold;
@@ -138,9 +138,9 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     /// @notice Computes if the next rebalance can be triggered.
     /// @param oraclePrice The current oracle price.
-    /// @return needRebalance   True if rebalance is allowed, false otherwise.
-    /// @return priceThreshold  The current price threshold for the price-based rebalance.
-    /// @return triggerTime     The exact timestamp when a time-based rebalance can be triggered.
+    /// @return needRebalance True if rebalance is allowed, false otherwise.
+    /// @return priceThreshold The current price threshold for the price-based rebalance.
+    /// @return triggerTime The exact timestamp when a time-based rebalance can be triggered.
     function isRebalanceNeeded(uint256 oraclePrice) public view returns (bool, uint256, uint256) {
         (bool _isPriceRebalance, uint256 priceThreshold) = isPriceRebalance(oraclePrice);
         (bool _isTimeRebalance, uint256 triggerTime) = isTimeRebalance();
@@ -149,8 +149,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
     /// @notice Computes if the next price‐based rebalance can be triggered.
     /// @param oraclePrice The current oracle price.
-    /// @return needRebalance   True if rebalance is allowed, false otherwise.
-    /// @return priceThreshold  The current price threshold for the price-based rebalance.
+    /// @return needRebalance True if rebalance is allowed, false otherwise.
+    /// @return priceThreshold The current price threshold for the price-based rebalance.
     function isPriceRebalance(uint256 oraclePrice) public view returns (bool needRebalance, uint256 priceThreshold) {
         priceThreshold = oraclePrice > oraclePriceAtLastRebalance
             ? div18(oraclePrice, oraclePriceAtLastRebalance)
@@ -159,8 +159,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     }
 
     /// @notice Computes when the next time‐based rebalance can be triggered.
-    /// @return needRebalance  True if rebalance is allowed, false otherwise.
-    /// @return triggerTime    The exact timestamp when a time-based rebalance can be triggered.
+    /// @return needRebalance True if rebalance is allowed, false otherwise.
+    /// @return triggerTime The exact timestamp when a time-based rebalance can be triggered.
     function isTimeRebalance() public view returns (bool needRebalance, uint256 triggerTime) {
         triggerTime = timeAtLastRebalance + rebalanceTimeThreshold;
         needRebalance = block.timestamp >= triggerTime;

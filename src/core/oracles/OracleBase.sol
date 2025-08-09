@@ -28,7 +28,7 @@ abstract contract OracleBase is IOracle {
     /// @notice Calculates the price of the quote token denominated in base token units.
     /// @dev Returns the price as a 1e18 fixed-point number (UD60x18 format).
     /// @return currentPrice The price ratio as a fixed-point number with 18 decimal precision.
-    function price() public view returns (uint256 currentPrice) {
+    function price() external view returns (uint256 currentPrice) {
         (uint256 priceBase, uint256 priceQuote) = _fetchAssetsPrices();
         currentPrice = ALMMathLib.getPrice(priceBase, priceQuote, scaleFactor);
         if (currentPrice == 0) revert PriceZero();

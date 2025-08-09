@@ -42,8 +42,8 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     /// @dev 0 = active, 1 = paused, 2 = shutdown.
     uint8 public status = 0;
 
-    /// @notice The multiplier applied to the virtual liquidity, encoded as a UD60x18 value.
-    ///         A value of 1e18 represents 100% (1.0x multiplier), 2e18 represents 200% (2.0x), etc.
+    /// @notice The multiplier applied to virtual liquidity, encoded as a UD60x18 value.
+    /// @dev A value of 1e18 represents 1.0x (100%), 2e18 represents 2.0x (200%), etc.
     uint256 public liquidityMultiplier;
     uint128 public liquidity;
 
@@ -153,7 +153,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
         revert AddLiquidityThroughHook();
     }
 
-    receive() external payable {
+    receive() external payable onlyActive {
         if (address(WETH9) == address(0)) revert NativeTokenUnsupported();
         if (msg.sender != address(WETH9) && msg.sender != address(poolManager)) revert InvalidNativeTokenSender();
     }
@@ -174,7 +174,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     }
 
     function _updateLiquidityAndBoundaries(uint160 sqrtPrice) internal returns (uint128 newLiquidity) {
-        // Unlocks to enable the swap, which updates the pool's sqrt price to the target.
+        // Unlocks to enable swap, which updates pool's sqrt price to target.
         poolManager.unlock(abi.encode(sqrtPrice));
         _updatePriceAndBoundaries(sqrtPrice);
         newLiquidity = calcLiquidity();

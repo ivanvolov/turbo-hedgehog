@@ -40,7 +40,7 @@ abstract contract LendingBase is Base, ILendingAdapter {
         IERC20 rewardToken,
         uint256 claimable,
         bytes32[] calldata proof
-    ) external notPaused onlyOwner {
+    ) external onlyOwner {
         address[] memory users = new address[](1);
         address[] memory tokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
@@ -52,7 +52,7 @@ abstract contract LendingBase is Base, ILendingAdapter {
         proofs[0] = proof;
 
         merklRewardsDistributor.claim(users, tokens, amounts, proofs);
-        // The `balanceOf` is necessary because the amount received is not always equal `claimable`.
+        // The `balanceOf` is necessary because amount received is not always equal `claimable`.
         // The `to != address(this)` check is necessary to skip transfer for tokens like rEUL, which are locked.
         if (to != address(this)) rewardToken.safeTransfer(to, rewardToken.balanceOf(address(this)));
     }

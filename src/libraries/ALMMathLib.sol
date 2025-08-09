@@ -145,8 +145,7 @@ library ALMMathLib {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    /// @notice Aligns a given tick with the tickSpacing of the pool.
-    ///         Always rounds down.
+    /// @notice Aligns a given tick with the tickSpacing of the pool. Always rounds down.
     /// @param tick The tick to align.
     /// @param tickSpacing The tick spacing of the pool.
     /// @return The aligned tick value.

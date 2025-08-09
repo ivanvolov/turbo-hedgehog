@@ -185,4 +185,9 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
             _swapPriceThreshold
         );
     }
+
+    function setProtocolStatus(uint8 _status) internal {
+        vm.prank(deployer.addr);
+        hook.setStatus(_status);
+    }
 }
