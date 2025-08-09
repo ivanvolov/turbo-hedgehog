@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
+/// @notice Defines the interface for a Swap Adapter.
 interface ISwapAdapter {
-    function swapExactOutput(address tokenIn, address tokenOut, uint256 amountOut) external returns (uint256);
+    function swapExactOutput(bool isBaseToQuote, uint256 amountOut) external returns (uint256 amountIn);
 
-    function swapExactInput(address tokenIn, address tokenOut, uint256 amountIn) external returns (uint256);
+    function swapExactInput(bool isBaseToQuote, uint256 amountIn) external returns (uint256 amountOut);
 }

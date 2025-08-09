@@ -1,99 +1,126 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
-// ** v4 imports
+// ** external imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {BaseHook} from "v4-periphery/src/base/hooks/BaseHook.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
+import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
-import {SafeCast} from "v4-core/libraries/SafeCast.sol";
+import {ALMMathLib, WAD} from "../../libraries/ALMMathLib.sol";
 
 // ** contracts
-import {Base} from "@src/core/Base/Base.sol";
+import {Base} from "./Base.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
+import {IALM} from "../../interfaces/IALM.sol";
 
+/// @title Base Strategy Hook
+/// @notice Abstract contract that serves as a base for ALM and holds storage and hook configuration.
 abstract contract BaseStrategyHook is BaseHook, Base, IALM {
     using PoolIdLibrary for PoolKey;
-    using PRBMathUD60x18 for uint256;
+    using StateLibrary for IPoolManager;
 
+    /// @notice WETH9 address to wrap and unwrap ETH during swaps.
+    /// @dev If address is zero, ETH is not supported.
+    IWETH9 public immutable WETH9;
+
+    bool public immutable isInvertedAssets;
+    bool public immutable isInvertedPool;
+    bytes32 public immutable authorizedPoolId;
+    PoolKey public authorizedPoolKey;
+
+    /// @notice Current operational status of the contract.
+    /// @dev 0 = active, 1 = paused, 2 = shutdown.
+    uint8 public status = 0;
+
+    /// @notice The multiplier applied to virtual liquidity, encoded as a UD60x18 value.
+    /// @dev A value of 1e18 represents 1.0x (100%), 2e18 represents 2.0x (200%), etc.
+    uint256 public liquidityMultiplier;
     uint128 public liquidity;
-    uint160 public sqrtPriceCurrent;
-    int24 public tickLower;
-    int24 public tickUpper;
 
-    bool public paused = false;
-    bool public shutdown = false;
-    int24 public tickUpperDelta;
-    int24 public tickLowerDelta;
-    bool public isInvertAssets;
-    bool public isInvertedPool;
+    Ticks public activeTicks;
+    Ticks public tickDeltas;
     uint256 public swapPriceThreshold;
-    bytes32 public authorizedPool;
-    address public liquidityOperator;
-    address public swapOperator;
     uint256 public tvlCap;
 
+    address public liquidityOperator;
+    address public swapOperator;
     address public treasury;
     uint256 public protocolFee;
+    uint24 public nextLPFee;
     uint256 public accumulatedFeeB;
     uint256 public accumulatedFeeQ;
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) Base(msg.sender) {}
-
-    function setTickUpperDelta(int24 _tickUpperDelta) external onlyOwner {
-        tickUpperDelta = _tickUpperDelta;
-    }
-
-    function setTickLowerDelta(int24 _tickLowerDelta) external onlyOwner {
-        tickLowerDelta = _tickLowerDelta;
-    }
-
-    function setPaused(bool _paused) external onlyOwner {
-        paused = _paused;
-    }
-
-    function setShutdown(bool _shutdown) external onlyOwner {
-        shutdown = _shutdown;
-    }
-
-    function setIsInvertAssets(bool _isInvertAssets) external onlyOwner {
-        isInvertAssets = _isInvertAssets;
-    }
-
-    function setIsInvertedPool(bool _isInvertedPool) external onlyOwner {
+    constructor(
+        IERC20 _base,
+        IERC20 _quote,
+        bool _isInvertedPool,
+        bool _isInvertedAssets,
+        IPoolManager _poolManager
+    ) BaseHook(_poolManager) Base(ComponentType.ALM, msg.sender, _base, _quote) {
         isInvertedPool = _isInvertedPool;
+        isInvertedAssets = _isInvertedAssets;
     }
 
-    function setSwapPriceThreshold(uint256 _swapPriceThreshold) external onlyOwner {
-        swapPriceThreshold = _swapPriceThreshold;
+    function setStatus(uint8 _status) external onlyOwner {
+        status = _status;
+        emit StatusSet(_status);
     }
 
-    function setLiquidityOperator(address _liquidityOperator) external onlyOwner {
+    function setOperators(address _liquidityOperator, address _swapOperator) external onlyOwner {
         liquidityOperator = _liquidityOperator;
-    }
-
-    function setSwapOperator(address _swapOperator) external onlyOwner {
         swapOperator = _swapOperator;
-    }
-
-    function setTVLCap(uint256 _tvlCap) external onlyOwner {
-        tvlCap = _tvlCap;
+        emit OperatorsSet(_liquidityOperator, _swapOperator);
     }
 
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
+        emit TreasurySet(_treasury);
     }
 
-    function setProtocolFee(uint256 _protocolFee) external onlyOwner {
+    /// @notice The lp fee is represented in hundredths of a bip, so the max is 100%.
+    uint24 internal constant MAX_SWAP_FEE = 1e6;
+
+    function setNextLPFee(uint24 _nextLPFee) external onlyOwner {
+        if (_nextLPFee > MAX_SWAP_FEE) revert LPFeeTooLarge(_nextLPFee);
+        nextLPFee = _nextLPFee;
+    }
+
+    function setProtocolParams(
+        uint256 _liquidityMultiplier,
+        uint256 _protocolFee,
+        uint256 _tvlCap,
+        int24 _tickLowerDelta,
+        int24 _tickUpperDelta,
+        uint256 _swapPriceThreshold
+    ) external onlyOwner {
+        if (_protocolFee > WAD) revert ProtocolFeeNotValid();
+        if (_liquidityMultiplier > 10 * WAD) revert LiquidityMultiplierNotValid();
+        if (_tickLowerDelta <= 0 || _tickUpperDelta <= 0) revert TickDeltasNotValid();
+
+        liquidityMultiplier = _liquidityMultiplier;
         protocolFee = _protocolFee;
+        swapPriceThreshold = _swapPriceThreshold;
+        tvlCap = _tvlCap;
+        tickDeltas = Ticks(_tickLowerDelta, _tickUpperDelta);
+
+        emit ProtocolParamsSet(
+            _liquidityMultiplier,
+            _protocolFee,
+            _tvlCap,
+            _swapPriceThreshold,
+            _tickLowerDelta,
+            _tickUpperDelta
+        );
     }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -106,129 +133,118 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
                 beforeRemoveLiquidity: false,
                 afterRemoveLiquidity: false,
                 beforeSwap: true,
-                afterSwap: false,
+                afterSwap: true,
                 beforeDonate: false,
                 afterDonate: false,
-                beforeSwapReturnDelta: true,
+                beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
                 afterAddLiquidityReturnDelta: false,
                 afterRemoveLiquidityReturnDelta: false
             });
     }
 
-    /// @notice  Disable adding liquidity through the PM
-    function beforeAddLiquidity(
+    /// @dev Disable adding liquidity through the PM.
+    function _beforeAddLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        ModifyLiquidityParams calldata,
         bytes calldata
-    ) external view override onlyAuthorizedPool(key) returns (bytes4) {
+    ) internal view override onlyAuthorizedPool(key) returns (bytes4) {
         revert AddLiquidityThroughHook();
     }
 
-    function updateBoundaries() public onlyRebalanceAdapter {
-        _updateBoundaries();
+    receive() external payable onlyActive {
+        if (address(WETH9) == address(0)) revert NativeTokenUnsupported();
+        if (msg.sender != address(WETH9) && msg.sender != address(poolManager)) revert InvalidNativeTokenSender();
     }
 
-    function updateLiquidity(uint128 _liquidity) public onlyRebalanceAdapter {
-        liquidity = _liquidity;
+    /// @notice Updates liquidity and sets new boundaries around the current oracle price.
+    function updateLiquidityAndBoundariesToOracle() external override onlyOwner onlyActive {
+        (, uint160 oracleSqrtPrice) = oracle.poolPrice();
+        _updateLiquidityAndBoundaries(oracleSqrtPrice);
     }
 
-    function updateSqrtPrice(uint160 _sqrtPrice) public onlyRebalanceAdapter {
-        sqrtPriceCurrent = _sqrtPrice;
+    /// @notice Updates liquidity and sets new boundaries around the specified sqrt price.
+    /// @param sqrtPrice The square root price around which the new liquidity boundaries are set.
+    /// @return newLiquidity The updated liquidity after recalculation.
+    function updateLiquidityAndBoundaries(
+        uint160 sqrtPrice
+    ) external override onlyRebalanceAdapter onlyActive returns (uint128) {
+        return _updateLiquidityAndBoundaries(sqrtPrice);
     }
 
-    function _updateBoundaries() internal {
-        int24 tick = ALMMathLib.getTickFromPrice(
-            ALMMathLib.getPoolPriceFromOraclePrice(oracle.price(), isInvertedPool, uint8(ALMMathLib.absSub(bDec, qDec)))
+    function _updateLiquidityAndBoundaries(uint160 sqrtPrice) internal returns (uint128 newLiquidity) {
+        // Unlocks to enable swap, which updates pool's sqrt price to target.
+        poolManager.unlock(abi.encode(sqrtPrice));
+        _updatePriceAndBoundaries(sqrtPrice);
+        newLiquidity = calcLiquidity();
+        liquidity = newLiquidity;
+        emit LiquidityUpdated(newLiquidity);
+    }
+
+    function unlockCallback(bytes calldata data) external onlyPoolManager onlyActive returns (bytes memory) {
+        (uint160 sqrtPriceTarget) = abi.decode(data, (uint160));
+        uint160 sqrtPrice = sqrtPriceCurrent();
+        if (sqrtPriceTarget < sqrtPrice) {
+            poolManager.swap(authorizedPoolKey, SwapParams(true, type(int256).min, sqrtPriceTarget), "");
+        } else if (sqrtPriceTarget > sqrtPrice) {
+            poolManager.swap(authorizedPoolKey, SwapParams(false, type(int128).max, sqrtPriceTarget), "");
+        }
+        return "";
+    }
+
+    function calcLiquidity() internal view returns (uint128) {
+        Ticks memory _activeTicks = activeTicks;
+        return
+            ALMMathLib.getLiquidity(
+                isInvertedPool,
+                _activeTicks.lower,
+                _activeTicks.upper,
+                lendingAdapter.getCollateralLong(),
+                liquidityMultiplier
+            );
+    }
+
+    function _updatePriceAndBoundaries(uint160 sqrtPrice) internal {
+        int24 tick = ALMMathLib.getTickFromSqrtPriceX96(sqrtPrice);
+
+        (, , , uint24 lpFee) = poolManager.getSlot0(PoolId.wrap(authorizedPoolId));
+        if (lpFee != nextLPFee) {
+            lpFee = nextLPFee;
+            poolManager.updateDynamicLPFee(authorizedPoolKey, nextLPFee);
+            emit LPFeeSet(nextLPFee);
+        }
+
+        Ticks memory deltas = tickDeltas;
+        int24 newTickLower = ALMMathLib.alignComputedTickWithTickSpacing(
+            tick - deltas.lower,
+            authorizedPoolKey.tickSpacing
         );
-        tickUpper = isInvertedPool ? tick - tickUpperDelta : tick + tickUpperDelta;
-        tickLower = isInvertedPool ? tick + tickLowerDelta : tick - tickLowerDelta;
+        int24 newTickUpper = ALMMathLib.alignComputedTickWithTickSpacing(
+            tick + deltas.upper,
+            authorizedPoolKey.tickSpacing
+        );
+
+        if (newTickLower >= newTickUpper) revert TicksMisordered(newTickLower, newTickUpper);
+        if (newTickLower < TickMath.MIN_TICK || newTickLower > TickMath.MAX_TICK)
+            revert TickLowerOutOfBounds(newTickLower);
+        if (newTickUpper < TickMath.MIN_TICK || newTickUpper > TickMath.MAX_TICK)
+            revert TickUpperOutOfBounds(newTickUpper);
+
+        activeTicks = Ticks(newTickLower, newTickUpper);
+        emit SqrtPriceUpdated(sqrtPrice);
+        emit BoundariesUpdated(newTickLower, newTickUpper);
     }
 
-    // --- Deltas calculation --- //
-
-    function getZeroForOneDeltas(
-        int256 amountSpecified
-    )
-        internal
-        view
-        returns (
-            BeforeSwapDelta beforeSwapDelta,
-            uint256 token0In,
-            uint256 token1Out,
-            uint160 sqrtPriceNext,
-            uint256 fee
-        )
-    {
-        if (amountSpecified > 0) {
-            token1Out = uint256(amountSpecified);
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneOut(sqrtPriceCurrent, liquidity, token1Out);
-
-            token0In = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
-            token0In += fee;
-
-            beforeSwapDelta = toBeforeSwapDelta(
-                -SafeCast.toInt128(token1Out), // specified token = token1
-                SafeCast.toInt128(token0In) // unspecified token = token0
-            );
-        } else {
-            token0In = uint256(-amountSpecified);
-            fee = token0In.mul(positionManager.getSwapFees(true, amountSpecified));
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96ZeroForOneIn(sqrtPriceCurrent, liquidity, token0In - fee);
-
-            token1Out = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            beforeSwapDelta = toBeforeSwapDelta(
-                SafeCast.toInt128(token0In), // specified token = token0
-                -SafeCast.toInt128(token1Out) // unspecified token = token1
-            );
-        }
+    function sqrtPriceCurrent() public view returns (uint160 sqrtPriceX96) {
+        (sqrtPriceX96, , , ) = poolManager.getSlot0(PoolId.wrap(authorizedPoolId));
     }
 
-    function getOneForZeroDeltas(
-        int256 amountSpecified
-    )
-        internal
-        view
-        returns (
-            BeforeSwapDelta beforeSwapDelta,
-            uint256 token0Out,
-            uint256 token1In,
-            uint160 sqrtPriceNext,
-            uint256 fee
-        )
-    {
-        if (amountSpecified > 0) {
-            token0Out = uint256(amountSpecified);
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroOut(sqrtPriceCurrent, liquidity, token0Out);
+    // ** Modifiers
 
-            token1In = ALMMathLib.getSwapAmount1(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
-            token1In += fee;
-
-            beforeSwapDelta = toBeforeSwapDelta(
-                -SafeCast.toInt128(token0Out), // specified token = token0
-                SafeCast.toInt128(token1In) // unspecified token = token1
-            );
-        } else {
-            token1In = uint256(-amountSpecified);
-            fee = token1In.mul(positionManager.getSwapFees(false, amountSpecified));
-            sqrtPriceNext = ALMMathLib.sqrtPriceNextX96OneForZeroIn(sqrtPriceCurrent, liquidity, token1In - fee);
-
-            token0Out = ALMMathLib.getSwapAmount0(sqrtPriceCurrent, sqrtPriceNext, liquidity);
-            beforeSwapDelta = toBeforeSwapDelta(
-                SafeCast.toInt128(token1In), // specified token = token1
-                -SafeCast.toInt128(token0Out) // unspecified token = token0
-            );
-        }
-    }
-
-    // --- Modifiers --- //
-
-    /// @dev Only allows execution for the authorized pool
+    /// @dev Only allows execution for the authorized pool.
     modifier onlyAuthorizedPool(PoolKey memory poolKey) {
-        if (PoolId.unwrap(poolKey.toId()) != authorizedPool) {
+        if (PoolId.unwrap(poolKey.toId()) != authorizedPoolId) {
             revert UnauthorizedPool();
         }
         _;

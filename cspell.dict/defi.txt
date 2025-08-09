@@ -32,3 +32,16 @@ circuit
 Brevis
 rebalancer
 IALM
+Merkl
+tral
+collateralization
+collateralized
+Reentrancy
+Lockdown
+USDE
+CBBTC
+UNICORDRALM
+ABDK
+Volovyk
+rehypothecation
+unichain

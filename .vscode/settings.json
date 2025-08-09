@@ -3,7 +3,6 @@
     "**/node_modules": true,
     "**/artifacts": true,
     "**/cache": true,
-    "**/external": true,
     // "**/.vscode": true,
     "**/cspell.dict": true,
     "**/.forge-snapshots": true,
@@ -13,6 +12,7 @@
     "**/.git": true
   },
   "search.exclude": {
+    "**/external": true,
     "**/node_modules": true,
     "**/out": true,
     "**/.git": true
@@ -22,10 +22,12 @@
     "https://github.com/Uniswap/v4-periphery",
     "https://github.com/smartcontractkit/chainlink-brownie-contracts",
     "https://github.com/morpho-org/morpho-blue",
-    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/forge-std",
-    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/v4-periphery",
-    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/chainlink-brownie-contracts",
-    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hh-hook/lib/morpho-blue"
+    "https://github.com/PaulRBerg/prb-math",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hedgehog/lib/forge-std",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hedgehog/lib/prb-math",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hedgehog/lib/v4-periphery",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hedgehog/lib/chainlink-brownie-contracts",
+    "/Users/ivanvolovik/p🗂️/hh🦔/turbo-hedgehog/lib/morpho-blue"
   ],
   "cSpell.enabled": true
 }

@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
+// ** external imports
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/// @notice Defines the interface for a Lending Adapter.
 interface ILendingAdapter {
-    // ** Flashloan
-    function flashLoanSingle(address token, uint256 amount, bytes calldata data) external;
+    // ** Position management
+    function getPosition() external view returns (uint256, uint256, uint256, uint256);
 
-    function flashLoanTwoTokens(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1,
-        bytes calldata data
-    ) external;
+    function updatePosition(int256 deltaCL, int256 deltaCS, int256 deltaDL, int256 deltaDS) external;
 
     // ** Long market
     function getBorrowedLong() external view returns (uint256);
@@ -40,19 +38,5 @@ interface ILendingAdapter {
     function addCollateralShort(uint256 amountUSDC) external;
 
     // ** Helpers
-    function syncLong() external;
-
-    function syncShort() external;
-}
-
-interface IFlashLoanReceiver {
-    function onFlashLoanSingle(address token, uint256 amount, bytes calldata data) external;
-
-    function onFlashLoanTwoTokens(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1,
-        bytes calldata data
-    ) external;
+    function syncPositions() external;
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
@@ -7,351 +7,413 @@ import "forge-std/Test.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Currency} from "v4-core/types/Currency.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {SafeCallback} from "v4-periphery/src/base/SafeCallback.sol";
+import {SwapParams} from "v4-core/types/PoolOperation.sol";
+import {ImmutableState} from "v4-periphery/src/base/ImmutableState.sol";
+import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
+import {Hooks} from "v4-core/libraries/Hooks.sol";
+import {toBalanceDelta} from "v4-core/types/BalanceDelta.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {TokenWrapperLib as TW} from "@src/libraries/TokenWrapperLib.sol";
+import {PRBMath} from "@test/libraries/math/PRBMath.sol";
+import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 import {Base} from "@src/core/base/Base.sol";
+import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
+import {ALM} from "@src/ALM.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ALMGeneralTest is ALMTestBase {
+contract General_ALMTest is ALMTestBase {
     using PoolIdLibrary for PoolId;
 
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
-    IERC20 WETH = IERC20(TestLib.WETH);
-    IERC20 USDC = IERC20(TestLib.USDC);
+    IERC20 WETH = IERC20(MConstants.WETH);
+    IERC20 USDC = IERC20(MConstants.USDC);
 
     function setUp() public {
-        uint256 mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-        vm.rollFork(21817163);
+        select_mainnet_fork(21817163);
 
         // ** Setting up test environments params
         {
-            TARGET_SWAP_POOL = TestLib.uniswap_v3_WETH_USDC_POOL;
-            assertEqPSThresholdCL = 1e5;
-            assertEqPSThresholdCS = 1e1;
-            assertEqPSThresholdDL = 1e1;
-            assertEqPSThresholdDS = 1e5;
+            TARGET_SWAP_POOL = MConstants.uniswap_v3_USDC_WETH_POOL;
+            ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
+            ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
+            ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL); // 2652 usdc for eth (but in reversed tokens order)
 
         deployFreshManagerAndRouters();
 
-        create_accounts_and_tokens(TestLib.USDC, 6, "USDC", TestLib.WETH, 18, "WETH");
-        create_lending_adapter_euler_WETH_USDC();
-        create_oracle(TestLib.chainlink_feed_WETH, TestLib.chainlink_feed_USDC, 1 hours, 10 hours);
-        init_hook(true, false, 3000, 3000);
+        create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.WETH, 18, "WETH");
+        create_lending_adapter_euler_USDC_WETH();
+        create_flash_loan_adapter_euler_USDC_WETH();
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_WETH, true);
+    }
+
+    /// @dev This test will sometimes need other deploys.
+    function _part_init_hook() internal {
+        init_hook(false, false, 1e18, 0, type(uint256).max, 3000, 3000, 0);
         approve_accounts();
     }
 
-    function test_token_set_up_second_time_revert() public {
-        vm.prank(deployer.addr);
-        vm.expectRevert(IBase.TokensAlreadyInitialized.selector);
-        hook.setTokens(address(1), address(1), 0, 0);
-    }
-
-    function test_price_conversion_WETH_USDC() public pure {
-        uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
-        uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
-        uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDC;
-
-        // ** HRprice to tick
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, true, 18 - 6));
-        assertApproxEqAbs(tick, 197293, 1e2);
-
-        // ** Human readable price (HRprice) to sqrtPrice
-        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
-        assertApproxEqAbs(sqrtPrice, 1523499582928038240140392754132197, 2e30);
-
-        // ** HRprice from tick
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(197293), true, 18 - 6);
-        assertApproxEqAbs(price, lastRoundPrice, TW.wrap(10, 0));
-    }
-
-    function test_price_conversion_WETH_USDT() public pure {
-        uint256 lastRoundPriceWETH = (269760151905 * 1e18) / 1e8;
-        uint256 lastRoundPriceUSDT = (100009255 * 1e18) / 1e8;
-        uint256 lastRoundPrice = (lastRoundPriceWETH * 1e18) / lastRoundPriceUSDT;
-
-        // ** HRprice to tick
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, false, 18 - 6));
-        assertApproxEqAbs(tick, -197309, 1e1);
-
-        // ** Human readable price (HRprice) to sqrtPrice
-        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
-        assertApproxEqAbs(sqrtPrice, 4117174797023293996373463, 23e20);
-
-        // ** Tick to HRprice
-
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-197309), false, 18 - 6);
-        assertApproxEqAbs(price, lastRoundPrice, 3e18);
-    }
-
-    function test_liquidity_WETH_USDT() public pure {
-        int24 targetTick = -197309;
-        int24 targetLowerTick = targetTick - 3000;
-        int24 targetUpperTick = targetTick + 3000;
-
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetTick), false, 18 - 6);
-        uint256 priceUpper = ALMMathLib.getOraclePriceFromPoolPrice(
-            ALMMathLib.getPriceFromTick(targetUpperTick),
-            false,
-            18 - 6
-        );
-        uint256 priceLower = ALMMathLib.getOraclePriceFromPoolPrice(
-            ALMMathLib.getPriceFromTick(targetLowerTick),
-            false,
-            18 - 6
-        );
-
-        uint128 liquidity = uint128(
-            ALMMathLib.getL(ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18), price, priceUpper, priceLower)
-        );
-
-        assertApproxEqAbs(liquidity, 46634530208923600, 1e8);
-    }
-
-    function test_price_conversion_CBBTC_USDC() public pure {
-        uint256 lastRoundPriceCBBTC = (9746369236640 * 1e18) / 1e8;
-        uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
-        uint256 lastRoundPrice = (lastRoundPriceCBBTC * 1e18) / lastRoundPriceUSDC;
-
-        // ** HRprice to tick
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, true, 8 - 6));
-        assertApproxEqAbs(tick, -68825, 1e1);
-
-        // ** Human readable price (HRprice) to sqrtPrice
-        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
-        assertApproxEqAbs(sqrtPrice, 2537807876084519460502185164, 2e23);
-
-        // ** HRprice from tick
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(-68825), true, 8 - 6);
-        assertApproxEqAbs(price, lastRoundPrice, 1e18);
-    }
-
-    function test_liquidity_CBBTC_USDC() public pure {
-        int24 targetTick = -68825;
-        int24 targetLowerTick = targetTick + 3000;
-        int24 targetUpperTick = targetTick - 3000;
-
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetTick), true, 8 - 6);
-        uint256 priceUpper = ALMMathLib.getOraclePriceFromPoolPrice(
-            ALMMathLib.getPriceFromTick(targetUpperTick),
-            true,
-            8 - 6
-        );
-        uint256 priceLower = ALMMathLib.getOraclePriceFromPoolPrice(
-            ALMMathLib.getPriceFromTick(targetLowerTick),
-            true,
-            8 - 6
-        );
-
-        uint256 VLP = ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
-
-        uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
-
-        assertApproxEqAbs(liquidity, 280185113050771000, 1e8);
-    }
-
-    function test_price_conversion_WBTC_USDC() public pure {
-        uint256 lastRoundPriceWBTC = (9714669236640 * 1e18) / 1e8;
-        uint256 lastRoundPriceUSDC = (99990000 * 1e18) / 1e8;
-        uint256 lastRoundPrice = (lastRoundPriceWBTC * 1e18) / lastRoundPriceUSDC;
-
-        // ** HRprice to tick
-        int24 tick = ALMMathLib.getTickFromPrice(ALMMathLib.getPoolPriceFromOraclePrice(lastRoundPrice, false, 8 - 6));
-        assertApproxEqAbs(tick, 68796, 1e1);
-
-        // ** Human readable price (HRprice) to sqrtPrice
-        uint160 sqrtPrice = ALMMathLib.getSqrtPriceAtTick(tick);
-        assertApproxEqAbs(sqrtPrice, 2470039624898724190709868109667, 6e26);
-
-        // ** HRprice from tick
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(68796), false, 8 - 6);
-        assertApproxEqAbs(price, lastRoundPrice, 35e18);
-    }
-
-    function test_liquidity_WBTC_USDC() public pure {
-        int24 targetTick = 68796;
-        int24 targetLowerTick = targetTick - 3000;
-        int24 targetUpperTick = targetTick + 3000;
-
-        uint256 price = ALMMathLib.getOraclePriceFromPoolPrice(ALMMathLib.getPriceFromTick(targetTick), false, 8 - 6);
-        uint256 priceUpper = ALMMathLib.getOraclePriceFromPoolPrice(
-            ALMMathLib.getPriceFromTick(targetUpperTick),
-            false,
-            8 - 6
-        );
-        uint256 priceLower = ALMMathLib.getOraclePriceFromPoolPrice(
-            ALMMathLib.getPriceFromTick(targetLowerTick),
-            false,
-            8 - 6
-        );
-
-        uint256 VLP = ALMMathLib.getVLP((100e18 * price) / 1e18, 5e17, 3e18, 2e18);
-        uint128 liquidity = uint128(ALMMathLib.getL(VLP, price, priceUpper, priceLower));
-
-        assertApproxEqAbs(liquidity, 279779159321772000, 1e8);
-    }
-
     function test_pool_deploy_twice_revert() public {
-        (address _token0, address _token1) = getTokensInOrder();
-        vm.expectRevert();
-        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
+        // ** Deploy hook contract
+        {
+            vm.startPrank(deployer.addr);
+
+            address payable hookAddress = payable(
+                address(
+                    uint160(
+                        Hooks.BEFORE_SWAP_FLAG |
+                            Hooks.AFTER_SWAP_FLAG |
+                            Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
+                            Hooks.AFTER_INITIALIZE_FLAG
+                    )
+                )
+            );
+
+            (address currency0, address currency1) = getHookCurrenciesInOrder();
+            key = PoolKey(
+                Currency.wrap(currency0),
+                Currency.wrap(currency1),
+                LPFeeLibrary.DYNAMIC_FEE_FLAG,
+                1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
+                IHooks(hookAddress)
+            );
+            deployCodeTo(
+                "ALM.sol",
+                abi.encode(key, BASE, QUOTE, WETH9, isInvertedPool, false, manager, "NAME", "SYMBOL"),
+                hookAddress
+            );
+            hook = ALM(hookAddress);
+            vm.label(address(hook), "hook");
+            _setComponents(address(hook));
+            hook.setProtocolParams(1e18, 0, type(uint256).max, 3000, 3000, 0);
+            vm.stopPrank();
+        }
+
+        // ** Revert initialized but not owner
+        vm.expectRevert(); // OwnableUnauthorizedAccount
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+
+        // ** Revert bad poolKey
+        vm.prank(deployer.addr);
+        vm.expectRevert(); // UnauthorizedPool
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, 60, initialSQRTPrice);
+
+        // ** Revert not active
+        vm.prank(deployer.addr);
+        hook.setStatus(1);
 
         vm.prank(deployer.addr);
+        vm.expectRevert(); // ContractNotActive
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+
+        // ** Revert already initialized
+        vm.prank(deployer.addr);
+        hook.setStatus(0);
+
+        vm.prank(deployer.addr);
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+
+        vm.prank(deployer.addr);
+        vm.expectRevert(); // PoolAlreadyInitialized
+        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+    }
+
+    function test_oracle() public {
+        _part_init_hook();
+        assertEq(oracle.price(), 2660201350, "price should eq");
+    }
+
+    function test_transfer_ownership() public {
+        _part_init_hook();
+        assertEq(address(hook.owner()), deployer.addr);
+
         vm.expectRevert();
-        initPool(Currency.wrap(_token0), Currency.wrap(_token1), hook, poolFee + 1, initialSQRTPrice);
-    }
+        hook.transferOwnership(address(0));
 
-    function test_oracle() public view {
-        assertEq(oracle.price(), 2660201350640229959005, "price should eq");
-    }
+        vm.prank(deployer.addr);
+        hook.transferOwnership(address(0));
 
-    function onFlashLoanTwoTokens(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1,
-        bytes calldata data
-    ) public view {
-        assertEq(token0, address(USDC), "token should be USDC");
-        assertEq(amount0, 1000 * 1e6, "amount should be 1000 USDC");
-        assertEq(token1, address(WETH), "token should be WETH");
-        assertEq(amount1, 1 ether, "amount should be 1 WETH");
-        assertEq(data, "0x3", "data should eq");
-        assertEqBalanceState(address(this), amount1, amount0);
+        assertEq(address(hook.owner()), address(0));
     }
 
     function test_accessability() public {
-        vm.expectRevert(SafeCallback.NotPoolManager.selector);
-        hook.afterInitialize(address(0), key, 0, 0);
+        _part_init_hook();
 
+        // ** not manager revert
+        {
+            vm.expectRevert(ImmutableState.NotPoolManager.selector);
+            hook.afterInitialize(address(0), key, 0, 0);
+
+            vm.expectRevert(ImmutableState.NotPoolManager.selector);
+            hook.beforeSwap(address(0), key, SwapParams(true, 0, 0), "");
+
+            vm.expectRevert(ImmutableState.NotPoolManager.selector);
+            hook.afterSwap(address(0), key, SwapParams(true, 0, 0), toBalanceDelta(0, 0), "");
+
+            vm.expectRevert(ImmutableState.NotPoolManager.selector);
+            hook.beforeAddLiquidity(address(0), key, ModifyLiquidityParams(0, 0, 0, ""), "");
+
+            vm.expectRevert(ImmutableState.NotPoolManager.selector);
+            hook.unlockCallback(bytes(""));
+        }
+
+        // ** reverts on failed key
+        {
+            vm.prank(address(manager));
+            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
+
+            vm.prank(address(manager));
+            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            hook.beforeSwap(address(0), unauthorizedKey, SwapParams(true, 0, 0), "");
+
+            vm.prank(address(manager));
+            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            hook.afterSwap(address(0), unauthorizedKey, SwapParams(true, 0, 0), toBalanceDelta(0, 0), "");
+
+            vm.prank(address(manager));
+            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            hook.beforeAddLiquidity(address(0), unauthorizedKey, ModifyLiquidityParams(0, 0, 0, ""), "");
+
+            // This doesn't have failed key protection.
+            // hook.unlockCallback(bytes(""));
+        }
+
+        // ** this always revert even with correct manager and pool key
+        vm.prank(address(manager));
         vm.expectRevert(IALM.AddLiquidityThroughHook.selector);
-        hook.beforeAddLiquidity(address(0), key, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");
-
-        PoolKey memory failedKey = key;
-        failedKey.tickSpacing = 3;
-
-        vm.expectRevert(IALM.UnauthorizedPool.selector);
-        hook.beforeAddLiquidity(address(0), failedKey, IPoolManager.ModifyLiquidityParams(0, 0, 0, ""), "");
-
-        vm.expectRevert(SafeCallback.NotPoolManager.selector);
-        hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
-
-        vm.expectRevert(IALM.UnauthorizedPool.selector);
-        hook.beforeSwap(address(0), failedKey, IPoolManager.SwapParams(true, 0, 0), "");
+        hook.beforeAddLiquidity(address(0), key, ModifyLiquidityParams(0, 0, 0, ""), "");
     }
 
     function test_hook_pause() public {
+        _part_init_hook();
         vm.prank(deployer.addr);
-        hook.setPaused(true);
+        hook.setStatus(1);
 
-        vm.expectRevert(IBase.ContractPaused.selector);
-        hook.deposit(address(0), 0);
+        // ** Hook
+        {
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.deposit(address(0), 0, 0);
 
-        vm.expectRevert(IBase.ContractPaused.selector);
-        hook.withdraw(deployer.addr, 0, 0, 0);
+            vm.expectRevert(IBase.ContractPaused.selector);
+            hook.withdraw(deployer.addr, 0, 0, 0);
 
-        vm.prank(address(manager));
-        vm.expectRevert(IBase.ContractPaused.selector);
-        hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+            // This is checked in test_pool_deploy_twice_revert because need special setup.
+            // hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
+
+            vm.prank(address(manager));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.beforeSwap(address(0), key, SwapParams(true, 0, 0), "");
+
+            vm.prank(address(manager));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.afterSwap(address(0), key, SwapParams(true, 0, 0), toBalanceDelta(0, 0), "");
+
+            // This doesn't have activity protection.
+            // hook.beforeAddLiquidity(address(0), key, ModifyLiquidityParams(0, 0, 0, ""), "");
+
+            vm.prank(address(manager));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.unlockCallback(bytes(""));
+
+            vm.expectRevert(IBase.ContractPaused.selector);
+            hook.onFlashLoanTwoTokens(0, 0, "");
+
+            vm.expectRevert(IBase.ContractPaused.selector);
+            hook.onFlashLoanSingle(true, 0, "");
+
+            vm.prank(address(rebalanceAdapter));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.updateLiquidityAndBoundaries(0);
+
+            vm.prank(deployer.addr);
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.updateLiquidityAndBoundariesToOracle();
+        }
     }
 
     function test_hook_shutdown() public {
+        _part_init_hook();
         vm.prank(deployer.addr);
-        hook.setShutdown(true);
+        hook.setStatus(2);
 
-        vm.expectRevert(IBase.ContractShutdown.selector);
-        hook.deposit(deployer.addr, 0);
+        // ** Hook
+        {
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.deposit(address(0), 0, 0);
 
-        vm.prank(address(manager));
-        vm.expectRevert(IBase.ContractShutdown.selector);
-        hook.beforeSwap(address(0), key, IPoolManager.SwapParams(true, 0, 0), "");
+            // This is not ContractsNotActive, so it works.
+            vm.expectRevert(IALM.NotZeroShares.selector);
+            hook.withdraw(deployer.addr, 0, 0, 0);
+
+            // This is checked in test_pool_deploy_twice_revert because need special setup.
+            // hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
+
+            vm.prank(address(manager));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.beforeSwap(address(0), key, SwapParams(true, 0, 0), "");
+
+            vm.prank(address(manager));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.afterSwap(address(0), key, SwapParams(true, 0, 0), toBalanceDelta(0, 0), "");
+
+            // Thi doesn't have active protection.
+            // hook.beforeAddLiquidity(address(0), key, ModifyLiquidityParams(0, 0, 0, ""), "");
+
+            vm.prank(address(manager));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.unlockCallback(bytes(""));
+
+            // This is not ContractPaused, so it works.
+            vm.expectRevert(abi.encodeWithSelector(IBase.NotFlashLoanAdapter.selector, address(this)));
+            hook.onFlashLoanTwoTokens(0, 0, "");
+
+            // This is not ContractPaused, so it works.
+            vm.expectRevert(abi.encodeWithSelector(IBase.NotFlashLoanAdapter.selector, address(this)));
+            hook.onFlashLoanSingle(true, 0, "");
+
+            vm.prank(address(rebalanceAdapter));
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.updateLiquidityAndBoundaries(0);
+
+            vm.prank(deployer.addr);
+            vm.expectRevert(IBase.ContractNotActive.selector);
+            hook.updateLiquidityAndBoundariesToOracle();
+        }
     }
 
-    function test_TokenWrapperLib_wrap_unwrap_same_wad() public pure {
-        uint256 amount = 1 ether;
-        uint8 token_wad = 18;
-
-        uint256 wrapped = TW.wrap(amount, token_wad);
-        assertEq(wrapped, amount, "wrap with same wad should return same amount");
-
-        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
-        assertEq(unwrapped, amount, "unwrap with same wad should return original amount");
+    function test_Fuzz_setWeight_valid(uint256 weight) public {
+        _part_init_hook();
+        weight = bound(weight, 0, 1e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18);
     }
 
-    function test_TokenWrapperLib_wrap_higher_wad() public pure {
-        uint256 amount = 1 ether;
-        uint8 token_wad = 24;
-
-        uint256 wrapped = TW.wrap(amount, token_wad);
-        assertEq(wrapped, amount / (10 ** (token_wad - 18)), "wrap with higher wad should divide correctly");
-
-        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
-        assertEq(unwrapped, amount, "unwrap should return original amount");
+    function test_Fuzz_setWeight_invalid(uint256 weight) public {
+        _part_init_hook();
+        vm.assume(weight > 1e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.WeightNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(weight, 1e18, 1e18);
     }
 
-    function test_TokenWrapperLib_wrap_lower_wad() public pure {
-        uint256 amount = 1 ether;
-        uint8 token_wad = 6;
-
-        uint256 wrapped = TW.wrap(amount, token_wad);
-        assertEq(wrapped, amount * (10 ** (18 - token_wad)), "wrap with lower wad should multiply correctly");
-
-        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
-        assertEq(unwrapped, amount, "unwrap should return original amount");
+    function test_Fuzz_setLongLeverage_valid(uint256 longLeverage) public {
+        _part_init_hook();
+        longLeverage = bound(longLeverage, 1e18, 5e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, 1e18);
     }
 
-    function test_TokenWrapperLib_wrap_zero_amount() public pure {
-        uint256 amount = 0;
-
-        uint8 token_wad_12 = 12;
-        uint256 wrapped_12 = TW.wrap(amount, token_wad_12);
-        assertEq(wrapped_12, 0, "wrap of zero with wad 12 should return zero");
-
-        uint256 unwrapped_12 = TW.unwrap(wrapped_12, token_wad_12);
-        assertEq(unwrapped_12, 0, "unwrap of zero with wad 12 should return zero");
-
-        uint8 token_wad_18 = 18;
-        uint256 wrapped_18 = TW.wrap(amount, token_wad_18);
-        assertEq(wrapped_18, 0, "wrap of zero with wad 18 should return zero");
-
-        uint256 unwrapped_18 = TW.unwrap(wrapped_18, token_wad_18);
-        assertEq(unwrapped_18, 0, "unwrap of zero with wad 18 should return zero");
-
-        uint8 token_wad_24 = 24;
-        uint256 wrapped_24 = TW.wrap(amount, token_wad_24);
-        assertEq(wrapped_24, 0, "wrap of zero with wad 24 should return zero");
-
-        uint256 unwrapped_24 = TW.unwrap(wrapped_24, token_wad_24);
-        assertEq(unwrapped_24, 0, "unwrap of zero with wad 24 should return zero");
+    function test_Fuzz_setLongLeverage_invalid(uint256 longLeverage) public {
+        _part_init_hook();
+        vm.assume(longLeverage > 5e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, 1e18);
     }
 
-    function test_TokenWrapperLib_wrap_unwrap_max_values() public {
-        uint256 max_amount = type(uint256).max;
+    function test_Fuzz_setShortLeverage_valid(uint256 shortLeverage) public {
+        _part_init_hook();
+        shortLeverage = bound(shortLeverage, 1e18, 5e18);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, 5e18, shortLeverage);
+    }
 
-        vm.expectRevert(stdError.arithmeticError);
-        TW.wrap(max_amount, 17);
+    function test_Fuzz_setShortLeverage_invalid(uint256 shortLeverage) public {
+        _part_init_hook();
+        vm.assume(shortLeverage > 5e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, 5e18, shortLeverage);
+    }
 
-        uint8 token_wad = 18;
-        uint256 wrapped = TW.wrap(max_amount, token_wad);
-        assertEq(wrapped, max_amount, "wrap of max value with same wad should not overflow");
+    function test_Fuzz_longLeverage_gte_shortLeverage(uint256 longLeverage, uint256 shortLeverage) public {
+        _part_init_hook();
+        longLeverage = bound(longLeverage, 1e18, 5e18);
+        shortLeverage = bound(shortLeverage, 1e18, longLeverage);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, shortLeverage);
+    }
 
-        uint256 unwrapped = TW.unwrap(wrapped, token_wad);
-        assertEq(unwrapped, max_amount, "unwrap should return original max amount");
+    function test_Fuzz_longLeverage_lt_shortLeverage(uint256 longLeverage, uint256 shortLeverage) public {
+        _part_init_hook();
+        vm.assume(shortLeverage > longLeverage);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.LeverageValuesNotValid.selector);
+        rebalanceAdapter.setRebalanceParams(1e18, longLeverage, shortLeverage);
+    }
+
+    function test_Fuzz_setMaxDeviationLong_valid(uint256 maxDevLong) public {
+        _part_init_hook();
+        maxDevLong = bound(maxDevLong, 0, 5e17);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, maxDevLong, 0);
+    }
+
+    function test_Fuzz_setMaxDeviationLong_invalid(uint256 maxDevLong) public {
+        _part_init_hook();
+        vm.assume(maxDevLong > 5e17);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.MaxDeviationNotValid.selector);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, maxDevLong, 0);
+    }
+
+    function test_Fuzz_setMaxDeviationShort_valid(uint256 maxDevShort) public {
+        _part_init_hook();
+        maxDevShort = bound(maxDevShort, 0, 5e17);
+        vm.prank(deployer.addr);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, 0, maxDevShort);
+    }
+
+    function test_Fuzz_setMaxDeviationShort_invalid(uint256 maxDevShort) public {
+        _part_init_hook();
+        vm.assume(maxDevShort > 5e17);
+        vm.prank(deployer.addr);
+        vm.expectRevert(SRebalanceAdapter.MaxDeviationNotValid.selector);
+        rebalanceAdapter.setRebalanceConstraints(1e18, 1 days, 0, maxDevShort);
+    }
+
+    function test_Fuzz_setProtocolFee_valid(uint256 protocolFee) public {
+        _part_init_hook();
+        protocolFee = bound(protocolFee, 0, 3e16);
+        vm.prank(deployer.addr);
+        hook.setProtocolParams(1e18, protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    function test_Fuzz_setProtocolFee_invalid(uint256 protocolFee) public {
+        _part_init_hook();
+        vm.assume(protocolFee > 1e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(IALM.ProtocolFeeNotValid.selector);
+        hook.setProtocolParams(1e18, protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    function test_Fuzz_setLiquidityMultiplier_valid(uint256 liquidityMultiplier) public {
+        _part_init_hook();
+        liquidityMultiplier = bound(liquidityMultiplier, 0, 10e18);
+        vm.prank(deployer.addr);
+        hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
+    }
+
+    function test_Fuzz_setLiquidityMultiplier_invalid(uint256 liquidityMultiplier) public {
+        _part_init_hook();
+        vm.assume(liquidityMultiplier > 10e18);
+        vm.prank(deployer.addr);
+        vm.expectRevert(IALM.LiquidityMultiplierNotValid.selector);
+        hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
     }
 }

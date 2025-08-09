@@ -1,49 +1,63 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
+
+// ** External imports
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** libraries
 import {TickMath} from "v4-core/libraries/TickMath.sol";
-import {ABDKMath64x64} from "@test/libraries/ABDKMath64x64.sol";
+import {ABDKMath64x64} from "@test/libraries/math/ABDKMath64x64.sol";
+import {PRBMathUD60x18, PRBMath} from "@test/libraries/math/PRBMathUD60x18.sol";
+import {ALMMathLib, WAD, div18} from "@src/libraries/ALMMathLib.sol";
+import {UD60x18, ud} from "@prb-math/UD60x18.sol";
+import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
 
 library TestLib {
-    address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address constant cbBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
-    address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    using PRBMathUD60x18 for uint256;
 
-    // ** https://app.morpho.org/ethereum/earn
-    address constant morphoUSDTVault = 0xbEef047a543E45807105E51A8BBEFCc5950fcfBa;
-    address constant morphoUSDCVault = 0xd63070114470f685b75B74D60EEc7c1113d33a3D;
-    address constant morphoDAIVault = 0x500331c9fF24D9d11aee6B07734Aa72343EA74a5;
+    IAggV3 constant ZERO_FEED = IAggV3(address(0));
+    IWETH9 constant ZERO_WETH9 = IWETH9(address(0));
 
-    // ** https://app.euler.finance/?asset=USDT&network=ethereum
-    address constant eulerUSDCVault1 = 0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9;
-    address constant eulerUSDCVault2 = 0xcBC9B61177444A793B85442D3a953B90f6170b7D;
-    address constant eulerUSDTVault1 = 0x313603FA690301b0CaeEf8069c065862f9162162;
-    address constant eulerUSDTVault2 = 0x7c280DBDEf569e96c7919251bD2B0edF0734C5A8;
-    address constant eulerWETHVault1 = 0xD8b27CF359b7D15710a5BE299AF6e7Bf904984C2;
-    address constant eulerWETHVault2 = 0x716bF454066a84F39A2F78b5707e79a9d64f1225;
-    address constant eulerCbBTCVault1 = 0x056f3a2E41d2778D3a0c0714439c53af2987718E;
-    address constant eulerCbBTCVault2 = 0x29A9E5A004002Ff9E960bb8BB536E076F53cbDF1;
+    // ** Uniswap math
 
-    // ** https://app.uniswap.org/explore/pools/ethereum/0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36
-    address constant uniswap_v3_cbBTC_USDC_POOL = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
-    address constant uniswap_v3_WETH_USDC_POOL = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
-    address constant uniswap_v3_WETH_USDT_POOL = 0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36;
-    address constant uniswap_v3_USDC_USDT_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
-    address constant uniswap_v3_DAI_USDC_POOL = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+    uint256 constant sqrt_price_10per = 1048808848170150000; // (sqrt(1.1) or max 10% price change
+    uint256 constant sqrt_price_1per = 1004987562112090000; // (sqrt(1.01) or max 1% price change
+    uint256 constant ONE_PERCENT_AND_ONE_BPS = 101e16; // 1.01%
 
-    // ** https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
-    address constant chainlink_feed_WETH = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
-    address constant chainlink_feed_USDC = 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
-    address constant chainlink_feed_USDT = 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D;
-    address constant chainlink_feed_cbBTC = 0x2665701293fCbEB223D11A08D826563EDcCE423A;
-    address constant chainlink_feed_DAI = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
+    uint256 constant Q192 = 2 ** 192;
+    UD60x18 constant Q96 = UD60x18.wrap(2 ** 96);
 
-    uint256 constant sqrt_price_10per_price_change = 48808848170151600; //(sqrt(1.1)-1) or max 10% price change
+    function getOraclePriceFromPoolPrice(
+        uint256 price,
+        bool reversedOrder,
+        int8 decimalsDelta
+    ) internal pure returns (uint256) {
+        if (decimalsDelta < 0) {
+            uint256 ratio = WAD * (10 ** uint8(-decimalsDelta));
+            if (reversedOrder) return ratio.div(price);
+            else return price.mul(ratio);
+        } else {
+            uint256 ratio = WAD * (10 ** uint8(decimalsDelta));
+            if (reversedOrder) return WAD.div(price.mul(ratio));
+            else return price.div(ratio);
+        }
+    }
 
-    function nearestUsableTick(int24 tick_, uint24 tickSpacing) public pure returns (int24 result) {
+    function getSqrtPriceX96FromPrice(uint256 price) internal pure returns (uint160) {
+        return SafeCast.toUint160(ud(price).sqrt().mul(Q96).unwrap());
+    }
+
+    function getPriceFromTick(int24 tick) internal pure returns (uint256) {
+        return getPriceFromSqrtPriceX96(ALMMathLib.getSqrtPriceX96FromTick(tick));
+    }
+
+    function getPriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
+        return PRBMath.mulDiv(uint256(sqrtPriceX96).mul(sqrtPriceX96), WAD * WAD, Q192);
+    }
+
+    function nearestUsableTick(int24 tick_, uint24 tickSpacing) internal pure returns (int24 result) {
         result = int24(divRound(int128(tick_), int128(int24(tickSpacing)))) * int24(tickSpacing);
 
         if (result < TickMath.MIN_TICK) {
@@ -63,7 +77,26 @@ library TestLib {
         }
     }
 
-    function getTickSpacingFromFee(uint24 fee) public pure returns (int24) {
-        return int24((fee / 100) * 2);
+    function newOracleGetPrices(
+        uint256 priceBase,
+        uint256 priceQuote,
+        int256 totalDecDelta,
+        bool isInvertedPool
+    ) public pure returns (uint256 price, uint160 sqrtPriceX96) {
+        uint256 scaleFactor = 10 ** uint256(totalDecDelta + 18);
+        price = ALMMathLib.getPrice(priceBase, priceQuote, scaleFactor);
+        sqrtPriceX96 = ALMMathLib.getSqrtPrice(priceBase, priceQuote, totalDecDelta, isInvertedPool);
+    }
+
+    function oldOracleGetPrices(
+        uint256 priceBase,
+        uint256 priceQuote,
+        int256 totalDecDelta,
+        bool isInvertedPool
+    ) public pure returns (uint256 price, uint160 _sqrtPriceX96) {
+        uint256 scaleFactor = 10 ** uint256(totalDecDelta + 18);
+        price = mulDiv(priceQuote, scaleFactor, priceBase);
+        uint256 alignedPrice = isInvertedPool ? div18(WAD, price) : price;
+        _sqrtPriceX96 = SafeCast.toUint160(ud(alignedPrice).sqrt().mul(ud(2 ** 96)).unwrap());
     }
 }

@@ -10,12 +10,10 @@ node_modules
 /broadcast/**/dry-run/
 /lib/**
 
-# Docs
-docs/
-
 # Dotenv file
 .env
 .DS_Store
 PLAN.md
 *.csv
 test/**/*.html
+.gas-snapshot

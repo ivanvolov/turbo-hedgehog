@@ -1,55 +1,35 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
-// ** libraries
-import {PRBMathUD60x18} from "@prb-math/PRBMathUD60x18.sol";
-import {TokenWrapperLib} from "@src/libraries/TokenWrapperLib.sol";
-
-// ** contracts
-import {Base} from "@src/core/base/Base.sol";
-
-// ** libraries
+// ** external imports
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-// ** interfaces
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title UnicordPositionManager
-/// @author IVikkk
-/// @custom:contact vivan.volovik@gmail.com
+// ** contracts
+import {Base} from "../base/Base.sol";
+
+// ** interfaces
+import {IPositionManager} from "../../interfaces/IPositionManager.sol";
+
+/// @title Unicord Position Manager
+/// @notice Holds rehypothecation flow for position adjustment when the price moves up or down.
 contract UnicordPositionManager is Base, IPositionManager {
-    using PRBMathUD60x18 for uint256;
-    using TokenWrapperLib for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public fees;
-
-    constructor() Base(msg.sender) {}
-
-    function setFees(uint256 _fees) external onlyOwner {
-        fees = _fees;
+    constructor(IERC20 _base, IERC20 _quote) Base(ComponentType.POSITION_MANAGER, msg.sender, _base, _quote) {
+        // Intentionally empty as all initialization is handled by parent Base contract.
     }
 
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        IERC20(base).safeTransferFrom(address(alm), address(this), deltaBase.unwrap(bDec));
-
-        lendingAdapter.addCollateralShort(deltaBase);
-        lendingAdapter.removeCollateralLong(deltaQuote);
-
-        IERC20(quote).safeTransfer(address(alm), deltaQuote.unwrap(qDec));
+    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
+        BASE.safeTransferFrom(address(alm), address(this), deltaBase);
+        lendingAdapter.updatePosition(SafeCast.toInt256(deltaQuote), -SafeCast.toInt256(deltaBase), 0, 0);
+        QUOTE.safeTransfer(address(alm), deltaQuote);
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote) external onlyALM notPaused notShutdown {
-        IERC20(quote).safeTransferFrom(address(alm), address(this), deltaQuote.unwrap(qDec));
-
-        lendingAdapter.addCollateralLong(deltaQuote);
-        lendingAdapter.removeCollateralShort(deltaBase);
-
-        IERC20(base).safeTransfer(address(alm), deltaBase.unwrap(bDec));
-    }
-
-    function getSwapFees(bool, int256) external view returns (uint256) {
-        return fees;
+    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
+        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
+        lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
+        BASE.safeTransfer(address(alm), deltaBase);
     }
 }

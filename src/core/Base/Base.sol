@@ -1,96 +1,100 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
-// ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
-import {IBase} from "@src/interfaces/IBase.sol";
+// ** external imports
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// ** libraries
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// ** interfaces
+import {IALM} from "../../interfaces/IALM.sol";
+import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
+import {IFlashLoanAdapter} from "../../interfaces/IFlashLoanAdapter.sol";
+import {IPositionManager} from "../../interfaces/IPositionManager.sol";
+import {IOracle} from "../../interfaces/IOracle.sol";
+import {IRebalanceAdapter} from "../../interfaces/IRebalanceAdapter.sol";
+import {ISwapAdapter} from "../../interfaces/ISwapAdapter.sol";
+import {IBase} from "../../interfaces/IBase.sol";
 
+/// @title Base
+/// @notice Abstract contract that serves as the base for all modules and adapters.
 abstract contract Base is IBase {
     using SafeERC20 for IERC20;
 
+    enum ComponentType {
+        ALM,
+        REBALANCE_ADAPTER,
+        POSITION_MANAGER,
+        EXTERNAL_ADAPTER
+    }
+
+    ComponentType public immutable componentType;
     address public owner;
 
-    address public base;
-    address public quote;
-    uint8 public bDec;
-    uint8 public qDec;
+    IERC20 public immutable BASE;
+    IERC20 public immutable QUOTE;
 
     IALM public alm;
     ILendingAdapter public lendingAdapter;
+    IFlashLoanAdapter public flashLoanAdapter;
     IPositionManager public positionManager;
     IOracle public oracle;
     IRebalanceAdapter public rebalanceAdapter;
     ISwapAdapter public swapAdapter;
 
-    constructor(address initialOwner) {
+    constructor(ComponentType _componentType, address initialOwner, IERC20 _base, IERC20 _quote) {
+        componentType = _componentType;
+        BASE = _base;
+        QUOTE = _quote;
+
         owner = initialOwner;
         emit OwnershipTransferred(address(0), initialOwner);
     }
 
-    function setTokens(address _base, address _quote, uint8 _bDec, uint8 _qDec) external onlyOwner {
-        if (base != address(0)) revert TokensAlreadyInitialized();
-
-        base = _base;
-        quote = _quote;
-        bDec = _bDec;
-        qDec = _qDec;
-
-        _postSetTokens();
-    }
-
-    function _postSetTokens() internal virtual {}
-
     function setComponents(
-        address _alm,
-        address _lendingAdapter,
-        address _positionManager,
-        address _oracle,
-        address _rebalanceAdapter,
-        address _swapAdapter
+        IALM _alm,
+        ILendingAdapter _lendingAdapter,
+        IFlashLoanAdapter _flashLoanAdapter,
+        IPositionManager _positionManager,
+        IOracle _oracle,
+        IRebalanceAdapter _rebalanceAdapter,
+        ISwapAdapter _swapAdapter
     ) external onlyOwner {
         alm = IALM(_alm);
         oracle = IOracle(_oracle);
         rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
 
-        _approveSingle(base, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        _approveSingle(quote, address(lendingAdapter), _lendingAdapter, type(uint256).max);
-        lendingAdapter = ILendingAdapter(_lendingAdapter);
+        if (componentType == ComponentType.POSITION_MANAGER) {
+            switchApproval(address(lendingAdapter), address(_lendingAdapter));
+        } else if (componentType == ComponentType.ALM || componentType == ComponentType.REBALANCE_ADAPTER) {
+            switchApproval(address(lendingAdapter), address(_lendingAdapter));
+            switchApproval(address(flashLoanAdapter), address(_flashLoanAdapter));
+            switchApproval(address(swapAdapter), address(_swapAdapter));
+            if (componentType == ComponentType.ALM) switchApproval(address(positionManager), address(_positionManager));
+        }
 
-        _approveSingle(base, address(positionManager), _positionManager, type(uint256).max);
-        _approveSingle(quote, address(positionManager), _positionManager, type(uint256).max);
-        positionManager = IPositionManager(_positionManager);
-
-        _approveSingle(base, address(swapAdapter), _swapAdapter, type(uint256).max);
-        _approveSingle(quote, address(swapAdapter), _swapAdapter, type(uint256).max);
-        swapAdapter = ISwapAdapter(_swapAdapter);
+        lendingAdapter = _lendingAdapter;
+        flashLoanAdapter = _flashLoanAdapter;
+        swapAdapter = _swapAdapter;
+        positionManager = _positionManager;
     }
 
-    function _approveSingle(address token, address moduleOld, address moduleNew, uint256 amount) internal {
-        if (moduleOld != address(0) && moduleOld != address(this)) IERC20(token).forceApprove(moduleOld, 0);
-        if (moduleNew != address(this)) IERC20(token).forceApprove(moduleNew, amount);
+    function switchApproval(address moduleOld, address moduleNew) internal {
+        if (moduleOld == moduleNew) return;
+        if (moduleOld != address(0)) {
+            BASE.forceApprove(moduleOld, 0);
+            QUOTE.forceApprove(moduleOld, 0);
+        }
+        BASE.forceApprove(moduleNew, type(uint256).max);
+        QUOTE.forceApprove(moduleNew, type(uint256).max);
     }
 
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        if (newOwner == address(0)) revert OwnableInvalidOwner(address(0));
-        address oldOwner = owner;
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (owner == newOwner) return;
+        emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-        emit OwnershipTransferred(oldOwner, owner);
     }
 
-    function otherToken(address token) internal view returns (address) {
-        return token == base ? quote : base;
-    }
-
-    // --- Modifiers --- //
+    // ** Modifiers
 
     modifier onlyOwner() {
         if (owner != msg.sender) {
@@ -99,46 +103,48 @@ abstract contract Base is IBase {
         _;
     }
 
-    // @dev Only the ALM may call this function
+    /// @dev Only the ALM may call this function.
     modifier onlyALM() {
-        if (msg.sender != address(alm)) revert NotALM();
+        if (msg.sender != address(alm)) revert NotALM(msg.sender);
         _;
     }
 
-    /// @dev Only the rebalance adapter may call this function
+    /// @dev Only the rebalance adapter may call this function.
     modifier onlyRebalanceAdapter() {
-        if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter();
+        if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter(msg.sender);
         _;
     }
 
-    /// @dev Only the lending adapter may call this function
-    modifier onlyLendingAdapter() {
-        if (msg.sender != address(lendingAdapter)) revert NotLendingAdapter();
+    /// @dev Only the flash loan adapter may call this function.
+    modifier onlyFlashLoanAdapter() {
+        if (msg.sender != address(flashLoanAdapter)) revert NotFlashLoanAdapter(msg.sender);
         _;
     }
 
-    /// @dev Only modules may call this function
+    /// @dev Only modules may call this function.
     modifier onlyModule() {
         if (
             msg.sender != address(alm) &&
-            msg.sender != address(lendingAdapter) &&
-            msg.sender != address(positionManager) &&
             msg.sender != address(rebalanceAdapter) &&
-            msg.sender != address(swapAdapter)
-        ) revert NotModule();
+            msg.sender != address(positionManager)
+        ) revert NotModule(msg.sender);
 
         _;
     }
 
-    /// @dev Only allows execution when the contract is not paused
+    /// @notice Restricts function execution when contract is paused.
+    /// @dev Allows execution when status is active (0) or shutdown (2).
+    /// @dev Reverts with ContractPaused when status equals 1 (paused).
     modifier notPaused() {
-        if (alm.paused()) revert ContractPaused();
+        if (alm.status() == 1) revert ContractPaused();
         _;
     }
 
-    /// @dev Only allows execution when the contract is not shut down
-    modifier notShutdown() {
-        if (alm.shutdown()) revert ContractShutdown();
+    /// @notice Restricts function execution when contract is not active.
+    /// @dev Allows execution when status equals 0 (active).
+    /// @dev Reverts with ContractNotActive when status is paused (1) or shutdown (2).
+    modifier onlyActive() {
+        if (alm.status() != 0) revert ContractNotActive();
         _;
     }
 }

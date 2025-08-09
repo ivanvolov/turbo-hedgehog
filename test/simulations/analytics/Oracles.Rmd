@@ -1,0 +1,221 @@
+---
+title: "Forge oracles simulation"
+output: html_notebook
+---
+
+```{r warnigns=FALSE}
+suppressPackageStartupMessages({
+  library(readr)
+  library(dplyr)
+  library(ggplot2)
+  library(plotly)
+  library(viridis)
+  library(scales)
+})
+```
+
+
+```{r warning=FALSE}
+create_scatter_plot <- function(df, color_variable = "p") {
+  # Ensure numeric columns
+  price0_numeric <- suppressWarnings(as.numeric(df$price0))
+  price1_numeric <- suppressWarnings(as.numeric(df$price1))
+
+  if (identical(color_variable, "p")) {
+    color_values <- suppressWarnings(as.numeric(df$p))
+    color_label <- "P Value"
+  } else if (identical(color_variable, "diffSqrt")) {
+    color_values <- abs(df$diffSqrt)
+    color_label <- "abs(diffSqrt)"
+  } else if (identical(color_variable, "sqrtCalc")) {
+    color_values <- df$sqrtCalc
+    color_label <- "sqrtCalc"
+  } else {
+    color_values <- suppressWarnings(as.numeric(df$p))
+    color_label <- "P Value"
+  }
+
+  # Console summary (no percentiles)
+  cat(sprintf("\n=== %s VALUE SUMMARY ===\n", toupper(color_variable)))
+  rng <- range(color_values, na.rm = TRUE)
+  cat(sprintf("Value range: %.6f to %.6f\n", rng[1], rng[2]))
+
+  # Build ggplot
+  df_plot <- df %>%
+    mutate(
+      price0_num = price0_numeric,
+      price1_num = price1_numeric,
+      color_val  = color_values,
+      hover_txt  = sprintf(
+        "%s: %.6f<br>price0: %.6f<br>price1: %.6f",
+        color_label, color_values, price0_numeric, price1_numeric
+      )
+    )
+
+  min_val <- min(df_plot$color_val, na.rm = TRUE)
+  max_val <- max(df_plot$color_val, na.rm = TRUE)
+  brks <- c(min_val,
+            min_val + (max_val - min_val) * 0.25,
+            min_val + (max_val - min_val) * 0.50,
+            min_val + (max_val - min_val) * 0.75,
+            max_val)
+
+  p <- ggplot(df_plot, aes(x = price0_num, y = price1_num, color = color_val, text = hover_txt)) +
+    geom_point(size = 2.5, alpha = 0.7) +
+    viridis::scale_color_viridis(option = "plasma", name = color_label, breaks = brks, labels = function(x) sprintf("%.6f", x)) +
+    labs(
+      x = "price0", y = "price1",
+      title = sprintf("Price Points: price0 vs price1 (colored by %s)\nTest Case: %s", color_label, test_case)
+    ) +
+    theme_minimal() +
+    theme(panel.grid.minor = element_blank())
+
+  # Interactive hover
+  ggplotly(p, tooltip = "text")
+}
+```
+
+```{r warnigns=FALSE}
+read_oracle_csv <- function(file_path) {
+  df <- read_csv(file_path, show_col_types = FALSE)
+  # Trim whitespace from column names
+  names(df) <- trimws(names(df))
+  cat("Column names:", paste(names(df), collapse = ", "), "\n")
+  df <- df %>% filter(.data$testCase == test_case)
+  return(df)
+}
+
+remove_duplicates <- function(df) {
+  initial_count <- nrow(df)
+  df_cleaned <- df %>% distinct()
+  final_count <- nrow(df_cleaned)
+  duplicates_removed <- initial_count - final_count
+  cat("\nDuplicates removed:", duplicates_removed, "\n")
+  cat("Original rows:", initial_count, "\n")
+  cat("After removing duplicates:", final_count, "\n")
+  return(df_cleaned)
+}
+```
+
+```{r warnigns=FALSE}
+create_3d_plot <- function(df) {
+  cat("\n=== 3D PLOT (NO FILTERING) ===\n")
+
+  # Numeric versions for plotting/coloring
+  diff_sqrt_values <- suppressWarnings(abs(as.numeric(df$diffSqrt)))
+  price0_numeric   <- suppressWarnings(as.numeric(df$price0))
+  price1_numeric   <- suppressWarnings(as.numeric(df$price1))
+
+  # Character/pretty versions for whole-number, non-exponential display
+  sqrt_char      <- as.character(df[["sqrt"]])                    
+  sqrtCalc_char  <- format(df$sqrtCalc, scientific = FALSE, trim = TRUE, digits = 22)
+  diff_char      <- format(diff_sqrt_values, scientific = FALSE, trim = TRUE, digits = 22)
+
+  cat("Total points:", length(diff_sqrt_values), "\n")
+
+  # Build preformatted hover text (avoids scientific notation)
+  hover_text <- paste0(
+    "abs(diffSqrt): ", diff_char, "<br>",
+    "sqrt: ",        sqrt_char, "<br>",
+    "sqrtCalc: ",    sqrtCalc_char, "<br>",
+    "price0: ", sprintf("%.6f", price0_numeric), "<br>",
+    "price1: ", sprintf("%.6f", price1_numeric)
+  )
+
+  plot_ly(
+    x = price0_numeric,
+    y = price1_numeric,
+    z = diff_sqrt_values,
+    type = "scatter3d",
+    mode = "markers",
+    text = hover_text,
+    hovertemplate = "%{text}<extra></extra>",
+    marker = list(size = 3),
+    color = diff_sqrt_values,
+    colors = viridis::viridis(256, option = "plasma"),
+    colorbar = list(tickformat = ".0f")
+  ) %>%
+    layout(
+      scene = list(
+        xaxis = list(title = "price0"),
+        yaxis = list(title = "price1"),
+        zaxis = list(title = "abs(diffSqrt)", tickformat = ".0f")
+      ),
+      title = list(text = sprintf(
+        "3D Price Points: price0 vs price1 vs abs(diffSqrt)<br>Test Case: %s (Unfiltered)",
+        test_case
+      ))
+    )
+}
+```
+
+```{r}
+populate_additional_columns <- function(df, stop_on_na = FALSE) {
+  # Convert to numeric safely
+  p <- suppressWarnings(as.numeric(df$p))
+  price0_numeric <- suppressWarnings(as.numeric(df$price0))
+  price1_numeric <- suppressWarnings(as.numeric(df$price1))
+  sqrt_numeric <- suppressWarnings(as.numeric(df$sqrt))
+  totalDecDel_numeric <- suppressWarnings(as.numeric(df$totalDecDel))
+  
+  # Check for NA values
+  na_mask <- is.na(price0_numeric) | is.na(price1_numeric) | is.na(sqrt_numeric) | is.na(totalDecDel_numeric) | is.na(p)
+  if (any(na_mask)) {
+    print(df[na_mask, , drop = FALSE])
+    if (stop_on_na) stop("NA values found.", call. = FALSE)
+  }
+  
+   # Scale and calculate
+  scale_factor <- 10^(totalDecDel_numeric)
+  price0_scaled <- price0_numeric / scale_factor
+  Q96 <- 2^96
+  
+  # Normalize isInverted to logical
+  is_inv <- df$isInverted
+  if (!is.logical(is_inv)) {
+    is_inv <- tolower(as.character(is_inv)) %in% c("true", "t", "1", "yes")
+  }
+  
+  # Compute sqrtCalc
+  sqrtCalc <- ifelse(
+    is_inv,
+    sqrt(price0_scaled / price1_numeric) * Q96,
+    sqrt(price1_numeric / price0_scaled) * Q96
+  )
+  
+  pC <- price1_numeric/price0_scaled*1e18
+  
+  # Your calculation
+  #diffSqrt <- abs(sqrt_numeric - sqrtCalc)
+  #diffSqrt <- abs(sqrt_numeric*sqrt_numeric/2^192 - sqrtCalc*sqrtCalc/2^192)
+  #diffSqrt <- abs(p-pC)
+  diffSqrt <- p
+  
+  dplyr::mutate(
+    df,
+    sqrtCalc = sqrtCalc,
+    diffSqrt = diffSqrt,
+    pC = pC
+  )
+}
+
+```
+
+```{r warings=FLASE}
+test_case <- "12_true"
+csv_file_path <- "../out/oracle_results.csv"
+df_original <- read_oracle_csv(csv_file_path)
+df_cleaned <- remove_duplicates(df_original)
+```
+
+```{r warnigns=FALSE}
+df_cleaned <- populate_additional_columns(df_cleaned)
+
+numeric_cols <- sapply(df_cleaned, is.numeric)
+df_cleaned[numeric_cols] <- data.frame(lapply(df_cleaned[numeric_cols], function(x) format(x, scientific = FALSE)))
+
+# Examples:
+# create_scatter_plot(df_cleaned, "diffSqrt")
+# create_scatter_plot(df_cleaned, "sqrtCalc")
+create_3d_plot(df_cleaned)
+```

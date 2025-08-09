@@ -1,34 +1,38 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
+
+// ** external imports
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IALM} from "./IALM.sol";
+import {ILendingAdapter} from "./ILendingAdapter.sol";
+import {IFlashLoanAdapter} from "./IFlashLoanAdapter.sol";
+import {IPositionManager} from "./IPositionManager.sol";
+import {IOracle} from "./IOracle.sol";
+import {IRebalanceAdapter} from "./IRebalanceAdapter.sol";
+import {ISwapAdapter} from "./ISwapAdapter.sol";
 
+/// @notice Defines the interface for a Base contract.
 interface IBase {
     error OwnableUnauthorizedAccount(address account);
-    error OwnableInvalidOwner(address owner);
-    error NotALM();
-    error NotRebalanceAdapter();
-    error NotModule();
-    error NotLendingAdapter();
+    error NotALM(address account);
+    error NotRebalanceAdapter(address account);
+    error NotModule(address account);
+    error NotFlashLoanAdapter(address account);
     error ContractPaused();
-    error ContractShutdown();
-    error TokensAlreadyInitialized();
+    error ContractNotActive();
+    error InvalidNativeTokenSender();
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    function oracle() external view returns (IOracle);
-
-    function setTokens(address _base, address _quote, uint8 _t0Dec, uint8 _t1Dec) external;
-
     function setComponents(
-        address _alm,
-        address _lendingAdapter,
-        address _positionManager,
-        address _oracle,
-        address _rebalanceAdapter,
-        address _swapAdapter
+        IALM _alm,
+        ILendingAdapter _lendingAdapter,
+        IFlashLoanAdapter _flashLoanAdapter,
+        IPositionManager _positionManager,
+        IOracle _oracle,
+        IRebalanceAdapter _rebalanceAdapter,
+        ISwapAdapter _swapAdapter
     ) external;
-
-    function transferOwnership(address newOwner) external;
 }

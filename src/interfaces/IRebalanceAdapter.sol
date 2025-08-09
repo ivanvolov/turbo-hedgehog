@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
+/// @notice Defines the interface for a Rebalance Adapter.
 interface IRebalanceAdapter {
     function sqrtPriceAtLastRebalance() external view returns (uint160);
-
-    function oraclePriceAtLastRebalance() external view returns (uint256);
-
-    function calcLiquidity() external view returns (uint128);
 }
