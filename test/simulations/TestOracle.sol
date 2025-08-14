@@ -16,7 +16,7 @@ contract TestOracle is IOracle {
         int256 totalDecDel,
         bool isInvertedPool
     ) external pure returns (uint256, uint160) {
-        return TestLib.newOracleGetPrices(priceBase, priceQuote, totalDecDel, isInvertedPool);
+        return TestLib.oracleGetPrices(priceBase, priceQuote, totalDecDel, isInvertedPool);
     }
 
     function poolPrice() external view returns (uint256, uint160) {}

@@ -84,15 +84,15 @@ contract OracleFuzzing is ALMTestBase {
     }
 
     function call_all_combinations(uint256 price0, uint256 price1, int256 totalDecDel) public pure {
-        TestLib.newOracleGetPrices(price0, price1, totalDecDel, false);
-        TestLib.newOracleGetPrices(price0, price1, -totalDecDel, false);
-        TestLib.newOracleGetPrices(price0, price1, totalDecDel, true);
-        TestLib.newOracleGetPrices(price0, price1, -totalDecDel, true);
+        TestLib.oracleGetPrices(price0, price1, totalDecDel, false);
+        TestLib.oracleGetPrices(price0, price1, -totalDecDel, false);
+        TestLib.oracleGetPrices(price0, price1, totalDecDel, true);
+        TestLib.oracleGetPrices(price0, price1, -totalDecDel, true);
 
-        TestLib.newOracleGetPrices(price1, price0, totalDecDel, false);
-        TestLib.newOracleGetPrices(price1, price0, -totalDecDel, false);
-        TestLib.newOracleGetPrices(price1, price0, totalDecDel, true);
-        TestLib.newOracleGetPrices(price1, price0, -totalDecDel, true);
+        TestLib.oracleGetPrices(price1, price0, totalDecDel, false);
+        TestLib.oracleGetPrices(price1, price0, -totalDecDel, false);
+        TestLib.oracleGetPrices(price1, price0, totalDecDel, true);
+        TestLib.oracleGetPrices(price1, price0, -totalDecDel, true);
     }
 
     // ** Helpers

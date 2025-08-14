@@ -17,6 +17,10 @@ if target_pool Q:B => int(1e18\*p)
 
 int(math.sqrt(1e18*q*1e18/b)\*q96/1e18)
 
+## python
+
+math.sqrt(q*1e18/b)*q96
+
 # (1)
 
 int((uint256Max/math.sqrt(b\*uint256Max/q))/q32)
