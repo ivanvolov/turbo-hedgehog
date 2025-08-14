@@ -37,10 +37,15 @@ library ALMMathLib {
         bool isInvertedPool
     ) internal pure returns (uint160) {
         if (totalDecDelta < 0) {
-            priceBase = priceBase * 10 ** uint256(-totalDecDelta);
+            uint256 scale = 10 ** uint256(-totalDecDelta);
+            if (priceBase <= type(uint256).max / scale) priceBase *= scale;
+            else priceQuote /= scale;
         } else if (totalDecDelta > 0) {
-            priceQuote = priceQuote * 10 ** uint256(totalDecDelta);
+            uint256 scale = 10 ** uint256(totalDecDelta);
+            if (priceQuote <= type(uint256).max / scale) priceQuote *= scale;
+            else priceBase /= scale;
         }
+
         bool invert = priceBase <= priceQuote;
         (uint256 lowP, uint256 highP) = invert ? (priceBase, priceQuote) : (priceQuote, priceBase);
         uint256 res = mulDiv(lowP, type(uint256).max, highP);

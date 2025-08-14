@@ -77,7 +77,7 @@ library TestLib {
         }
     }
 
-    function newOracleGetPrices(
+    function oracleGetPrices(
         uint256 priceBase,
         uint256 priceQuote,
         int256 totalDecDelta,
@@ -98,5 +98,25 @@ library TestLib {
         price = mulDiv(priceQuote, scaleFactor, priceBase);
         uint256 alignedPrice = isInvertedPool ? div18(WAD, price) : price;
         _sqrtPriceX96 = SafeCast.toUint160(ud(alignedPrice).sqrt().mul(ud(2 ** 96)).unwrap());
+    }
+
+    function sqrtPriceWithoutOverflowCheck(
+        uint256 priceBase,
+        uint256 priceQuote,
+        int256 totalDecDelta,
+        bool isInvertedPool
+    ) public pure returns (uint160 sqrtPriceX96) {
+        if (totalDecDelta < 0) {
+            priceBase = priceBase * 10 ** uint256(-totalDecDelta);
+        } else if (totalDecDelta > 0) {
+            priceQuote = priceQuote * 10 ** uint256(totalDecDelta);
+        }
+        bool invert = priceBase <= priceQuote;
+        (uint256 lowP, uint256 highP) = invert ? (priceBase, priceQuote) : (priceQuote, priceBase);
+        uint256 res = mulDiv(lowP, type(uint256).max, highP);
+        res = sqrt(res);
+        if (invert != isInvertedPool) res = type(uint256).max / res;
+        res = res >> 32;
+        sqrtPriceX96 = SafeCast.toUint160(res);
     }
 }

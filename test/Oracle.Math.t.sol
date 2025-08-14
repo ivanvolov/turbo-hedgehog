@@ -352,9 +352,50 @@ contract OracleMathTest is ALMTestBase {
     // ** Constraints
 
     //TODO: Retest this constraints in sim. ALMMathLib.getSqrtPriceX96FromPrice(340256786833063481322211904572563530436318729319284211712);
-    //TODO: Think about scaleFactor constraints, do wee need them? No we don't.
-    function test_constraints() public pure {
-        TestLib.newOracleGetPrices(1e18, 1e18, int256(-18), false);
+    //TODO: Think about precision loss during /=scale, but need further testing.
+    function test_constraints() public {
+        // ** Large negative delta on large base
+        {
+            uint256 base = type(uint256).max / 1e17;
+            int256 delta = -18;
+
+            vm.expectRevert();
+            TestLib.sqrtPriceWithoutOverflowCheck(base, 1e18, delta, false);
+            ALMMathLib.getSqrtPrice(base, 1e18, delta, false);
+        }
+
+        // ** Large positive delta on large quote
+        {
+            uint256 quote = type(uint256).max / 1e17;
+            int256 delta = 18;
+
+            vm.expectRevert();
+            TestLib.sqrtPriceWithoutOverflowCheck(1e18, quote, delta, true);
+
+            ALMMathLib.getSqrtPrice(1e18, quote, delta, true);
+        }
+
+        // ** Exactly at overflow threshold, both succeed and match
+        {
+            uint256 scale = 1e12;
+            uint256 base = type(uint256).max / scale;
+            int256 delta = -12;
+
+            uint160 oldResult = TestLib.sqrtPriceWithoutOverflowCheck(base, 1e18, delta, false);
+            uint160 newResult = ALMMathLib.getSqrtPrice(base, 1e18, delta, false);
+            assertEq(oldResult, newResult, "Exact boundary case should match");
+        }
+
+        // ** Just above threshold, old reverts, new passes
+        {
+            uint256 scale = 1e12;
+            uint256 base = (type(uint256).max / scale) + 1;
+            int256 delta = -12;
+
+            vm.expectRevert();
+            TestLib.sqrtPriceWithoutOverflowCheck(base, 1e18, delta, false);
+            ALMMathLib.getSqrtPrice(base, 1e18, delta, false);
+        }
     }
 
     // ** Helpers
