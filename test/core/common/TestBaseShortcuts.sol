@@ -54,7 +54,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
             "ALM.sol",
-            abi.encode(key, BASE, QUOTE, _isNTS, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            abi.encode(BASE, QUOTE, _isNTS, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
             hookAddress
         );
         hook = ALM(hookAddress);

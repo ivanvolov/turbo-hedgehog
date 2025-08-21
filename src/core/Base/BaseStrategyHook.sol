@@ -35,7 +35,7 @@ abstract contract BaseStrategyHook is BaseHook, Base, IALM {
 
     bool public immutable isInvertedAssets;
     bool public immutable isInvertedPool;
-    bytes32 public immutable authorizedPoolId;
+    bytes32 public authorizedPoolId;
     PoolKey public authorizedPoolKey;
 
     /// @notice Current operational status of the contract.

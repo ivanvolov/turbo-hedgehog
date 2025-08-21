@@ -93,7 +93,7 @@ contract General_ALMTest is ALMTestBase {
             );
             deployCodeTo(
                 "ALM.sol",
-                abi.encode(key, BASE, QUOTE, WETH9, isInvertedPool, false, manager, "NAME", "SYMBOL"),
+                abi.encode(BASE, QUOTE, WETH9, isInvertedPool, false, manager, "NAME", "SYMBOL"),
                 hookAddress
             );
             hook = ALM(hookAddress);
@@ -104,32 +104,40 @@ contract General_ALMTest is ALMTestBase {
         }
 
         // ** Revert initialized but not owner
-        vm.expectRevert(); // OwnableUnauthorizedAccount
-        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
-
-        // ** Revert bad poolKey
-        vm.prank(deployer.addr);
-        vm.expectRevert(); // UnauthorizedPool
-        initPool(key.currency0, key.currency1, key.hooks, key.fee, 60, initialSQRTPrice);
+        {
+            vm.expectRevert(); // OwnableUnauthorizedAccount
+            initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+        }
 
         // ** Revert not active
-        vm.prank(deployer.addr);
-        hook.setStatus(1);
+        {
+            vm.prank(deployer.addr);
+            hook.setStatus(1);
 
-        vm.prank(deployer.addr);
-        vm.expectRevert(); // ContractNotActive
-        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+            vm.prank(deployer.addr);
+            vm.expectRevert(); // ContractNotActive
+            initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+        }
 
         // ** Revert already initialized
-        vm.prank(deployer.addr);
-        hook.setStatus(0);
+        {
+            vm.prank(deployer.addr);
+            hook.setStatus(0);
 
-        vm.prank(deployer.addr);
-        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+            vm.prank(deployer.addr);
+            initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
 
-        vm.prank(deployer.addr);
-        vm.expectRevert(); // PoolAlreadyInitialized
-        initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+            vm.prank(deployer.addr);
+            vm.expectRevert(); // PoolAlreadyInitialized
+            initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
+        }
+
+        // ** Revert only one pool per hook
+        {
+            vm.prank(deployer.addr);
+            vm.expectRevert(); // OnlyOnePoolPerHook
+            initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing + 2, initialSQRTPrice);
+        }
     }
 
     function test_oracle() public {
@@ -173,9 +181,8 @@ contract General_ALMTest is ALMTestBase {
 
         // ** reverts on failed key
         {
-            vm.prank(address(manager));
-            vm.expectRevert(IALM.UnauthorizedPool.selector);
-            hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
+            // This doesn't have failed key protection.
+            // hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
 
             vm.prank(address(manager));
             vm.expectRevert(IALM.UnauthorizedPool.selector);

@@ -45,7 +45,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     using LPFeeLibrary for uint24;
 
     constructor(
-        PoolKey memory key,
         IERC20 _base,
         IERC20 _quote,
         IWETH9 _WETH9,
@@ -55,8 +54,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         string memory name,
         string memory symbol
     ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
-        authorizedPoolKey = key;
-        authorizedPoolId = PoolId.unwrap(key.toId());
         WETH9 = _WETH9;
     }
 
@@ -65,11 +62,14 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         PoolKey calldata key,
         uint160 sqrtPrice,
         int24
-    ) internal override onlyActive onlyAuthorizedPool(key) returns (bytes4) {
+    ) internal override onlyActive returns (bytes4) {
         if (!key.fee.isDynamicFee()) revert MustUseDynamicFee();
         if (creator != owner) revert OwnableUnauthorizedAccount(creator);
-        _updatePriceAndBoundaries(sqrtPrice);
+        if (authorizedPoolId != bytes32("")) revert OnlyOnePoolPerHook();
+        authorizedPoolKey = key;
+        authorizedPoolId = PoolId.unwrap(key.toId());
 
+        _updatePriceAndBoundaries(sqrtPrice);
         return IHooks.afterInitialize.selector;
     }
 

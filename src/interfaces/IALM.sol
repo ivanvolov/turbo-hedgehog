@@ -14,6 +14,7 @@ interface IALM {
     error SwapPriceChangeTooHigh();
     error NotALiquidityOperator();
     error NotASwapOperator();
+    error OnlyOnePoolPerHook();
     error MustUseDynamicFee();
     error TVLCapExceeded();
     error NotAValidPositionState();
