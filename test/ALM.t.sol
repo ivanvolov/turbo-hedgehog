@@ -30,6 +30,7 @@ import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IBaseStrategyHook} from "@src/interfaces/IBaseStrategyHook.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -72,6 +73,7 @@ contract General_ALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
 
+            alm = new ALM(BASE, QUOTE, isInvertedAssets, "NAME", "SYMBOL");
             address payable hookAddress = payable(
                 address(
                     uint160(
@@ -91,15 +93,12 @@ contract General_ALMTest is ALMTestBase {
                 1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
                 IHooks(hookAddress)
             );
-            deployCodeTo(
-                "ALM.sol",
-                abi.encode(BASE, QUOTE, WETH9, isInvertedPool, false, manager, "NAME", "SYMBOL"),
-                hookAddress
-            );
-            hook = ALM(hookAddress);
+            deployCodeTo("BaseStrategyHook.sol", abi.encode(BASE, QUOTE, WETH9, isInvertedPool, manager), hookAddress);
+            hook = BaseStrategyHook(hookAddress);
             vm.label(address(hook), "hook");
+            _setComponents(address(alm));
             _setComponents(address(hook));
-            hook.setProtocolParams(1e18, 0, type(uint256).max, 3000, 3000, 0);
+            hook.setProtocolParams(1e18, 0, 3000, 3000, 0);
             vm.stopPrank();
         }
 
@@ -112,7 +111,7 @@ contract General_ALMTest is ALMTestBase {
         // ** Revert not active
         {
             vm.prank(deployer.addr);
-            hook.setStatus(1);
+            alm.setStatus(1);
 
             vm.prank(deployer.addr);
             vm.expectRevert(); // ContractNotActive
@@ -122,7 +121,7 @@ contract General_ALMTest is ALMTestBase {
         // ** Revert already initialized
         {
             vm.prank(deployer.addr);
-            hook.setStatus(0);
+            alm.setStatus(0);
 
             vm.prank(deployer.addr);
             initPool(key.currency0, key.currency1, key.hooks, key.fee, key.tickSpacing, initialSQRTPrice);
@@ -147,15 +146,15 @@ contract General_ALMTest is ALMTestBase {
 
     function test_transfer_ownership() public {
         _part_init_hook();
-        assertEq(address(hook.owner()), deployer.addr);
+        assertEq(address(alm.owner()), deployer.addr);
 
         vm.expectRevert();
-        hook.transferOwnership(address(0));
+        alm.transferOwnership(address(0));
 
         vm.prank(deployer.addr);
-        hook.transferOwnership(address(0));
+        alm.transferOwnership(address(0));
 
-        assertEq(address(hook.owner()), address(0));
+        assertEq(address(alm.owner()), address(0));
     }
 
     function test_accessability() public {
@@ -185,15 +184,15 @@ contract General_ALMTest is ALMTestBase {
             // hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
 
             vm.prank(address(manager));
-            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            vm.expectRevert(IBaseStrategyHook.UnauthorizedPool.selector);
             hook.beforeSwap(address(0), unauthorizedKey, SwapParams(true, 0, 0), "");
 
             vm.prank(address(manager));
-            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            vm.expectRevert(IBaseStrategyHook.UnauthorizedPool.selector);
             hook.afterSwap(address(0), unauthorizedKey, SwapParams(true, 0, 0), toBalanceDelta(0, 0), "");
 
             vm.prank(address(manager));
-            vm.expectRevert(IALM.UnauthorizedPool.selector);
+            vm.expectRevert(IBaseStrategyHook.UnauthorizedPool.selector);
             hook.beforeAddLiquidity(address(0), unauthorizedKey, ModifyLiquidityParams(0, 0, 0, ""), "");
 
             // This doesn't have failed key protection.
@@ -202,22 +201,22 @@ contract General_ALMTest is ALMTestBase {
 
         // ** this always revert even with correct manager and pool key
         vm.prank(address(manager));
-        vm.expectRevert(IALM.AddLiquidityThroughHook.selector);
+        vm.expectRevert(IBaseStrategyHook.AddLiquidityThroughHook.selector);
         hook.beforeAddLiquidity(address(0), key, ModifyLiquidityParams(0, 0, 0, ""), "");
     }
 
     function test_hook_pause() public {
         _part_init_hook();
         vm.prank(deployer.addr);
-        hook.setStatus(1);
+        alm.setStatus(1);
 
         // ** Hook
         {
             vm.expectRevert(IBase.ContractNotActive.selector);
-            hook.deposit(address(0), 0, 0);
+            alm.deposit(address(0), 0, 0);
 
             vm.expectRevert(IBase.ContractPaused.selector);
-            hook.withdraw(deployer.addr, 0, 0, 0);
+            alm.withdraw(deployer.addr, 0, 0, 0);
 
             // This is checked in test_pool_deploy_twice_revert because need special setup.
             // hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
@@ -238,10 +237,10 @@ contract General_ALMTest is ALMTestBase {
             hook.unlockCallback(bytes(""));
 
             vm.expectRevert(IBase.ContractPaused.selector);
-            hook.onFlashLoanTwoTokens(0, 0, "");
+            alm.onFlashLoanTwoTokens(0, 0, "");
 
             vm.expectRevert(IBase.ContractPaused.selector);
-            hook.onFlashLoanSingle(true, 0, "");
+            alm.onFlashLoanSingle(true, 0, "");
 
             vm.prank(address(rebalanceAdapter));
             vm.expectRevert(IBase.ContractNotActive.selector);
@@ -256,16 +255,16 @@ contract General_ALMTest is ALMTestBase {
     function test_hook_shutdown() public {
         _part_init_hook();
         vm.prank(deployer.addr);
-        hook.setStatus(2);
+        alm.setStatus(2);
 
         // ** Hook
         {
             vm.expectRevert(IBase.ContractNotActive.selector);
-            hook.deposit(address(0), 0, 0);
+            alm.deposit(address(0), 0, 0);
 
             // This is not ContractsNotActive, so it works.
             vm.expectRevert(IALM.NotZeroShares.selector);
-            hook.withdraw(deployer.addr, 0, 0, 0);
+            alm.withdraw(deployer.addr, 0, 0, 0);
 
             // This is checked in test_pool_deploy_twice_revert because need special setup.
             // hook.afterInitialize(address(0), unauthorizedKey, 0, 0);
@@ -287,11 +286,11 @@ contract General_ALMTest is ALMTestBase {
 
             // This is not ContractPaused, so it works.
             vm.expectRevert(abi.encodeWithSelector(IBase.NotFlashLoanAdapter.selector, address(this)));
-            hook.onFlashLoanTwoTokens(0, 0, "");
+            alm.onFlashLoanTwoTokens(0, 0, "");
 
             // This is not ContractPaused, so it works.
             vm.expectRevert(abi.encodeWithSelector(IBase.NotFlashLoanAdapter.selector, address(this)));
-            hook.onFlashLoanSingle(true, 0, "");
+            alm.onFlashLoanSingle(true, 0, "");
 
             vm.prank(address(rebalanceAdapter));
             vm.expectRevert(IBase.ContractNotActive.selector);
@@ -398,29 +397,29 @@ contract General_ALMTest is ALMTestBase {
         _part_init_hook();
         protocolFee = bound(protocolFee, 0, 3e16);
         vm.prank(deployer.addr);
-        hook.setProtocolParams(1e18, protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+        hook.setProtocolParams(1e18, protocolFee, int24(1e6), int24(1e6), 1e18);
     }
 
     function test_Fuzz_setProtocolFee_invalid(uint256 protocolFee) public {
         _part_init_hook();
         vm.assume(protocolFee > 1e18);
         vm.prank(deployer.addr);
-        vm.expectRevert(IALM.ProtocolFeeNotValid.selector);
-        hook.setProtocolParams(1e18, protocolFee, 1e18, int24(1e6), int24(1e6), 1e18);
+        vm.expectRevert(IBaseStrategyHook.ProtocolFeeNotValid.selector);
+        hook.setProtocolParams(1e18, protocolFee, int24(1e6), int24(1e6), 1e18);
     }
 
     function test_Fuzz_setLiquidityMultiplier_valid(uint256 liquidityMultiplier) public {
         _part_init_hook();
         liquidityMultiplier = bound(liquidityMultiplier, 0, 10e18);
         vm.prank(deployer.addr);
-        hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
+        hook.setProtocolParams(liquidityMultiplier, 0, int24(1e6), int24(1e6), 1e18);
     }
 
     function test_Fuzz_setLiquidityMultiplier_invalid(uint256 liquidityMultiplier) public {
         _part_init_hook();
         vm.assume(liquidityMultiplier > 10e18);
         vm.prank(deployer.addr);
-        vm.expectRevert(IALM.LiquidityMultiplierNotValid.selector);
-        hook.setProtocolParams(liquidityMultiplier, 0, 1e18, int24(1e6), int24(1e6), 1e18);
+        vm.expectRevert(IBaseStrategyHook.LiquidityMultiplierNotValid.selector);
+        hook.setProtocolParams(liquidityMultiplier, 0, int24(1e6), int24(1e6), 1e18);
     }
 }

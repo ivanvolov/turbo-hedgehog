@@ -21,15 +21,15 @@ contract UnicordPositionManager is Base, IPositionManager {
         // Intentionally empty as all initialization is handled by parent Base contract.
     }
 
-    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
-        BASE.safeTransferFrom(address(alm), address(this), deltaBase);
+    function positionAdjustmentPriceUp(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyHook onlyActive {
+        BASE.safeTransferFrom(address(hook), address(this), deltaBase);
         lendingAdapter.updatePosition(SafeCast.toInt256(deltaQuote), -SafeCast.toInt256(deltaBase), 0, 0);
-        QUOTE.safeTransfer(address(alm), deltaQuote);
+        QUOTE.safeTransfer(address(hook), deltaQuote);
     }
 
-    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyALM onlyActive {
-        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
+    function positionAdjustmentPriceDown(uint256 deltaBase, uint256 deltaQuote, uint160) external onlyHook onlyActive {
+        QUOTE.safeTransferFrom(address(hook), address(this), deltaQuote);
         lendingAdapter.updatePosition(-SafeCast.toInt256(deltaQuote), SafeCast.toInt256(deltaBase), 0, 0);
-        BASE.safeTransfer(address(alm), deltaBase);
+        BASE.safeTransfer(address(hook), deltaBase);
     }
 }

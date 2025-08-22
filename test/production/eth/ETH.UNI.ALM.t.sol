@@ -89,12 +89,13 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
+        uint256 shares = alm.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
+        assertEq(alm.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEqProtocolState(initialSQRTPrice, amountToDep);
@@ -113,6 +114,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
         console.log("postRebalanceTVL %s", calcTVL());
         console.log("oraclePrice %s", oracle.price());
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
@@ -154,10 +156,11 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         assertBalanceNotChanged(address(manager), 1e1);
         assertEq(address(swapper.addr).balance, deltaETH);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(159320597294454579124, 327170066668, 385260236144, 43373643052594317998);
 
-        assertApproxEqAbs(hook.TVL(oracle.price()), 99967145006703864476, 1e9); //1 wei drift on collateral supply
+        assertApproxEqAbs(alm.TVL(oracle.price()), 99967145006703864476, 1e9); //1 wei drift on collateral supply
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 4794324096889277519347724, 1);
     }
 
@@ -374,7 +377,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Before swap State
         assertEqBalanceState(address(hook), 0, 0);
-        assertEq(hook.accumulatedFeeB(), 0);
+        assertEq(BASE.balanceOf(address(hook)), 0);
 
         uint256 usdcToSwap = 14541229590;
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -388,8 +391,8 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEq(address(swapper.addr).balance, deltaETH);
-        assertEqBalanceState(address(hook), 0, hook.accumulatedFeeB());
-        assertEq(hook.accumulatedFeeB(), 1454122);
+        assertEqBalanceState(address(hook), 0, BASE.balanceOf(address(hook)));
+        assertEq(BASE.balanceOf(address(hook)), 1454122);
 
         assertEqPositionState(159323426673882747835, 327170066668, 385261690267, 43374486902599210421);
         assertEqProtocolState(4794315379123569767722965, 99968730526825152868);
@@ -419,8 +422,8 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEq(address(swapper.addr).balance, deltaETH);
-        assertEqBalanceState(address(hook), 0, hook.accumulatedFeeB());
-        assertEq(hook.accumulatedFeeB(), 1988085);
+        assertEqBalanceState(address(hook), 0, BASE.balanceOf(address(hook)));
+        assertEq(BASE.balanceOf(address(hook)), 1988085);
 
         assertEqPositionState(157249302282605916703, 327170066668, 379922602937, 42755888399937699382);
         assertEqProtocolState(4800714602932652518603895, 99981914366427953080);
@@ -447,8 +450,8 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), hook.accumulatedFeeQ(), 0);
-        assertEq(hook.accumulatedFeeQ(), 552128979362270);
+        assertEqBalanceState(address(hook), QUOTE.balanceOf(address(hook)), 0);
+        assertEq(QUOTE.balanceOf(address(hook)), 552128979362270);
 
         assertEqPositionState(172867051172116770507, 327170066668, 419762037989, 47413813507335673323);
         assertEqProtocolState(4752955020824053462055316, 99982455744822148027);
@@ -477,8 +480,8 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), hook.accumulatedFeeQ(), 0);
-        assertEq(hook.accumulatedFeeQ(), 403696363458998);
+        assertEqBalanceState(address(hook), QUOTE.balanceOf(address(hook)), 0);
+        assertEq(QUOTE.balanceOf(address(hook)), 403696363458998);
 
         assertEqPositionState(170752097911972797140, 327170066668, 414415585063, 46783037973608523371);
         assertEqProtocolState(4759365637254375262663404, 99969013921104341535);
@@ -582,9 +585,9 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Withdraw
         {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
             (int24 tickLower, int24 tickUpper) = hook.activeTicks();
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
@@ -614,12 +617,6 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaETH %s", deltaETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
-
             assertApproxEqAbs(deltaETH, deltaY, 2);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 2);
         }
@@ -632,7 +629,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
             uint256 _amountToDep = 200 ether;
             deal(address(WETH), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep, 0);
+            alm.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Up In
@@ -672,11 +669,6 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaETH %s", deltaETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
-
             assertApproxEqAbs(deltaETH, deltaY, 1);
             assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaX, 5);
         }
@@ -695,12 +687,6 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
-
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaETH %s", deltaETH);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
-
             assertApproxEqAbs((deltaETH * (1e18 - testFee)) / 1e18, deltaY, 3);
             assertApproxEqAbs(deltaUSDC, deltaX, 2);
         }
@@ -709,11 +695,13 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
 
         // ** Rebalance
-        uint256 preRebalanceTVL = calcTVL();
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-
-        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        {
+            uint256 preRebalanceTVL = calcTVL();
+            vm.prank(deployer.addr);
+            rebalanceAdapter.rebalance(slippage);
+            assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+            assertEqBalanceStateZero(address(hook));
+        }
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
@@ -721,9 +709,9 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         // ** Full withdraw
         {
             setProtocolStatus(2);
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

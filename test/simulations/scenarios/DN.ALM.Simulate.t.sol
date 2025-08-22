@@ -129,9 +129,9 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         uint256 delShares;
         {
             deal(address(USDC), actor, amount);
-            delShares = hook.balanceOf(actor);
-            hook.deposit(actor, amount, 0);
-            delShares = hook.balanceOf(actor) - delShares;
+            delShares = alm.balanceOf(actor);
+            alm.deposit(actor, amount, 0);
+            delShares = alm.balanceOf(actor) - delShares;
         }
 
         save_deposit_data(amount, actor, 0, 0, 0, delShares, 0);

@@ -1,7 +1,7 @@
 # Batches of tests
 
 ta:
-	clear && forge test -v --no-match-contract "SimulationTest" --code-size-limit 24576
+	clear && forge test -v --no-match-contract "SimulationTest"
 
 tam:
 	clear && forge test -v --no-match-contract "Simulation|UNI_ALMTest|BASE_ALMTest|Oracle|LendingAdaptersTest"

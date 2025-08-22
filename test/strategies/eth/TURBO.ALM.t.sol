@@ -62,7 +62,7 @@ contract TURBO_ALMTest is ALMTestBase {
     }
 
     function test_setUp() public view {
-        assertEq(hook.owner(), deployer.addr);
+        assertEq(alm.owner(), deployer.addr);
         assertTicks(-13, 7);
     }
 
@@ -75,12 +75,13 @@ contract TURBO_ALMTest is ALMTestBase {
         deal(address(USDT), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
+        uint256 shares = alm.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
+        assertEq(alm.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEqProtocolState(initialSQRTPrice, amountToDep);
@@ -181,9 +182,9 @@ contract TURBO_ALMTest is ALMTestBase {
 
         // ** Withdraw
         {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
             (int24 tickLower, int24 tickUpper) = hook.activeTicks();
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
@@ -223,7 +224,7 @@ contract TURBO_ALMTest is ALMTestBase {
             uint256 _amountToDep = 50e9;
             deal(address(USDT), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep, 0);
+            alm.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Up out
@@ -270,8 +271,11 @@ contract TURBO_ALMTest is ALMTestBase {
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
+        {
+            vm.prank(deployer.addr);
+            rebalanceAdapter.rebalance(slippage);
+            assertEqBalanceStateZero(address(hook));
+        }
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -279,9 +283,9 @@ contract TURBO_ALMTest is ALMTestBase {
         // ** Full withdraw
         {
             setProtocolStatus(2);
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
 
         assertBalanceNotChanged(address(manager), 2e1);

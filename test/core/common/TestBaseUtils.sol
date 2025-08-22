@@ -13,6 +13,7 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 // ** contracts
 import {ALM} from "@src/ALM.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 
 // ** libraries
 import {PRBMathUD60x18} from "@test/libraries/math/PRBMathUD60x18.sol";
@@ -20,6 +21,7 @@ import {TestAccount} from "@test/libraries/TestAccountLib.t.sol";
 
 // ** interfaces
 import {IALM} from "@src/interfaces/IALM.sol";
+import {IBaseStrategyHook} from "@src/interfaces/IBaseStrategyHook.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
 import {IBase} from "@src/interfaces/IBase.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
@@ -37,7 +39,8 @@ abstract contract TestBaseUtils is Deployers {
     IV4Quoter quoter;
     IUniversalRouter universalRouter;
     uint160 initialSQRTPrice;
-    ALM hook;
+    ALM alm;
+    BaseStrategyHook hook;
     SRebalanceAdapter rebalanceAdapter;
     IWETH9 WETH9;
 
@@ -115,7 +118,7 @@ abstract contract TestBaseUtils is Deployers {
     IERC20 ETH = IERC20(address(0));
 
     function calcTVL() internal view returns (uint256) {
-        return hook.TVL(oracle.price());
+        return alm.TVL(oracle.price());
     }
 
     function calcSharePrice(uint256 tS, uint256 TVL) internal pure returns (uint256) {
@@ -144,6 +147,7 @@ abstract contract TestBaseUtils is Deployers {
         vm.prank(deployer.addr);
         IBase(adapter).setComponents(
             IALM(fakeALM),
+            IBaseStrategyHook(alice.addr),
             ILendingAdapter(alice.addr),
             IFlashLoanAdapter(alice.addr),
             IPositionManager(alice.addr),

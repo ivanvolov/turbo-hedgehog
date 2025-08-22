@@ -76,18 +76,18 @@ contract ETH_ALMTest is ALMTestBase {
     }
 
     function test_setUp() public view {
-        assertEq(hook.owner(), deployer.addr);
+        assertEq(alm.owner(), deployer.addr);
         assertTicks(194466, 200466);
     }
 
     function test_withdraw() public {
         vm.expectRevert(IALM.NotZeroShares.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 0, 0, 0);
+        alm.withdraw(alice.addr, 0, 0, 0);
 
         vm.expectRevert();
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, 10, 0, 0);
+        alm.withdraw(alice.addr, 10, 0, 0);
     }
 
     uint256 amountToDep = 100 ether;
@@ -99,12 +99,13 @@ contract ETH_ALMTest is ALMTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
+        uint256 shares = alm.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
+        assertEq(alm.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEqProtocolState(initialSQRTPrice, amountToDep);
@@ -119,7 +120,7 @@ contract ETH_ALMTest is ALMTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
         vm.expectRevert(IALM.TVLCapExceeded.selector);
-        hook.deposit(alice.addr, amountToDep, 0);
+        alm.deposit(alice.addr, amountToDep, 0);
     }
 
     function test_deposit_min_shares() public {
@@ -129,23 +130,23 @@ contract ETH_ALMTest is ALMTestBase {
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
         vm.expectRevert(IALM.NotMinShares.selector);
-        hook.deposit(alice.addr, amountToDep, type(uint256).max / 2);
+        alm.deposit(alice.addr, amountToDep, type(uint256).max / 2);
     }
 
     function test_deposit_not_operator() public {
         vm.prank(deployer.addr);
-        hook.setOperators(deployer.addr, deployer.addr);
+        alm.setOperator(deployer.addr);
         deal(address(WETH), address(alice.addr), amountToDep);
 
         vm.prank(alice.addr);
         vm.expectRevert(IALM.NotALiquidityOperator.selector);
-        hook.deposit(alice.addr, amountToDep, 0);
+        alm.deposit(alice.addr, amountToDep, 0);
 
         vm.prank(deployer.addr);
-        hook.setOperators(alice.addr, deployer.addr);
+        alm.setOperator(alice.addr);
 
         vm.prank(alice.addr);
-        hook.deposit(alice.addr, amountToDep, 0);
+        alm.deposit(alice.addr, amountToDep, 0);
     }
 
     function test_deposit_rebalance() public {
@@ -160,6 +161,7 @@ contract ETH_ALMTest is ALMTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
         console.log("postRebalanceTVL %s", calcTVL());
 
         assertTicks(194458, 200458);
@@ -202,33 +204,34 @@ contract ETH_ALMTest is ALMTestBase {
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
-        hook.setOperators(deployer.addr, deployer.addr);
+        alm.setOperator(deployer.addr);
 
-        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
         vm.prank(alice.addr);
         vm.expectRevert(IALM.NotALiquidityOperator.selector);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
 
         vm.prank(deployer.addr);
-        hook.setOperators(alice.addr, deployer.addr);
+        alm.setOperator(alice.addr);
 
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
     }
 
     /// @dev This is needed for composability testing.
     function part_withdraw() public {
         assertEqBalanceStateZero(alice.addr);
 
-        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
-        assertEq(hook.balanceOf(alice.addr), 0);
+        alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+        assertEq(alm.balanceOf(alice.addr), 0);
 
         assertEqBalanceState(alice.addr, 99990323997909256072, 0);
         assertEqPositionState(0, 0, 0, 0);
         assertApproxEqAbs(calcTVL(), 0, 1e4, "tvl");
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
     }
 
     function test_deposit_rebalance_withdraw_on_shutdown() public {
@@ -237,7 +240,7 @@ contract ETH_ALMTest is ALMTestBase {
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         vm.prank(deployer.addr);
-        hook.setStatus(2);
+        alm.setStatus(2);
 
         part_withdraw();
     }
@@ -247,10 +250,10 @@ contract ETH_ALMTest is ALMTestBase {
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         assertEqBalanceStateZero(alice.addr);
 
-        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
         vm.expectRevert(IALM.NotMinOutWithdrawQuote.selector);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw, 0, type(uint256).max);
+        alm.withdraw(alice.addr, sharesToWithdraw, 0, type(uint256).max);
     }
 
     function test_deposit_rebalance_swap_price_up_in() public {
@@ -278,10 +281,11 @@ contract ETH_ALMTest is ALMTestBase {
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(157249302284379730407, 239418121498, 277892412530, 42755888400416243368);
 
-        assertApproxEqAbs(hook.TVL(oracle.price()), 100030489482569180703, 1e9); //1 wei drift on collateral supply
+        assertApproxEqAbs(alm.TVL(oracle.price()), 100030489482569180703, 1e9); //1 wei drift on collateral supply
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 1528486622352927269830375254242368, 1);
     }
 
@@ -331,12 +335,12 @@ contract ETH_ALMTest is ALMTestBase {
 
         // ** Try Swap
         vm.prank(deployer.addr);
-        hook.setOperators(deployer.addr, deployer.addr);
+        hook.setOperator(deployer.addr);
         part_swap_USDC_WETH_OUT_revert(wethToGetFSwap);
 
         // ** Swap
         vm.prank(deployer.addr);
-        hook.setOperators(deployer.addr, address(swapRouter));
+        hook.setOperator(address(swapRouter));
         swapUSDC_WETH_Out(wethToGetFSwap);
     }
 
@@ -539,7 +543,6 @@ contract ETH_ALMTest is ALMTestBase {
 
         // ** Before swap State
         assertEqBalanceState(address(hook), 0, 0);
-        assertEq(hook.accumulatedFeeB(), 0);
 
         uint256 usdcToSwap = 14541229590;
         deal(address(USDC), address(swapper.addr), usdcToSwap);
@@ -553,8 +556,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
-        assertEqBalanceState(address(hook), 0, hook.accumulatedFeeB());
-        assertEq(hook.accumulatedFeeB(), 1454122);
+        assertEqBalanceState(address(hook), 0, 1454122);
 
         assertEqPositionState(157253158410295846688, 239418121498, 277893866654, 42757038473057892083);
         assertEqProtocolState(1528490415156631802711428712919168, 100032648914438673274);
@@ -584,8 +586,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaWETH, 0);
-        assertEqBalanceState(address(hook), 0, hook.accumulatedFeeB());
-        assertEq(hook.accumulatedFeeB(), 1454850);
+        assertEqBalanceState(address(hook), 0, 1454850);
 
         assertEqPositionState(157249302282605916703, 239418121498, 277886593128, 42755888399887211211);
         assertEqProtocolState(1528486622351182584276128648738257, 100032677061598280463);
@@ -612,8 +613,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), hook.accumulatedFeeQ(), 0);
-        assertEq(hook.accumulatedFeeQ(), 552128979362270);
+        assertEqBalanceState(address(hook), 552128979362270, 0);
 
         assertEqPositionState(172867051172116770507, 239418121498, 307040490998, 47413813507285185152);
         assertEqProtocolState(1543844813620587397209298936306614, 100033218432610693217);
@@ -643,8 +643,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** After swap State
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, 0, deltaUSDC);
-        assertEqBalanceState(address(hook), hook.accumulatedFeeQ(), 0);
-        assertEq(hook.accumulatedFeeQ(), 55215658704402);
+        assertEqBalanceState(address(hook), 55215658704402, 0);
 
         assertEqPositionState(172868152683063660494, 239418121498, 307047761449, 47414142028093906727);
         assertEqProtocolState(1543848682937829632319054235770132, 100031258378877100960);
@@ -724,14 +723,7 @@ contract ETH_ALMTest is ALMTestBase {
 
         // ** Update liquidity and boundaries to oracle.
         vm.startPrank(deployer.addr);
-        hook.setProtocolParams(
-            hook.liquidityMultiplier(),
-            hook.protocolFee(),
-            hook.tvlCap(),
-            1000,
-            1000,
-            hook.swapPriceThreshold()
-        );
+        hook.setProtocolParams(hook.liquidityMultiplier(), hook.protocolFee(), 1000, 1000, hook.swapPriceThreshold());
         hook.updateLiquidityAndBoundariesToOracle();
         vm.stopPrank();
 
@@ -837,9 +829,9 @@ contract ETH_ALMTest is ALMTestBase {
 
         // ** Withdraw
         {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
             (int24 tickLower, int24 tickUpper) = hook.activeTicks();
             uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount1(
@@ -881,7 +873,7 @@ contract ETH_ALMTest is ALMTestBase {
             uint256 _amountToDep = 200 ether;
             deal(address(WETH), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep, 0);
+            alm.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Up In
@@ -957,12 +949,14 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
-        // Rebalance
-        uint256 preRebalanceTVL = calcTVL();
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-
-        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+        // ** Rebalance
+        {
+            uint256 preRebalanceTVL = calcTVL();
+            vm.prank(deployer.addr);
+            rebalanceAdapter.rebalance(slippage);
+            assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
+            assertEqBalanceStateZero(address(hook));
+        }
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -970,9 +964,9 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Full withdraw
         {
             setProtocolStatus(2);
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 
@@ -1000,6 +994,7 @@ contract ETH_ALMTest is ALMTestBase {
                 MConstants.rEUL
             );
             IBase(address(newAdapter)).setComponents(
+                alm,
                 hook,
                 newAdapter,
                 flashLoanAdapter,
@@ -1013,6 +1008,7 @@ contract ETH_ALMTest is ALMTestBase {
         // ** Withdraw collateral
         {
             IBase(address(lendingAdapter)).setComponents(
+                alm,
                 hook,
                 ILendingAdapter(migrationContract.addr),
                 IFlashLoanAdapter(migrationContract.addr),
@@ -1058,7 +1054,19 @@ contract ETH_ALMTest is ALMTestBase {
         {
             vm.startPrank(deployer.addr);
 
+            alm.setComponents(
+                alm,
+                hook,
+                newAdapter,
+                flashLoanAdapter,
+                positionManager,
+                oracle,
+                rebalanceAdapter,
+                swapAdapter
+            );
+
             hook.setComponents(
+                alm,
                 hook,
                 newAdapter,
                 flashLoanAdapter,
@@ -1069,6 +1077,7 @@ contract ETH_ALMTest is ALMTestBase {
             );
 
             IBase(address(newAdapter)).setComponents(
+                alm,
                 hook,
                 newAdapter,
                 flashLoanAdapter,
@@ -1079,6 +1088,7 @@ contract ETH_ALMTest is ALMTestBase {
             );
 
             IBase(address(positionManager)).setComponents(
+                alm,
                 hook,
                 newAdapter,
                 flashLoanAdapter,
@@ -1089,6 +1099,7 @@ contract ETH_ALMTest is ALMTestBase {
             );
 
             IBase(address(rebalanceAdapter)).setComponents(
+                alm,
                 hook,
                 newAdapter,
                 flashLoanAdapter,
@@ -1104,6 +1115,7 @@ contract ETH_ALMTest is ALMTestBase {
 
         // ** Check if states are the same
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(164999999999999999995, 239418121497, 292433642119, 45067499999811762368);
         assertEqPositionState(CLbefore, CSbefore, DLbefore, DSbefore);

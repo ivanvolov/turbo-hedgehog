@@ -37,7 +37,9 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
     ) internal {
         vm.startPrank(deployer.addr);
         WETH9 = UConstants.WETH9;
-        deploy_hook_contract(_isInvertedAssets, IS_NTS ? WETH9 : TestLib.ZERO_WETH9);
+        alm = new ALM(BASE, QUOTE, _isInvertedAssets, "NAME", "SYMBOL");
+        alm.setTVLCap(_tvlCap);
+        deploy_hook_contract(IS_NTS ? WETH9 : TestLib.ZERO_WETH9);
         isInvertedAssets = _isInvertedAssets;
 
         createPositionManager(_isNova);
@@ -53,11 +55,11 @@ abstract contract ALMTestBaseUnichain is TestBaseMorpho {
         hook.setProtocolParams(
             _liquidityMultiplier,
             _protocolFee,
-            _tvlCap,
             _tickLowerDelta,
             _tickUpperDelta,
             _swapPriceThreshold
         );
+        _setComponents(address(alm));
         _setComponents(address(hook));
         _setComponents(address(lendingAdapter));
         _setComponents(address(flashLoanAdapter));

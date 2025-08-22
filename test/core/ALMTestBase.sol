@@ -7,6 +7,7 @@ import "forge-std/console.sol";
 import {V4Quoter} from "v4-periphery/src/lens/V4Quoter.sol";
 
 // ** contracts
+import {ALM} from "@src/ALM.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 
@@ -35,7 +36,9 @@ abstract contract ALMTestBase is TestBaseMorpho {
         console.log("oracle: initialPrice %s", oraclePriceW());
         vm.startPrank(deployer.addr);
         WETH9 = MConstants.WETH9;
-        deploy_hook_contract(_isInvertedAssets, IS_NTS ? WETH9 : TestLib.ZERO_WETH9);
+        alm = new ALM(BASE, QUOTE, _isInvertedAssets, "NAME", "SYMBOL");
+        alm.setTVLCap(_tvlCap);
+        deploy_hook_contract(IS_NTS ? WETH9 : TestLib.ZERO_WETH9);
         isInvertedAssets = _isInvertedAssets;
 
         createPositionManager(_isNova);
@@ -51,11 +54,11 @@ abstract contract ALMTestBase is TestBaseMorpho {
         hook.setProtocolParams(
             _liquidityMultiplier,
             _protocolFee,
-            _tvlCap,
             _tickLowerDelta,
             _tickUpperDelta,
             _swapPriceThreshold
         );
+        _setComponents(address(alm));
         _setComponents(address(hook));
         _setComponents(address(lendingAdapter));
         _setComponents(address(flashLoanAdapter));

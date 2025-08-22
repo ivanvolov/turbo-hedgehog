@@ -290,15 +290,15 @@ contract ETH_ALMSimulationTest is ALMTestSimBase {
         uint256 delShares;
         {
             deal(address(WETH), actor, amount);
-            delShares = hook.balanceOf(actor);
-            hook.deposit(actor, amount, 0);
+            delShares = alm.balanceOf(actor);
+            alm.deposit(actor, amount, 0);
             balanceWETH = amount - WETH.balanceOf(actor);
 
             // ** Clear up account
             WETH.safeTransfer(zero.addr, WETH.balanceOf(actor));
             USDC.safeTransfer(zero.addr, USDC.balanceOf(actor));
 
-            delShares = hook.balanceOf(actor) - delShares;
+            delShares = alm.balanceOf(actor) - delShares;
         }
 
         save_deposit_data(
@@ -314,7 +314,7 @@ contract ETH_ALMSimulationTest is ALMTestSimBase {
     }
 
     function withdraw(uint256 sharesPercent, address actor) internal {
-        uint256 shares1 = (hook.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
+        uint256 shares1 = (alm.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
         uint256 shares2 = (hookControl.balanceOf(actor) * sharesPercent * 1e16) / 1e18;
 
         vm.startPrank(actor);
@@ -338,9 +338,9 @@ contract ETH_ALMSimulationTest is ALMTestSimBase {
         uint256 balanceWETH;
         uint256 balanceUSDC;
         {
-            uint256 sharesBefore = hook.balanceOf(actor);
-            hook.withdraw(actor, shares1, 0, 0);
-            assertEq(sharesBefore - hook.balanceOf(actor), shares1);
+            uint256 sharesBefore = alm.balanceOf(actor);
+            alm.withdraw(actor, shares1, 0, 0);
+            assertEq(sharesBefore - alm.balanceOf(actor), shares1);
 
             balanceWETH = WETH.balanceOf(actor);
             balanceUSDC = USDC.balanceOf(actor);

@@ -1,24 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// ** v4 imports
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/types/BeforeSwapDelta.sol";
-import {SafeCast as SafeCastLib} from "v4-core/libraries/SafeCast.sol";
-import {Currency} from "v4-core/types/Currency.sol";
-import {SwapParams} from "v4-core/types/PoolOperation.sol";
-import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
-import {ModifyLiquidityParams} from "v4-core/types/PoolOperation.sol";
-import {TransientStateLibrary} from "v4-core/libraries/TransientStateLibrary.sol";
-import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
-import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
-import {IHooks} from "v4-core/interfaces/IHooks.sol";
-import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
-
 // ** external imports
-import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
@@ -26,51 +9,51 @@ import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // ** contracts
-import {BaseStrategyHook} from "./core/base/BaseStrategyHook.sol";
+import {Base} from "./core/base/Base.sol";
 
 // ** libraries
-import {ALMMathLib, div18, WAD} from "./libraries/ALMMathLib.sol";
-import {CurrencySettler} from "./libraries/CurrencySettler.sol";
+import {ALMMathLib} from "./libraries/ALMMathLib.sol";
+
+// ** interfaces
+import {IALM} from "./interfaces/IALM.sol";
 
 /// @title Automated Liquidity Manager
 /// @author Ivan Volovyk <https://github.com/ivanvolov>
 /// @custom:contact ivan@lumis.fi
-/// @notice The main hook contract that handles liquidity management and swap flow.
-contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
-    using PoolIdLibrary for PoolKey;
-    using CurrencySettler for Currency;
+/// @notice The main contract that handles deposit and withdraw flow.
+contract ALM is Base, ERC20, ReentrancyGuard, IALM {
     using SafeERC20 for IERC20;
-    using TransientStateLibrary for IPoolManager;
-    using StateLibrary for IPoolManager;
-    using LPFeeLibrary for uint24;
+
+    /// @notice Current operational status of the contract.
+    /// @dev 0 = active, 1 = paused, 2 = shutdown.
+    uint8 public status = 0;
+    uint256 public tvlCap;
+    bool public immutable isInvertedAssets;
+    address public liquidityOperator;
 
     constructor(
         IERC20 _base,
         IERC20 _quote,
-        IWETH9 _WETH9,
-        bool _isInvertedPool,
         bool _isInvertedAssets,
-        IPoolManager _poolManager,
         string memory name,
         string memory symbol
-    ) BaseStrategyHook(_base, _quote, _isInvertedPool, _isInvertedAssets, _poolManager) ERC20(name, symbol) {
-        WETH9 = _WETH9;
+    ) Base(ComponentType.ALM, msg.sender, _base, _quote) ERC20(name, symbol) {
+        isInvertedAssets = _isInvertedAssets;
     }
 
-    function _afterInitialize(
-        address creator,
-        PoolKey calldata key,
-        uint160 sqrtPrice,
-        int24
-    ) internal override onlyActive returns (bytes4) {
-        if (!key.fee.isDynamicFee()) revert MustUseDynamicFee();
-        if (creator != owner) revert OwnableUnauthorizedAccount(creator);
-        if (authorizedPoolId != bytes32("")) revert OnlyOnePoolPerHook();
-        authorizedPoolKey = key;
-        authorizedPoolId = PoolId.unwrap(key.toId());
+    function setStatus(uint8 _status) external onlyOwner {
+        status = _status;
+        emit StatusSet(_status);
+    }
 
-        _updatePriceAndBoundaries(sqrtPrice);
-        return IHooks.afterInitialize.selector;
+    function setOperator(address _liquidityOperator) external onlyOwner {
+        liquidityOperator = _liquidityOperator;
+        emit OperatorSet(_liquidityOperator);
+    }
+
+    function setTVLCap(uint256 _tvlCap) external onlyOwner {
+        tvlCap = _tvlCap;
+        emit TVLCapSet(_tvlCap);
     }
 
     function deposit(
@@ -145,8 +128,7 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
             QUOTE.safeTransfer(to, quoteOut);
         }
 
-        uint128 newLiquidity = calcLiquidity();
-        liquidity = newLiquidity;
+        uint128 newLiquidity = hook.updateLiquidity();
         emit Withdraw(to, sharesOut, baseOut, quoteOut, totalSupply(), newLiquidity);
     }
 
@@ -193,114 +175,6 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
         else swapAdapter.swapExactInput(token == BASE, balance - targetBalance);
     }
 
-    function refreshReservesAndTransferFees() external onlyActive onlyRebalanceAdapter {
-        lendingAdapter.syncPositions();
-        uint256 feeB = accumulatedFeeB;
-        uint256 feeQ = accumulatedFeeQ;
-
-        if (feeB > 0) {
-            accumulatedFeeB = 0;
-            BASE.safeTransfer(treasury, feeB);
-        }
-        if (feeQ > 0) {
-            accumulatedFeeQ = 0;
-            QUOTE.safeTransfer(treasury, feeQ);
-        }
-    }
-
-    // ** Swapping logic
-
-    function _beforeSwap(
-        address swapper,
-        PoolKey calldata key,
-        SwapParams calldata,
-        bytes calldata
-    ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, BeforeSwapDelta, uint24) {
-        if (swapOperator != address(0) && swapOperator != swapper) revert NotASwapOperator();
-        lendingAdapter.syncPositions();
-
-        Ticks memory _activeTicks = activeTicks;
-        poolManager.modifyLiquidity(
-            key,
-            ModifyLiquidityParams({
-                tickLower: _activeTicks.lower,
-                tickUpper: _activeTicks.upper,
-                liquidityDelta: SafeCast.toInt256(liquidity),
-                salt: bytes32(0)
-            }),
-            ""
-        );
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
-    }
-
-    function _afterSwap(
-        address swapper,
-        PoolKey calldata key,
-        SwapParams calldata params,
-        BalanceDelta,
-        bytes calldata
-    ) internal override onlyActive onlyAuthorizedPool(key) nonReentrant returns (bytes4, int128) {
-        Ticks memory _activeTicks = activeTicks;
-        (, BalanceDelta feesAccrued) = poolManager.modifyLiquidity(
-            key,
-            ModifyLiquidityParams({
-                tickLower: _activeTicks.lower,
-                tickUpper: _activeTicks.upper,
-                liquidityDelta: -SafeCast.toInt256(poolManager.getLiquidity(PoolId.wrap(authorizedPoolId))),
-                salt: bytes32(0)
-            }),
-            ""
-        );
-        uint160 sqrtPrice = sqrtPriceCurrent();
-        checkSwapDeviations(sqrtPrice);
-
-        // We assume that fees are positive and only one token accrued fees during a single swap.
-        uint128 feesAccrued0 = SafeCastLib.toUint128(feesAccrued.amount0());
-        uint128 feesAccrued1 = SafeCastLib.toUint128(feesAccrued.amount1());
-        settleDeltas(key, params.zeroForOne, feesAccrued0 + feesAccrued1, sqrtPrice);
-
-        emit HookFee(authorizedPoolId, swapper, feesAccrued0, feesAccrued1);
-        return (IHooks.afterSwap.selector, 0);
-    }
-
-    function settleDeltas(PoolKey calldata key, bool zeroForOne, uint256 feeAmount, uint160 sqrtPrice) internal {
-        if (zeroForOne) {
-            uint256 token0 = SafeCast.toUint256(poolManager.currencyDelta(address(this), key.currency0));
-            uint256 token1 = SafeCast.toUint256(-poolManager.currencyDelta(address(this), key.currency1));
-
-            key.currency0.take(poolManager, address(this), token0, false);
-            if (address(WETH9) != address(0)) WETH9.deposit{value: token0}();
-            updatePosition(feeAmount, token0, token1, isInvertedPool, sqrtPrice);
-            key.currency1.settle(poolManager, address(this), token1, false);
-        } else {
-            uint256 token0 = SafeCast.toUint256(-poolManager.currencyDelta(address(this), key.currency0));
-            uint256 token1 = SafeCast.toUint256(poolManager.currencyDelta(address(this), key.currency1));
-
-            key.currency1.take(poolManager, address(this), token1, false);
-            updatePosition(feeAmount, token1, token0, !isInvertedPool, sqrtPrice);
-            if (address(WETH9) != address(0)) WETH9.withdraw(token0);
-            key.currency0.settle(poolManager, address(this), token0, false);
-        }
-    }
-
-    function updatePosition(uint256 feeAmount, uint256 tokenIn, uint256 tokenOut, bool up, uint160 sqrtPrice) internal {
-        uint256 protocolFeeAmount = protocolFee == 0 ? 0 : mul18(feeAmount, protocolFee);
-        if (up) {
-            accumulatedFeeB += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceUp((tokenIn - protocolFeeAmount), tokenOut, sqrtPrice);
-        } else {
-            accumulatedFeeQ += protocolFeeAmount;
-            positionManager.positionAdjustmentPriceDown(tokenOut, (tokenIn - protocolFeeAmount), sqrtPrice);
-        }
-    }
-
-    function checkSwapDeviations(uint256 sqrtPriceNext) internal view {
-        uint256 sqrtPriceAtLastRebalance = rebalanceAdapter.sqrtPriceAtLastRebalance();
-        uint256 priceThreshold = div18(sqrtPriceNext, sqrtPriceAtLastRebalance);
-        if (priceThreshold < WAD) priceThreshold = div18(sqrtPriceAtLastRebalance, sqrtPriceNext);
-        if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
-    }
-
     // ** Math functions
 
     function TVL(uint256 price) public view returns (uint256) {
@@ -311,10 +185,10 @@ contract ALM is BaseStrategyHook, ERC20, ReentrancyGuard {
     // ** Helpers
 
     function getBalanceBase() internal view returns (uint256) {
-        return BASE.balanceOf(address(this)) - accumulatedFeeB;
+        return BASE.balanceOf(address(this));
     }
 
     function getBalanceQuote() internal view returns (uint256) {
-        return QUOTE.balanceOf(address(this)) - accumulatedFeeQ;
+        return QUOTE.balanceOf(address(this));
     }
 }

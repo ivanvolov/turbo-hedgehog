@@ -12,6 +12,7 @@ import {LPFeeLibrary} from "v4-core/libraries/LPFeeLibrary.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 
 // ** contracts
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {TestBaseUniswap} from "./TestBaseUniswap.sol";
 import {ALM} from "@src/ALM.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
@@ -40,7 +41,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         positionManager = IPositionManagerStandard(address(_positionManager));
     }
 
-    function deploy_hook_contract(bool _isInvertedAssets, IWETH9 _isNTS) internal {
+    function deploy_hook_contract(IWETH9 WETH9_or_zero) internal {
         address payable hookAddress = create_address_without_collision();
         (address currency0, address currency1) = getHookCurrenciesInOrder();
 
@@ -53,11 +54,11 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         );
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
-            "ALM.sol",
-            abi.encode(BASE, QUOTE, _isNTS, isInvertedPool, _isInvertedAssets, manager, "NAME", "SYMBOL"),
+            "BaseStrategyHook.sol",
+            abi.encode(BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager),
             hookAddress
         );
-        hook = ALM(hookAddress);
+        hook = BaseStrategyHook(hookAddress);
         vm.label(address(hook), "hook");
     }
 
@@ -89,6 +90,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     function _setComponents(address module) internal {
         IBase(module).setComponents(
+            alm,
             hook,
             lendingAdapter,
             flashLoanAdapter,
@@ -143,8 +145,8 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     function approve_accounts() public virtual {
         vm.startPrank(alice.addr);
-        BASE.forceApprove(address(hook), type(uint256).max);
-        QUOTE.forceApprove(address(hook), type(uint256).max);
+        BASE.forceApprove(address(alm), type(uint256).max);
+        QUOTE.forceApprove(address(alm), type(uint256).max);
         vm.stopPrank();
     }
 
@@ -152,42 +154,20 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
 
     function updateProtocolFees(uint256 _protocolFee) internal {
         (int24 lower, int24 upper) = hook.tickDeltas();
-        hook.setProtocolParams(
-            hook.liquidityMultiplier(),
-            _protocolFee,
-            hook.tvlCap(),
-            lower,
-            upper,
-            hook.swapPriceThreshold()
-        );
+        hook.setProtocolParams(hook.liquidityMultiplier(), _protocolFee, lower, upper, hook.swapPriceThreshold());
     }
 
     function updateProtocolTVLCap(uint256 _tvlCap) internal {
-        (int24 lower, int24 upper) = hook.tickDeltas();
-        hook.setProtocolParams(
-            hook.liquidityMultiplier(),
-            hook.protocolFee(),
-            _tvlCap,
-            lower,
-            upper,
-            hook.swapPriceThreshold()
-        );
+        alm.setTVLCap(_tvlCap);
     }
 
     function updateProtocolPriceThreshold(uint256 _swapPriceThreshold) internal {
         (int24 lower, int24 upper) = hook.tickDeltas();
-        hook.setProtocolParams(
-            hook.liquidityMultiplier(),
-            hook.protocolFee(),
-            hook.tvlCap(),
-            lower,
-            upper,
-            _swapPriceThreshold
-        );
+        hook.setProtocolParams(hook.liquidityMultiplier(), hook.protocolFee(), lower, upper, _swapPriceThreshold);
     }
 
     function setProtocolStatus(uint8 _status) internal {
         vm.prank(deployer.addr);
-        hook.setStatus(_status);
+        alm.setStatus(_status);
     }
 }

@@ -25,6 +25,7 @@ import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {MorphoLendingAdapter} from "@src/core/lendingAdapters/MorphoLendingAdapter.sol";
 import {MorphoFlashLoanAdapter} from "@src/core/flashLoanAdapters/MorphoFlashLoanAdapter.sol";
@@ -63,7 +64,8 @@ contract DeployALM {
     IV4Quoter quoter;
 
     // ** Deployed contracts
-    ALM hook;
+    ALM alm;
+    BaseStrategyHook hook;
     address hookAddress;
     PoolKey key;
     SRebalanceAdapter rebalanceAdapter;
@@ -110,17 +112,16 @@ contract DeployALM {
     IrEUL rEUL;
 
     function deploy_and_init_hook() internal {
+        // ** main parts
+        alm = new ALM(BASE, QUOTE, isInvertedAssets, "NAME", "SYMBOL");
+        alm.setTVLCap(tvlCap);
         deploy_hook_contract();
+
+        // ** adapters
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, universalRouter, manager, PERMIT_2, WETH9);
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, isInvertedAssets, isNova);
-        // hook.setProtocolParams(
-        //     liquidityMultiplier,
-        //     protocolFee,
-        //     tvlCap,
-        //     tickLowerDelta,
-        //     tickUpperDelta,
-        //     swapPriceThreshold
-        // );
+        hook.setProtocolParams(liquidityMultiplier, protocolFee, tickLowerDelta, tickUpperDelta, swapPriceThreshold);
+        // _setComponents(address(alm));
         // _setComponents(address(hook));
         // _setComponents(address(lendingAdapter));
         // _setComponents(address(flashLoanAdapter));
@@ -129,29 +130,28 @@ contract DeployALM {
         // _setComponents(address(rebalanceAdapter));
         // rebalanceAdapter.setRebalanceOperator(address(this));
         // rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
+
+        // ** initialize pool
         // manager.initialize(key, initialSQRTPrice);
     }
 
     address constant CREATE2_DEPLOYER = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
 
     function deploy_hook_contract() internal returns (bytes32 salt) {
-        bytes memory constructorArgs = abi.encode(
-            BASE,
-            QUOTE,
-            IS_NTS ? WETH9 : TestLib.ZERO_WETH9,
-            isInvertedPool,
-            isInvertedAssets,
-            manager,
-            TOKEN_NAME,
-            TOKEN_SYMBOL
-        );
+        IWETH9 WETH9_or_zero = IS_NTS ? WETH9 : TestLib.ZERO_WETH9;
+        bytes memory constructorArgs = abi.encode(BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager);
         uint160 flags = uint160(
             Hooks.BEFORE_SWAP_FLAG |
                 Hooks.AFTER_SWAP_FLAG |
                 Hooks.BEFORE_ADD_LIQUIDITY_FLAG |
                 Hooks.AFTER_INITIALIZE_FLAG
         );
-        (hookAddress, salt) = HookMiner.find(CREATE2_DEPLOYER, flags, type(ALM).creationCode, constructorArgs);
+        (hookAddress, salt) = HookMiner.find(
+            CREATE2_DEPLOYER,
+            flags,
+            type(BaseStrategyHook).creationCode,
+            constructorArgs
+        );
 
         (address currency0, address currency1) = getHookCurrenciesInOrder();
         key = PoolKey(
@@ -161,16 +161,7 @@ contract DeployALM {
             1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
-        hook = new ALM{salt: salt}(
-            BASE,
-            QUOTE,
-            IS_NTS ? WETH9 : TestLib.ZERO_WETH9,
-            isInvertedPool,
-            isInvertedAssets,
-            manager,
-            TOKEN_NAME,
-            TOKEN_SYMBOL
-        );
+        hook = new BaseStrategyHook{salt: salt}(BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager);
         require(address(hook) == hookAddress, "PointsHookScript: hook address mismatch");
     }
 
@@ -216,6 +207,7 @@ contract DeployALM {
 
     function _setComponents(address module) internal {
         IBase(module).setComponents(
+            alm,
             hook,
             lendingAdapter,
             flashLoanAdapter,
