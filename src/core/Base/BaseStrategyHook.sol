@@ -24,8 +24,8 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {mulDiv18 as mul18} from "@prb-math/Common.sol";
 
 // ** libraries
 import {ALMMathLib, WAD, div18} from "../../libraries/ALMMathLib.sol";
