@@ -68,12 +68,13 @@ contract BaseStrategyHook is BaseHook, Base, ReentrancyGuard, IBaseStrategyHook 
     uint24 public nextLPFee;
 
     constructor(
+        address _owner,
         IERC20 _base,
         IERC20 _quote,
         IWETH9 _WETH9,
         bool _isInvertedPool,
         IPoolManager _poolManager
-    ) BaseHook(_poolManager) Base(ComponentType.HOOK, msg.sender, _base, _quote) {
+    ) BaseHook(_poolManager) Base(ComponentType.HOOK, _owner, _base, _quote) {
         WETH9 = _WETH9;
         isInvertedPool = _isInvertedPool;
     }

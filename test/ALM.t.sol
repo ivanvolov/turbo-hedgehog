@@ -93,7 +93,11 @@ contract General_ALMTest is ALMTestBase {
                 1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
                 IHooks(hookAddress)
             );
-            deployCodeTo("BaseStrategyHook.sol", abi.encode(BASE, QUOTE, WETH9, isInvertedPool, manager), hookAddress);
+            deployCodeTo(
+                "BaseStrategyHook.sol",
+                abi.encode(deployer.addr, BASE, QUOTE, WETH9, isInvertedPool, manager),
+                hookAddress
+            );
             hook = BaseStrategyHook(hookAddress);
             vm.label(address(hook), "hook");
             _setComponents(address(alm));

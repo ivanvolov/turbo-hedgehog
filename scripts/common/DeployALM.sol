@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "forge-std/Script.sol";
 import "forge-std/console.sol";
 
 // ** external imports
@@ -35,6 +36,7 @@ import {Oracle} from "@src/core/oracles/Oracle.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
+import {TestFeed} from "@test/simulations/TestFeed.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
@@ -52,8 +54,9 @@ import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
 
-contract DeployALM {
+contract DeployALM is Script {
     uint256 deployerKey;
+    address deployerAddress;
 
     // ** Network specific constants
     IERC20 ETH = IERC20(address(0));
@@ -113,33 +116,38 @@ contract DeployALM {
 
     function deploy_and_init_hook() internal {
         // ** main parts
+        vm.startBroadcast(deployerKey);
         alm = new ALM(BASE, QUOTE, isInvertedAssets, "NAME", "SYMBOL");
         alm.setTVLCap(tvlCap);
+        vm.stopBroadcast();
+
         deploy_hook_contract();
 
+        vm.startBroadcast(deployerKey);
         // ** adapters
         swapAdapter = new UniswapSwapAdapter(BASE, QUOTE, universalRouter, manager, PERMIT_2, WETH9);
         rebalanceAdapter = new SRebalanceAdapter(BASE, QUOTE, isInvertedAssets, isNova);
+        _setComponents(address(alm));
+        _setComponents(address(hook));
+        _setComponents(address(lendingAdapter));
+        _setComponents(address(flashLoanAdapter));
+        _setComponents(address(positionManager));
+        _setComponents(address(swapAdapter));
+        _setComponents(address(rebalanceAdapter));
         hook.setProtocolParams(liquidityMultiplier, protocolFee, tickLowerDelta, tickUpperDelta, swapPriceThreshold);
-        // _setComponents(address(alm));
-        // _setComponents(address(hook));
-        // _setComponents(address(lendingAdapter));
-        // _setComponents(address(flashLoanAdapter));
-        // _setComponents(address(positionManager));
-        // _setComponents(address(swapAdapter));
-        // _setComponents(address(rebalanceAdapter));
-        // rebalanceAdapter.setRebalanceOperator(address(this));
-        // rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
+        rebalanceAdapter.setRebalanceOperator(address(this));
+        rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
 
         // ** initialize pool
-        // manager.initialize(key, initialSQRTPrice);
+        manager.initialize(key, initialSQRTPrice);
+        vm.stopBroadcast();
     }
 
     address constant CREATE2_DEPLOYER = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
 
     function deploy_hook_contract() internal returns (bytes32 salt) {
         IWETH9 WETH9_or_zero = IS_NTS ? WETH9 : TestLib.ZERO_WETH9;
-        bytes memory constructorArgs = abi.encode(BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager);
+        bytes memory constructorArgs = abi.encode(deployerAddress, BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager);
         uint160 flags = uint160(
             Hooks.BEFORE_SWAP_FLAG |
                 Hooks.AFTER_SWAP_FLAG |
@@ -161,7 +169,9 @@ contract DeployALM {
             1, // The value of tickSpacing doesn't change with dynamic fees, so it does matter.
             IHooks(hookAddress)
         );
-        hook = new BaseStrategyHook{salt: salt}(BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager);
+        vm.startBroadcast(deployerKey);
+        hook = new BaseStrategyHook{salt: salt}(deployerAddress, BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager);
+        vm.stopBroadcast();
         require(address(hook) == hookAddress, "PointsHookScript: hook address mismatch");
     }
 
@@ -193,8 +203,13 @@ contract DeployALM {
         );
     }
 
+    TestFeed feed0;
+    TestFeed feed1;
     function deploy_oracle() internal {
-        oracle = new Oracle(feedB, feedQ, isInvertedPoolInOracle, decimalsDelta);
+        feed0 = new TestFeed(999800000000000000, 18);
+        feed1 = new TestFeed(4277964584225000000000, 18);
+
+        oracle = new Oracle(feed0, feed1, isInvertedPoolInOracle, decimalsDelta);
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/Script.sol";
-
 // ** external imports
 import {Constants} from "v4-core-test/utils/Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,9 +12,10 @@ import {DeployALM} from "./common/DeployALM.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
-contract DeployALMAnvil is DeployALM, Script {
+contract DeployALMAnvil is DeployALM {
     function setUp() public {
         deployerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY");
+        deployerAddress = vm.addr(deployerKey);
         setup_network_specific_addresses();
         setup_strategy_params();
         setup_adapters_params();
@@ -24,15 +23,13 @@ contract DeployALMAnvil is DeployALM, Script {
 
     function run() external {
         vm.startBroadcast(deployerKey);
-
         deploy_fl_adapter_morpho();
         deploy_lending_adapter_euler();
         deploy_oracle();
         deploy_position_manager();
+        vm.stopBroadcast();
 
         deploy_and_init_hook();
-
-        vm.stopBroadcast();
     }
 
     function setup_network_specific_addresses() internal {
