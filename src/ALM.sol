@@ -20,7 +20,7 @@ import {IALM} from "./interfaces/IALM.sol";
 /// @title Automated Liquidity Manager
 /// @author Ivan Volovyk <https://github.com/ivanvolov>
 /// @custom:contact ivan@lumis.fi
-/// @notice The main contract that handles deposit and withdraw flow.
+/// @notice The main contract that handles the deposit and withdrawal flow.
 contract ALM is Base, ERC20, ReentrancyGuard, IALM {
     using SafeERC20 for IERC20;
 
