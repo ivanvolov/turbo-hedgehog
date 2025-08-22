@@ -25,7 +25,7 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** contracts
 import {ERC20} from "@openzeppelin/token/ERC20/ERC20.sol";
-import {ALM} from "@src/ALM.sol";
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 
 contract ALMControl is BaseHook, ERC20 {
     using CurrencySettler for Currency;
@@ -33,17 +33,17 @@ contract ALMControl is BaseHook, ERC20 {
     using StateLibrary for IPoolManager;
     using PRBMathUD60x18 for uint256;
 
-    ALM alm;
+    BaseStrategyHook hook;
 
     PoolKey key;
 
     int24 public tickLower;
     int24 public tickUpper;
 
-    constructor(IPoolManager _manager, ALM _alm) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
-        alm = _alm;
+    constructor(IPoolManager _manager, BaseStrategyHook _hook) BaseHook(_manager) ERC20("ALMControl", "hhALMControl") {
+        hook = _hook;
 
-        (int24 _tickLower, int24 _tickUpper) = alm.activeTicks();
+        (int24 _tickLower, int24 _tickUpper) = hook.activeTicks();
         tickLower = TestLib.nearestUsableTick(_tickLower, 2);
         tickUpper = TestLib.nearestUsableTick(_tickUpper, 2);
     }
@@ -69,7 +69,7 @@ contract ALMControl is BaseHook, ERC20 {
         key.currency0.transfer(msg.sender, key.currency0.balanceOf(address(this)));
         key.currency1.transfer(msg.sender, key.currency1.balanceOf(address(this)));
 
-        (int24 _tickLower, int24 _tickUpper) = alm.activeTicks();
+        (int24 _tickLower, int24 _tickUpper) = hook.activeTicks();
         tickLower = TestLib.nearestUsableTick(_tickLower, 2);
         tickUpper = TestLib.nearestUsableTick(_tickUpper, 2);
 
@@ -208,7 +208,7 @@ contract ALMControl is BaseHook, ERC20 {
     }
 
     function TVL(uint256 amount0, uint256 amount1) public view returns (uint256) {
-        return amount1 + (amount0 * 1e30) / alm.oracle().price();
+        return amount1 + (amount0 * 1e30) / hook.oracle().price();
     }
 
     function getUniswapPositionAmounts() public view returns (uint256, uint256) {

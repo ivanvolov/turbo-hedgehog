@@ -170,7 +170,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         (uint256 currentPrice, uint160 currentSqrtPrice) = oracle.poolPrice();
         (bool isRebalance, uint256 priceThreshold, uint256 auctionTriggerTime) = isRebalanceNeeded(currentPrice);
         if (!isRebalance) revert RebalanceConditionNotMet();
-        alm.refreshReservesAndTransferFees();
+        hook.refreshReservesAndTransferFees();
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = calcFlashLoanParams(WAD + slippage, currentPrice);
 
@@ -197,7 +197,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         sqrtPriceAtLastRebalance = currentSqrtPrice;
         timeAtLastRebalance = block.timestamp;
 
-        uint128 liquidity = alm.updateLiquidityAndBoundaries(currentSqrtPrice);
+        uint128 liquidity = hook.updateLiquidityAndBoundaries(currentSqrtPrice);
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);
     }
 

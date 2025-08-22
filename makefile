@@ -168,6 +168,8 @@ viz_data:
 
 build:
 	clear && forge clean && forge build
+builds:
+	clear && forge clean && forge build --sizes
 
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
@@ -189,3 +191,11 @@ gas_r:
 	clear && forge test -vv --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"
 gas_s:
 	clear && forge snapshot --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"
+
+# Deploy
+
+run_unichain_copy:
+	clear && anvil --fork-block-number 25114133 --fork-url https://unichain-mainnet.g.alchemy.com/v2/38A3rlBUZpErpHxQnoZlEhpRHSu4a7VB
+
+deploy_anvil:
+	clear && forge script scripts/Deploy.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545

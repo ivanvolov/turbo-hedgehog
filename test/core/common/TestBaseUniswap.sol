@@ -19,6 +19,7 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 
 // ** contracts
+import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {TestBaseAsserts} from "@test/core/common/TestBaseAsserts.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
 import {Oracle} from "@src/core/oracles/Oracle.sol";
@@ -160,10 +161,10 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         setV3PoolPrice(newSqrtPrice);
     }
 
-    function alignOraclesAndPoolsV4(ALM _hook, PoolKey memory _poolKey) public {
+    function alignOraclesAndPoolsV4(BaseStrategyHook _hook, PoolKey memory _poolKey) public {
         console.log("_alignOraclesAndPoolsV4");
         alignOracles(_hook.sqrtPriceCurrent());
-        uint160 targetSqrtPriceX96 = hook.sqrtPriceCurrent();
+        uint160 targetSqrtPriceX96 = _hook.sqrtPriceCurrent();
         setV4PoolPrice(_poolKey, targetSqrtPriceX96);
     }
 

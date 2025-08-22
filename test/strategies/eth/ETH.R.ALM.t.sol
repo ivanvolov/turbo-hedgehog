@@ -65,7 +65,7 @@ contract ETH_R_ALMTest is ALMTestBase {
     }
 
     function test_setUp() public view {
-        assertEq(hook.owner(), deployer.addr);
+        assertEq(alm.owner(), deployer.addr);
         assertTicks(-200488, -194488);
     }
 
@@ -77,12 +77,13 @@ contract ETH_R_ALMTest is ALMTestBase {
 
         deal(address(WETH), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
-        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
+        uint256 shares = alm.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1e1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
+        assertEq(alm.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEqProtocolState(initialSQRTPrice, amountToDep);
@@ -95,6 +96,7 @@ contract ETH_R_ALMTest is ALMTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         assertTicks(-197461 - 3000, -197461 + 3000);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 4086015488547314315014353, 1, "sqrtPrice");
@@ -146,10 +148,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
-
-            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
+            assertApproxEqAbs(BASE.balanceOf(address(hook)), treasuryFeeB, 1, "treasuryFee");
 
             assertEqPositionState(
                 CL - (deltaWETH * k1) / 1e18,
@@ -189,10 +188,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
-
-            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 1, "treasuryFee");
+            assertApproxEqAbs(BASE.balanceOf(address(hook)), treasuryFeeB, 1, "treasuryFee");
 
             assertEqPositionState(
                 CL - (deltaWETH * k1) / 1e18,
@@ -234,10 +230,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             treasuryFeeQ += deltaTreasuryFee;
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 2, "treasuryFee");
-
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
+            assertApproxEqAbs(QUOTE.balanceOf(address(hook)), treasuryFeeQ, 2, "treasuryFee");
 
             assertEqPositionState(
                 CL + ((deltaWETH - deltaTreasuryFee) * k1) / 1e18,
@@ -252,9 +245,9 @@ contract ETH_R_ALMTest is ALMTestBase {
 
         // ** Withdraw
         {
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
 
@@ -288,10 +281,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
-
-            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
+            assertApproxEqAbs(BASE.balanceOf(address(hook)), treasuryFeeB, 2, "treasuryFee");
 
             assertEqPositionState(
                 CL - (deltaWETH * k1) / 1e18,
@@ -309,7 +299,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             uint256 _amountToDep = 200 ether;
             deal(address(WETH), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep, 0);
+            alm.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Up In
@@ -342,10 +332,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             console.log("deltaTreasuryFee %s", deltaTreasuryFee);
 
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
-            console.log("accumulatedFeeB %s", hook.accumulatedFeeB());
-            console.log("accumulatedFeeQ %s", hook.accumulatedFeeQ());
-
-            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 2, "treasuryFee");
+            assertApproxEqAbs(BASE.balanceOf(address(hook)), treasuryFeeB, 2, "treasuryFee");
 
             assertEqPositionState(
                 CL - (deltaWETH * k1) / 1e18,
@@ -383,7 +370,7 @@ contract ETH_R_ALMTest is ALMTestBase {
             uint256 deltaTreasuryFeeB = (deltaUSDT * testFee * hook.protocolFee()) / 1e36;
             treasuryFeeB += deltaTreasuryFeeB;
 
-            assertApproxEqAbs(hook.accumulatedFeeQ(), treasuryFeeQ, 3, "treasuryFee");
+            assertApproxEqAbs(QUOTE.balanceOf(address(hook)), treasuryFeeQ, 3, "treasuryFee");
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
             assertEqPositionState(
@@ -430,7 +417,7 @@ contract ETH_R_ALMTest is ALMTestBase {
 
             console.log("deltaTreasuryFeeQ %s", deltaTreasuryFeeQ);
 
-            assertApproxEqAbs(hook.accumulatedFeeB(), treasuryFeeB, 3, "treasuryFee");
+            assertApproxEqAbs(BASE.balanceOf(address(hook)), treasuryFeeB, 3, "treasuryFee");
             assertEqBalanceState(address(hook), treasuryFeeQ, treasuryFeeB);
 
             assertEqPositionState(
@@ -445,11 +432,15 @@ contract ETH_R_ALMTest is ALMTestBase {
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Rebalance
-        uint256 preRebalanceTVL = calcTVL();
-        vm.prank(deployer.addr);
-        rebalanceAdapter.rebalance(slippage);
-        _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage * 2);
+        {
+            uint256 preRebalanceTVL = calcTVL();
+            vm.prank(deployer.addr);
+            rebalanceAdapter.rebalance(slippage);
+            _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
+            assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage * 2);
+            assertEqBalanceState(treasury.addr, treasuryFeeQ, treasuryFeeB);
+            assertEqBalanceStateZero(address(hook));
+        }
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
@@ -457,9 +448,9 @@ contract ETH_R_ALMTest is ALMTestBase {
         // ** Full withdraw
         {
             setProtocolStatus(2);
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
     }

@@ -71,7 +71,7 @@ contract UNICORD_ALMTest is ALMTestBase {
     }
 
     function test_setUp() public view {
-        assertEq(hook.owner(), deployer.addr);
+        assertEq(alm.owner(), deployer.addr);
         assertTicks(-99, 101);
     }
 
@@ -84,12 +84,13 @@ contract UNICORD_ALMTest is ALMTestBase {
         deal(address(USDT), address(alice.addr), amountToDep);
         vm.prank(alice.addr);
 
-        uint256 shares = hook.deposit(alice.addr, amountToDep, 0);
+        uint256 shares = alm.deposit(alice.addr, amountToDep, 0);
 
         assertApproxEqAbs(shares, amountToDep, 1);
-        assertEq(hook.balanceOf(alice.addr), shares, "shares on user");
+        assertEq(alm.balanceOf(alice.addr), shares, "shares on user");
         assertEqBalanceStateZero(alice.addr);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(amountToDep, 0, 0, 0);
         assertEqProtocolState(initialSQRTPrice, 99999999999);
@@ -99,9 +100,9 @@ contract UNICORD_ALMTest is ALMTestBase {
     function test_deposit_withdraw() public {
         test_deposit();
 
-        uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+        uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
         vm.prank(alice.addr);
-        hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+        alm.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
     }
 
     function test_deposit_rebalance() public {
@@ -110,6 +111,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         vm.prank(deployer.addr);
         rebalanceAdapter.rebalance(slippage);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
         assertTicks(-98, 102);
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 79238983412918441966270215824, 1e1, "sqrtPrice");
     }
@@ -131,6 +133,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(32312602163, 67734162297, 0, 0);
         assertEqProtocolState(78957152480392665472826686309, 100065267844);
@@ -156,6 +159,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         assertBalanceNotChanged(address(manager), 1e1);
         assertEqBalanceState(swapper.addr, deltaUSDT, 0);
         assertEqBalanceStateZero(address(hook));
+        assertEqBalanceStateZero(address(alm));
 
         assertEqPositionState(32253816633, 67793352762, 0, 0);
         assertEqProtocolState(78956223751810304282634447090, 100065688948);
@@ -391,20 +395,20 @@ contract UNICORD_ALMTest is ALMTestBase {
 
         // ** Withdraw
         {
-            console.log("shares before withdraw %s", hook.totalSupply());
-            console.log("tvl pre %s", hook.TVL(oracle.price()));
+            console.log("shares before withdraw %s", alm.totalSupply());
+            console.log("tvl pre %s", alm.TVL(oracle.price()));
 
             console.log("CL pre %s", lendingAdapter.getCollateralLong());
             console.log("CS pre %s", lendingAdapter.getCollateralShort());
             console.log("DL pre %s", lendingAdapter.getBorrowedLong());
             console.log("DS pre %s", lendingAdapter.getBorrowedShort());
 
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw / 2, 0, 0);
 
-            console.log("shares after withdraw %s", hook.totalSupply());
-            console.log("tvl after %s", hook.TVL(oracle.price()));
+            console.log("shares after withdraw %s", alm.totalSupply());
+            console.log("tvl after %s", alm.TVL(oracle.price()));
 
             console.log("CL after %s", lendingAdapter.getCollateralLong());
             console.log("CS after %s", lendingAdapter.getCollateralShort());
@@ -436,7 +440,7 @@ contract UNICORD_ALMTest is ALMTestBase {
             uint256 _amountToDep = 100000e6; //100k USDC
             deal(address(USDT), address(alice.addr), _amountToDep);
             vm.prank(alice.addr);
-            hook.deposit(alice.addr, _amountToDep, 0);
+            alm.deposit(alice.addr, _amountToDep, 0);
         }
 
         // ** Swap Down In
@@ -473,7 +477,7 @@ contract UNICORD_ALMTest is ALMTestBase {
 
         // ** Rebalance
         {
-            uint256 preRebalanceTVL = hook.TVL(oracle.price());
+            uint256 preRebalanceTVL = alm.TVL(oracle.price());
             vm.prank(deployer.addr);
             rebalanceAdapter.rebalance(slippage);
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
@@ -503,9 +507,9 @@ contract UNICORD_ALMTest is ALMTestBase {
         // ** Full withdraw
         {
             setProtocolStatus(2);
-            uint256 sharesToWithdraw = hook.balanceOf(alice.addr);
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
             vm.prank(alice.addr);
-            hook.withdraw(alice.addr, sharesToWithdraw, 0, 0);
+            alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
         }
     }
 

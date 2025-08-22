@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** interfaces
 import {IALM} from "../../interfaces/IALM.sol";
+import {IBaseStrategyHook} from "../../interfaces/IBaseStrategyHook.sol";
 import {ILendingAdapter} from "../../interfaces/ILendingAdapter.sol";
 import {IFlashLoanAdapter} from "../../interfaces/IFlashLoanAdapter.sol";
 import {IPositionManager} from "../../interfaces/IPositionManager.sol";
@@ -22,6 +23,7 @@ abstract contract Base is IBase {
 
     enum ComponentType {
         ALM,
+        HOOK,
         REBALANCE_ADAPTER,
         POSITION_MANAGER,
         EXTERNAL_ADAPTER
@@ -34,6 +36,7 @@ abstract contract Base is IBase {
     IERC20 public immutable QUOTE;
 
     IALM public alm;
+    IBaseStrategyHook public hook;
     ILendingAdapter public lendingAdapter;
     IFlashLoanAdapter public flashLoanAdapter;
     IPositionManager public positionManager;
@@ -52,6 +55,7 @@ abstract contract Base is IBase {
 
     function setComponents(
         IALM _alm,
+        IBaseStrategyHook _hook,
         ILendingAdapter _lendingAdapter,
         IFlashLoanAdapter _flashLoanAdapter,
         IPositionManager _positionManager,
@@ -59,17 +63,20 @@ abstract contract Base is IBase {
         IRebalanceAdapter _rebalanceAdapter,
         ISwapAdapter _swapAdapter
     ) external onlyOwner {
-        alm = IALM(_alm);
-        oracle = IOracle(_oracle);
-        rebalanceAdapter = IRebalanceAdapter(_rebalanceAdapter);
+        alm = _alm;
+        hook = _hook;
+        oracle = _oracle;
+        rebalanceAdapter = _rebalanceAdapter;
 
         if (componentType == ComponentType.POSITION_MANAGER) {
             switchApproval(address(lendingAdapter), address(_lendingAdapter));
+        } else if (componentType == ComponentType.HOOK) {
+            switchApproval(address(lendingAdapter), address(_lendingAdapter));
+            switchApproval(address(positionManager), address(_positionManager));
         } else if (componentType == ComponentType.ALM || componentType == ComponentType.REBALANCE_ADAPTER) {
             switchApproval(address(lendingAdapter), address(_lendingAdapter));
             switchApproval(address(flashLoanAdapter), address(_flashLoanAdapter));
             switchApproval(address(swapAdapter), address(_swapAdapter));
-            if (componentType == ComponentType.ALM) switchApproval(address(positionManager), address(_positionManager));
         }
 
         lendingAdapter = _lendingAdapter;
@@ -109,6 +116,11 @@ abstract contract Base is IBase {
         _;
     }
 
+    modifier onlyHook() {
+        if (msg.sender != address(hook)) revert NotHook(msg.sender);
+        _;
+    }
+
     /// @dev Only the rebalance adapter may call this function.
     modifier onlyRebalanceAdapter() {
         if (msg.sender != address(rebalanceAdapter)) revert NotRebalanceAdapter(msg.sender);
@@ -125,6 +137,7 @@ abstract contract Base is IBase {
     modifier onlyModule() {
         if (
             msg.sender != address(alm) &&
+            msg.sender != address(hook) &&
             msg.sender != address(rebalanceAdapter) &&
             msg.sender != address(positionManager)
         ) revert NotModule(msg.sender);

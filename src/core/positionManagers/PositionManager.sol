@@ -40,8 +40,8 @@ contract PositionManager is Base, IPositionManager {
         uint256 deltaBase,
         uint256 deltaQuote,
         uint160 sqrtPrice
-    ) external onlyALM onlyActive {
-        BASE.safeTransferFrom(address(alm), address(this), deltaBase);
+    ) external onlyHook onlyActive {
+        BASE.safeTransferFrom(address(hook), address(this), deltaBase);
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
 
@@ -52,15 +52,15 @@ contract PositionManager is Base, IPositionManager {
         lendingAdapter.updatePosition(SafeCast.toInt256(updateAmount), 0, -SafeCast.toInt256(deltaBase), 0);
         if (k != WAD) lendingAdapter.repayShort(updateAmount - deltaQuote);
 
-        QUOTE.safeTransfer(address(alm), deltaQuote);
+        QUOTE.safeTransfer(address(hook), deltaQuote);
     }
 
     function positionAdjustmentPriceDown(
         uint256 deltaBase,
         uint256 deltaQuote,
         uint160 sqrtPrice
-    ) external onlyALM onlyActive {
-        QUOTE.safeTransferFrom(address(alm), address(this), deltaQuote);
+    ) external onlyHook onlyActive {
+        QUOTE.safeTransferFrom(address(hook), address(this), deltaQuote);
 
         uint256 k = sqrtPrice >= rebalanceAdapter.sqrtPriceAtLastRebalance() ? k2 : k1;
 
@@ -75,6 +75,6 @@ contract PositionManager is Base, IPositionManager {
         }
         lendingAdapter.borrowLong(deltaBase);
 
-        BASE.safeTransfer(address(alm), deltaBase);
+        BASE.safeTransfer(address(hook), deltaBase);
     }
 }

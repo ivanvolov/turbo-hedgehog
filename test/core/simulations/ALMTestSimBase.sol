@@ -161,7 +161,7 @@ abstract contract ALMTestSimBase is ALMTestBase {
 
         uint256 tvl = calcTVL();
         uint256 tvlControl = hookControl.TVL();
-        uint256 sharePrice = calcSharePrice(hook.totalSupply(), tvl);
+        uint256 sharePrice = calcSharePrice(alm.totalSupply(), tvl);
         uint256 sharePriceControl = hookControl.sharePrice();
         (uint160 sqrtPriceX96Control, ) = hookControl.getTick();
         bytes memory packedData = abi.encodePacked(
