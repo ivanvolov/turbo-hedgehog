@@ -8,7 +8,7 @@ import {TestOracle} from "@test/simulations/TestOracle.sol";
 
 contract DeployOracleSimulation is Script {
     function run() external {
-        uint256 deployerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY");
+        uint256 deployerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_DEPLOYER");
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerKey);

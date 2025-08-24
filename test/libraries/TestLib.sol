@@ -67,6 +67,10 @@ library TestLib {
         }
     }
 
+    function absSub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a > b ? a - b : b - a;
+    }
+
     function divRound(int128 x, int128 y) internal pure returns (int128 result) {
         int128 quot = ABDKMath64x64.div(x, y);
         result = quot >> 64;

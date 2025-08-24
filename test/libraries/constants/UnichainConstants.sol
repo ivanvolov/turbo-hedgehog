@@ -41,7 +41,7 @@ library Constants {
     IrEUL constant rEUL = IrEUL(0x1b0e3Da51b2517E09aE74CD31b708e46B9158E8b); // https://docs.euler.finance/EUL/addresses
 
     IEulerVault constant eulerUSDCVault1 = IEulerVault(0x6eAe95ee783e4D862867C4e0E4c3f4B95AA682Ba); // https://app.euler.finance/?asset=USDT&network=unichain
-    IEulerVault constant eulerWETHVault1 = IEulerVault(0x1f3134C3f3f8AdD904B9635acBeFC0eA0D0E1ffC);
+    IEulerVault constant eulerWETHVault1 = IEulerVault(0x1f3134C3f3f8AdD904B9635acBeFC0eA0D0E1ffC); // https://app.euler.finance/vault/0x1f3134C3f3f8AdD904B9635acBeFC0eA0D0E1ffC?network=unichain
     IEulerVault constant eulerWSTETHVault1 = IEulerVault(0x54ff502df96CD9B9585094EaCd86AAfCe902d06A);
     IEulerVault constant eulerUSDTVault1 = IEulerVault(0xD49181c522eCDB265f0D9C175Cf26FFACE64eAD3);
     IEulerVault constant eulerWBTCVault1 = IEulerVault(0x5d2511C1EBc795F4394f7f659f693f8C15796485);

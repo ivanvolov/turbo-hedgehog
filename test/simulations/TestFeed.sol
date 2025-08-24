@@ -15,6 +15,10 @@ contract TestFeed is AggregatorV3Interface {
         decimals = _decimals;
     }
 
+    function updateFeed(uint256 _price) external {
+        price = _price;
+    }
+
     function latestRoundData()
         external
         view

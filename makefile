@@ -197,5 +197,14 @@ gas_s:
 run_unichain_copy:
 	clear && anvil --fork-block-number 25114133 --fork-url https://unichain-mainnet.g.alchemy.com/v2/38A3rlBUZpErpHxQnoZlEhpRHSu4a7VB
 
-deploy_anvil:
+deploy_on_anvil:
 	clear && forge script scripts/Deploy.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
+
+first_deposit_rebalance_anvil:
+	clear && forge script scripts/FD_R.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
+
+first_deposit_rebalance_anvill:
+	clear && forge script scripts/FD_R.ALM.ANVIL.s.sol -vvvvv --broadcast --rpc-url http://127.0.0.1:8545
+
+swap_anvil:
+	clear && forge script scripts/SWAP.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
