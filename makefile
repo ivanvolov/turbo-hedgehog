@@ -203,8 +203,11 @@ deploy_on_anvil:
 first_deposit_rebalance_anvil:
 	clear && forge script scripts/FD_R.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
 
-first_deposit_rebalance_anvill:
-	clear && forge script scripts/FD_R.ALM.ANVIL.s.sol -vvvvv --broadcast --rpc-url http://127.0.0.1:8545
-
 swap_anvil:
 	clear && forge script scripts/SWAP.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
+
+set_feed:
+	clear && forge script scripts/SET.PRICE.FEED.s.sol --broadcast --rpc-url http://127.0.0.1:8545
+
+mint_blocks:
+	clear && anvil --block-time 1

@@ -71,7 +71,7 @@ contract SwapDepositAndRebalanceALMAnvil is DeployUtils {
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.V4_SWAP))));
         swapCommands = bytes.concat(swapCommands, bytes(abi.encodePacked(uint8(Commands.SWEEP))));
 
-        uint256 deadline = block.timestamp + 10 minutes;
+        uint256 deadline = type(uint256).max; //block.timestamp + 10 minutes;
         if (isSendETHToRouter(zeroForOne)) universalRouter.execute{value: amount}(swapCommands, inputs, deadline);
         else universalRouter.execute(swapCommands, inputs, deadline);
     }
