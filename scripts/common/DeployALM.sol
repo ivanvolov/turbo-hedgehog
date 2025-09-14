@@ -152,11 +152,16 @@ contract DeployALM is DeployUtils {
     TestFeed feed0;
     TestFeed feed1;
 
-    function deploy_oracle() internal {
+    function deploy_oracle_with_test_feeds() internal {
         feed0 = new TestFeed(999800000000000000, 18);
         feed1 = new TestFeed(4277964584225000000000, 18);
 
         oracle = new Oracle(feed0, feed1, isInvertedPoolInOracle, decimalsDelta);
+        IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
+    }
+
+    function deploy_oracle() internal {
+        oracle = new Oracle(feedB, feedQ, isInvertedPoolInOracle, decimalsDelta);
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
 
@@ -165,5 +170,11 @@ contract DeployALM is DeployUtils {
         if (isNova) _positionManager = new UnicordPositionManager(BASE, QUOTE);
         else _positionManager = new PositionManager(BASE, QUOTE);
         positionManager = IPositionManagerStandard(address(_positionManager));
+    }
+
+    function dealETH(address to, uint256 amount) public {
+        uint256 testDeployerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_DEPLOYER");
+        vm.broadcast(testDeployerKey);
+        payable(to).transfer(amount);
     }
 }

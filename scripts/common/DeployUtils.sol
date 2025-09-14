@@ -171,7 +171,16 @@ contract DeployUtils is Script {
         depositorAddress = vm.addr(depositorKey);
     }
 
-    function saveComponentAddresses() internal {
+    function loadActorsUNI() internal {
+        deployerKey = vm.envUint("PROD_UNI_PRIVATE_KEY_DEPLOYER");
+        deployerAddress = vm.addr(deployerKey);
+        swapperKey = vm.envUint("PROD_UNI_PRIVATE_KEY_SWAPPER");
+        swapperAddress = vm.addr(swapperKey);
+        depositorKey = vm.envUint("PROD_UNI_PRIVATE_KEY_DEPOSITOR");
+        depositorAddress = vm.addr(depositorKey);
+    }
+
+    function saveComponentAddresses(bool isAnvilTestRun) internal {
         // Log deployed contract addresses
         console.log("\n=== Deployed Contract Addresses ===");
         console.log("ALM:                %s", address(alm));
@@ -194,8 +203,35 @@ contract DeployUtils is Script {
         string memory finalJson = vm.serializeAddress(json, "lendingAdapter", address(lendingAdapter));
 
         // Write to broadcast folder
-        string memory deploymentPath = "./broadcast/custom_anvil_broadcast.json";
+        string memory deploymentPath = isAnvilTestRun
+            ? "./broadcast/custom_anvil_broadcast.json"
+            : "./broadcast/custom_unichain_broadcast.json";
         vm.writeJson(finalJson, deploymentPath);
+    }
+
+    function saveOracleAddresses() internal {
+        console.log("\n=== Deployed Oracle Addresses ===");
+        console.log("Oracle:             %s", address(oracle));
+        console.log("===================================\n");
+
+        // Serialize addresses to JSON
+        string memory json = "deployments";
+        string memory finalJson = vm.serializeAddress(json, "oracle", address(oracle));
+
+        // Write to broadcast folder
+        string memory deploymentPath = "./broadcast/custom_unichain_oracle_broadcast.json";
+        vm.writeJson(finalJson, deploymentPath);
+    }
+
+    function loadOracleAddress() internal {
+        string memory deploymentPath = "./broadcast/custom_unichain_oracle_broadcast.json";
+        string memory json = vm.readFile(deploymentPath);
+
+        // Parse addresses from JSON
+        address oracleAddress = vm.parseJsonAddress(json, ".oracle");
+        console.log("oracleAddress %s", oracleAddress);
+
+        oracle = IOracle(oracleAddress);
     }
 
     function loadComponentAddresses() internal {

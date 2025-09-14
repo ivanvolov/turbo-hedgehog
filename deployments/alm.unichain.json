@@ -1,0 +1,8 @@
+{
+  "alms": [
+    {
+      "description": "Alm for ETH/USDC to test before real deployment",
+      "oracle": "0x21e0E87467A9629b35FaB45734d7E0a645931f09"
+    }
+  ]
+}

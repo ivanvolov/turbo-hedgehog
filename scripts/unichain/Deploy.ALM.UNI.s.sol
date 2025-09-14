@@ -9,20 +9,24 @@ import {Constants} from "v4-core-test/utils/Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** contracts
-import {DeployALM} from "./common/DeployALM.sol";
+import {DeployALM} from "../common/DeployALM.sol";
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
-contract DeployALMAnvil is DeployALM {
+// ** interfaces
+import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
+
+contract DeployALMUNI is DeployALM {
     PoolKey public ETH_USDC_key_unichain;
 
     function setUp() public {
-        loadActorsAnvil();
+        loadActorsUNI();
         setup_network_specific_addresses_unichain();
         setup_strategy_params();
         setup_adapters_params();
+        loadOracleAddress();
 
         ETH_USDC_key_unichain = getAndCheckPoolKey(
             ETH,
@@ -33,54 +37,42 @@ contract DeployALMAnvil is DeployALM {
         );
     }
 
-    function run() external {
-        // ** Deploy adapters
-        {
-            vm.startBroadcast(deployerKey);
-            deploy_fl_adapter_morpho();
-            deploy_lending_adapter_euler();
-            deploy_oracle();
-            deploy_position_manager();
-            vm.stopBroadcast();
+    function run(bool isAnvilTestRun) external {
+        if (isAnvilTestRun) {
+            console.log("Is in anvil test run");
+            // dealETH(deployerAddress, 10 ether);
         }
 
-        deploy_and_init_hook();
+        // // ** Deploy adapters
+        // {
+        //     vm.startBroadcast(deployerKey);
+        //     deploy_fl_adapter_morpho();
+        //     deploy_lending_adapter_euler();
+        //     deploy_position_manager();
+        //     vm.stopBroadcast();
+        // }
 
-        // ** Setting up strategy params
-        {
-            vm.startBroadcast(deployerKey);
+        // deploy_and_init_hook();
 
-            hook.setTreasury(treasury);
-            positionManager.setKParams(k1, k2);
-            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
-            rebalanceAdapter.setRebalanceConstraints(
-                rebalancePriceThreshold,
-                rebalanceTimeThreshold,
-                maxDeviationLong,
-                maxDeviationShort
-            );
-            rebalanceAdapter.setRebalanceOperator(rebalanceOperator);
+        // // ** Setting up strategy params
+        // {
+        // vm.startBroadcast(deployerKey);
+        // hook.setTreasury(treasury);
+        // positionManager.setKParams(k1, k2);
+        // rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
+        // rebalanceAdapter.setRebalanceConstraints(
+        //     rebalancePriceThreshold,
+        //     rebalanceTimeThreshold,
+        //     maxDeviationLong,
+        //     maxDeviationShort
+        // );
+        // rebalanceAdapter.setRebalanceOperator(rebalanceOperator);
+        // uint8[4] memory config = [0, 1, 2, 3];
+        // setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
+        // vm.stopBroadcast();
+        // }
 
-            uint8[4] memory config = [0, 1, 2, 3];
-            setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
-
-            vm.stopBroadcast();
-        }
-
-        saveComponentAddresses();
-
-        // ** Approving actors
-        {
-            vm.startBroadcast(swapperKey);
-            approvePermitIfNotEth(BASE);
-            approvePermitIfNotEth(QUOTE);
-            vm.stopBroadcast();
-
-            vm.startBroadcast(depositorKey);
-            BASE.approve(address(alm), type(uint256).max);
-            QUOTE.approve(address(alm), type(uint256).max);
-            vm.stopBroadcast();
-        }
+        // saveComponentAddresses();
     }
 
     function setup_strategy_params() internal {
@@ -100,19 +92,18 @@ contract DeployALMAnvil is DeployALM {
         IS_NTS = true;
         isInvertedAssets = false;
         isInvertedPool = false;
-        isInvertedPoolInOracle = false;
         isNova = false;
 
         protocolFee = 0;
         tvlCap = 1000 ether;
         tickLowerDelta = 3000;
         tickUpperDelta = 3000;
-        swapPriceThreshold = TestLib.sqrt_price_10per;
+        swapPriceThreshold = TestLib.SQRT_PRICE_10PER;
 
         k1 = 1425 * 1e15; //1.425
         k2 = 1425 * 1e15; //1.425
-        treasury = address(0); // Set treasury multisig in production
-        rebalanceOperator = deployerAddress; // Set rebalance operator in production
+        treasury = 0x3A1e87139D73CD4a931888B755625246c1038B65;
+        rebalanceOperator = deployerAddress;
         rebalancePriceThreshold = TestLib.ONE_PERCENT_AND_ONE_BPS;
         rebalanceTimeThreshold = 2000;
         maxDeviationLong = 1e17;
@@ -120,10 +111,6 @@ contract DeployALMAnvil is DeployALM {
     }
 
     function setup_adapters_params() internal {
-        feedB = UConstants.chronicle_feed_USDC;
-        feedQ = UConstants.chronicle_feed_WETH;
-        stalenessThresholdB = 24 hours;
-        stalenessThresholdQ = 24 hours;
         morpho = UConstants.MORPHO;
 
         ethereumVaultConnector = UConstants.EULER_VAULT_CONNECT;
