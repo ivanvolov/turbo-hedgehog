@@ -12,7 +12,7 @@ import {ABDKMath64x64} from "@test/libraries/math/ABDKMath64x64.sol";
 import {PRBMathUD60x18, PRBMath} from "@test/libraries/math/PRBMathUD60x18.sol";
 import {ALMMathLib, WAD, div18} from "@src/libraries/ALMMathLib.sol";
 import {UD60x18, ud} from "@prb-math/UD60x18.sol";
-import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
+import {mulDiv, sqrt} from "@prb-math/Common.sol";
 
 library TestLib {
     using PRBMathUD60x18 for uint256;
@@ -22,8 +22,8 @@ library TestLib {
 
     // ** Uniswap math
 
-    uint256 constant sqrt_price_10per = 1048808848170150000; // (sqrt(1.1) or max 10% price change
-    uint256 constant sqrt_price_1per = 1004987562112090000; // (sqrt(1.01) or max 1% price change
+    uint256 constant SQRT_PRICE_10PER = 1048808848170150000; // (sqrt(1.1) or max 10% price change
+    uint256 constant SQRT_PRICE_1PER = 1004987562112090000; // (sqrt(1.01) or max 1% price change
     uint256 constant ONE_PERCENT_AND_ONE_BPS = 101e16; // 1.01%
 
     uint256 constant Q192 = 2 ** 192;

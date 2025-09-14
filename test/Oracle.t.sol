@@ -5,17 +5,10 @@ import "forge-std/console.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
-
-// ** interfaces
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IOracleTest, IChronicleSelfKisser} from "@test/interfaces/IOracleTest.sol";
 
 contract OracleFuzzing is ALMTestBase {
     function setUp() public {

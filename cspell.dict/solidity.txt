@@ -97,3 +97,5 @@ nomicfoundation
 typechain
 BTCALM
 Misordered
+solhint-disable
+unaliased-plain-import

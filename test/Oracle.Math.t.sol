@@ -5,10 +5,7 @@ import "forge-std/console.sol";
 
 // ** External imports
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {ABDKMath64x64} from "@test/libraries/math/ABDKMath64x64.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {PoolKey} from "v4-core/types/PoolKey.sol";
 
 // ** contracts
@@ -20,8 +17,6 @@ import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.s
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
-import {ud} from "@prb-math/UD60x18.sol";
-import {mulDiv, mulDiv18 as mul18, sqrt} from "@prb-math/Common.sol";
 
 contract OracleMathTest is ALMTestBase {
     function setUp() public {

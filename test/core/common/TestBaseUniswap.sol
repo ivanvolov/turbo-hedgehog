@@ -21,12 +21,8 @@ import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {TestBaseAsserts} from "@test/core/common/TestBaseAsserts.sol";
-import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
-import {Oracle} from "@src/core/oracles/Oracle.sol";
-import {ALM} from "@src/ALM.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@test/libraries/math/PRBMathUD60x18.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";

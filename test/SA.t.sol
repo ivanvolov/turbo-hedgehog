@@ -5,7 +5,6 @@ import "forge-std/console.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {Currency, CurrencyLibrary} from "v4-core/types/Currency.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";

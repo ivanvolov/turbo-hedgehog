@@ -45,7 +45,7 @@ contract TURBO_ALMTest is ALMTestBase {
         create_lending_adapter_euler_USDT_USDC();
         create_flash_loan_adapter_euler_USDT_USDC();
         create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
-        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 10, 10, TestLib.sqrt_price_10per);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 10, 10, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

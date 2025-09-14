@@ -171,6 +171,9 @@ build:
 builds:
 	clear && forge clean && forge build --sizes
 
+lint:
+	clear && forge lint
+
 format:
 	npx prettier --check "src/**/*.sol" "test/**/*.sol"
 format_write:

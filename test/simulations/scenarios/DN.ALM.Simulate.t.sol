@@ -3,14 +3,12 @@ pragma solidity ^0.8.0;
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 
 // ** contracts
 import {ALMTestSimBase} from "@test/core/simulations/ALMTestSimBase.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
@@ -36,7 +34,7 @@ contract DeltaNeutralALMSimulationTest is ALMTestSimBase {
         create_lending_adapter_euler_USDC_WETH();
         create_flash_loan_adapter_euler_USDC_WETH();
         create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_WETH, true);
-        init_hook(true, false, 0, 1e18, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(true, false, 0, 1e18, 1000 ether, 3000, 3000, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

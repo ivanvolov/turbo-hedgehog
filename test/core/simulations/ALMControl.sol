@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/// forge-lint: disable-start(erc20-unchecked-transfer)
+
 // ** v4 imports
 import {PoolIdLibrary} from "v4-core/types/PoolId.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
@@ -18,7 +20,6 @@ import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {BaseHook} from "v4-periphery/src/utils/BaseHook.sol";
 
 // ** libraries
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {PRBMathUD60x18} from "@test/libraries/math/PRBMathUD60x18.sol";
 import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";

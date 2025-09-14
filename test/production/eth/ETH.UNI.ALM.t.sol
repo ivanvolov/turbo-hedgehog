@@ -9,15 +9,11 @@ import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
 
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-
-// ** interfaces
-import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 
 contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 3e18;
@@ -56,7 +52,7 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
         mock_latestRoundData(UConstants.chronicle_feed_WETH, 3634568623200000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 999820000000000000);
 
-        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
 
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
@@ -49,7 +48,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_USDT, true);
         mock_latestRoundData(UConstants.chronicle_feed_USDT, 999620000000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 999735368664584522);
-        init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
+        init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.SQRT_PRICE_1PER);
 
         // ** Setting up strategy params
         {

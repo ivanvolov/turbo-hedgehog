@@ -14,3 +14,16 @@ optimizer_runs = 800
 via_ir = false
 ffi = true
 bytecode_hash = "none"
+
+etherscan_api_key = "${ETHERSCAN_API_KEY}"
+[etherscan]
+unichain = { key = "${ETHERSCAN_API_KEY}" }
+
+[lint]
+exclude_lints = ["unaliased-plain-import", "screaming-snake-case-immutable", "mixed-case-variable", "mixed-case-function", "divide-before-multiply"]
+ignore = [
+    "./test/libraries/math/**/*.sol",
+    "./test/libraries/v4-forks/**/*.sol",
+    "./test/libraries/TestAccountLib.t.sol",
+    "./external/**/*.sol"
+]

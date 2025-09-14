@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 // ** v4 imports
-import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {PoolIdLibrary, PoolId} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 
@@ -54,7 +53,7 @@ contract UNICORD_R_ALMTest is ALMTestBase {
         create_lending_adapter_morpho_earn_USDC_DAI();
         create_flash_loan_adapter_morpho();
         create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_DAI, false);
-        init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
+        init_hook(true, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

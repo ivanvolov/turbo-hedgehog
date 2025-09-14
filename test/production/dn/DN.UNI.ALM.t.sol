@@ -6,14 +6,12 @@ import "forge-std/console.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
 
 // ** contracts
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
 
 // ** interfaces
-import {IALM} from "@src/interfaces/IALM.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
@@ -55,7 +53,7 @@ contract DeltaNeutral_UNI_ALMTest is ALMTestBaseUnichain {
         mock_latestRoundData(UConstants.chronicle_feed_WETH, 3634568623200000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 999820000000000000);
 
-        init_hook(true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {
