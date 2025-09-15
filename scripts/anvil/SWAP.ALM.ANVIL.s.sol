@@ -27,7 +27,7 @@ contract SwapDepositAndRebalanceALMAnvil is DeployUtils {
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
         loadActorsAnvil();
-        loadComponentAddresses();
+        loadComponentAddresses(true);
         IS_NTS = true;
         poolKey = constructPoolKey();
     }

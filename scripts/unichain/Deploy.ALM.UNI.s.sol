@@ -39,40 +39,39 @@ contract DeployALMUNI is DeployALM {
 
     function run(bool isAnvilTestRun) external {
         if (isAnvilTestRun) {
-            console.log("Is in anvil test run");
-            // dealETH(deployerAddress, 10 ether);
+            console.log("Dealing ETH");
+            dealETH(deployerAddress, 10 ether);
         }
 
-        // // ** Deploy adapters
-        // {
-        //     vm.startBroadcast(deployerKey);
-        //     deploy_fl_adapter_morpho();
-        //     deploy_lending_adapter_euler();
-        //     deploy_position_manager();
-        //     vm.stopBroadcast();
-        // }
+        // ** Deploy adapters
+        {
+            vm.startBroadcast(deployerKey);
+            deploy_fl_adapter_morpho();
+            deploy_lending_adapter_euler();
+            deploy_position_manager();
+            vm.stopBroadcast();
+        }
 
-        // deploy_and_init_hook();
+        deploy_and_init_hook();
 
-        // // ** Setting up strategy params
-        // {
-        // vm.startBroadcast(deployerKey);
-        // hook.setTreasury(treasury);
-        // positionManager.setKParams(k1, k2);
-        // rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
-        // rebalanceAdapter.setRebalanceConstraints(
-        //     rebalancePriceThreshold,
-        //     rebalanceTimeThreshold,
-        //     maxDeviationLong,
-        //     maxDeviationShort
-        // );
-        // rebalanceAdapter.setRebalanceOperator(rebalanceOperator);
-        // uint8[4] memory config = [0, 1, 2, 3];
-        // setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
-        // vm.stopBroadcast();
-        // }
+        // ** Setting up strategy params
+        {
+            vm.startBroadcast(deployerKey);
+            hook.setTreasury(treasury);
+            positionManager.setKParams(k1, k2);
+            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
+            rebalanceAdapter.setRebalanceConstraints(
+                rebalancePriceThreshold,
+                rebalanceTimeThreshold,
+                maxDeviationLong,
+                maxDeviationShort
+            );
+            uint8[4] memory config = [0, 1, 2, 3];
+            setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
+            vm.stopBroadcast();
+        }
 
-        // saveComponentAddresses();
+        saveComponentAddresses(false);
     }
 
     function setup_strategy_params() internal {
@@ -104,10 +103,20 @@ contract DeployALMUNI is DeployALM {
         k2 = 1425 * 1e15; //1.425
         treasury = 0x3A1e87139D73CD4a931888B755625246c1038B65;
         rebalanceOperator = deployerAddress;
+        swapOperator = address(0);
+        liquidityOperator = address(0);
         rebalancePriceThreshold = TestLib.ONE_PERCENT_AND_ONE_BPS;
         rebalanceTimeThreshold = 2000;
         maxDeviationLong = 1e17;
         maxDeviationShort = 1e17;
+
+        //! This is deposit mode only values.
+        {
+            longLeverage = 2e18;
+            shortLeverage = 1e18;
+            weight = 1e18;
+            swapOperator = deployerAddress;
+        }
     }
 
     function setup_adapters_params() internal {

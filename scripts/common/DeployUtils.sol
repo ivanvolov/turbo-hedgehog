@@ -234,8 +234,11 @@ contract DeployUtils is Script {
         oracle = IOracle(oracleAddress);
     }
 
-    function loadComponentAddresses() internal {
-        string memory deploymentPath = "./broadcast/custom_anvil_broadcast.json";
+    function loadComponentAddresses(bool isAnvilTestRun) internal {
+        // Write to broadcast folder
+        string memory deploymentPath = isAnvilTestRun
+            ? "./broadcast/custom_anvil_broadcast.json"
+            : "./broadcast/custom_unichain_broadcast.json";
         string memory json = vm.readFile(deploymentPath);
 
         // Parse addresses from JSON

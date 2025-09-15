@@ -2,7 +2,25 @@
   "alms": [
     {
       "description": "Alm for ETH/USDC to test before real deployment",
-      "oracle": "0x21e0E87467A9629b35FaB45734d7E0a645931f09"
+      "addresses": {
+        "alm": "0x257C54AB34BD745Fea8bb06eeAb93D4C2D3355c9",
+        "flashLoanAdapter": "0xB97Ae60106E02939835466b473186A4832A32A32",
+        "hook": "0xab39798bb0a9907B1A76E577A392B56117A358C0",
+        "lendingAdapter": "0x05E93f708ca58D62617d5e5ad1E6D4a88C8fbcCE",
+        "oracle": "0x21e0E87467A9629b35FaB45734d7E0a645931f09",
+        "positionManager": "0x721b5752b8215486C1a75bF372f71aCa167480F9",
+        "rebalanceAdapter": "0xAed8CeB0FeC91fBBf3bfC1Ca779C70d7828c598B"
+      },
+      "paths": {
+        "alm": "src/ALM.sol:ALM",
+        "flashLoanAdapter": "src/core/flashLoanAdapters/MorphoFlashLoanAdapter.sol:MorphoFlashLoanAdapter",
+        "hook": "src/core/base/BaseStrategyHook.sol:BaseStrategyHook",
+        "lendingAdapter": "src/core/lendingAdapters/EulerLendingAdapter.sol:EulerLendingAdapter",
+        "oracle": "src/core/oracles/Oracle.sol:Oracle",
+        "positionManager": "src/core/positionManagers/PositionManager.sol:PositionManager",
+        "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter"
+      },
+      "arguments": {}
     }
   ]
 }

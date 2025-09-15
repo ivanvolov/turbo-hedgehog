@@ -59,8 +59,6 @@ contract DeployALMAnvil is DeployALM {
                 maxDeviationLong,
                 maxDeviationShort
             );
-            rebalanceAdapter.setRebalanceOperator(rebalanceOperator);
-
             uint8[4] memory config = [0, 1, 2, 3];
             setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
 
@@ -113,6 +111,8 @@ contract DeployALMAnvil is DeployALM {
         k2 = 1425 * 1e15; //1.425
         treasury = address(0); // Set treasury multisig in production
         rebalanceOperator = deployerAddress; // Set rebalance operator in production
+        swapOperator = address(0);
+        liquidityOperator = address(0);
         rebalancePriceThreshold = TestLib.ONE_PERCENT_AND_ONE_BPS;
         rebalanceTimeThreshold = 2000;
         maxDeviationLong = 1e17;

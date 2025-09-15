@@ -60,6 +60,8 @@ contract DeployALM is DeployUtils {
 
     address treasury;
     address rebalanceOperator;
+    address swapOperator;
+    address liquidityOperator;
 
     uint256 rebalancePriceThreshold;
     uint256 rebalanceTimeThreshold;
@@ -99,7 +101,9 @@ contract DeployALM is DeployUtils {
         _setComponents(address(swapAdapter));
         _setComponents(address(rebalanceAdapter));
         hook.setProtocolParams(liquidityMultiplier, protocolFee, tickLowerDelta, tickUpperDelta, swapPriceThreshold);
-        rebalanceAdapter.setRebalanceOperator(address(this));
+        if (swapOperator != address(0)) hook.setOperator(swapOperator);
+        if (liquidityOperator != address(0)) hook.setOperator(liquidityOperator);
+        if (rebalanceOperator != address(0)) rebalanceAdapter.setRebalanceOperator(rebalanceOperator);
         rebalanceAdapter.setLastRebalanceSnapshot(oracle.price(), initialSQRTPrice, 0);
 
         // ** initialize pool

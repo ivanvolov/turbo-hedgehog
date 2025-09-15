@@ -13,27 +13,30 @@ import {DeployUtils} from "../common/DeployUtils.sol";
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
-contract FirstDepositAndRebalanceALMAnvil is DeployUtils {
+contract FirstDepositAndRebalanceALMUNI is DeployUtils {
     using SafeERC20 for IERC20;
 
     function setUp() public {
         setup_network_specific_addresses_unichain();
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
-        loadActorsAnvil();
-        loadComponentAddresses(true);
+        loadActorsUNI();
+        loadComponentAddresses(false);
         poolKey = constructPoolKey();
     }
 
-    function run() external {
-        doDeposit();
-        doRebalance();
+    function run(uint256 action) external {
+        if (action == 0) doDeposit();
+        else if (action == 1) doRebalance();
     }
 
     function doDeposit() internal {
+        uint256 depositAmount = 224250000000000; // ~ 1$
+
+        uint256 allowance = QUOTE.allowance(depositorAddress, address(alm));
         vm.startBroadcast(depositorKey);
 
-        uint256 depositAmount = 100 ether;
+        if (allowance < depositAmount) QUOTE.approve(address(alm), type(uint256).max);
         WETH9.deposit{value: depositAmount}();
         uint256 shares = alm.deposit(depositorAddress, depositAmount, 0);
         console.log("shares: %s", shares);
@@ -55,7 +58,7 @@ contract FirstDepositAndRebalanceALMAnvil is DeployUtils {
         console.log("priceThreshold: %s", priceThreshold);
         console.log("auctionTriggerTime: %s", auctionTT);
 
-        rebalanceAdapter.rebalance(15e14);
+        rebalanceAdapter.rebalance(1e18);
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
         console.log("TVL: %s", alm.TVL(price));
 

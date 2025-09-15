@@ -1,7 +1,7 @@
 # Batches of tests
 
 ta:
-	clear && forge test -v --no-match-contract "SimulationTest"
+	clear && ./scripts/infisical_run.sh 'forge test -v --no-match-contract "SimulationTest"'
 
 tam:
 	clear && forge test -v --no-match-contract "Simulation|UNI_ALMTest|BASE_ALMTest|Oracle|LendingAdaptersTest"
@@ -152,9 +152,6 @@ tessl:
 
 ## Simulations oracles
 
-run_node:
-	clear && anvil
-
 deploy_test_contract:
 	clear && forge script scripts/DeployOracleSimulation.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
 
@@ -195,22 +192,33 @@ gas_r:
 gas_s:
 	clear && forge snapshot --match-contract "ETH_ALMTest\b" --match-test "test_lifecycle"
 
-# Deploy
-
-run_unichain_copy:
-	clear && anvil --fork-block-number 25114133 --fork-url https://unichain-mainnet.g.alchemy.com/v2/38A3rlBUZpErpHxQnoZlEhpRHSu4a7VB
+# Deploy anvil and simulate
 
 deploy_on_anvil:
 	clear && forge script scripts/Deploy.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
 
 first_deposit_rebalance_anvil:
-	clear && forge script scripts/FD_R.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
+	clear && forge script scripts/anvil/FD_R.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
 
 swap_anvil:
-	clear && forge script scripts/SWAP.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
+	clear && forge script scripts/anvil/SWAP.ALM.ANVIL.s.sol --broadcast --rpc-url http://127.0.0.1:8545
 
 set_feed:
 	clear && forge script scripts/SET.PRICE.FEED.s.sol --broadcast --rpc-url http://127.0.0.1:8545
 
 mint_blocks:
 	clear && anvil --block-time 1
+
+# Deploy unichain
+
+run_unichain_copy:
+	clear && ./scripts/infisical_run.sh 'anvil --fork-block-number 27185697 --fork-url "$$UNICHAIN_RPC_URL" --no-storage-caching'
+
+deploy:
+	clear && python3 scripts/deploy.py
+
+verify:
+	clear && python3 scripts/unichain/verify.py --id 0
+
+verify_one:
+	clear && ./scripts/infisical_run.sh './scripts/unichain/verify.sh'
