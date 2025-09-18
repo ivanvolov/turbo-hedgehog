@@ -181,4 +181,7 @@ contract DeployALM is DeployUtils {
         vm.broadcast(testDeployerKey);
         payable(to).transfer(amount);
     }
+
+    uint256 public mainnetDepositAmount = 224250000000000; // ~ 1$
+    uint256 public testDepositAmount = 1 ether / 100; // ~ 46$
 }

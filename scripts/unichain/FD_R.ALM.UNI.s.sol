@@ -8,12 +8,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
-import {DeployUtils} from "../common/DeployUtils.sol";
+import {DeployALM} from "../common/DeployALM.sol";
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
-contract FirstDepositAndRebalanceALMUNI is DeployUtils {
+contract FirstDepositAndRebalanceALMUNI is DeployALM {
     using SafeERC20 for IERC20;
 
     function setUp() public {
@@ -26,13 +26,15 @@ contract FirstDepositAndRebalanceALMUNI is DeployUtils {
     }
 
     function run(uint256 action) external {
-        if (action == 0) doDeposit();
+        if (action == 0) doDeposit(mainnetDepositAmount);
         else if (action == 1) doRebalance();
+        else if (action == 3) {
+            dealETH(depositorAddress, testDepositAmount);
+            doDeposit(testDepositAmount);
+        } else revert("Invalid action");
     }
 
-    function doDeposit() internal {
-        uint256 depositAmount = 224250000000000; // ~ 1$
-
+    function doDeposit(uint256 depositAmount) internal {
         uint256 allowance = QUOTE.allowance(depositorAddress, address(alm));
         vm.startBroadcast(depositorKey);
 
@@ -58,7 +60,8 @@ contract FirstDepositAndRebalanceALMUNI is DeployUtils {
         console.log("priceThreshold: %s", priceThreshold);
         console.log("auctionTriggerTime: %s", auctionTT);
 
-        rebalanceAdapter.rebalance(1e18);
+        // rebalanceAdapter.rebalance(1e18);//! This is deposit mode only values.
+        rebalanceAdapter.rebalance(15e14);
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
         console.log("TVL: %s", alm.TVL(price));
 

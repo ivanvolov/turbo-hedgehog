@@ -13,37 +13,41 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** contracts
-import {DeployUtils} from "../common/DeployUtils.sol";
+import {DeployALM} from "../common/DeployALM.sol";
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
-contract SwapDepositAndRebalanceALMAnvil is DeployUtils {
+contract SwapDepositAndRebalanceALMAnvil is DeployALM {
     using SafeERC20 for IERC20;
 
     function setUp() public {
         setup_network_specific_addresses_unichain();
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
-        loadActorsAnvil();
-        loadComponentAddresses(true);
+        loadActorsUNI();
+        loadComponentAddresses(false);
         IS_NTS = true;
         poolKey = constructPoolKey();
     }
 
-    function run() external {
-        doSwap();
+    function run(uint256 action) external {
+        if (action == 0) {
+            doSwap(mainnetDepositAmount);
+        } else if (action == 1) {
+            dealETH(swapperAddress, testDepositAmount);
+            doSwap(testDepositAmount);
+        } else revert("Invalid action");
     }
 
-    function doSwap() internal {
-        // console.log("sqrtPrice before %s", hook.sqrtPriceCurrent());
-        // console.log("TVL before: %s", alm.TVL(oracle.price()));
+    function doSwap(uint256 ethToSwap) internal {
+        console.log("sqrtPrice before %s", hook.sqrtPriceCurrent());
+        console.log("TVL before: %s", alm.TVL(oracle.price()));
 
         // ** swap
         {
             vm.startBroadcast(swapperKey);
-            uint256 ethToSwap = 1 ether;
 
             uint256 currency0Before = poolKey.currency0.balanceOf(swapperAddress);
             uint256 currency1Before = poolKey.currency1.balanceOf(swapperAddress);
@@ -60,7 +64,7 @@ contract SwapDepositAndRebalanceALMAnvil is DeployUtils {
         }
 
         console.log("sqrtPrice after %s", hook.sqrtPriceCurrent());
-        // console.log("TVL after: %s", alm.TVL(oracle.price()));
+        console.log("TVL after: %s", alm.TVL(oracle.price()));
     }
 
     function swapAndReturnDeltas(bool zeroForOne, bool isExactInput, uint256 amount) private {

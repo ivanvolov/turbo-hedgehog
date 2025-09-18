@@ -24,8 +24,8 @@ contract SetPriceTestFeedAnvil is DeployUtils {
         setup_network_specific_addresses_unichain();
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
-        loadActorsAnvil();
-        loadComponentAddresses(true);
+        loadActorsUNI();
+        loadComponentAddresses(false);
     }
 
     function run() external {

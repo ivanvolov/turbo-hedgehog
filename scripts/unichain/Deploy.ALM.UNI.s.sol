@@ -109,13 +109,13 @@ contract DeployALMUNI is DeployALM {
         maxDeviationLong = 1e17;
         maxDeviationShort = 1e17;
 
-        //! This is deposit mode only values.
-        {
-            longLeverage = 2e18;
-            shortLeverage = 1e18;
-            weight = 1e18;
-            swapOperator = deployerAddress;
-        }
+        // //! This is deposit mode only values.
+        // {
+        //     longLeverage = 2e18;
+        //     shortLeverage = 1e18;
+        //     weight = 9e17;
+        //     swapOperator = deployerAddress;
+        // }
     }
 
     function setup_adapters_params() internal {
