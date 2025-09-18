@@ -12,7 +12,7 @@ COMMANDS: Dict[str, Any] = {
     "oracles": {
         "anvil": (
             'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
-            '--broadcast --rpc-url http://127.0.0.1:8545'
+            "--broadcast --rpc-url http://127.0.0.1:8545"
         ),
         "dry-run": (
             'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
@@ -23,13 +23,13 @@ COMMANDS: Dict[str, Any] = {
                 'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
                 '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
             ),
-            "dry_run_first": True
+            "dry_run_first": True,
         },
     },
     "body": {
         "anvil": (
             'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool)" true '
-            '--broadcast --rpc-url http://127.0.0.1:8545'
+            "--broadcast --rpc-url http://127.0.0.1:8545"
         ),
         "dry-run": (
             'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool)" false '
@@ -40,18 +40,18 @@ COMMANDS: Dict[str, Any] = {
                 'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool)" false '
                 '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
             ),
-            "dry_run_first": True
+            "dry_run_first": True,
         },
     },
     "deposit": {
         "anvil": {
             "Mainnet-size deposit": (
                 'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                '--broadcast --rpc-url http://127.0.0.1:8545'
+                "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
             "Test-size deposit": (
                 'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 3 '
-                '--broadcast --rpc-url http://127.0.0.1:8545'
+                "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
         },
         "dry-run": (
@@ -64,21 +64,21 @@ COMMANDS: Dict[str, Any] = {
                     'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 0 '
                     '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                 ),
-                "dry_run_first": True
+                "dry_run_first": True,
             },
             "Test-size deposit": {
                 "cmd": (
                     'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 3 '
                     '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                 ),
-                "dry_run_first": True
-            }
+                "dry_run_first": True,
+            },
         },
     },
     "rebalance": {
         "anvil": (
             'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-            '--broadcast --rpc-url http://127.0.0.1:8545'
+            "--broadcast --rpc-url http://127.0.0.1:8545"
         ),
         "dry-run": (
             'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 1 '
@@ -89,18 +89,18 @@ COMMANDS: Dict[str, Any] = {
                 'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 1 '
                 '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
             ),
-            "dry_run_first": True
+            "dry_run_first": True,
         },
     },
     "swap": {
         "anvil": {
             "Mainnet-size swap": (
                 'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                '--broadcast --rpc-url http://127.0.0.1:8545'
+                "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
             "Test-size swap": (
                 'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                '--broadcast --rpc-url http://127.0.0.1:8545'
+                "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
         },
         "dry-run": (
@@ -113,32 +113,34 @@ COMMANDS: Dict[str, Any] = {
                     'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
                     '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                 ),
-                "dry_run_first": True
+                "dry_run_first": True,
             },
             "Test-size swap": {
                 "cmd": (
                     'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
                     '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                 ),
-                "dry_run_first": True
-            }
+                "dry_run_first": True,
+            },
         },
     },
     "advanced": {
-        "run_anvil_copy":{
+        "run_anvil_copy": {
             "cmd": (
                 'anvil --fork-block-number 27301734 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
             )
         },
         "set_feed": (
-            'forge script scripts/unichain/SET.FEED.UNI.s.sol ',
-            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
-        )
-    }
+            "forge script scripts/unichain/SET.FEED.UNI.s.sol ",
+            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"',
+        ),
+    },
 }
+
 
 def main():
     run_nested(COMMANDS, SESSION_FILE)
+
 
 if __name__ == "__main__":
     main()

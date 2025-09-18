@@ -1,6 +1,6 @@
 # Tests
 
-test:
+t:
 	clear && python3 cmd/test.py
 
 # Simulations

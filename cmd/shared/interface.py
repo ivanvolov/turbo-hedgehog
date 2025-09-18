@@ -13,18 +13,21 @@ INFISICAL_ENABLED = True
 INFISICAL_ENV = "prod"
 INFISICAL_PATH = "/IVa-laptop-forge"
 
+
 def with_infisical(cmd: str) -> str:
     """Wrap a command so it runs with Infisical-provided env vars."""
     if not INFISICAL_ENABLED:
         return cmd
     return (
-        f'infisical run --env={shlex.quote(INFISICAL_ENV)} '
-        f'--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}'
+        f"infisical run --env={shlex.quote(INFISICAL_ENV)} "
+        f"--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}"
     )
+
 
 def clean_spaces(s: str) -> str:
     """Collapse repeated whitespace to a single space."""
     return re.sub(r"\s+", " ", s).strip()
+
 
 def strip_broadcast(cmd: str) -> str:
     """
@@ -35,9 +38,11 @@ def strip_broadcast(cmd: str) -> str:
     without = re.sub(r"(?<!\S)--broadcast(?!\S)", "", cmd)
     return clean_spaces(without)
 
+
 def save_session(path: List[str], SESSION_FILE: str) -> None:
     with open(SESSION_FILE, "w") as f:
         json.dump({"path": path}, f)
+
 
 def load_session(SESSION_FILE: str) -> Optional[List[str]]:
     if not os.path.exists(SESSION_FILE):
@@ -49,13 +54,14 @@ def load_session(SESSION_FILE: str) -> Optional[List[str]]:
     except Exception:
         return None
 
+
 def is_leaf(node: Any) -> bool:
     """Leaf = command string OR dict with a 'cmd' field."""
     return isinstance(node, str) or (isinstance(node, dict) and "cmd" in node)
 
+
 def traverse(
-    root: Dict[str, Any],
-    cached_path: Optional[List[str]] = None
+    root: Dict[str, Any], cached_path: Optional[List[str]] = None
 ) -> Tuple[Any, List[str]]:
     """
     Walk the nested dict until a leaf is reached.
@@ -86,12 +92,14 @@ def traverse(
         path.append(choice)
         node = node[choice]
 
+
 def run_step(label: str, cmd: str) -> None:
     """Clear screen and run one command wrapped in Infisical."""
     wrapped = with_infisical(cmd)
     print(f"\n=== {label.upper()} ===\n{wrapped}\n")
     subprocess.run(["clear"])
     subprocess.run(wrapped, shell=True, check=True)
+
 
 def execute_leaf(leaf: Union[str, Dict[str, Any]], path: List[str]) -> None:
     """
@@ -118,7 +126,7 @@ def execute_leaf(leaf: Union[str, Dict[str, Any]], path: List[str]) -> None:
 
         sure = questionary.confirm(
             f"Dry-run succeeded.\nProceed to BROADCAST for: '{path[-1] if path else 'command'}' on {INFISICAL_ENV}?",
-            default=False
+            default=False,
         ).ask()
         if not sure:
             print("Execution aborted by user.")
@@ -126,6 +134,7 @@ def execute_leaf(leaf: Union[str, Dict[str, Any]], path: List[str]) -> None:
 
     # Run final/broadcast command
     run_step("broadcast" if dry_run_first else (path[-1] if path else "command"), cmd)
+
 
 def run_nested(COMMANDS: Dict[str, Any], SESSION_FILE: str):
     # Offer retry using last path
@@ -141,8 +150,10 @@ def run_nested(COMMANDS: Dict[str, Any], SESSION_FILE: str):
     if not top:
         sys.exit(0)
 
-    use_cached = (retry_label and top == retry_label)
-    leaf, chosen_path = traverse(COMMANDS, cached_path=last_path if use_cached else None)
+    use_cached = retry_label and top == retry_label
+    leaf, chosen_path = traverse(
+        COMMANDS, cached_path=last_path if use_cached else None
+    )
 
     # Save for next time
     save_session(chosen_path, SESSION_FILE)

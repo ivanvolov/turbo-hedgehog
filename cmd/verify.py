@@ -9,14 +9,14 @@ SESSION_FILE = "verify.session"
 # Keys are the menu labels shown to the user.
 # ============================================================================
 COMMANDS: Dict[str, Any] = {
-    "all": {
-        "id-1": ('python3 cmd/verify/all.py --id 0')
-    },
-    "one": ('./cmd/verify/one.sh')
+    "all": {"id-1": ("python3 cmd/verify/all.py --id 0")},
+    "one": ("./cmd/verify/one.sh"),
 }
+
 
 def main():
     run_nested(COMMANDS, SESSION_FILE)
+
 
 if __name__ == "__main__":
     main()
