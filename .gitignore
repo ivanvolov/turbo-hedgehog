@@ -15,6 +15,6 @@ PLAN.md
 *.csv
 test/**/*.html
 .gas-snapshot
-deploy.session
+*.session
 __pycache__/
 __pycache__/**

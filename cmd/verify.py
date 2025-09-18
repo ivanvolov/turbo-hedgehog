@@ -1,48 +1,22 @@
 #!/usr/bin/env python3
-import argparse, json, shlex, subprocess
-from pathlib import Path
+from typing import Any, Dict
+from shared.interface import run_nested
 
-DATA_FILE = Path("deployments/alm.unichain.json")
-INFISICAL_ENV = "prod"
-INFISICAL_PATH = "/IVa-laptop-forge"
+SESSION_FILE = "verify.session"
 
-def with_infisical(cmd: str) -> str:
-    return (
-        f'infisical run --env={shlex.quote(INFISICAL_ENV)} '
-        f'--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}'
-    )
-
-def run(cmd: str):
-    print("\n$ " + cmd)
-    subprocess.run(with_infisical(cmd), shell=True, check=True)
-
-def block_scout(addr: str, spec: str):
-    run(
-        f"forge verify-contract {addr} {spec} "
-        "--chain-id 130 --verifier blockscout "
-        "--verifier-url https://unichain.blockscout.com/api --watch"
-    )
-
-def etherscan(addr: str, spec: str):
-    run(
-        f"forge verify-contract {addr} {spec} "
-        "--chain unichain --verifier etherscan "
-        '--etherscan-api-key "$ETHERSCAN_API_KEY" --watch'
-    )
+# ============================================================================
+# Define ANY nested structure. Leaves (strings) are commands to execute.
+# Keys are the menu labels shown to the user.
+# ============================================================================
+COMMANDS: Dict[str, Any] = {
+    "all": {
+        "id-1": ('python3 cmd/verify/all.py --id 0')
+    },
+    "one": ('./cmd/verify/one.sh')
+}
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--id", type=int, required=True)
-    args = parser.parse_args()
-
-    data = json.loads(DATA_FILE.read_text())
-    entry = data["alms"][args.id]
-
-    for key, addr in entry["addresses"].items():
-        spec = entry["paths"][key]
-        print(f"\n=== {key}: {addr} ===")
-        block_scout(addr, spec)
-        etherscan(addr, spec)
+    run_nested(COMMANDS, SESSION_FILE)
 
 if __name__ == "__main__":
     main()

@@ -124,13 +124,15 @@ COMMANDS: Dict[str, Any] = {
             }
         },
     },
-    "set_feed": (
-        'forge script scripts/unichain/SET.FEED.UNI.s.sol ',
-        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
-    ),
-    "run_anvil_copy":{
-        "cmd": (
-            'anvil --fork-block-number 27301734 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
+    "advanced": {
+        "run_anvil_copy":{
+            "cmd": (
+                'anvil --fork-block-number 27301734 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
+            )
+        },
+        "set_feed": (
+            'forge script scripts/unichain/SET.FEED.UNI.s.sol ',
+            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
         )
     }
 }
