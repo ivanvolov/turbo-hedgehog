@@ -16,19 +16,23 @@ contract DeployALMUNI is DeployALM {
         setup_oracles_params();
     }
 
-    function run() external {
+    function run(bool isTestFeed) external {
         vm.startBroadcast(deployerKey);
-        deploy_oracle();
+        if (isTestFeed) deploy_oracle_with_test_feeds();
+        else deploy_oracle();
         vm.stopBroadcast();
 
         saveOracleAddresses();
     }
 
     function setup_oracles_params() internal {
-        feedB = UConstants.chronicle_feed_USDC;
-        feedQ = UConstants.chronicle_feed_WETH;
+        // feedB = UConstants.chronicle_feed_USDC;
+        // feedQ = UConstants.chronicle_feed_WETH;
+        feedB = UConstants.api3_feed_USDC;
+        feedQ = UConstants.api3_feed_WETH;
         stalenessThresholdB = 24 hours;
         stalenessThresholdQ = 24 hours;
         isInvertedPoolInOracle = false;
+        decimalsDelta = int8(6) - int8(18);
     }
 }

@@ -157,8 +157,8 @@ contract DeployALM is DeployUtils {
     TestFeed feed1;
 
     function deploy_oracle_with_test_feeds() internal {
-        feed0 = new TestFeed(999800000000000000, 18);
-        feed1 = new TestFeed(4277964584225000000000, 18);
+        feed0 = new TestFeed(999700000000000000, 18);
+        feed1 = new TestFeed(4612052471000000000000, 18);
 
         oracle = new Oracle(feed0, feed1, isInvertedPoolInOracle, decimalsDelta);
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);

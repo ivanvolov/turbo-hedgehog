@@ -79,7 +79,6 @@ contract DeployALMUNI is DeployALM {
         TOKEN_SYMBOL = "TURBO";
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
-        decimalsDelta = int8(6) - int8(18);
         longLeverage = 3e18;
         shortLeverage = 2e18;
         weight = 55e16; //50%

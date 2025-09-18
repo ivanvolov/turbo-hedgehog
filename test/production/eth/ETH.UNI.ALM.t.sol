@@ -15,6 +15,9 @@ import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
+// ** interfaces
+import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
+
 contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 3e18;
     uint256 shortLeverage = 2e18;
@@ -74,6 +77,10 @@ contract ETH_UNI_ALMTest is ALMTestBaseUnichain {
             setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, config);
             vm.stopPrank();
         }
+
+        // console.log("oracle.price() %s", oracle.price());
+        // console.log("totalDecimals %s", IOracleTest(address(oracle)).totalDecDelta());
+        // console.log("scaleFactor %s", IOracleTest(address(oracle)).scaleFactor());
     }
 
     uint256 amountToDep = 100 ether;

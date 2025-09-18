@@ -22,6 +22,7 @@ import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
 import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IOracle} from "@src/interfaces/IOracle.sol";
+import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
 import {IPositionManagerStandard} from "@test/interfaces/IPositionManagerStandard.sol";
 
 contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
@@ -91,15 +92,25 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance() public {
+        console.log("oracle.price() %s", oracle.price());
+        console.log("totalDecimals %s", IOracleTest(address(oracle)).totalDecDelta());
+        console.log("scaleFactor %s", IOracleTest(address(oracle)).scaleFactor());
+
+        amountToDep = 1 ether;
+        deal(address(WETH), address(alice.addr), amountToDep);
+        vm.prank(alice.addr);
+        WETH.approve(address(alm), type(uint256).max);
+        vm.prank(alice.addr);
+        alm.deposit(alice.addr, amountToDep, 0);
+
         uint256 preRebalanceTVL = calcTVL();
         console.log("preRebalanceTVL %s", preRebalanceTVL);
 
         vm.prank(deployerAddress);
         rebalanceAdapter.setRebalanceParams(55e16, 3e18, 2e18);
-        // swapOperator
 
         vm.prank(deployerAddress);
-        rebalanceAdapter.rebalance(slippage);
+        rebalanceAdapter.rebalance(15e16);
     }
 
     // ** Helpers

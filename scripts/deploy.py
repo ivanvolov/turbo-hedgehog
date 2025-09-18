@@ -27,22 +27,22 @@ def with_infisical(cmd: str) -> str:
 # === Forge commands for each action/target ===
 FORGE_CMDS = {
     "oracles": {
-        "pre-deploy": (
-            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol '
+        "anvil": (
+            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
             '--broadcast --rpc-url http://127.0.0.1:8545'
         ),
         "dry-run": (
-            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol '
+            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
             '--rpc-url "$UNICHAIN_RPC_URL"'
         ),
         "deploy": (
-            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol '
+            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
             '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
         ),
     },
     "body": {
-        "pre-deploy": (
-            'forge script scripts/unichain/Deploy.ALM.UNI.s.sol '
+        "anvil": (
+            'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool)" true '
             '--broadcast --rpc-url http://127.0.0.1:8545'
         ),
         "dry-run": (
@@ -55,7 +55,7 @@ FORGE_CMDS = {
         ),
     },
     "deposit": {
-        "pre-deploy": (
+        "anvil": (
             'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 0 '
             '--broadcast --rpc-url http://127.0.0.1:8545'
         ),
@@ -69,7 +69,7 @@ FORGE_CMDS = {
         ),
     },
     "rebalance": {
-        "pre-deploy": (
+        "anvil": (
             'forge script scripts/unichain/FD_R.ALM.UNI.s.sol --sig "run(uint256)" 1 '
             '--broadcast --rpc-url http://127.0.0.1:8545'
         ),
@@ -123,7 +123,7 @@ def main():
     action_choices = []
     if retry_choice:
         action_choices.append(retry_choice)
-    action_choices += ["pre-deploy", "dry-run", "deploy"]
+    action_choices += ["anvil", "dry-run", "deploy"]
 
     action = questionary.select(
         "Choose action:",

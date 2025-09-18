@@ -58,5 +58,9 @@ library Constants {
     IAggV3 constant chronicle_feed_USDT = IAggV3(0x8E947Ea7D5881Cd600Ace95F1201825F8C708844);
     IAggV3 constant chronicle_feed_WBTC = IAggV3(0x1F852F2Fe663c90f454476dd62491C5717F506F2);
     IAggV3 constant zero_feed = IAggV3(address(0));
+
+    // ** Api3
+    IAggV3 constant api3_feed_USDC = IAggV3(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f);
+    IAggV3 constant api3_feed_WETH = IAggV3(0x5b0cf2b36a65a6BB085D501B971e4c102B9Cd473);
 }
 /// forge-lint: disable-end(screaming-snake-case-const)
