@@ -20,7 +20,7 @@ contract DeployOraclesUNI is DeployALM {
         console.log("Deploying Oracles");
         console.log("Block.timestamp", block.timestamp);
         vm.startBroadcast(deployerKey);
-        if (isTestFeed) deploy_oracle_with_test_feeds(999801391481903400, 3854785066950000000000);
+        if (isTestFeed) deploy_oracle_with_test_feeds(UConstants.api3_feed_USDC_price, UConstants.api3_feed_WETH_price);
         else deploy_oracle();
         vm.stopBroadcast();
 
