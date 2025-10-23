@@ -21,10 +21,12 @@ contract FirstDepositAndRebalanceALMUNI is DeployALM {
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
         loadActorsUNI();
-        loadComponentAddresses(false);
+        loadComponentAddresses();
         poolKey = constructPoolKey();
     }
 
+    uint256 public mainnetDepositAmount = 224250000000000; // ~ 1$
+    uint256 public testDepositAmount = 1 ether; // ~ 3800$
     function run(uint256 action) external {
         if (action == 0) doDeposit(mainnetDepositAmount);
         else if (action == 1) doRebalance();

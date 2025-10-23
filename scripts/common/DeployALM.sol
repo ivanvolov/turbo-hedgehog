@@ -36,7 +36,7 @@ import {IPositionManagerStandard} from "@test/interfaces/IPositionManagerStandar
 import {IPositionManager} from "@src/interfaces/IPositionManager.sol";
 import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
 
-contract DeployALM is DeployUtils {
+abstract contract DeployALM is DeployUtils {
     // ** Strategy params
     int8 decimalsDelta;
     uint256 public longLeverage;
@@ -156,10 +156,9 @@ contract DeployALM is DeployUtils {
     TestFeed feed0;
     TestFeed feed1;
 
-    function deploy_oracle_with_test_feeds() internal {
-        feed0 = new TestFeed(999700000000000000, 18);
-        feed1 = new TestFeed(4612052471000000000000, 18);
-
+    function deploy_oracle_with_test_feeds(uint256 price0, uint256 price1) internal {
+        feed0 = new TestFeed(price0, 18);
+        feed1 = new TestFeed(price1, 18);
         oracle = new Oracle(feed0, feed1, isInvertedPoolInOracle, decimalsDelta);
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
     }
@@ -181,7 +180,4 @@ contract DeployALM is DeployUtils {
         vm.broadcast(testDeployerKey);
         payable(to).transfer(amount);
     }
-
-    uint256 public mainnetDepositAmount = 224250000000000; // ~ 1$
-    uint256 public testDepositAmount = 1 ether / 100; // ~ 46$
 }

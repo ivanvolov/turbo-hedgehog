@@ -9,7 +9,10 @@ SESSION_FILE = "verify.session"
 # Keys are the menu labels shown to the user.
 # ============================================================================
 COMMANDS: Dict[str, Any] = {
-    "all": {"id-1": ("python3 cmd/verify/all.py --id 0")},
+    "all": {
+        "id-1": ("python3 cmd/verify/all.py --id 0"),
+        "id-2": ("python3 cmd/verify/all.py --id 1"),
+    },
     "one": ("./cmd/verify/one.sh"),
 }
 

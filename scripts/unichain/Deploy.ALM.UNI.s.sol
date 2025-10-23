@@ -71,7 +71,7 @@ contract DeployALMUNI is DeployALM {
             vm.stopBroadcast();
         }
 
-        saveComponentAddresses(false);
+        saveComponentAddresses();
     }
 
     function setup_strategy_params() internal {

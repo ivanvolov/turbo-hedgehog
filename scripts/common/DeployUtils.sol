@@ -36,7 +36,7 @@ import {ISwapAdapter} from "@src/interfaces/ISwapAdapter.sol";
 import {IUniswapSwapAdapter} from "@test/interfaces/IUniswapSwapAdapter.sol";
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
-contract DeployUtils is Script {
+abstract contract DeployUtils is Script {
     using SafeERC20 for IERC20;
     uint256 deployerKey;
     address deployerAddress;
@@ -180,7 +180,7 @@ contract DeployUtils is Script {
         depositorAddress = vm.addr(depositorKey);
     }
 
-    function saveComponentAddresses(bool isAnvilTestRun) internal {
+    function saveComponentAddresses() internal {
         // Log deployed contract addresses
         console.log("\n=== Deployed Contract Addresses ===");
         console.log("ALM:                %s", address(alm));
@@ -203,9 +203,7 @@ contract DeployUtils is Script {
         string memory finalJson = vm.serializeAddress(json, "lendingAdapter", address(lendingAdapter));
 
         // Write to broadcast folder
-        string memory deploymentPath = isAnvilTestRun
-            ? "./broadcast/custom_anvil_broadcast.json"
-            : "./broadcast/custom_unichain_broadcast.json";
+        string memory deploymentPath = "./broadcast/custom_unichain_broadcast.json";
         vm.writeJson(finalJson, deploymentPath);
     }
 
@@ -234,11 +232,9 @@ contract DeployUtils is Script {
         oracle = IOracle(oracleAddress);
     }
 
-    function loadComponentAddresses(bool isAnvilTestRun) internal {
+    function loadComponentAddresses() internal {
         // Write to broadcast folder
-        string memory deploymentPath = isAnvilTestRun
-            ? "./broadcast/custom_anvil_broadcast.json"
-            : "./broadcast/custom_unichain_broadcast.json";
+        string memory deploymentPath = "./broadcast/custom_unichain_broadcast.json";
         string memory json = vm.readFile(deploymentPath);
 
         // Parse addresses from JSON

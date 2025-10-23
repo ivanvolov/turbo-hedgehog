@@ -19,7 +19,7 @@ import {DeployALM} from "../common/DeployALM.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
-contract SwapDepositAndRebalanceALMAnvil is DeployALM {
+contract SwapDepositAndRebalanceALMUNI is DeployALM {
     using SafeERC20 for IERC20;
 
     function setUp() public {
@@ -27,17 +27,22 @@ contract SwapDepositAndRebalanceALMAnvil is DeployALM {
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
         loadActorsUNI();
-        loadComponentAddresses(false);
+        loadComponentAddresses();
         IS_NTS = true;
         poolKey = constructPoolKey();
     }
 
+    uint256 public mainnetSwapAmount = 224250000000000; // ~ 1$
+    uint256 public testSwapAmount = 1 ether / 20; // ~ 380$
+
     function run(uint256 action) external {
         if (action == 0) {
-            doSwap(mainnetDepositAmount);
+            // Mainnet deposit
+            doSwap(mainnetSwapAmount);
         } else if (action == 1) {
-            dealETH(swapperAddress, testDepositAmount);
-            doSwap(testDepositAmount);
+            // Test deposit
+            dealETH(swapperAddress, testSwapAmount);
+            doSwap(testSwapAmount);
         } else revert("Invalid action");
     }
 

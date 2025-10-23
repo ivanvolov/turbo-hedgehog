@@ -10,14 +10,14 @@ import {TestFeed} from "@test/simulations/TestFeed.sol";
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 // ** contracts
-import {DeployUtils} from "./common/DeployUtils.sol";
+import {DeployUtils} from "../common/DeployUtils.sol";
 import {Oracle} from "@src/core/oracles/Oracle.sol";
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
 
-contract SetPriceTestFeedAnvil is DeployUtils {
+contract SetPriceTestFeedUNI is DeployUtils {
     using SafeERC20 for IERC20;
 
     function setUp() public {
@@ -25,7 +25,7 @@ contract SetPriceTestFeedAnvil is DeployUtils {
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
         loadActorsUNI();
-        loadComponentAddresses(false);
+        loadOracleAddress();
     }
 
     function run() external {
@@ -34,7 +34,7 @@ contract SetPriceTestFeedAnvil is DeployUtils {
 
         TestFeed testFeed = TestFeed(address(feedQ));
         vm.startBroadcast(deployerKey);
-        testFeed.updateFeed(4777e18);
+        testFeed.updateFeed(4000e18);
         vm.stopBroadcast();
 
         console.log("feedQ: %s", uint256(price));

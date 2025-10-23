@@ -10,8 +10,12 @@ SESSION_FILE = "deploy.session"
 # ============================================================================
 COMMANDS: Dict[str, Any] = {
     "oracles": {
-        "anvil": (
-            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
+        "anvil mock feeds": (
+            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" true '
+            "--broadcast --rpc-url http://127.0.0.1:8545"
+        ),
+        "anvil api3 feeds": (
+            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" true '
             "--broadcast --rpc-url http://127.0.0.1:8545"
         ),
         "dry-run": (
@@ -127,13 +131,26 @@ COMMANDS: Dict[str, Any] = {
     "advanced": {
         "run_anvil_copy": {
             "cmd": (
-                'anvil --fork-block-number 27301734 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
+                'anvil --fork-block-number 30484160 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
             )
         },
-        "set_feed": (
-            "forge script scripts/unichain/SET.FEED.UNI.s.sol ",
-            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"',
-        ),
+        "set_feed": {
+            "anvil": (
+                "forge script scripts/unichain/SET.FEED.UNI.s.sol "
+                "--broadcast --rpc-url http://127.0.0.1:8545"
+            ),
+            "dry-run": (
+                "forge script scripts/unichain/SET.FEED.UNI.s.sol "
+                '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+            ),
+            "deploy": {
+                "cmd": (
+                    "forge script scripts/unichain/SET.FEED.UNI.s.sol "
+                    '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                ),
+                "dry_run_first": True,
+            },
+        },
     },
 }
 
