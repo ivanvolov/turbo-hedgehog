@@ -30,7 +30,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 shortLeverage = 1e18;
     uint256 weight = 9e17;
     uint256 liquidityMultiplier = 2e18;
-    uint256 slippage = 15e14; //0.15%
+    uint256 slippage = 5e15; //0.5%
     uint24 feeLP = 500; //0.05%
 
     IERC20 WETH = IERC20(UConstants.WETH);
@@ -86,7 +86,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         }
     }
 
-    uint256 amountToDep = 100 ether;
+    uint256 amountToDep = 10 ether;
 
     function test_deposit() public {
         assertEq(calcTVL(), 0, "TVL");
@@ -124,17 +124,16 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         console.log("postRebalanceTVL %s", calcTVL());
         console.log("oraclePrice %s", oracle.price());
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
-        assertTicks(-197336, -191336);
+        assertTicks(-196748, -190748);
 
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4776888565966093100083611, 1e1, "sqrtPrice");
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4919520778899813658844498, 1e1, "sqrtPrice");
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
         assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);
-        assertEq(hook.liquidity(), 66076272993486110, "liquidity");
+        assertEq(hook.liquidity(), 7423380454458728, "liquidity");
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
     }
 
     function test_lifecycle() public {
-        vm.skip(true);
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
