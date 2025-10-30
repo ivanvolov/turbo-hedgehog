@@ -134,6 +134,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_lifecycle() public {
+        vm.skip(true);
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
         rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)

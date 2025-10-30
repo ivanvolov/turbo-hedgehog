@@ -13,7 +13,7 @@ import {DeployALM} from "../common/DeployALM.sol";
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
-contract FirstDepositAndRebalanceALMUNI is DeployALM {
+contract DepositAndRebalanceALMUNI is DeployALM {
     using SafeERC20 for IERC20;
 
     function setUp() public {
@@ -27,10 +27,13 @@ contract FirstDepositAndRebalanceALMUNI is DeployALM {
 
     uint256 public mainnetDepositAmount = 224250000000000; // ~ 1$
     uint256 public testDepositAmount = 1 ether; // ~ 3800$
-    function run(uint256 action) external {
-        if (action == 0) doDeposit(mainnetDepositAmount);
-        else if (action == 1) doRebalance();
-        else if (action == 3) {
+
+    function run(uint256 depositSize) external {
+        if (action == 0) {
+            // Mainnet deposit small size
+            doDeposit(mainnetDepositAmount);
+        } else if (action == 1) {
+            // Test deposit large size
             dealETH(depositorAddress, testDepositAmount);
             doDeposit(testDepositAmount);
         } else revert("Invalid action");
@@ -44,28 +47,6 @@ contract FirstDepositAndRebalanceALMUNI is DeployALM {
         WETH9.deposit{value: depositAmount}();
         uint256 shares = alm.deposit(depositorAddress, depositAmount, 0);
         console.log("shares: %s", shares);
-
-        vm.stopBroadcast();
-    }
-
-    function doRebalance() internal {
-        vm.startBroadcast(deployerKey);
-
-        console.log("sqrtPrice hooks %s", hook.sqrtPriceCurrent());
-        (uint256 price, uint256 sqrtPriceX96) = oracle.poolPrice();
-        console.log("price oracle %s", price);
-        console.log("sqrtPriceX96 oracle %s", sqrtPriceX96);
-        console.log("TVL: %s", alm.TVL(price));
-
-        (bool isRebalance, uint256 priceThreshold, uint256 auctionTT) = rebalanceAdapter.isRebalanceNeeded(price);
-        console.log("isRebalance: %s", isRebalance);
-        console.log("priceThreshold: %s", priceThreshold);
-        console.log("auctionTriggerTime: %s", auctionTT);
-
-        // rebalanceAdapter.rebalance(1e18);//! This is deposit mode only values.
-        rebalanceAdapter.rebalance(15e14);
-        console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
-        console.log("TVL: %s", alm.TVL(price));
 
         vm.stopBroadcast();
     }

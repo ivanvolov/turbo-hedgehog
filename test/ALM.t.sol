@@ -90,7 +90,7 @@ contract General_ALMTest is ALMTestBase {
                 IHooks(hookAddress)
             );
             deployCodeTo(
-                "BaseStrategyHook.sol",
+                "src/core/base/BaseStrategyHook.sol:BaseStrategyHook",
                 abi.encode(deployer.addr, BASE, QUOTE, WETH9, isInvertedPool, manager),
                 hookAddress
             );

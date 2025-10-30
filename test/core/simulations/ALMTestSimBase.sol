@@ -59,7 +59,11 @@ abstract contract ALMTestSimBase is ALMTestBase {
         vm.startPrank(deployer.addr);
 
         address hookAddress = address(uint160(Hooks.AFTER_INITIALIZE_FLAG));
-        deployCodeTo("ALMControl.sol", abi.encode(manager, address(hook)), hookAddress);
+        deployCodeTo(
+            "test/core/simulations/ALMControl.sol:ALMControl",
+            abi.encode(manager, address(hook)),
+            hookAddress
+        );
         hookControl = ALMControl(hookAddress);
         vm.label(address(hookControl), "hookControl");
 
