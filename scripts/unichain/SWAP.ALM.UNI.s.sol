@@ -32,21 +32,32 @@ contract SwapDepositAndRebalanceALMUNI is DeployALM {
         poolKey = constructPoolKey();
     }
 
-    uint256 public mainnetSwapAmount = 224250000000000; // ~ 1$
-    uint256 public testSwapAmount = 1 ether / 20; // ~ 380$
+    uint256 public mainnetSwapAmountETH = 224250000000000; // ~ 1$
+    uint256 public testSwapAmountETH = 1 ether / 20; // ~ 380$
+    uint256 public mainnetSwapAmountUSDC =1 *1e6; // ~ 1$
+    uint256 public testSwapAmountUSDC = 380 * 1e6; // ~ 380$
 
+    // ** The difference between mainnet and test is not only in amounts, but also that we assume we have assets on the address during mainnet.
     function run(uint256 action) external {
         if (action == 0) {
             // Mainnet deposit
-            doSwap(mainnetSwapAmount);
+            doSwap(true, mainnetSwapAmountETH);
         } else if (action == 1) {
             // Test deposit
-            dealETH(swapperAddress, testSwapAmount);
-            doSwap(testSwapAmount);
-        } else revert("Invalid action");
+            dealETH(swapperAddress, testSwapAmountETH);
+            doSwap(true, testSwapAmountETH);
+        } else if(action == 2) {
+            // Mainnet deposit
+            doSwap(false, mainnetSwapAmountUSDC);
+        } else if (action == 3) {
+            // Test deposit
+            dealUSDC(swapperAddress, testSwapAmountUSDC);
+            doSwap(false, testSwapAmountUSDC);
+        }
+        else revert("Invalid action");
     }
 
-    function doSwap(uint256 ethToSwap) internal {
+    function doSwap(bool zeroForOne, uint256 ethToSwap) internal {
         console.log("sqrtPrice before %s", hook.sqrtPriceCurrent());
         console.log("TVL before: %s", alm.TVL(oracle.price()));
 
@@ -57,7 +68,7 @@ contract SwapDepositAndRebalanceALMUNI is DeployALM {
             uint256 currency0Before = poolKey.currency0.balanceOf(swapperAddress);
             uint256 currency1Before = poolKey.currency1.balanceOf(swapperAddress);
 
-            swapAndReturnDeltas(true, true, ethToSwap);
+            swapAndReturnDeltas(zeroForOne, true, ethToSwap);
 
             uint256 currency0After = poolKey.currency0.balanceOf(swapperAddress);
             uint256 currency1After = poolKey.currency1.balanceOf(swapperAddress);

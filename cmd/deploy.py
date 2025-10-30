@@ -98,30 +98,66 @@ COMMANDS: Dict[str, Any] = {
     },
     "swap": {
         "anvil": {
-            "Mainnet-size swap": (
+            "⬇️ Mainnet-size swap": (
                 'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
                 "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
-            "Test-size swap": (
+            "⬇️ Test-size swap": (
                 'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
                 "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
+            "⬆️ Mainnet-size swap": (
+                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
+                "--broadcast --rpc-url http://127.0.0.1:8545"
+            ),
+            "⬆️ Test-size swap": (
+                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
+                "--broadcast --rpc-url http://127.0.0.1:8545"
+            ),
         },
-        "dry-run": (
-            'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-            '--rpc-url "$UNICHAIN_RPC_URL"'
-        ),
+        "dry-run": {
+            "⬇️ Mainnet-size swap": (
+                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                '--rpc-url "$UNICHAIN_RPC_URL"'
+            ),
+            "⬇️ Test-size swap": (
+                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                '--rpc-url "$UNICHAIN_RPC_URL"'
+            ),
+            "⬆️ Mainnet-size swap": (
+                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
+                '--rpc-url "$UNICHAIN_RPC_URL"'
+            ),
+            "⬆️ Test-size swap": (
+                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
+                '--rpc-url "$UNICHAIN_RPC_URL"'
+            ),
+        },
         "deploy": {
-            "Mainnet-size swap": {
+            "⬇️ Mainnet-size swap": {
                 "cmd": (
                     'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
                     '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                 ),
                 "dry_run_first": True,
             },
-            "Test-size swap": {
+            "⬇️ Test-size swap": {
                 "cmd": (
                     'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                    '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                ),
+                "dry_run_first": True,
+            },
+            "⬆️ Mainnet-size swap": {
+                "cmd": (
+                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
+                    '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                ),
+                "dry_run_first": True,
+            },
+            "⬆️ Test-size swap": {
+                "cmd": (
+                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
                     '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                 ),
                 "dry_run_first": True,
@@ -130,9 +166,12 @@ COMMANDS: Dict[str, Any] = {
     },
     "advanced": {
         "run_anvil_copy": {
-            "cmd": (
+            "no-mining": (
                 'anvil --fork-block-number 30484160 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
-            )
+            ),
+            "mining": (
+                'anvil --fork-block-number 30484160 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching --block-time 0.5'
+            ),
         },
         "set_feed": {
             "anvil": (

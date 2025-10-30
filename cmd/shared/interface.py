@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # === Infisical configuration ===
 INFISICAL_ENABLED = True
-INFISICAL_ENV = "prod"
+INFISICAL_ENV = "dev"
 INFISICAL_PATH = "/IVa-laptop-forge"
 
 

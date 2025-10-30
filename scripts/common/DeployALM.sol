@@ -180,4 +180,8 @@ abstract contract DeployALM is DeployUtils {
         vm.broadcast(testDeployerKey);
         payable(to).transfer(amount);
     }
+
+    function dealUSDC(address, uint256) public {
+        revert ("Not implemented");
+    }
 }
