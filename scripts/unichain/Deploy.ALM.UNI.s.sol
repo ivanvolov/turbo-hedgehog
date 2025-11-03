@@ -37,11 +37,13 @@ contract DeployALMUNI is DeployALM {
         );
     }
 
-    function run(bool isAnvilTestRun) external {
-        if (isAnvilTestRun) {
+    function run(bool transferETHToDeployer, boll isPreDepositMode) external {
+        if (transferETHToDeployer) {
             console.log("Dealing ETH");
             dealETH(deployerAddress, 10 ether);
         }
+
+        if (isPreDepositMode) setup_params_on_pre_deposit_mode();
 
         // ** Deploy adapters
         {
@@ -108,14 +110,13 @@ contract DeployALMUNI is DeployALM {
         rebalanceTimeThreshold = 2000;
         maxDeviationLong = 1e17;
         maxDeviationShort = 1e17;
+    }
 
-        // //! This is deposit mode only values.
-        // {
-        //     longLeverage = 2e18;
-        //     shortLeverage = 1e18;
-        //     weight = 9e17;
-        //     swapOperator = deployerAddress;
-        // }
+    function setup_params_on_pre_deposit_mode() internal {
+        longLeverage = 2e18;
+        shortLeverage = 1e18;
+        weight = 9e17;
+        swapOperator = deployerAddress;
     }
 
     function setup_adapters_params() internal {

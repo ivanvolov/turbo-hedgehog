@@ -134,10 +134,57 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_lifecycle() public {
-        vm.skip(true);
+        test_deposit_rebalance();
+        part_pre_deposit_lifecycle();
+        // part_general_lifecycle();
+    }
+
+    //TODO Yevhen: uncomment all and make it work.
+    function part_pre_deposit_lifecycle() public {
+        // ** Deposit
+        {
+            deal(address(WETH), address(alice.addr), amountToDep);
+            uint256 sharesBefore = alm.balanceOf(alice.addr);
+            console.log("sharesBefore %s", sharesBefore);
+            vm.prank(alice.addr);
+            uint256 shares = alm.deposit(alice.addr, amountToDep, 0);
+
+            console.log("shares %s", shares);
+            // assertApproxEqAbs(shares, amountToDep, 1e1);
+            // assertEq(alm.balanceOf(alice.addr), shares + sharesBefore, "shares on user");
+            assertEqBalanceStateZero(alice.addr);
+            assertEqBalanceStateZero(address(hook));
+            assertEqBalanceStateZero(address(alm));
+
+            // assertEqPositionState(amountToDep * 2, 0, 0, 0);
+            // assertEqProtocolState(initialSQRTPrice, amountToDep * 2);
+            // assertEq(hook.liquidity(), 0, "liquidity");
+        }
+
+        // ** Withdraw
+        {
+            uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
+            vm.prank(alice.addr);
+            alm.withdraw(alice.addr, sharesToWithdraw / 3, 0, 0);
+
+            // (int24 tickLower, int24 tickUpper) = hook.activeTicks();
+            // uint128 liquidityCheck = LiquidityAmounts.getLiquidityForAmount0(
+            //     ALMMathLib.getSqrtPriceX96FromTick(tickLower),
+            //     ALMMathLib.getSqrtPriceX96FromTick(tickUpper),
+            //     lendingAdapter.getCollateralLong()
+            // );
+
+            // console.log("liquidity %s", hook.liquidity());
+            // console.log("liquidityCheck %s", liquidityCheck);
+
+            // assertApproxEqAbs(hook.liquidity(), (liquidityCheck * liquidityMultiplier) / 1e18, 1);
+        }
+    }
+
+    function part_general_lifecycle() public {
         vm.startPrank(deployer.addr);
         hook.setNextLPFee(feeLP);
-        rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
+        rebalanceAdapter.setRebalanceConstraints(1e15, 60 * 60 * 24 * 7, 1e17, 1e17); // 0.1 (1%), 0.1 (1%) //TODO: do wee need it here?
         vm.stopPrank();
 
         test_deposit_rebalance();

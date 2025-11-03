@@ -131,6 +131,12 @@ def execute_leaf(leaf: Union[str, Dict[str, Any]], path: List[str]) -> None:
         if not sure:
             print("Execution aborted by user.")
             sys.exit(0)
+        
+        # Require password to proceed
+        password = questionary.password("Enter password to proceed:").ask()
+        if password != "13489":
+            print("Invalid password. Execution aborted.")
+            sys.exit(0)
 
     # Run final/broadcast command
     run_step("broadcast" if dry_run_first else (path[-1] if path else "command"), cmd)
