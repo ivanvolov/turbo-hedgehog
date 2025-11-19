@@ -45,6 +45,31 @@
         "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter",
         "swapAdapter": "src/core/swapAdapters/UniswapSwapAdapter.sol:UniswapSwapAdapter"
       }
+    },
+    {
+      "description": "Alm for ETH/USDC to test before real deployment V2. In basic mode with API3 oracle setup.",
+      "addresses": {
+        "alm": "0xDaD4E68a5803cfeb862BBCC7F8D0008de96697D9",
+        "flashLoanAdapter": "0xf37D672dd3425beD81A4232Fe33CA711CF128C96",
+        "hook": "0xE5Ba808abB259EA81BA33D57A54e705a914498C0",
+        "lendingAdapter": "0xF82AbE97BD7F36474ed86c7359241b15F7b54720",
+        "oracle": "0x8FDFf3fAd7D2449eB16F8967c40b17D8d324A45f",
+        "positionManager": "0xf7b753380F4D14e6212c8db9dC4b9501EF8c6C6F",
+        "rebalanceAdapter": "0x4B7290b91235d89D8329E83f9157C5910EBA169c",
+        "swapAdapter": "0xBa14bA6eCa45E3C3d784D3669ecF25892e5E218b",
+        "arbitrageAdapter": "0xaC262534Ab8D793c8bBa5a1CE338Db38C089874e"
+      },
+      "paths": {
+        "alm": "src/ALM.sol:ALM",
+        "flashLoanAdapter": "src/core/flashLoanAdapters/MorphoFlashLoanAdapter.sol:MorphoFlashLoanAdapter",
+        "hook": "src/core/base/BaseStrategyHook.sol:BaseStrategyHook",
+        "lendingAdapter": "src/core/lendingAdapters/EulerLendingAdapter.sol:EulerLendingAdapter",
+        "oracle": "src/core/oracles/Oracle.sol:Oracle",
+        "positionManager": "src/core/positionManagers/PositionManager.sol:PositionManager",
+        "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter",
+        "swapAdapter": "src/core/swapAdapters/UniswapSwapAdapter.sol:UniswapSwapAdapter",
+        "arbitrageAdapter": "test/periphery/ArbV4V4.sol:ArbV4V4"
+      }
     }
   ]
 }

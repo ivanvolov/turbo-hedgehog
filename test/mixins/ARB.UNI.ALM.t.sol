@@ -36,7 +36,7 @@ contract ARB_ETH_UNI_ALMTest is ALMTestBaseUnichain {
     IERC20 USDC = IERC20(UConstants.USDC);
 
     function setUp() public {
-        select_unichain_fork(32808606);
+        select_unichain_fork(32827242);
 
         // ** Setting up test environments params
         {
@@ -105,7 +105,7 @@ contract ARB_ETH_UNI_ALMTest is ALMTestBaseUnichain {
         );
     }
 
-    uint256 amountToDep = 28000000000000000; // 100$ in ETH - 3500
+    uint256 amountToDep = 3428179636612958; // 10$ in ETH - 2917
 
     function part_deposit_rebalance() public {
         deal(address(WETH), address(alice.addr), amountToDep);

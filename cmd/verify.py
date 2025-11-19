@@ -12,6 +12,12 @@ COMMANDS: Dict[str, Any] = {
     "all": {
         "id-1": ("python3 cmd/verify/all.py --id 0"),
         "id-2": ("python3 cmd/verify/all.py --id 1"),
+        "id-3": ("python3 cmd/verify/all.py --id 2"),
+    },
+    "arbitrage": {
+        "id-1": ("python3 cmd/verify/arbitrage.py --id 0"),
+        "id-2": ("python3 cmd/verify/arbitrage.py --id 1"),
+        "id-3": ("python3 cmd/verify/arbitrage.py --id 2"),
     },
     "one": ("./cmd/verify/one.sh"),
 }

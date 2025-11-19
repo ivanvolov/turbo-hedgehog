@@ -24,7 +24,7 @@ contract DepositAndRebalanceALMUNI is DeployALM {
         loadComponentAddresses();
     }
 
-    uint256 public mainnetDepositAmount = 28000000000000000; // ~ 1$
+    uint256 public mainnetDepositAmount = 3428179636612958; // 10$ in ETH - 2917
     uint256 public testDepositAmount = 1 ether; // ~ 3800$
 
     function run(uint256 action) external {

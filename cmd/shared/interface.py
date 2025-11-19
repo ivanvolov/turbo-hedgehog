@@ -13,6 +13,7 @@ INFISICAL_ENABLED = True
 # We always use dev env vars even during production deployments on the blockchains.
 INFISICAL_ENV = "dev"
 INFISICAL_PATH = "/IVa-laptop-forge"
+PASSWORD = "13489"
 
 
 def with_infisical(cmd: str) -> str:
@@ -135,7 +136,7 @@ def execute_leaf(leaf: Union[str, Dict[str, Any]], path: List[str]) -> None:
 
         # Require password to proceed
         password = questionary.password("Enter password to proceed:").ask()
-        if password != "13489":
+        if password != PASSWORD:
             print("Invalid password. Execution aborted.")
             sys.exit(0)
 

@@ -31,7 +31,7 @@ contract SwapDepositAndRebalanceALMUNI is DeployALM {
         IS_NTS = true;
     }
 
-    uint256 public mainnetSwapAmountETH = 28000000000000000 / 10; // ~ 1$
+    uint256 public mainnetSwapAmountETH = 342817963661295; // ~ 1$
     uint256 public testSwapAmountETH = 1 ether / 20; // ~ 380$
     uint256 public mainnetSwapAmountUSDC = 1 * 1e6; // ~ 1$
     uint256 public testSwapAmountUSDC = 380 * 1e6; // ~ 380$
