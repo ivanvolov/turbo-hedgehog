@@ -37,7 +37,7 @@ contract DeployALMUNI is DeployALM {
         );
     }
 
-    function run(bool transferETHToDeployer, boll isPreDepositMode) external {
+    function run(bool transferETHToDeployer, bool isPreDepositMode) external {
         if (transferETHToDeployer) {
             console.log("Dealing ETH");
             dealETH(deployerAddress, 10 ether);
@@ -83,7 +83,7 @@ contract DeployALMUNI is DeployALM {
         QUOTE = IERC20(UConstants.WETH);
         longLeverage = 3e18;
         shortLeverage = 2e18;
-        weight = 55e16; //50%
+        weight = 55e16; //55%
         liquidityMultiplier = 2e18;
         slippage = 15e14; //0.15%
         feeLP = 500; //0.05%

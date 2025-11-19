@@ -22,13 +22,12 @@ contract DepositAndRebalanceALMUNI is DeployALM {
         QUOTE = IERC20(UConstants.WETH);
         loadActorsUNI();
         loadComponentAddresses();
-        poolKey = constructPoolKey();
     }
 
-    uint256 public mainnetDepositAmount = 224250000000000; // ~ 1$
+    uint256 public mainnetDepositAmount = 28000000000000000; // ~ 1$
     uint256 public testDepositAmount = 1 ether; // ~ 3800$
 
-    function run(uint256 depositSize) external {
+    function run(uint256 action) external {
         if (action == 0) {
             // Mainnet deposit small size
             doDeposit(mainnetDepositAmount);

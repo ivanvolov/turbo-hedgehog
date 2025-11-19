@@ -1,5 +1,5 @@
 {
-  "plugins": ["prettier-plugin-solidity", "prettier-plugin-python"],
+  "plugins": ["prettier-plugin-solidity"],
   "overrides": [
     {
       "files": "*.sol",
@@ -19,15 +19,6 @@
         "semi": true,
         "tabWidth": 4,
         "useTabs": false,
-        "singleQuote": false,
-        "bracketSpacing": true
-      }
-    },
-    {
-      "files": "*.py",
-      "options": {
-        "printWidth": 88,
-        "semi": false,
         "singleQuote": false,
         "bracketSpacing": true
       }

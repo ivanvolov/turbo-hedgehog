@@ -5,25 +5,13 @@ import "forge-std/console.sol";
 
 // ** External imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
-import {ALM} from "@src/ALM.sol";
-import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-
-// ** interfaces
-import {IFlashLoanAdapter} from "@src/interfaces/IFlashLoanAdapter.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
-import {IPositionManagerStandard} from "@test/interfaces/IPositionManagerStandard.sol";
 
 contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 longLeverage = 2e18;
@@ -280,8 +268,9 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
 
             deal(address(swapper.addr), ethToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaETH) = swapETH_USDC_Out(usdcToGetFSwap);
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaUSDC, uint256 deltaETH) = swapETH_USDC_Out(usdcToGetFSwap);
+            swapETH_USDC_Out(usdcToGetFSwap);
 
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -327,8 +316,9 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             uint256 usdcToSwap = 10000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaETH) = swapUSDC_ETH_In(usdcToSwap);
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaUSDC, uint256 deltaETH) = swapUSDC_ETH_In(usdcToSwap);
+            swapUSDC_ETH_In(usdcToSwap);
 
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -357,8 +347,9 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             uint256 usdcToSwap = 5000e6; // 10k USDC
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaETH) = swapUSDC_ETH_In(usdcToSwap);
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaUSDC, uint256 deltaETH) = swapUSDC_ETH_In(usdcToSwap);
+            swapUSDC_ETH_In(usdcToSwap);
 
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
@@ -379,8 +370,9 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
 
             deal(address(USDC), address(swapper.addr), usdcToSwapQ);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaETH) = swapUSDC_ETH_Out(ethToGetFSwap);
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaUSDC, uint256 deltaETH) = swapUSDC_ETH_Out(ethToGetFSwap);
+            swapUSDC_ETH_Out(ethToGetFSwap);
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             // (uint256 deltaX, uint256 deltaY) = _checkSwap(
@@ -398,8 +390,9 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             uint256 ethToSwap = 10e18;
             deal(address(swapper.addr), ethToSwap);
 
-            uint256 preSqrtPrice = hook.sqrtPriceCurrent();
-            (uint256 deltaUSDC, uint256 deltaETH) = swapETH_USDC_In(ethToSwap);
+            // uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            // (uint256 deltaUSDC, uint256 deltaETH) = swapETH_USDC_In(ethToSwap);
+            swapETH_USDC_In(ethToSwap);
             // uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             // (uint256 deltaX, uint256 deltaY) = _checkSwap(
@@ -416,7 +409,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Rebalance
         {
-            uint256 preRebalanceTVL = calcTVL();
+            // uint256 preRebalanceTVL = calcTVL();
             vm.prank(deployer.addr);
             rebalanceAdapter.rebalance(slippage);
             // assertEqHookPositionState(preRebalanceTVL, weight, longLeverage, shortLeverage, slippage);

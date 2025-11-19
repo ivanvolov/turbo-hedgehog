@@ -13,10 +13,11 @@
     "ethers": "^5.6.9",
     "fs": "^0.0.1-security",
     "prettier-plugin-solidity": "^2.0.0",
-    "web3": "^1.7.5"
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.17",
+    "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

@@ -25,7 +25,6 @@ import {Oracle} from "@src/core/oracles/Oracle.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
-import {TestFeed} from "@test/simulations/TestFeed.sol";
 import {DeployUtils} from "./DeployUtils.sol";
 
 // ** libraries
@@ -153,16 +152,6 @@ abstract contract DeployALM is DeployUtils {
         );
     }
 
-    TestFeed feed0;
-    TestFeed feed1;
-
-    function deploy_oracle_with_test_feeds(uint256 price0, uint256 price1) internal {
-        feed0 = new TestFeed(price0, 18);
-        feed1 = new TestFeed(price1, 18);
-        oracle = new Oracle(feed0, feed1, isInvertedPoolInOracle, decimalsDelta);
-        IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
-    }
-
     function deploy_oracle() internal {
         oracle = new Oracle(feedB, feedQ, isInvertedPoolInOracle, decimalsDelta);
         IOracleTest(address(oracle)).setStalenessThresholds(stalenessThresholdB, stalenessThresholdQ);
@@ -181,7 +170,7 @@ abstract contract DeployALM is DeployUtils {
         payable(to).transfer(amount);
     }
 
-    function dealUSDC(address, uint256) public {
-        revert ("Not implemented");
+    function dealUSDC(address, uint256) public pure {
+        revert("Not implemented");
     }
 }

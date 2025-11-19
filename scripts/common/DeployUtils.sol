@@ -19,12 +19,16 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 // ** contracts
 import {ALM} from "@src/ALM.sol";
+import {ArbV4V4} from "@test/periphery/ArbV4V4.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {Oracle} from "@src/core/oracles/Oracle.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UniswapSwapAdapter} from "@src/core/swapAdapters/UniswapSwapAdapter.sol";
+
+// ** libraries
+import {TestLib} from "@test/libraries/TestLib.sol";
 
 // ** interfaces
 import {IOracle} from "@src/interfaces/IOracle.sol";
@@ -46,6 +50,9 @@ abstract contract DeployUtils is Script {
 
     uint256 depositorKey;
     address depositorAddress;
+
+    uint256 arbitragerKey;
+    address arbitragerAddress;
 
     // ** Strategy params
     string TOKEN_NAME;
@@ -72,6 +79,7 @@ abstract contract DeployUtils is Script {
     IPositionManagerStandard positionManager;
     IOracle oracle;
     ISwapAdapter swapAdapter;
+    ArbV4V4 arbitrageAdapter;
 
     function getAndCheckPoolKey(
         IERC20 token0,
@@ -101,8 +109,8 @@ abstract contract DeployUtils is Script {
             1,
             IHooks(address(hook))
         );
-        // console.log("PoolID: %s");
-        // console.logBytes32(PoolId.unwrap(_poolKey.toId()));
+        console.log("PoolID reconstructed:");
+        console.logBytes32(PoolId.unwrap(_poolKey.toId()));
     }
 
     function getHookCurrenciesInOrder() internal view returns (address currency0, address currency1) {
@@ -162,14 +170,17 @@ abstract contract DeployUtils is Script {
         PERMIT_2.approve(address(TOKEN), address(universalRouter), type(uint160).max, type(uint48).max);
     }
 
-    function loadActorsAnvil() internal {
-        deployerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_DEPLOYER");
-        deployerAddress = vm.addr(deployerKey);
-        swapperKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_SWAPPER");
-        swapperAddress = vm.addr(swapperKey);
-        depositorKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_DEPOSITOR");
-        depositorAddress = vm.addr(depositorKey);
-    }
+    // TODO: remove it in the future if no anvil envs needed.
+    // function loadActorsAnvil() internal {
+    //     deployerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_DEPLOYER");
+    //     deployerAddress = vm.addr(deployerKey);
+    //     swapperKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_SWAPPER");
+    //     swapperAddress = vm.addr(swapperKey);
+    //     depositorKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_DEPOSITOR");
+    //     depositorAddress = vm.addr(depositorKey);
+    //     arbitragerKey = vm.envUint("TEST_ANVIL_PRIVATE_KEY_ARBITRAGER");
+    //     arbitragerAddress = vm.addr(arbitragerKey);
+    // }
 
     function loadActorsUNI() internal {
         deployerKey = vm.envUint("PROD_UNI_PRIVATE_KEY_DEPLOYER");
@@ -178,6 +189,8 @@ abstract contract DeployUtils is Script {
         swapperAddress = vm.addr(swapperKey);
         depositorKey = vm.envUint("PROD_UNI_PRIVATE_KEY_DEPOSITOR");
         depositorAddress = vm.addr(depositorKey);
+        arbitragerKey = vm.envUint("PROD_UNI_PRIVATE_KEY_ARBITRAGER");
+        arbitragerAddress = vm.addr(arbitragerKey);
     }
 
     function saveComponentAddresses() internal {
@@ -189,6 +202,7 @@ abstract contract DeployUtils is Script {
         console.log("Oracle:             %s", address(oracle));
         console.log("PositionManager:    %s", address(positionManager));
         console.log("FlashLoanAdapter:   %s", address(flashLoanAdapter));
+        console.log("SwapAdapter:        %s", address(swapAdapter));
         console.log("LendingAdapter:     %s", address(lendingAdapter));
         console.log("===================================\n");
 
@@ -200,6 +214,7 @@ abstract contract DeployUtils is Script {
         vm.serializeAddress(json, "oracle", address(oracle));
         vm.serializeAddress(json, "positionManager", address(positionManager));
         vm.serializeAddress(json, "flashLoanAdapter", address(flashLoanAdapter));
+        vm.serializeAddress(json, "swapAdapter", address(swapAdapter));
         string memory finalJson = vm.serializeAddress(json, "lendingAdapter", address(lendingAdapter));
 
         // Write to broadcast folder
@@ -221,6 +236,20 @@ abstract contract DeployUtils is Script {
         vm.writeJson(finalJson, deploymentPath);
     }
 
+    function saveArbitrageAdapterAddresses() internal {
+        console.log("\n=== Deployed Arbitrage Adapter Addresses ===");
+        console.log("Arbitrage Adapter: %s", address(arbitrageAdapter));
+        console.log("===================================\n");
+
+        // Serialize addresses to JSON
+        string memory json = "deployments";
+        string memory finalJson = vm.serializeAddress(json, "arbitrageAdapter", address(arbitrageAdapter));
+
+        // Write to broadcast folder
+        string memory deploymentPath = "./broadcast/custom_unichain_arbitrage_broadcast.json";
+        vm.writeJson(finalJson, deploymentPath);
+    }
+
     function loadOracleAddress() internal {
         string memory deploymentPath = "./broadcast/custom_unichain_oracle_broadcast.json";
         string memory json = vm.readFile(deploymentPath);
@@ -230,6 +259,17 @@ abstract contract DeployUtils is Script {
         console.log("oracleAddress %s", oracleAddress);
 
         oracle = IOracle(oracleAddress);
+    }
+
+    function loadArbitrageAdapterAddress() internal {
+        string memory deploymentPath = "./broadcast/custom_unichain_arbitrage_broadcast.json";
+        string memory json = vm.readFile(deploymentPath);
+
+        // Parse addresses from JSON
+        address arbitrageAdapterAddress = vm.parseJsonAddress(json, ".arbitrageAdapter");
+        console.log("arbitrageAdapterAddress %s", arbitrageAdapterAddress);
+
+        arbitrageAdapter = ArbV4V4(payable(arbitrageAdapterAddress));
     }
 
     function loadComponentAddresses() internal {
@@ -244,15 +284,21 @@ abstract contract DeployUtils is Script {
         address oracleAddress = vm.parseJsonAddress(json, ".oracle");
         address positionManagerAddress = vm.parseJsonAddress(json, ".positionManager");
         address flashLoanAdapterAddress = vm.parseJsonAddress(json, ".flashLoanAdapter");
+        address swapAdapterAddress = vm.parseJsonAddress(json, ".swapAdapter");
         address lendingAdapterAddress = vm.parseJsonAddress(json, ".lendingAdapter");
 
         // Cast to appropriate contract types
         alm = ALM(almAddress);
         hook = BaseStrategyHook(payable(hookAddress));
+        BASE = hook.BASE();
+        QUOTE = hook.QUOTE();
+        IS_NTS = hook.WETH9() != TestLib.ZERO_WETH9;
+        poolKey = constructPoolKey();
         rebalanceAdapter = SRebalanceAdapter(rebalanceAdapterAddress);
         oracle = IOracle(oracleAddress);
         positionManager = IPositionManagerStandard(positionManagerAddress);
         flashLoanAdapter = IFlashLoanAdapter(flashLoanAdapterAddress);
+        swapAdapter = ISwapAdapter(swapAdapterAddress);
         lendingAdapter = ILendingAdapter(lendingAdapterAddress);
     }
 

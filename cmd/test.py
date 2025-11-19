@@ -225,6 +225,14 @@ COMMANDS: Dict[str, Any] = {
                 'forge test -vvvv --match-contract PRE_DEPOSIT_UNI_ALMTest --match-test "test_"'
             ),
         },
+        "ARB ALM UNISWAP": {
+            "silent": (
+                'forge test -vv --match-contract ARB_ETH_UNI_ALMTest --match-test "test_"'
+            ),
+            "logs": (
+                'forge test -vvvv --match-contract ARB_ETH_UNI_ALMTest --match-test "test_"'
+            ),
+        },
     },
 }
 

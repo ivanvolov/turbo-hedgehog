@@ -27,7 +27,6 @@ contract MoveALMUNI is DeployALM {
         QUOTE = IERC20(UConstants.WETH);
         loadActorsUNI();
         loadComponentAddresses();
-        poolKey = constructPoolKey();
     }
 
     function run() external {

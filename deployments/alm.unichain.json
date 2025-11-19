@@ -9,7 +9,8 @@
         "lendingAdapter": "0x05E93f708ca58D62617d5e5ad1E6D4a88C8fbcCE",
         "oracle": "0x21e0E87467A9629b35FaB45734d7E0a645931f09",
         "positionManager": "0x721b5752b8215486C1a75bF372f71aCa167480F9",
-        "rebalanceAdapter": "0xAed8CeB0FeC91fBBf3bfC1Ca779C70d7828c598B"
+        "rebalanceAdapter": "0xAed8CeB0FeC91fBBf3bfC1Ca779C70d7828c598B",
+        "swapAdapter": "0x397910e71DC884062D90f518072cE9513D0323Ac"
       },
       "paths": {
         "alm": "src/ALM.sol:ALM",
@@ -18,7 +19,8 @@
         "lendingAdapter": "src/core/lendingAdapters/EulerLendingAdapter.sol:EulerLendingAdapter",
         "oracle": "src/core/oracles/Oracle.sol:Oracle",
         "positionManager": "src/core/positionManagers/PositionManager.sol:PositionManager",
-        "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter"
+        "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter",
+        "swapAdapter": "src/core/swapAdapters/UniswapSwapAdapter.sol:UniswapSwapAdapter"
       }
     },
     {
@@ -30,7 +32,8 @@
         "lendingAdapter": "0x98bEf40722b21382C3389B72F16f9b79CEdA8Db1",
         "oracle": "0xC497f949d484A92d101aD5bab2B246DB826E79eD",
         "positionManager": "0xB15f788e39639a86fb27ea9355C4226FecEbA496",
-        "rebalanceAdapter": "0x03Abaf87f1D96d8AA5e6805D63B99DB6162bEdCe"
+        "rebalanceAdapter": "0x03Abaf87f1D96d8AA5e6805D63B99DB6162bEdCe",
+        "swapAdapter": "0x266d2B28E6F6D1426cB8380179D0748861168Ec4"
       },
       "paths": {
         "alm": "src/ALM.sol:ALM",
@@ -39,7 +42,8 @@
         "lendingAdapter": "src/core/lendingAdapters/EulerLendingAdapter.sol:EulerLendingAdapter",
         "oracle": "src/core/oracles/Oracle.sol:Oracle",
         "positionManager": "src/core/positionManagers/PositionManager.sol:PositionManager",
-        "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter"
+        "rebalanceAdapter": "src/core/SRebalanceAdapter.sol:SRebalanceAdapter",
+        "swapAdapter": "src/core/swapAdapters/UniswapSwapAdapter.sol:UniswapSwapAdapter"
       }
     }
   ]

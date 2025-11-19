@@ -20,7 +20,7 @@ etherscan_api_key = "${ETHERSCAN_API_KEY}"
 unichain = { key = "${ETHERSCAN_API_KEY}" }
 
 [lint]
-exclude_lints = ["unaliased-plain-import", "screaming-snake-case-immutable", "mixed-case-variable", "mixed-case-function", "divide-before-multiply"]
+exclude_lints = ["unaliased-plain-import", "screaming-snake-case-immutable", "mixed-case-variable", "mixed-case-function", "divide-before-multiply", "named-struct-fields", "unsafe-typecast", "unwrapped-modifier-logic", "unsafe-cheatcode"]
 ignore = [
     "./test/libraries/math/**/*.sol",
     "./test/libraries/v4-forks/**/*.sol",

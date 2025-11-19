@@ -5,6 +5,7 @@ import "forge-std/console.sol";
 
 // ** contracts
 import {DeployALM} from "../common/DeployALM.sol";
+import {TestFeed} from "@test/simulations/TestFeed.sol";
 
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
@@ -16,22 +17,32 @@ contract DeployOraclesUNI is DeployALM {
         setup_oracles_params();
     }
 
-    function run(bool isTestFeed) external {
+    function run(uint256 action) external {
         console.log("Deploying Oracles");
         console.log("Block.timestamp", block.timestamp);
         vm.startBroadcast(deployerKey);
-        if (isTestFeed) deploy_oracle_with_test_feeds(UConstants.api3_feed_USDC_price, UConstants.api3_feed_WETH_price);
-        else deploy_oracle();
+        if (action == 0) {
+            // Test Mock feeds
+            feedB = new TestFeed(UConstants.api3_feed_USDC_price, 18);
+            feedQ = new TestFeed(UConstants.api3_feed_WETH_price, 18);
+            deploy_oracle();
+        } else if (action == 1) {
+            // Chronicle feeds
+            feedB = UConstants.chronicle_feed_USDC;
+            feedQ = UConstants.chronicle_feed_WETH;
+            deploy_oracle();
+        } else if (action == 2) {
+            // API3 feeds
+            feedB = UConstants.api3_feed_USDC;
+            feedQ = UConstants.api3_feed_WETH;
+            deploy_oracle();
+        } else revert("Invalid action");
         vm.stopBroadcast();
 
         saveOracleAddresses();
     }
 
     function setup_oracles_params() internal {
-        // feedB = UConstants.chronicle_feed_USDC;
-        // feedQ = UConstants.chronicle_feed_WETH;
-        feedB = UConstants.api3_feed_USDC;
-        feedQ = UConstants.api3_feed_WETH;
         stalenessThresholdB = 24 hours;
         stalenessThresholdQ = 24 hours;
         isInvertedPoolInOracle = false;

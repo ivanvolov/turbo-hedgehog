@@ -22,13 +22,12 @@ contract RebalanceALMUNI is DeployALM {
         QUOTE = IERC20(UConstants.WETH);
         loadActorsUNI();
         loadComponentAddresses();
-        poolKey = constructPoolKey();
     }
 
     function run(uint256 action) external {
         if (action == 0) doRebalance(15e14);
         else if (action == 1) doRebalance(1e18);
-        else revert("Invalid action")
+        else revert("Invalid action");
     }
 
     function doRebalance(uint256 slippage) internal {

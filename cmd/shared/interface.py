@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # === Infisical configuration ===
 INFISICAL_ENABLED = True
+# We always use dev env vars even during production deployments on the blockchains.
 INFISICAL_ENV = "dev"
 INFISICAL_PATH = "/IVa-laptop-forge"
 
@@ -131,7 +132,7 @@ def execute_leaf(leaf: Union[str, Dict[str, Any]], path: List[str]) -> None:
         if not sure:
             print("Execution aborted by user.")
             sys.exit(0)
-        
+
         # Require password to proceed
         password = questionary.password("Enter password to proceed:").ask()
         if password != "13489":

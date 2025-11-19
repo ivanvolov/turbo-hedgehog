@@ -29,12 +29,11 @@ contract SwapDepositAndRebalanceALMUNI is DeployALM {
         loadActorsUNI();
         loadComponentAddresses();
         IS_NTS = true;
-        poolKey = constructPoolKey();
     }
 
-    uint256 public mainnetSwapAmountETH = 224250000000000; // ~ 1$
+    uint256 public mainnetSwapAmountETH = 28000000000000000 / 10; // ~ 1$
     uint256 public testSwapAmountETH = 1 ether / 20; // ~ 380$
-    uint256 public mainnetSwapAmountUSDC =1 *1e6; // ~ 1$
+    uint256 public mainnetSwapAmountUSDC = 1 * 1e6; // ~ 1$
     uint256 public testSwapAmountUSDC = 380 * 1e6; // ~ 380$
 
     // ** The difference between mainnet and test is not only in amounts, but also that we assume we have assets on the address during mainnet.
@@ -46,15 +45,15 @@ contract SwapDepositAndRebalanceALMUNI is DeployALM {
             // Test deposit
             dealETH(swapperAddress, testSwapAmountETH);
             doSwap(true, testSwapAmountETH);
-        } else if(action == 2) {
+        } else if (action == 2) {
             // Mainnet deposit
             doSwap(false, mainnetSwapAmountUSDC);
         } else if (action == 3) {
+            revert("Not implemented");
             // Test deposit
-            dealUSDC(swapperAddress, testSwapAmountUSDC);
-            doSwap(false, testSwapAmountUSDC);
-        }
-        else revert("Invalid action");
+            // dealUSDC(swapperAddress, testSwapAmountUSDC);
+            // doSwap(false, testSwapAmountUSDC);
+        } else revert("Invalid action");
     }
 
     function doSwap(bool zeroForOne, uint256 ethToSwap) internal {

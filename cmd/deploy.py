@@ -10,227 +10,288 @@ SESSION_FILE = "deploy.session"
 # ============================================================================
 COMMANDS: Dict[str, Any] = {
     "anvil": {
-        "oracles": {
-            "deploy mock feeds": (
-                'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" true '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "deploy api3 feeds": (
-                'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" true '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
+        "deploy": {
+            "oracles": {
+                "mock feeds": (
+                    'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 0 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "chronicle feeds": (
+                    'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 1 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "api3 feeds": (
+                    'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 2 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+            },
+            "body": {
+                "general": (
+                    'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" true false '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "pre-deposit": (
+                    'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" true true '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+            },
         },
-        "body": {
-            "general": (
-                'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" true false'
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "pre-deposit": (
-                'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" true true'
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-        },
-        "deposit": {
-            "mainnet-size (Small) deposit": (
-                'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "test-size (Large) deposit": (
-                'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-        },
-        "rebalance": 
-        {
-            "general": (
-                'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "pre-deposit": (
-                'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-        },
-        "swap": {
-            "⬇️ mainnet-size (Small) swap": (
-                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "⬇️ test-size (Large) swap": (
-                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "⬆️ mainnet-size (Small) swap": (
-                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
-            "⬆️ test-size (Large) swap": (
-                'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
-                "--broadcast --rpc-url http://127.0.0.1:8545"
-            ),
+        "operate": {
+            "deposit": {
+                "mainnet-size (Small) deposit": (
+                    'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "test-size (Large) deposit": (
+                    'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+            },
+            "rebalance": {
+                "general": (
+                    'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "pre-deposit": (
+                    'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+            },
+            "swap": {
+                "⬇️ mainnet-size (Small) swap": (
+                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "⬇️ test-size (Large) swap": (
+                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "⬆️ mainnet-size (Small) swap": (
+                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "⬆️ test-size (Large) swap": (
+                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+            },
         },
         "advanced": {
             "run_anvil_copy: mining": (
-                'anvil --fork-block-number 30484160 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching --block-time 0.5'
+                'anvil --fork-block-number 32808606 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching --block-time 0.5'
             ),
             "run_anvil_copy: no-mining": (
-                'anvil --fork-block-number 30484160 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
+                'anvil --fork-block-number 32808606 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
             ),
             "set_feed": (
                 "forge script scripts/unichain/SET.FEED.UNI.s.sol "
                 "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
             "move from pre-deposit to general": (
-                'forge script scripts/unichain/Move.ALM.UNI.s.sol '
+                "forge script scripts/unichain/Move.ALM.UNI.s.sol "
                 "--broadcast --rpc-url http://127.0.0.1:8545"
             ),
+            "arbitrage": {
+                "deploy": (
+                    'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 5 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "ensure exclusive": (
+                    'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 1 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "ensure non-exclusive": (
+                    'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 2 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "calculate price ratio": (
+                    'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 3 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+                "execute arbitrage": (
+                    'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 4 '
+                    "--broadcast --rpc-url http://127.0.0.1:8545"
+                ),
+            },
         },
     },
     "unichain": {
-        "oracles": {
-            "dry-run: api3 feeds": (
-                'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
-                '--rpc-url "$UNICHAIN_RPC_URL"'
-            ),
-            "deploy: api3 feeds": {
-                "cmd": (
-                    'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(bool)" false '
-                    '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "dry_run_first": True,
+        "deploy": {
+            "oracles": {
+                "mock feeds": {
+                    "dry-run": (
+                        'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 0 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 0 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                },
+                "chronicle feeds": {
+                    "dry-run": (
+                        'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 1 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 1 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                },
+                "api3 feeds": {
+                    "dry-run": (
+                        'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 2 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.Oracles.UNI.s.sol --sig "run(uint256)" 2 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                },
             },
-        },
-        "body": {
-            "general": {
-                "dry-run": (
-                    'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" false false '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "deploy": {
-                    "cmd": (
+            "body": {
+                "general": {
+                    "dry-run": (
                         'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" false false '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" false false '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
                 },
-            },
-            "pre-deposit": {
-                "dry-run": (
-                    'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" false true '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "deploy": {
-                    "cmd": (
+                "pre-deposit": {
+                    "dry-run": (
                         'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" false true '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ALM.UNI.s.sol --sig "run(bool,bool)" false true '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
                 },
             },
         },
-        "deposit": {
-            "dry-run": {
-                "mainnet-size (Small) deposit": (
-                    'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "test-size (Large) deposit": (
-                    'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-            },
-            "deploy": {
-                "mainnet-size (Small) deposit": {
-                    "cmd": (
+        "operate": {
+            "deposit": {
+                "dry-run": {
+                    "mainnet-size (Small) deposit": (
                         'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
-                },
-                "test-size (Large) deposit": {
-                    "cmd": (
+                    "test-size (Large) deposit": (
                         'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
+                },
+                "broadcast": {
+                    "mainnet-size (Small) deposit": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "test-size (Large) deposit": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deposit.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
                 },
             },
-        },
-        "rebalance": {
-            "general": {
-                "dry-run": (
-                    'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "deploy": {
-                    "cmd": (
+            "rebalance": {
+                "general": {
+                    "dry-run": (
                         'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
                 },
-            },
-            "pre-deposit": {
-                "dry-run": (
-                    'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "deploy": {
-                    "cmd": (
+                "pre-deposit": {
+                    "dry-run": (
                         'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
+                    "broadcast": {
+                        "cmd": (
+                            'forge script scripts/unichain/Rebalance.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
                 },
             },
-        },
-        "swap": {
-            "dry-run": {
-                "⬇️ mainnet-size (Small) swap": (
-                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "⬇️ test-size (Large) swap": (
-                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "⬆️ mainnet-size (Small) swap": (
-                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-                "⬆️ test-size (Large) swap": (
-                    'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
-                    '--rpc-url "$UNICHAIN_RPC_URL"'
-                ),
-            },
-            "deploy": {
-                "⬇️ mainnet-size (Small) swap": {
-                    "cmd": (
+            "swap": {
+                "dry-run": {
+                    "⬇️ mainnet-size (Small) swap": (
                         'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
-                },
-                "⬇️ test-size (Large) swap": {
-                    "cmd": (
+                    "⬇️ test-size (Large) swap": (
                         'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
-                },
-                "⬆️ mainnet-size (Small) swap": {
-                    "cmd": (
+                    "⬆️ mainnet-size (Small) swap": (
                         'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
-                },
-                "⬆️ test-size (Large) swap": {
-                    "cmd": (
+                    "⬆️ test-size (Large) swap": (
                         'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
-                        '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
                     ),
-                    "dry_run_first": True,
+                },
+                "broadcast": {
+                    "⬇️ mainnet-size (Small) swap": {
+                        "cmd": (
+                            'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 0 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "⬇️ test-size (Large) swap": {
+                        "cmd": (
+                            'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 1 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "⬆️ mainnet-size (Small) swap": {
+                        "cmd": (
+                            'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 2 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "⬆️ test-size (Large) swap": {
+                        "cmd": (
+                            'forge script scripts/unichain/SWAP.ALM.UNI.s.sol --sig "run(uint256)" 3 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
                 },
             },
         },
@@ -240,29 +301,90 @@ COMMANDS: Dict[str, Any] = {
                     "forge script scripts/unichain/SET.FEED.UNI.s.sol "
                     '--rpc-url "$UNICHAIN_RPC_URL"'
                 ),
-                "deploy": {
+                "broadcast": {
                     "cmd": (
                         "forge script scripts/unichain/SET.FEED.UNI.s.sol "
                         '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                     ),
                     "dry_run_first": True,
-                }
+                },
             },
             "move from pre-deposit to general": {
                 "dry-run": (
-                    'forge script scripts/unichain/Move.ALM.UNI.s.sol '
+                    "forge script scripts/unichain/Move.ALM.UNI.s.sol "
                     '--rpc-url "$UNICHAIN_RPC_URL"'
                 ),
-                "deploy": {
+                "broadcast": {
                     "cmd": (
-                        'forge script scripts/unichain/Move.ALM.UNI.s.sol '
+                        "forge script scripts/unichain/Move.ALM.UNI.s.sol "
                         '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
                     ),
                     "dry_run_first": True,
                 },
             },
+            "arbitrage": {
+                "dry-run": {
+                    "deploy": (
+                        'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 0 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "ensure exclusive": (
+                        'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 1 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "ensure non-exclusive": (
+                        'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 2 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "calculate price ratio": (
+                        'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 3 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                    "execute arbitrage": (
+                        'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 4 '
+                        '--rpc-url "$UNICHAIN_RPC_URL"'
+                    ),
+                },
+                "broadcast": {
+                    "deploy": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 0 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "ensure exclusive": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 1 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "ensure non-exclusive": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 2 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "calculate price ratio": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 3 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                    "execute arbitrage": {
+                        "cmd": (
+                            'forge script scripts/unichain/Deploy.ARB.UNI.s.sol --sig "run(uint256)" 4 '
+                            '--broadcast --rpc-url "$UNICHAIN_RPC_URL"'
+                        ),
+                        "dry_run_first": True,
+                    },
+                },
+            },
         },
-    }
+    },
 }
 
 
