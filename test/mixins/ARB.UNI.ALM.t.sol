@@ -36,7 +36,7 @@ contract ARB_ETH_UNI_ALMTest is ALMTestBaseUnichain {
     IERC20 USDC = IERC20(UConstants.USDC);
 
     function setUp() public {
-        select_unichain_fork(32827242);
+        select_unichain_fork(32905776);
 
         // ** Setting up test environments params
         {
