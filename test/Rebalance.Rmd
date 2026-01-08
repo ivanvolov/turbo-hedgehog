@@ -1,0 +1,84 @@
+---
+title: "Rebalances"
+author: "Yevhen"
+date: "2026-01-05"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+```
+
+```{r}
+events <- read.csv("events.csv")
+```
+
+```{r}
+rebalance_ledger <- events %>%
+  filter(eventName == "Rebalance") %>%
+  arrange(blockTimestamp) %>%
+  mutate(
+    Date = as.POSIXct(blockTimestamp, origin="1970-01-01"),
+    Block = blockNumber,
+    
+    # Time Calculations
+    Time_Diff_Sec = as.numeric(difftime(Date, lag(Date), units = "secs")),
+    Time_Hours = round(Time_Diff_Sec / 3600, 1),
+    
+    # Price Calculations (Scale: 1e6)
+    Price = args_oraclePriceAtRebalance / 1e6,
+    Price_Delta = round((Price / lag(Price) - 1) * 100, 2),
+    
+    # Slippage Calculations (Scale: 1e16 = 1%)
+    Slippage = round(args_slippage / 1e16, 2),
+    
+    # Context Classification Logic
+    Context = case_when(
+      is.na(Time_Diff_Sec) ~ "Initial",
+      Time_Diff_Sec > 86400 ~ "CRITICAL GAP (>24h)",
+      Time_Diff_Sec >= 1900 & Time_Diff_Sec <= 2100 & abs(Price_Delta) < 0.1 ~ "Heartbeat (~33m)",
+      abs(Price_Delta) >= 0.9 & Slippage > 1 ~ "Volatility (High Slip)",
+      abs(Price_Delta) >= 0.9 ~ "Volatility",
+      Slippage > 1 ~ "Weird",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  select(Date, Block, Time_Hours, Price, Price_Delta, Slippage, Context)
+
+print(rebalance_ledger)
+
+# write.csv(rebalance_ledger, "rebalance_ledger_analysis.csv", row.names = FALSE)
+```
+```{r}
+events$Date <- as.POSIXct(events$blockTimestamp, origin="1970-01-01")
+
+plot_data <- events %>%
+  filter(eventName == "Rebalance") %>%
+  arrange(Date) %>%
+  mutate(
+    Time_Diff_Sec = as.numeric(difftime(Date, lag(Date), units = "secs")),
+    Price_Change_Abs = abs((args_oraclePriceAtRebalance / lag(args_oraclePriceAtRebalance) - 1) * 100),
+    Trigger_Type = case_when(
+      Time_Diff_Sec < 1900 ~ "Volatility (<1900s)",
+      Time_Diff_Sec >= 1900 & Time_Diff_Sec <= 2100 ~ "Heartbeat (~2000s)",
+      TRUE ~ "Gap/Recovery (>2100s)"
+    )
+  ) %>%
+  filter(!is.na(Time_Diff_Sec))
+
+# Plot
+ggplot(plot_data, aes(x = Time_Diff_Sec, y = Price_Change_Abs, color = Trigger_Type)) +
+  geom_point(size = 3, alpha = 0.8) +
+  scale_x_log10() +
+  geom_vline(xintercept = 2000, linetype = "dashed", color = "grey") +
+  geom_hline(yintercept = 1.0, linetype = "dotted", color = "grey") +
+  scale_color_manual(values = c("Volatility (<1900s)" = "#E74C3C", 
+                                "Heartbeat (~2000s)" = "#27AE60", 
+                                "Gap/Recovery (>2100s)" = "#F39C12")) +
+  labs(title = "Rebalance Logic: Time vs. Price Volatility",
+       x = "Time Since Last Rebalance (Seconds, Log Scale)",
+       y = "Absolute Price Change (%)") +
+  theme_minimal()
+```

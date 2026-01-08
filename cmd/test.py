@@ -225,12 +225,20 @@ COMMANDS: Dict[str, Any] = {
                 'forge test -vvvv --match-contract PRE_DEPOSIT_UNI_ALMTest --match-test "test_"'
             ),
         },
-        "ARB ALM UNISWAP": {
+        "Arbitrage ALM UNISWAP": {
             "silent": (
                 'forge test -vv --match-contract ARB_ETH_UNI_ALMTest --match-test "test_"'
             ),
             "logs": (
                 'forge test -vvvv --match-contract ARB_ETH_UNI_ALMTest --match-test "test_"'
+            ),
+        },
+        "Rebalance in production": {
+            "silent": (
+                'forge test -vv --match-contract REB_PROD_ALMTest --match-test "test_"'
+            ),
+            "logs": (
+                'forge test -vvvv --match-contract REB_PROD_ALMTest --match-test "test_"'
             ),
         },
     },
