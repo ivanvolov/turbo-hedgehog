@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
+import "forge-std/console.sol";
 
 // ** v4 imports
 import {Hooks} from "v4-core/libraries/Hooks.sol";
@@ -253,6 +254,8 @@ contract BaseStrategyHook is BaseHook, Base, ReentrancyGuard, IBaseStrategyHook 
         uint256 sqrtPriceAtLastRebalance = rebalanceAdapter.sqrtPriceAtLastRebalance();
         uint256 priceThreshold = div18(sqrtPriceNext, sqrtPriceAtLastRebalance);
         if (priceThreshold < WAD) priceThreshold = div18(sqrtPriceAtLastRebalance, sqrtPriceNext);
+        console.log("priceThreshold", priceThreshold);
+        console.log("swapPriceThreshold", swapPriceThreshold);
         if (priceThreshold >= swapPriceThreshold) revert SwapPriceChangeTooHigh();
     }
 
