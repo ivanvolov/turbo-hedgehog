@@ -174,6 +174,11 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = calcFlashLoanParams(WAD + slippage, currentPrice);
 
+        // Update state
+        timeAtLastRebalance = block.timestamp;
+  
+        if (baseToFl == 0 && quoteToFl == 0) return;
+
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
             else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
@@ -192,10 +197,8 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         // Check max deviation
         checkDeviations(currentPrice);
 
-        // Update state
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
-        timeAtLastRebalance = block.timestamp;
 
         uint128 liquidity = hook.updateLiquidityAndBoundaries(currentSqrtPrice);
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);
