@@ -72,6 +72,7 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public immutable isInvertedAssets;
     bool public immutable isNova;
+    bool public isQuickRebalance = false;
     address public rebalanceOperator;
 
     constructor(
@@ -82,6 +83,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote) {
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;
+    }
+
+    function setIsQuickRebalance(bool _isQuickRebalance) external onlyOwner {
+        isQuickRebalance = _isQuickRebalance;
     }
 
     function setLastRebalanceSnapshot(
@@ -174,10 +179,12 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = calcFlashLoanParams(WAD + slippage, currentPrice);
 
-        // Update state
-        timeAtLastRebalance = block.timestamp;
-  
-        if (baseToFl == 0 && quoteToFl == 0) return;
+        if (isQuickRebalance) {
+            if (baseToFl == 0 && quoteToFl == 0) {
+                timeAtLastRebalance = block.timestamp;
+                return;
+            }
+        }
 
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
@@ -197,8 +204,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
         // Check max deviation
         checkDeviations(currentPrice);
 
+        // Update state
         oraclePriceAtLastRebalance = currentPrice;
         sqrtPriceAtLastRebalance = currentSqrtPrice;
+        timeAtLastRebalance = block.timestamp;
 
         uint128 liquidity = hook.updateLiquidityAndBoundaries(currentSqrtPrice);
         emit Rebalance(priceThreshold, auctionTriggerTime, slippage, liquidity, currentPrice, currentSqrtPrice);

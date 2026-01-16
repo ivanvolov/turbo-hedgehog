@@ -8,13 +8,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
-import {ArbV4V4} from "@test/periphery/ArbV4V4.sol";
 import {ALM} from "@src/ALM.sol";
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 
 // ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 
 // ** interfaces
@@ -94,17 +92,19 @@ contract REB_PROD_ALMTest is ALMTestBaseUnichain {
         (bool needed, uint256 priceThreshold, uint256 triggerTime) = rebalanceAdapter.isRebalanceNeeded(currentPrice);
         console.log("Is Rebalance Needed:", needed);
         console.log("Calculated Price Threshold:", priceThreshold);
-        
+
         // Price Difference %
-        uint256 priceDiffPercent = priceThreshold > 1e18 ? ((priceThreshold - 1e18) * 100) / 1e18 : ((1e18 - priceThreshold) * 100) / 1e18;
+        // uint256 priceDiffPercent = priceThreshold > 1e18
+        //     ? ((priceThreshold - 1e18) * 100) / 1e18
+        //     : ((1e18 - priceThreshold) * 100) / 1e18;
         uint256 diffScaled = priceThreshold > 1e18 ? priceThreshold - 1e18 : 1e18 - priceThreshold;
-        uint256 diffPercent = diffScaled * 100 / 1e18;
-        uint256 diffBps = diffScaled * 10000 / 1e18;
+        uint256 diffPercent = (diffScaled * 100) / 1e18;
+        uint256 diffBps = (diffScaled * 10000) / 1e18;
         console.log("Price Difference (%):", diffPercent);
         console.log("Price Difference (BPS):", diffBps);
 
         console.log("Trigger Time:", triggerTime);
-        
+
         // Time Difference
         uint256 timeLast = rebalanceAdapter.timeAtLastRebalance();
         if (block.timestamp >= timeLast) {

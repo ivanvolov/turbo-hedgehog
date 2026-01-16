@@ -43,43 +43,36 @@ library DeployConfig {
     }
 
     function getConfig() internal pure returns (Config memory) {
-        return Config({
-            initialParams: RebalanceParams({
-                weight: 9e17,
-                longLeverage: 2e18,
-                shortLeverage: 1e18
-            }),
-            initialConstraints: RebalanceConstraints({
-                priceThreshold: TestLib.ONE_PERCENT_AND_ONE_BPS, // 1.01%
-                timeThreshold: 2000,
-                maxDeviationLong: 1e17,
-                maxDeviationShort: 1e17
-            }),
-            lifecycleParams: RebalanceParams({
-                weight: 525e15,
-                longLeverage: 3e18,
-                shortLeverage: 2e18
-            }),
-            lifecycleConstraints: RebalanceConstraints({
-                priceThreshold: 1e17, //price change threshold
-                timeThreshold: 60 * 60 * 24 * 4, // 4 days
-                maxDeviationLong: 1e17, //max deviation long leverage position
-                maxDeviationShort: 1e17 //max deviation short leverage position
-            }),
-            hookParams: HookParams({
-                isInvertedPool: false,
-                isSourcePool: false,
-                liquidityMultiplier: 2e18,
-                liquidity: 0,
-                initialToken0: 1000 ether,
-                tickLower: 3000,
-                tickUpper: 3000,
-                sqrtPriceX96: uint160(TestLib.SQRT_PRICE_10PER)
-            }),
-            kParams: KParams({
-                kLower: 1425 * 1e15, // 1.425
-                kUpper: 1425 * 1e15 // 1.425
-            })
-        });
+        return
+            Config({
+                initialParams: RebalanceParams({weight: 9e17, longLeverage: 2e18, shortLeverage: 1e18}),
+                initialConstraints: RebalanceConstraints({
+                    priceThreshold: TestLib.ONE_PERCENT_AND_ONE_BPS, // 1.01%
+                    timeThreshold: 2000,
+                    maxDeviationLong: 1e17,
+                    maxDeviationShort: 1e17
+                }),
+                lifecycleParams: RebalanceParams({weight: 525e15, longLeverage: 3e18, shortLeverage: 2e18}),
+                lifecycleConstraints: RebalanceConstraints({
+                    priceThreshold: 1e17, //price change threshold
+                    timeThreshold: 60 * 60 * 24 * 4, // 4 days
+                    maxDeviationLong: 1e17, //max deviation long leverage position
+                    maxDeviationShort: 1e17 //max deviation short leverage position
+                }),
+                hookParams: HookParams({
+                    isInvertedPool: false,
+                    isSourcePool: false,
+                    liquidityMultiplier: 2e18,
+                    liquidity: 0,
+                    initialToken0: 1000 ether,
+                    tickLower: 3000,
+                    tickUpper: 3000,
+                    sqrtPriceX96: uint160(TestLib.SQRT_PRICE_10PER)
+                }),
+                kParams: KParams({
+                    kLower: 1425 * 1e15, // 1.425
+                    kUpper: 1425 * 1e15 // 1.425
+                })
+            });
     }
 }
