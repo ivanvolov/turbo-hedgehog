@@ -14,14 +14,17 @@ import {DeployALM} from "../common/DeployALM.sol";
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {TestLib} from "@test/libraries/TestLib.sol";
+import {DeployConfig} from "./DeployConfig.sol";
 
 // ** interfaces
 import {IOracleTest} from "@test/interfaces/IOracleTest.sol";
 
 contract DeployALMUNI is DeployALM {
     PoolKey public ETH_USDC_key_unichain;
+    DeployConfig.Config internal config;
 
     function setUp() public {
+        config = DeployConfig.getConfig();
         loadActorsUNI();
         setup_network_specific_addresses_unichain();
         setup_strategy_params();
@@ -77,51 +80,52 @@ contract DeployALMUNI is DeployALM {
     }
 
     function setup_strategy_params() internal {
-        TOKEN_NAME = "Turbo HH";
-        TOKEN_SYMBOL = "TURBO";
+        TOKEN_NAME = "Turbo HH PD";
+        TOKEN_SYMBOL = "TURBO PD";
         BASE = IERC20(UConstants.USDC);
         QUOTE = IERC20(UConstants.WETH);
-        longLeverage = 3e18;
-        shortLeverage = 2e18;
-        weight = 55e16; //55%
-        liquidityMultiplier = 2e18;
-        slippage = 15e14; //0.15%
-        feeLP = 500; //0.05%
+        longLeverage = config.params.longLeverage;
+        shortLeverage = config.params.shortLeverage;
+        weight = config.params.weight;
+        liquidityMultiplier = config.hookParams.liquidityMultiplier;
         initialSQRTPrice = Constants.SQRT_PRICE_1_1;
 
         IS_NTS = true;
-        isInvertedAssets = false;
-        isInvertedPool = false;
-        isNova = false;
+        isInvertedAssets = config.hookParams.isInvertedAssets;
+        isInvertedPool = config.hookParams.isInvertedPool;
+        isNova = config.hookParams.isNova;
 
-        protocolFee = 0;
-        tvlCap = 1000 ether;
-        tickLowerDelta = 3000;
-        tickUpperDelta = 3000;
-        swapPriceThreshold = TestLib.SQRT_PRICE_10PER;
+        protocolFee = config.hookParams.protocolFee;
+        tvlCap = config.hookParams.tvlCap;
+        tickLowerDelta = config.hookParams.tickLowerDelta;
+        tickUpperDelta = config.hookParams.tickUpperDelta;
+        swapPriceThreshold = config.hookParams.swapPriceThreshold;
 
-        k1 = 1425 * 1e15; //1.425
-        k2 = 1425 * 1e15; //1.425
+        k1 = config.kParams.k1;
+        k2 = config.kParams.k2;
         treasury = 0x3A1e87139D73CD4a931888B755625246c1038B65;
         rebalanceOperator = deployerAddress;
         swapOperator = address(0);
         liquidityOperator = address(0);
-        rebalancePriceThreshold = TestLib.ONE_PERCENT_AND_ONE_BPS;
-        rebalanceTimeThreshold = 2000;
-        maxDeviationLong = 1e17;
-        maxDeviationShort = 1e17;
+        rebalancePriceThreshold = config.constraints.rebalancePriceThreshold;
+        rebalanceTimeThreshold = config.constraints.rebalanceTimeThreshold;
+        maxDeviationLong = config.constraints.maxDeviationLong;
+        maxDeviationShort = config.constraints.maxDeviationShort;
     }
 
     function setup_params_on_pre_deposit_mode() internal {
-        longLeverage = 2e18;
-        shortLeverage = 1e18;
-        weight = 9e17;
         swapOperator = deployerAddress;
+        weight = config.preDeployParams.weight;
+        longLeverage = config.preDeployParams.longLeverage;
+        shortLeverage = config.preDeployParams.shortLeverage;
+        rebalancePriceThreshold = config.preDeployConstraints.rebalancePriceThreshold;
+        rebalanceTimeThreshold = config.preDeployConstraints.rebalanceTimeThreshold;
+        maxDeviationLong = config.preDeployConstraints.maxDeviationLong;
+        maxDeviationShort = config.preDeployConstraints.maxDeviationShort;
     }
 
     function setup_adapters_params() internal {
         morpho = UConstants.MORPHO;
-
         ethereumVaultConnector = UConstants.EULER_VAULT_CONNECT;
         vault0 = UConstants.eulerUSDCVault1;
         vault1 = UConstants.eulerWETHVault1;

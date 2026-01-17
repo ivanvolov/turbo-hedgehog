@@ -78,10 +78,10 @@ COMMANDS: Dict[str, Any] = {
         },
         "advanced": {
             "run_anvil_copy: mining": (
-                'anvil --fork-block-number 32905776 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching --block-time 0.5'
+                'anvil --fork-block-number 37917524 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching --block-time 0.5'
             ),
             "run_anvil_copy: no-mining": (
-                'anvil --fork-block-number 32905776 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
+                'anvil --fork-block-number 37917524 --fork-url "$UNICHAIN_RPC_URL" --no-storage-caching'
             ),
             "set_feed": (
                 "forge script scripts/unichain/SET.FEED.UNI.s.sol "

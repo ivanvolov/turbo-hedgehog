@@ -11,33 +11,34 @@ library DeployConfig {
     }
 
     struct RebalanceConstraints {
-        uint256 priceThreshold;
-        uint256 timeThreshold;
+        uint256 rebalancePriceThreshold;
+        uint256 rebalanceTimeThreshold;
         uint256 maxDeviationLong;
         uint256 maxDeviationShort;
     }
 
     struct HookParams {
+        bool isInvertedAssets;
         bool isInvertedPool;
-        bool isSourcePool;
+        bool isNova;
         uint256 liquidityMultiplier;
-        uint256 liquidity;
-        uint256 initialToken0;
-        int24 tickLower;
-        int24 tickUpper;
-        uint160 sqrtPriceX96;
+        uint256 protocolFee;
+        uint256 tvlCap;
+        int24 tickLowerDelta;
+        int24 tickUpperDelta;
+        uint160 swapPriceThreshold;
     }
 
     struct KParams {
-        uint256 kLower;
-        uint256 kUpper;
+        uint256 k1;
+        uint256 k2;
     }
 
     struct Config {
-        RebalanceParams initialParams;
-        RebalanceConstraints initialConstraints;
-        RebalanceParams lifecycleParams;
-        RebalanceConstraints lifecycleConstraints;
+        RebalanceParams preDeployParams;
+        RebalanceConstraints preDeployConstraints;
+        RebalanceParams params;
+        RebalanceConstraints constraints;
         HookParams hookParams;
         KParams kParams;
     }
@@ -45,33 +46,34 @@ library DeployConfig {
     function getConfig() internal pure returns (Config memory) {
         return
             Config({
-                initialParams: RebalanceParams({weight: 9e17, longLeverage: 2e18, shortLeverage: 1e18}),
-                initialConstraints: RebalanceConstraints({
-                    priceThreshold: TestLib.ONE_PERCENT_AND_ONE_BPS, // 1.01%
-                    timeThreshold: 2000,
+                preDeployParams: RebalanceParams({weight: 9e17, longLeverage: 2e18, shortLeverage: 1e18}),
+                params: RebalanceParams({weight: 525e15, longLeverage: 3e18, shortLeverage: 2e18}),
+                preDeployConstraints: RebalanceConstraints({
+                    rebalancePriceThreshold: TestLib.ONE_PERCENT_AND_ONE_BPS, // 1.01%
+                    rebalanceTimeThreshold: 2000,
                     maxDeviationLong: 1e17,
                     maxDeviationShort: 1e17
                 }),
-                lifecycleParams: RebalanceParams({weight: 525e15, longLeverage: 3e18, shortLeverage: 2e18}),
-                lifecycleConstraints: RebalanceConstraints({
-                    priceThreshold: 1e17, //price change threshold
-                    timeThreshold: 60 * 60 * 24 * 4, // 4 days
+                constraints: RebalanceConstraints({
+                    rebalancePriceThreshold: 1e17, //price change threshold
+                    rebalanceTimeThreshold: 60 * 60 * 24 * 4, // 4 days
                     maxDeviationLong: 1e17, //max deviation long leverage position
                     maxDeviationShort: 1e17 //max deviation short leverage position
                 }),
                 hookParams: HookParams({
+                    isInvertedAssets: false,
                     isInvertedPool: false,
-                    isSourcePool: false,
+                    isNova: false,
                     liquidityMultiplier: 2e18,
-                    liquidity: 0,
-                    initialToken0: 1000 ether,
-                    tickLower: 3000,
-                    tickUpper: 3000,
-                    sqrtPriceX96: uint160(TestLib.SQRT_PRICE_10PER)
+                    protocolFee: 0,
+                    tvlCap: 1000 ether,
+                    tickLowerDelta: 3000,
+                    tickUpperDelta: 3000,
+                    swapPriceThreshold: uint160(TestLib.SQRT_PRICE_10PER)
                 }),
                 kParams: KParams({
-                    kLower: 1425 * 1e15, // 1.425
-                    kUpper: 1425 * 1e15 // 1.425
+                    k1: 1425 * 1e15, // 1.425
+                    k2: 1425 * 1e15 // 1.425
                 })
             });
     }
