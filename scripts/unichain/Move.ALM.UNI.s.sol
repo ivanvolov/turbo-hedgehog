@@ -30,6 +30,7 @@ contract MoveALMUNI is DeployALM {
     }
 
     function run() external {
+        // TODO: this should be redo according to PRE_DEPOSIT_UNI_ALMTest
         longLeverage = 3e18;
         shortLeverage = 2e18;
         weight = 55e16; //50%

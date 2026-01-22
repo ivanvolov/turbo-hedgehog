@@ -13,24 +13,21 @@ import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
 // ** libraries
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
-import {DeployConfig} from "./DeployConfig.sol";
+import {ALMDeployConfig} from "@test/core/configs/ALMDeployConfig.sol";
+import {DeployConfig} from "@test/core/configs/DeployConfig.sol";
 
 contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
-    uint256 longLeverage;
-    uint256 shortLeverage;
-    uint256 weight;
-    uint256 liquidityMultiplier;
     uint256 slippage = 5e15; //0.5%
-    uint24 feeLP = 500; //0.05%
-
     IERC20 WETH = IERC20(UConstants.WETH);
     IERC20 USDC = IERC20(UConstants.USDC);
 
     address deployerAddress;
+    uint256 liquidityMultiplier;
+    uint24 feeLP;
 
     function setUp() public {
         select_unichain_fork(37917524);
-        DeployConfig.Config memory config = DeployConfig.getConfig();
+        DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         // ** Setting up test environments params
         {
@@ -55,10 +52,11 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         mock_latestRoundData(UConstants.chronicle_feed_USDC, UConstants.api3_feed_USDC_price);
 
         liquidityMultiplier = config.hookParams.liquidityMultiplier;
+        feeLP = config.hookParams.feeLP;
         init_hook(
             config.hookParams.isInvertedAssets,
             config.hookParams.isNova,
-            config.hookParams.liquidityMultiplier,
+            liquidityMultiplier,
             config.hookParams.protocolFee,
             config.hookParams.tvlCap,
             config.hookParams.tickLowerDelta,
@@ -139,7 +137,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
 
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 4919520778899813658844498, 1e1, "sqrtPrice");
         alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
-        DeployConfig.Config memory config = DeployConfig.getConfig();
+        DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         assertEqHookPositionState(
             preRebalanceTVL,
@@ -161,7 +159,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             vm.startPrank(deployer.addr);
             alm.setStatus(1); // paused
 
-            DeployConfig.Config memory config = DeployConfig.getConfig();
+            DeployConfig.Config memory config = ALMDeployConfig.getConfig();
             rebalanceAdapter.setRebalanceParams(
                 config.params.weight,
                 config.params.longLeverage,
@@ -169,7 +167,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             );
 
             hook.setOperator(address(0));
-            hook.setNextLPFee(feeLP);
+            hook.setNextLPFee(config.hookParams.feeLP);
 
             rebalanceAdapter.setRebalanceConstraints(
                 config.constraints.rebalancePriceThreshold,
@@ -448,7 +446,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             vm.prank(deployer.addr);
             rebalanceAdapter.rebalance(slippage);
 
-            DeployConfig.Config memory config = DeployConfig.getConfig();
+            DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
             assertEqHookPositionState(
                 preRebalanceTVL,
