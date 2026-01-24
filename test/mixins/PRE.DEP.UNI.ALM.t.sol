@@ -26,7 +26,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     uint24 feeLP;
 
     function setUp() public {
-        select_unichain_fork(37917524);
+        select_unichain_fork(38514035);
         DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         // ** Setting up test environments params
@@ -47,10 +47,9 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         create_flash_loan_adapter_morpho_unichain();
         create_lending_adapter_euler_USDC_WETH_unichain();
 
-        //TODO: block was updated but not the price feed
         create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_WETH, config.hookParams.isInvertedPool);
-        mock_latestRoundData(UConstants.chronicle_feed_WETH, UConstants.api3_feed_WETH_price);
-        mock_latestRoundData(UConstants.chronicle_feed_USDC, UConstants.api3_feed_USDC_price);
+        mock_latestRoundData(UConstants.chronicle_feed_WETH, 999640000000000000);
+        mock_latestRoundData(UConstants.chronicle_feed_USDC, 998364291299005920);
 
         liquidityMultiplier = config.hookParams.liquidityMultiplier;
         feeLP = config.hookParams.feeLP;

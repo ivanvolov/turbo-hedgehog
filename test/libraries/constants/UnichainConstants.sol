@@ -62,7 +62,5 @@ library Constants {
     // ** Api3
     IAggV3 constant api3_feed_USDC = IAggV3(0xD3C586Eec1C6C3eC41D276a23944dea080eDCf7f);
     IAggV3 constant api3_feed_WETH = IAggV3(0x5b0cf2b36a65a6BB085D501B971e4c102B9Cd473);
-    uint256 constant api3_feed_USDC_price = 999801391481903400;
-    uint256 constant api3_feed_WETH_price = 3854785066950000000000;
 }
 /// forge-lint: disable-end(screaming-snake-case-const)

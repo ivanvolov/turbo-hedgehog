@@ -23,8 +23,8 @@ contract DeployOraclesUNI is DeployALM {
         vm.startBroadcast(deployerKey);
         if (action == 0) {
             // Test Mock feeds
-            feedB = new TestFeed(UConstants.api3_feed_USDC_price, 18);
-            feedQ = new TestFeed(UConstants.api3_feed_WETH_price, 18);
+            feedB = new TestFeed(999801391481903400, 18);
+            feedQ = new TestFeed(3854785066950000000000, 18);
             deploy_oracle();
         } else if (action == 1) {
             // Chronicle feeds
