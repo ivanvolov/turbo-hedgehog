@@ -8,8 +8,8 @@ library TurboDeployConfig {
     function getConfig() internal pure returns (DeployConfig.Config memory) {
         return
             DeployConfig.Config({
-                preDeployParams: DeployConfig.RebalanceParams({weight: 9e17, longLeverage: 2e18, shortLeverage: 1e18}),
-                params: DeployConfig.RebalanceParams({weight: 525e15, longLeverage: 3e18, shortLeverage: 2e18}),
+                preDeployParams: DeployConfig.RebalanceParams({weight: 50e16, longLeverage: 2e18, shortLeverage: 2e18}),
+                params: DeployConfig.RebalanceParams({weight: 50e16, longLeverage: 2e18, shortLeverage: 2e18}),
                 preDeployConstraints: DeployConfig.RebalanceConstraints({
                     rebalancePriceThreshold: TestLib.ONE_PERCENT_AND_ONE_BPS, // 1.01%
                     rebalanceTimeThreshold: 2000,
@@ -24,14 +24,14 @@ library TurboDeployConfig {
                 }),
                 hookParams: DeployConfig.HookParams({
                     isInvertedAssets: false,
-                    isInvertedPool: false,
+                    isInvertedPool: true,
                     isNova: false,
-                    liquidityMultiplier: 2e18,
+                    liquidityMultiplier: 1e18,
                     protocolFee: 0,
                     tvlCap: 1000 ether,
-                    tickLowerDelta: 3000,
-                    tickUpperDelta: 3000,
-                    feeLP: 1,
+                    tickLowerDelta: 10,
+                    tickUpperDelta: 10,
+                    feeLP: 1, //0.01%
                     swapPriceThreshold: uint160(TestLib.SQRT_PRICE_10PER)
                 }),
                 kParams: DeployConfig.KParams({

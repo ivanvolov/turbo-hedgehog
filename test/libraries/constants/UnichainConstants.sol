@@ -32,7 +32,7 @@ library Constants {
 
     // ** Morpho
     IMorpho constant MORPHO = IMorpho(0x8f5ae9CddB9f68de460C77730b018Ae7E04a140A); // https://docs.morpho.org/getting-started/resources/addresses/
-    IERC4626 constant morphoUSDCVault = IERC4626(0x38f4f3B6533de0023b9DCd04b02F93d36ad1F9f9); // Gauntlet
+    IERC4626 constant morphoUSDCVault = IERC4626(0x38f4f3B6533de0023b9DCd04b02F93d36ad1F9f9); // https://app.morpho.org/unichain/vault/0x38f4f3B6533de0023b9DCd04b02F93d36ad1F9f9/gauntlet-usdc
     IERC4626 constant morphoUSDTVault = IERC4626(0x89849B6e57e1c61e447257242bDa97c70FA99b6b); // Gauntlet
 
     // ** Euler

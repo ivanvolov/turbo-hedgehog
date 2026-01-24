@@ -194,6 +194,10 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             uint256 balanceQuote = getBalanceQuote();
             if (balanceQuote != 0) lendingAdapter.addCollateralLong(balanceQuote);
         } else {
+            // TODO: this is second approach of foxing the problem
+            // if (quoteToFl == 0) flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
+            // else if (baseToFl == 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
+            // else flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
             uint256 balanceBase = getBalanceBase();
             if (balanceBase != 0) lendingAdapter.repayLong(balanceBase);

@@ -75,12 +75,25 @@ COMMANDS: Dict[str, Any] = {
                 ),
             },
             "TURBO ALM": {
-                "silent": (
-                    'forge test -vv --match-contract TURBO_ALMTest --match-test "test_"'
-                ),
-                "logs": (
-                    'forge test -vvvv --match-contract TURBO_ALMTest --match-test "test_"'
-                ),
+                "mainnet": {
+                    "silent": (
+                        'forge test -vv --match-contract TURBO_ALMTest --match-test "test_"'
+                    ),
+                    "logs": (
+                        'forge test -vvvv --match-contract TURBO_ALMTest --match-test "test_"'
+                    ),
+                },
+                "unichain": {
+                    "silent": (
+                        'forge test -vv --match-contract TURBO_UNI_ALMTest --match-test "test_"'
+                    ),
+                    "logs": (
+                        'forge test -vvvv --match-contract TURBO_UNI_ALMTest --match-test "test_"'
+                    ),
+                    "debug": (
+                        'forge test --debug -vvvv --match-contract TURBO_UNI_ALMTest --match-test "test_deposit"'
+                    ),
+                },
             },
         },
         "UNICORD": {

@@ -38,6 +38,10 @@ abstract contract TestBaseEuler is TestBaseOracles {
         create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 10e12, MConstants.eulerUSDTVault2, 10e12);
     }
 
+    function create_flash_loan_adapter_euler_USDT_USDC_unichain() internal {
+        create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerUSDTVault2, 0);
+    }
+
     function create_lending_adapter_euler_USDC_WETH_unichain() internal returns (ILendingAdapter) {
         vm.prank(deployer.addr);
         lendingAdapter = new EulerLendingAdapter(
@@ -46,6 +50,20 @@ abstract contract TestBaseEuler is TestBaseOracles {
             UConstants.EULER_VAULT_CONNECT,
             UConstants.eulerUSDCVault1,
             UConstants.eulerWETHVault1,
+            UConstants.merklRewardsDistributor,
+            UConstants.rEUL
+        );
+        return lendingAdapter;
+    }
+
+    function create_lending_adapter_euler_USDT_USDC_unichain() internal returns (ILendingAdapter) {
+        vm.prank(deployer.addr);
+        lendingAdapter = new EulerLendingAdapter(
+            BASE,
+            QUOTE,
+            UConstants.EULER_VAULT_CONNECT,
+            UConstants.eulerUSDCVault1,
+            UConstants.eulerUSDTVault1,
             UConstants.merklRewardsDistributor,
             UConstants.rEUL
         );
@@ -136,8 +154,8 @@ abstract contract TestBaseEuler is TestBaseOracles {
     ) internal {
         vm.prank(deployer.addr);
         flashLoanAdapter = new EulerFlashLoanAdapter(BASE, QUOTE, _flVault0, _flVault1);
-        _deposit_to_euler(_flVault0, deposit0);
-        _deposit_to_euler(_flVault1, deposit1);
+        if (deposit0 > 0) _deposit_to_euler(_flVault0, deposit0);
+        if (deposit1 > 0) _deposit_to_euler(_flVault1, deposit1);
     }
 
     function _deposit_to_euler(IEulerVault vault, uint256 toSupply) internal {

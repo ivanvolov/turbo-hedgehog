@@ -47,6 +47,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         create_flash_loan_adapter_morpho_unichain();
         create_lending_adapter_euler_USDC_WETH_unichain();
 
+        //TODO: block was updated but not the price feed
         create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_WETH, config.hookParams.isInvertedPool);
         mock_latestRoundData(UConstants.chronicle_feed_WETH, UConstants.api3_feed_WETH_price);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, UConstants.api3_feed_USDC_price);
@@ -69,13 +70,11 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
             positionManager.setKParams(config.kParams.k1, config.kParams.k2);
-
             rebalanceAdapter.setRebalanceParams(
                 config.preDeployParams.weight,
                 config.preDeployParams.longLeverage,
                 config.preDeployParams.shortLeverage
             );
-
             rebalanceAdapter.setRebalanceConstraints(
                 config.preDeployConstraints.rebalancePriceThreshold,
                 config.preDeployConstraints.rebalanceTimeThreshold,
