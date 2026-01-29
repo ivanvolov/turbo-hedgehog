@@ -13,14 +13,14 @@ library TurboDeployConfig {
                 preDeployConstraints: DeployConfig.RebalanceConstraints({
                     rebalancePriceThreshold: TestLib.ONE_PERCENT_AND_ONE_BPS, // 1.01%
                     rebalanceTimeThreshold: 2000,
-                    maxDeviationLong: 1e17,
-                    maxDeviationShort: 1e17
+                    maxDeviationLong: 1e16,
+                    maxDeviationShort: 1e16
                 }),
                 constraints: DeployConfig.RebalanceConstraints({
-                    rebalancePriceThreshold: 1e17, //price change threshold
+                    rebalancePriceThreshold: 1e16, //price change threshold (1%)
                     rebalanceTimeThreshold: 60 * 60 * 24 * 4, // 4 days
-                    maxDeviationLong: 1e17, //max deviation long leverage position
-                    maxDeviationShort: 1e17 //max deviation short leverage position
+                    maxDeviationLong: 1e16, //max deviation long leverage positio (1%)
+                    maxDeviationShort: 1e16 //max deviation short leverage position (1%)
                 }),
                 hookParams: DeployConfig.HookParams({
                     isInvertedAssets: false,
@@ -35,8 +35,8 @@ library TurboDeployConfig {
                     swapPriceThreshold: uint160(TestLib.SQRT_PRICE_10PER)
                 }),
                 kParams: DeployConfig.KParams({
-                    k1: 1425 * 1e15, // 1.425
-                    k2: 1425 * 1e15 // 1.425
+                    k1: 1e18, // 1
+                    k2: 1e18 // 1
                 })
             });
     }
