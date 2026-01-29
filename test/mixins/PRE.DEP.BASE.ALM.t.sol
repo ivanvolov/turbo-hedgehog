@@ -8,25 +8,25 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 
 // ** contracts
-import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
+import {ALMTestBaseBase} from "@test/core/ALMTestBaseBase.sol";
 
 // ** libraries
-import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
+import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 import {ALMDeployConfig} from "@test/core/configs/ALMDeployConfig.sol";
 import {DeployConfig} from "@test/core/configs/DeployConfig.sol";
 
-contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
+contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
     uint256 slippage = 5e15; //0.5%
-    IERC20 WETH = IERC20(UConstants.WETH);
-    IERC20 USDC = IERC20(UConstants.USDC);
+    IERC20 WETH = IERC20(BConstants.WETH);
+    IERC20 USDC = IERC20(BConstants.USDC);
 
     address deployerAddress;
     uint256 liquidityMultiplier;
     uint24 feeLP;
 
     function setUp() public {
-        select_unichain_fork(38514035);
+        select_base_fork(41414366);
         DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         // ** Setting up test environments params
@@ -39,17 +39,15 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         initialSQRTPrice = SQRT_PRICE_1_1;
-        manager = UConstants.manager;
-        universalRouter = UConstants.UNIVERSAL_ROUTER;
-        quoter = UConstants.V4_QUOTER;
+        manager = BConstants.manager;
+        universalRouter = BConstants.UNIVERSAL_ROUTER;
+        quoter = BConstants.V4_QUOTER;
 
-        create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.WETH, 18, "WETH");
-        create_flash_loan_adapter_morpho_unichain();
-        create_lending_adapter_euler_USDC_WETH_unichain();
+        create_accounts_and_tokens(BConstants.USDC, 6, "USDC", BConstants.WETH, 18, "WETH");
+        create_flash_loan_adapter_euler_USDC_WETH_base();
+        create_lending_adapter_morpho_USDC_WETH_base();
 
-        create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_WETH, config.hookParams.isInvertedPool);
-        mock_latestRoundData(UConstants.chronicle_feed_WETH, 999640000000000000);
-        mock_latestRoundData(UConstants.chronicle_feed_USDC, 998364291299005920);
+        create_oracle(BConstants.chainlink_feed_USDC, BConstants.chainlink_feed_WETH, config.hookParams.isInvertedPool);
 
         liquidityMultiplier = config.hookParams.liquidityMultiplier;
         feeLP = config.hookParams.feeLP;
@@ -83,15 +81,14 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             vm.stopPrank();
         }
 
-        approve_accounts();
-
-        // Re-setup swap router for native-token
+        // ** Configure swap adapter routes
         {
             vm.startPrank(deployer.addr);
-            uint8[4] memory swapConfig = [0, 1, 2, 3];
-            setSwapAdapterToV4SingleSwap(ETH_USDC_key_unichain, swapConfig);
+            setSwapAdapterToV3SingleSwap(BConstants.uniswap_v3_WETH_USDC_POOL);
             vm.stopPrank();
         }
+
+        approve_accounts();
     }
 
     uint256 amountToDep = 10 ether;
@@ -131,10 +128,10 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         console.log("postRebalanceTVL %s", calcTVL());
         console.log("oraclePrice %s", oracle.price());
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
-        assertTicks(-196748, -190748);
+        assertTicks(-199242, -193242);
 
         assertApproxEqAbs(hook.sqrtPriceCurrent(), 4919520778899813658844498, 1e1, "sqrtPrice");
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         assertEqHookPositionState(
@@ -191,7 +188,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
             assertTicks(-196748, -190748);
 
             assertApproxEqAbs(hook.sqrtPriceCurrent(), 4919520778899813658844498, 1e1, "sqrtPrice");
-            alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+            alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
             assertEq(hook.liquidity(), 4330305265100924, "liquidity");
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
@@ -245,7 +242,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
@@ -327,7 +324,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Withdraw
         {
@@ -368,7 +365,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Deposit
         {
@@ -438,7 +435,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
         // ** Rebalance
         {
             uint256 preRebalanceTVL = calcTVL();
@@ -458,7 +455,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV4(hook, ETH_USDC_key_unichain);
+        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
 
         // ** Full withdraw
         {

@@ -230,12 +230,20 @@ COMMANDS: Dict[str, Any] = {
                 'forge test -vvvv --match-contract ETH_UNICORD_UNI_ALMTest --match-test "test_"'
             ),
         },
-        "ETH ALM pre deposit": {
+        "PRE deposit: ETH ALM Unichain": {
             "silent": (
                 'forge test -vv --match-contract PRE_DEPOSIT_UNI_ALMTest --match-test "test_"'
             ),
             "logs": (
                 'forge test -vvvv --match-contract PRE_DEPOSIT_UNI_ALMTest --match-test "test_"'
+            ),
+        },
+        "PRE deposit: ETH ALM Base": {
+            "silent": (
+                'forge test -vv --match-contract PRE_DEPOSIT_BASE_ALMTest --match-test "test_"'
+            ),
+            "logs": (
+                'forge test -vvvv --match-contract PRE_DEPOSIT_BASE_ALMTest --match-test "test_"'
             ),
         },
         "Arbitrage ALM UNISWAP": {

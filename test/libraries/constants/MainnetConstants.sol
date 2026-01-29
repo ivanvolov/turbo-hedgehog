@@ -33,7 +33,7 @@ library Constants {
     // ** Morpho
     IMorpho constant MORPHO = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb); // https://app.morpho.org/ethereum/earn
     IUniversalRewardsDistributor constant universalRewardsDistributor =
-        IUniversalRewardsDistributor(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb);
+        IUniversalRewardsDistributor(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb); // https://docs.morpho.org/get-started/resources/addresses/
     IMorphoChainlinkOracleV2Factory constant morphoOracleFactory =
         IMorphoChainlinkOracleV2Factory(0x3A7bB36Ee3f3eE32A60e9f2b33c1e5f2E83ad766);
 

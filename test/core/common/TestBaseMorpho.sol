@@ -23,6 +23,7 @@ import {Constants as BConstants} from "@test/libraries/constants/BaseConstants.s
 import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {ILendingAdapterMorpho} from "@test/interfaces/ILendingAdapterMorpho.sol";
+import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 
 abstract contract TestBaseMorpho is TestBaseEuler {
     using TestAccountLib for TestAccount;
@@ -78,6 +79,27 @@ abstract contract TestBaseMorpho is TestBaseEuler {
         flashLoanAdapter = new MorphoFlashLoanAdapter(BASE, QUOTE, BConstants.MORPHO);
     }
 
+    function create_lending_adapter_morpho_USDC_WETH_base() internal {
+        {
+            shortMId = Id.wrap(bytes32(0x3b3769cfca57be2eaed03fcc5299c25691b77781a1e124e7a8d520eb9a7eabb5));
+            longMId = Id.wrap(bytes32(0x8793cf302b8ffd655ab97bd1c695dbd967807e8367a65cb2f4edaf1380ba1bda));
+        }
+
+        vm.prank(deployer.addr);
+        lendingAdapter = new MorphoLendingAdapter(
+            BASE,
+            QUOTE,
+            BConstants.MORPHO,
+            longMId,
+            shortMId,
+            IERC4626(address(0)),
+            IERC4626(address(0)),
+            BConstants.merklRewardsDistributor
+        );
+
+        setURD(BConstants.universalRewardsDistributor);
+    }
+
     function create_lending_adapter_morpho() internal {
         create_and_seed_morpho_markets();
         vm.prank(deployer.addr);
@@ -93,7 +115,7 @@ abstract contract TestBaseMorpho is TestBaseEuler {
             MConstants.merklRewardsDistributor
         );
 
-        setURD();
+        setURD(MConstants.universalRewardsDistributor);
     }
 
     function create_lending_adapter_morpho_earn() internal {
@@ -109,7 +131,7 @@ abstract contract TestBaseMorpho is TestBaseEuler {
             MConstants.merklRewardsDistributor
         );
 
-        setURD();
+        setURD(MConstants.universalRewardsDistributor);
     }
 
     function create_lending_adapter_morpho_earn_USDC_USDT_unichain() internal {
@@ -125,7 +147,8 @@ abstract contract TestBaseMorpho is TestBaseEuler {
             UConstants.merklRewardsDistributor
         );
 
-        setURD();
+        // TODO: No rewards for unichain exists yet.
+        // setURD(UConstants.universalRewardsDistributor);
     }
 
     function create_lending_adapter_morpho_earn_USDC_DAI() internal {
@@ -141,14 +164,14 @@ abstract contract TestBaseMorpho is TestBaseEuler {
             MConstants.merklRewardsDistributor
         );
 
-        setURD();
+        setURD(MConstants.universalRewardsDistributor);
     }
 
     // --- Helpers --- //
 
-    function setURD() internal {
+    function setURD(IUniversalRewardsDistributor _universalRewardsDistributor) internal {
         vm.prank(deployer.addr);
-        ILendingAdapterMorpho(address(lendingAdapter)).setURD(MConstants.universalRewardsDistributor);
+        ILendingAdapterMorpho(address(lendingAdapter)).setURD(_universalRewardsDistributor);
     }
 
     function create_and_seed_morpho_markets() internal {

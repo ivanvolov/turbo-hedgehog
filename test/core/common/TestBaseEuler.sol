@@ -30,6 +30,10 @@ abstract contract TestBaseEuler is TestBaseOracles {
         create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerWETHVault2, 0);
     }
 
+    function create_flash_loan_adapter_euler_USDC_WETH_base() internal {
+        create_flash_loan_adapter_euler(BConstants.eulerUSDCVault1, 0, BConstants.eulerWETHVault1, 0);
+    }
+
     function create_lending_adapter_euler_USDT_USDC() internal {
         create_lending_adapter_euler(MConstants.eulerUSDCVault1, 10e12, MConstants.eulerUSDTVault1, 10e12);
     }
@@ -125,6 +129,8 @@ abstract contract TestBaseEuler is TestBaseOracles {
         );
         return lendingAdapter;
     }
+
+    // ** Helpers
 
     function create_lending_adapter_euler(
         IEulerVault _vault0,

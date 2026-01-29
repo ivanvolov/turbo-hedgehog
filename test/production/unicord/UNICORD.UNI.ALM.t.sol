@@ -42,7 +42,7 @@ contract UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         quoter = UConstants.V4_QUOTER; // deployMockV4Quoter();
 
         create_accounts_and_tokens(UConstants.USDC, 6, "USDC", UConstants.USDT, 6, "USDT");
-        create_lending_adapter_morpho_earn_USDC_USDT_unichain();
+        create_lending_adapter_morpho_earn_USDC_USDT_unichain(); // TODO: unichain have no rewards, double check.
         create_flash_loan_adapter_morpho_unichain();
 
         create_oracle(UConstants.chronicle_feed_USDC, UConstants.chronicle_feed_USDT, true);
