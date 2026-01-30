@@ -108,8 +108,6 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         IUniswapSwapAdapter(address(swapAdapter)).setSwapRoute(true, false, activeSwapRoute); // exactIn, quote => base
     }
 
-    function checkSwapAdapterV4SingleConfig(bool isETH, uint8[4] memory config) internal {}
-
     function setSwapAdapterToV4MultihopSwap(
         bytes memory path0,
         bytes memory path1,
@@ -150,18 +148,12 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         else revert("ProtId not found");
     }
 
-    // --- Oracle Alignment --- //
+    // --- Oracle Alignment with sqrtLimitX96 --- //
 
-    function alignOraclesAndPoolsV3(uint160 newSqrtPrice) public {
-        alignOracles(newSqrtPrice);
-        setV3PoolPrice(newSqrtPrice);
-    }
-
-    function alignOraclesAndPoolsV4(BaseStrategyHook _hook, PoolKey memory _poolKey) public {
-        console.log("_alignOraclesAndPoolsV4");
-        alignOracles(_hook.sqrtPriceCurrent());
-        uint160 targetSqrtPriceX96 = _hook.sqrtPriceCurrent();
-        setV4PoolPrice(_poolKey, targetSqrtPriceX96);
+    function alignOraclesHookAndPoolsV3(BaseStrategyHook _hook) public {
+        uint160 sqrtOfTheHook = _hook.sqrtPriceCurrent();
+        alignOracles(sqrtOfTheHook);
+        setV3PoolPricePrecise(sqrtOfTheHook);
     }
 
     function alignOracles(uint160 targetSqrtPriceX96) public {
@@ -178,6 +170,43 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             abi.encode(_price, TestLib.getSqrtPriceX96FromPrice(_poolPrice))
         );
     }
+
+    function setV3PoolPricePrecise(uint160 targetSqrtPriceX96) private {
+        uint160 sqrtCurrent = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
+        if (sqrtCurrent == targetSqrtPriceX96) revert("Impossible: sqrtCurrent already equals targetSqrt.");
+
+        // Direction of swap
+        bool zeroForOne = _sqrtPriceToOraclePrice(sqrtCurrent) > _sqrtPriceToOraclePrice(targetSqrtPriceX96); // need price ↓
+        if (isInvertedPool) zeroForOne = !zeroForOne;
+        _doV3SwapToTargetPrice(zeroForOne, targetSqrtPriceX96);
+
+        uint160 sqrtAfter = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
+        require(sqrtAfter == targetSqrtPriceX96, "SQRT PRICE MISS");
+    }
+
+    function _doV3SwapToTargetPrice(bool zeroForOne, uint160 targetSqrtPriceX96) private {
+        address _token0 = IUniswapV3Pool(TARGET_SWAP_POOL).token0();
+        address _token1 = IUniswapV3Pool(TARGET_SWAP_POOL).token1();
+
+        address tokenIn = zeroForOne ? _token0 : _token1;
+
+        // Use a very large amount (effectively infinite)
+        uint256 infiniteAmount = type(uint256).max / 2;
+        deal(tokenIn, address(this), infiniteAmount);
+
+        vm.startPrank(address(this));
+        // Set sqrtPriceLimitX96 to target price - swap will stop at this price
+        IUniswapV3Pool(TARGET_SWAP_POOL).swap(
+            marketMaker.addr, // recipient
+            zeroForOne,
+            int256(infiniteAmount),
+            targetSqrtPriceX96,
+            ""
+        );
+        vm.stopPrank();
+    }
+
+    // --- Getters and helper functions --- //
 
     function getHookPrice() public view returns (uint256) {
         return _sqrtPriceToOraclePrice(hook.sqrtPriceCurrent());
@@ -203,6 +232,20 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
                 isInvertedPool,
                 int8(bDec) - int8(qDec)
             );
+    }
+
+    // --- Oracle Alignment Iterative --- //
+
+    function alignOraclesAndPoolsV3(uint160 newSqrtPrice) public {
+        alignOracles(newSqrtPrice);
+        setV3PoolPrice(newSqrtPrice);
+    }
+
+    function alignOraclesAndPoolsV4(BaseStrategyHook _hook, PoolKey memory _poolKey) public {
+        console.log("_alignOraclesAndPoolsV4");
+        alignOracles(_hook.sqrtPriceCurrent());
+        uint160 targetSqrtPriceX96 = _hook.sqrtPriceCurrent();
+        setV4PoolPrice(_poolKey, targetSqrtPriceX96);
     }
 
     uint256 SLIPPAGE_TOLERANCE_V4 = 1e14; // 0.01%
@@ -232,7 +275,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
 
             console.log("iteration %s - deviation %s", i, ratio - 1e18);
 
-            // If within tolerance, we’re done
+            // If within tolerance, we're done
             if (ratio - 1e18 <= SLIPPAGE_TOLERANCE_V4) break;
 
             // Direction of swap
@@ -242,7 +285,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
             // Liquidity snapshot
             uint128 L = manager.getLiquidity(_poolKey.toId());
 
-            // Amount needed to push price fully to target (may overshoot, but we’ll
+            // Amount needed to push price fully to target (may overshoot, but we'll
             // re-check after swap)
             uint256 amountIn = zeroForOne
                 ? SqrtPriceMath.getAmount0Delta(targetSqrtPriceX96, sqrtCurrent, L, true)
@@ -310,7 +353,7 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
 
             console.log("iteration %s - deviation %s", i, ratio - 1e18);
 
-            // If within tolerance, we’re done
+            // If within tolerance, we're done
             if (ratio - 1e18 <= SLIPPAGE_TOLERANCE_V3) break;
 
             // Direction of swap
@@ -342,21 +385,28 @@ abstract contract TestBaseUniswap is TestBaseAsserts {
         address _token0 = IUniswapV3Pool(TARGET_SWAP_POOL).token0();
         address _token1 = IUniswapV3Pool(TARGET_SWAP_POOL).token1();
 
-        deal(zeroForOne ? _token0 : _token1, address(marketMaker.addr), amountIn);
-        vm.startPrank(marketMaker.addr);
-        amountOut = MConstants.UNISWAP_V3_ROUTER.exactInputSingle(
-            ISwapRouter.ExactInputSingleParams({
-                tokenIn: zeroForOne ? _token0 : _token1,
-                tokenOut: zeroForOne ? _token1 : _token0,
-                fee: IUniswapV3Pool(TARGET_SWAP_POOL).fee(),
-                recipient: msg.sender,
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            })
+        address tokenIn = zeroForOne ? _token0 : _token1;
+
+        deal(tokenIn, address(this), amountIn);
+
+        vm.startPrank(address(this));
+        (int256 amount0, int256 amount1) = IUniswapV3Pool(TARGET_SWAP_POOL).swap(
+            marketMaker.addr, // recipient
+            zeroForOne,
+            int256(amountIn),
+            zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1,
+            ""
         );
         vm.stopPrank();
+        amountOut = uint256(-(zeroForOne ? amount1 : amount0));
+    }
+
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata) external {
+        require(msg.sender == TARGET_SWAP_POOL, "Invalid callback caller");
+        if (amount0Delta > 0)
+            IERC20(IUniswapV3Pool(TARGET_SWAP_POOL).token0()).safeTransfer(msg.sender, uint256(amount0Delta));
+        if (amount1Delta > 0)
+            IERC20(IUniswapV3Pool(TARGET_SWAP_POOL).token1()).safeTransfer(msg.sender, uint256(amount1Delta));
     }
 
     // --- Logic for swapping in tests --- //

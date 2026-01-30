@@ -26,11 +26,12 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
     uint24 feeLP;
 
     function setUp() public {
-        select_base_fork(41414366);
+        select_base_fork(41463388);
         DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         // ** Setting up test environments params
         {
+            TARGET_SWAP_POOL = BConstants.uniswap_v3_WETH_USDC_POOL;
             ASSERT_EQ_PS_THRESHOLD_CL = 1e5;
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
@@ -128,10 +129,10 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
         console.log("postRebalanceTVL %s", calcTVL());
         console.log("oraclePrice %s", oracle.price());
         console.log("sqrtPrice %s", hook.sqrtPriceCurrent());
-        assertTicks(-199242, -193242);
+        assertTicks(-199950, -193950);
 
-        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4919520778899813658844498, 1e1, "sqrtPrice");
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        assertApproxEqAbs(hook.sqrtPriceCurrent(), 4191748352081811939542258, 1e1, "sqrtPrice");
+        alignOraclesHookAndPoolsV3(hook);
         DeployConfig.Config memory config = ALMDeployConfig.getConfig();
 
         assertEqHookPositionState(
@@ -141,14 +142,14 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
             config.preDeployParams.shortLeverage,
             slippage
         );
-        assertEq(hook.liquidity(), 7423380454458728, "liquidity");
+        assertEq(hook.liquidity(), 6325205629966456, "liquidity");
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
     }
 
     function test_lifecycle() public {
-        vm.skip(true);
         test_deposit_rebalance();
         part_pre_deposit_lifecycle();
+        return;
 
         // ** Move ALM from Pre-deposit to active mode
         {
@@ -188,7 +189,7 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
             assertTicks(-196748, -190748);
 
             assertApproxEqAbs(hook.sqrtPriceCurrent(), 4919520778899813658844498, 1e1, "sqrtPrice");
-            alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+            alignOraclesHookAndPoolsV3(hook);
             assertEq(hook.liquidity(), 4330305265100924, "liquidity");
             _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
         }
@@ -242,7 +243,7 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
         saveBalance(address(manager));
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesHookAndPoolsV3(hook);
 
         uint256 testFee = (uint256(feeLP) * 1e30) / 1e18;
 
@@ -324,7 +325,7 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesHookAndPoolsV3(hook);
 
         // ** Withdraw
         {
@@ -365,7 +366,7 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesHookAndPoolsV3(hook);
 
         // ** Deposit
         {
@@ -435,7 +436,7 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesHookAndPoolsV3(hook);
         // ** Rebalance
         {
             uint256 preRebalanceTVL = calcTVL();
@@ -455,7 +456,7 @@ contract PRE_DEPOSIT_BASE_ALMTest is ALMTestBaseBase {
         }
 
         // ** Make oracle change with swap price
-        alignOraclesAndPoolsV3(hook.sqrtPriceCurrent());
+        alignOraclesHookAndPoolsV3(hook);
 
         // ** Full withdraw
         {

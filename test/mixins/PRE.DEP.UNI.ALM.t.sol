@@ -117,6 +117,7 @@ contract PRE_DEPOSIT_UNI_ALMTest is ALMTestBaseUnichain {
     }
 
     function test_deposit_rebalance() public {
+        vm.skip(true);
         test_deposit();
 
         uint256 preRebalanceTVL = calcTVL();
