@@ -15,6 +15,7 @@ import {DeployConfig} from "@test/core/configs/DeployConfig.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
     uint256 slippage = 5e14; //0.05%
@@ -54,6 +55,7 @@ contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
         liquidityMultiplier = config.hookParams.liquidityMultiplier;
         feeLP = config.hookParams.feeLP;
         feeLP = 5; // for this test
+        deal(UConstants.USDT, address(UConstants.MORPHO), 1000000e6);
         init_hook(
             config.hookParams.isInvertedAssets,
             config.hookParams.isNova,
@@ -143,7 +145,6 @@ contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
 
         test_deposit_rebalance();
         _liquidityCheck(hook.isInvertedPool(), liquidityMultiplier);
-        saveBalance(address(manager));
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
@@ -156,24 +157,37 @@ contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
             deal(address(USDC), address(swapper.addr), usdcToSwap);
 
             uint256 preSqrtPrice = hook.sqrtPriceCurrent();
+            uint128 liquidity = hook.liquidity();
+            
+            console.log("--- Swap Up In START ---");
+            console.log("usdcToSwap: %s", usdcToSwap);
+            console.log("preSqrtPrice: %s", preSqrtPrice);
+            console.log("liquidity: %s", liquidity);
+            console.log("feeLP: %s", feeLP);
+            console.log("testFee: %s", testFee);
+
             (uint256 deltaUSDC, uint256 deltaUSDT) = swapUSDC_USDT_In(usdcToSwap);
 
-            return;
             uint256 postSqrtPrice = hook.sqrtPriceCurrent();
 
             (uint256 deltaX, uint256 deltaY) = _checkSwap(
-                hook.liquidity(),
+                liquidity,
                 uint160(preSqrtPrice),
                 uint160(postSqrtPrice)
             );
 
-            console.log("deltaUSDC %s", deltaUSDC);
-            console.log("deltaUSDT %s", deltaUSDT);
-            console.log("deltaX %s", deltaX);
-            console.log("deltaY %s", deltaY);
+            console.log("deltaUSDC: %s", deltaUSDC);
+            console.log("deltaUSDT: %s", deltaUSDT);
+            console.log("deltaX: %s", deltaX);
+            console.log("deltaY: %s", deltaY);
+            console.log("postSqrtPrice: %s", postSqrtPrice);
+            
+            uint256 expectedDeltaY = (deltaUSDC * (1e18 - testFee)) / 1e18;
+            console.log("expectedDeltaY: %s", expectedDeltaY);
+            console.log("--- Swap Up In END ---");
 
             assertApproxEqAbs(deltaUSDT, deltaX, 2);
-            assertApproxEqAbs((deltaUSDC * (1e18 - testFee)) / 1e18, deltaY, 4);
+            assertApproxEqAbs(expectedDeltaY, deltaY, 4);
         }
 
         // ** Swap Up In
@@ -310,9 +324,16 @@ contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Make oracle change with swap price
         alignOraclesAndPoolsV4(hook, USDC_USDT_key_unichain);
-
+        
         // ** Rebalance
         {
+            vm.warp(block.timestamp + 15 days);
+            mock_latestRoundData(UConstants.chronicle_feed_USDC, 999680000000000000);
+            mock_latestRoundData(UConstants.chronicle_feed_USDT, 998660000000000000);
+            mock_latestRoundData(IAggV3(0xf0DEbDAE819b354D076b0D162e399BE013A856d3), 999680000000000000);
+            mock_latestRoundData(IAggV3(0xD15862FC3D5407A03B696548b6902D6464A69b8c), 999680000000000000);
+            mock_latestRoundData(IAggV3(0x4aF6b78d92432D32E3a635E824d3A541866f7a78), 998660000000000000);
+            mock_latestRoundData(IAggV3(0x58fa68A373956285dDfb340EDf755246f8DfCA16), 998660000000000000);
             vm.prank(deployer.addr);
             rebalanceAdapter.rebalance(slippage);
             assertEqBalanceStateZero(address(hook));
@@ -323,13 +344,34 @@ contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
 
         // ** Full withdraw
         {
+            console.log("--- Full Withdraw START ---");
             setProtocolStatus(2);
             uint256 sharesToWithdraw = alm.balanceOf(alice.addr);
+            uint256 tvlBefore = alm.TVL(oracle.price());
+            uint256 aliceUSDCBefore = BASE.balanceOf(alice.addr);
+            uint256 aliceUSDTBefore = QUOTE.balanceOf(alice.addr);
+
             vm.prank(alice.addr);
             alm.withdraw(alice.addr, sharesToWithdraw, 0, 0);
-        }
 
-        assertBalanceNotChanged(address(manager), 2e1);
+            console.log("Alice USDC/USDT after withdraw: %s / %s", BASE.balanceOf(alice.addr), QUOTE.balanceOf(alice.addr));
+            console.log("ALM TVL after: %s", alm.TVL(oracle.price()));
+            
+            // 1. Hook is clean
+            assertEqBalanceStateZero(address(hook));
+            
+            // 2. Alice received value (within 0.05% slippage)
+            uint256 aliceValueReceived = (QUOTE.balanceOf(alice.addr) - aliceUSDTBefore) + 
+                                         (BASE.balanceOf(alice.addr) - aliceUSDCBefore) * 1e18 / oracle.price();
+            uint256 allowedSlippage = (tvlBefore * 5) / 10000; // 0.05%
+            
+            console.log("Alice Value Received: %s", aliceValueReceived);
+            console.log("TVL Before:           %s", tvlBefore);
+            console.log("Allowed Slippage:     %s", allowedSlippage);
+            
+            assertApproxEqAbs(aliceValueReceived, tvlBefore, allowedSlippage, "Alice payout slippage");
+            console.log("--- Full Withdraw END ---");
+        }
     }
 
     // ** Helpers
@@ -361,15 +403,15 @@ contract TURBO_UNI_ALMTest is ALMTestBaseUnichain {
     function swapAndReturnDeltas(bool zeroForOne, bool isExactInput, uint256 amount) public returns (uint256, uint256) {
         console.log("START: swapAndReturnDeltas");
         int256 usdtBefore = int256(USDT.balanceOf(swapper.addr));
-        int256 ethBefore = int256(swapper.addr.balance);
+        int256 usdcBefore = int256(USDC.balanceOf(swapper.addr));
 
         vm.startPrank(swapper.addr);
         _swap_v4_single_throw_router(zeroForOne, isExactInput, amount, key);
         vm.stopPrank();
 
         int256 usdtAfter = int256(USDT.balanceOf(swapper.addr));
-        int256 ethAfter = int256(swapper.addr.balance);
+        int256 usdcAfter = int256(USDC.balanceOf(swapper.addr));
         console.log("END: swapAndReturnDeltas");
-        return (abs(ethAfter - ethBefore), abs(usdtAfter - usdtBefore));
+        return (abs(usdcAfter - usdcBefore), abs(usdtAfter - usdtBefore));
     }
 }
