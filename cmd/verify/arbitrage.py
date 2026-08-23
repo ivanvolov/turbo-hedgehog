@@ -8,10 +8,17 @@ INFISICAL_PATH = "/IVa-laptop-forge"
 
 
 def with_infisical(cmd: str) -> str:
-    return (
+    probe = (
         f"infisical run --env={shlex.quote(INFISICAL_ENV)} "
-        f"--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}"
+        f"--path={shlex.quote(INFISICAL_PATH)} --silent -- true"
     )
+    if subprocess.run(probe, shell=True, capture_output=True).returncode == 0:
+        return (
+            f"infisical run --env={shlex.quote(INFISICAL_ENV)} "
+            f"--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}"
+        )
+    print("⚠ Infisical unreachable — falling back to local .env")
+    return f"bash -c {shlex.quote('set -a; source .env; set +a; ' + cmd)}"
 
 
 def run(cmd: str):
