@@ -72,7 +72,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     uint256 public maxDeviationShort;
     bool public immutable isInvertedAssets;
     bool public immutable isNova;
-    bool public isQuickRebalance = false;
     address public rebalanceOperator;
 
     constructor(
@@ -83,10 +82,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
     ) Base(ComponentType.REBALANCE_ADAPTER, msg.sender, _base, _quote) {
         isInvertedAssets = _isInvertedAssets;
         isNova = _isNova;
-    }
-
-    function setIsQuickRebalance(bool _isQuickRebalance) external onlyOwner {
-        isQuickRebalance = _isQuickRebalance;
     }
 
     function setLastRebalanceSnapshot(
@@ -179,13 +174,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
 
         (uint256 baseToFl, uint256 quoteToFl, bytes memory data) = calcFlashLoanParams(WAD + slippage, currentPrice);
 
-        if (isQuickRebalance) {
-            if (baseToFl == 0 && quoteToFl == 0) {
-                timeAtLastRebalance = block.timestamp;
-                return;
-            }
-        }
-
         if (isNova) {
             if (quoteToFl != 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
             else flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
@@ -194,10 +182,6 @@ contract SRebalanceAdapter is Base, ReentrancyGuard, IRebalanceAdapter {
             uint256 balanceQuote = getBalanceQuote();
             if (balanceQuote != 0) lendingAdapter.addCollateralLong(balanceQuote);
         } else {
-            // TODO: this is second approach of foxing the problem
-            // if (quoteToFl == 0) flashLoanAdapter.flashLoanSingle(true, baseToFl, data);
-            // else if (baseToFl == 0) flashLoanAdapter.flashLoanSingle(false, quoteToFl, data);
-            // else flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
             flashLoanAdapter.flashLoanTwoTokens(baseToFl, quoteToFl, data);
             uint256 balanceBase = getBalanceBase();
             if (balanceBase != 0) lendingAdapter.repayLong(balanceBase);

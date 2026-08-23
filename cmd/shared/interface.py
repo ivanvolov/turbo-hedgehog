@@ -17,13 +17,31 @@ PASSWORD = "13489"
 
 
 def with_infisical(cmd: str) -> str:
-    """Wrap a command so it runs with Infisical-provided env vars."""
-    if not INFISICAL_ENABLED:
-        return cmd
-    return (
+    """Wrap a command so it runs with Infisical-provided env vars.
+
+    Falls back to sourcing the local .env when Infisical is disabled or the
+    linked project is unreachable (e.g. deleted workspace in .infisical.json).
+    """
+    if INFISICAL_ENABLED and _infisical_reachable():
+        return (
+            f"infisical run --env={shlex.quote(INFISICAL_ENV)} "
+            f"--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}"
+        )
+    if os.path.exists(".env"):
+        return f"bash -c {shlex.quote('set -a; source .env; set +a; ' + cmd)}"
+    return cmd
+
+
+def _infisical_reachable() -> bool:
+    """True if `infisical run` can actually fetch secrets for the linked project."""
+    probe = (
         f"infisical run --env={shlex.quote(INFISICAL_ENV)} "
-        f"--path={shlex.quote(INFISICAL_PATH)} -- bash -c {shlex.quote(cmd)}"
+        f"--path={shlex.quote(INFISICAL_PATH)} --silent -- true"
     )
+    result = subprocess.run(probe, shell=True, capture_output=True)
+    if result.returncode != 0:
+        print("⚠ Infisical unreachable — falling back to local .env")
+    return result.returncode == 0
 
 
 def clean_spaces(s: str) -> str:
