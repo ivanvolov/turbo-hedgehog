@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+/// forge-lint: disable-start(screaming-snake-case-const)
+
 // ** interfaces
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IEVault as IEulerVault} from "@euler-interfaces/IEulerVault.sol";
 import {AggregatorV3Interface as IAggV3} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-import {ISwapRouter} from "@v3-core/ISwapRouter.sol";
 import {IMorpho} from "@morpho-blue/interfaces/IMorpho.sol";
 import {IEthereumVaultConnector as IEVC} from "@euler-interfaces/IEVC.sol";
 import {IRewardToken as IrEUL} from "@euler-interfaces/IRewardToken.sol";
 import {IMerklDistributor} from "@merkl-contracts/IMerklDistributor.sol";
-import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 import {IUniversalRouter} from "@universal-router/IUniversalRouter.sol";
 import {IPermit2} from "v4-periphery/lib/permit2/src/interfaces/IPermit2.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IV4Quoter} from "v4-periphery/src/interfaces/IV4Quoter.sol";
+import {IUniversalRewardsDistributor} from "@universal-rewards-distributor/IUniversalRewardsDistributor.sol";
 
 library Constants {
     IPoolManager constant manager = IPoolManager(0x498581fF718922c3f8e6A244956aF099B2652b2b);
@@ -28,6 +28,8 @@ library Constants {
 
     // ** Morpho
     IMorpho constant MORPHO = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb); // https://docs.morpho.org/getting-started/resources/addresses/
+    IUniversalRewardsDistributor constant universalRewardsDistributor =
+        IUniversalRewardsDistributor(0x5400dBb270c956E8985184335A1C62AcA6Ce1333); // https://docs.morpho.org/get-started/resources/addresses/
 
     // ** Euler
     IEVC constant EULER_VAULT_CONNECT = IEVC(payable(0x5301c7dD20bD945D2013b48ed0DEE3A284ca8989)); // https://github.com/euler-xyz/euler-interfaces/tree/master/addresses/130
@@ -36,12 +38,14 @@ library Constants {
 
     // https://app.euler.finance/?asset=USDT&network=base
     IEulerVault constant eulerUSDCVault1 = IEulerVault(0x0A1a3b5f2041F33522C4efc754a7D096f880eE16);
+    IEulerVault constant eulerWETHVault1 = IEulerVault(0x859160DB5841E5cfB8D3f144C6b3381A85A4b410);
     IEulerVault constant eulerCBBTCVault1 = IEulerVault(0x882018411Bc4A020A879CEE183441fC9fa5D7f8B);
 
     // ** Uniswap
     IUniversalRouter constant UNIVERSAL_ROUTER = IUniversalRouter(0x6fF5693b99212Da76ad316178A184AB56D299b43); // https://docs.uniswap.org/contracts/v4/deployments
     IPermit2 constant PERMIT_2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3); // https://docs.uniswap.org/contracts/v4/deployments
     IV4Quoter constant V4_QUOTER = IV4Quoter(0x0d5e0F971ED27FBfF6c2837bf31316121532048D);
+    address constant uniswap_v3_WETH_USDC_POOL = 0xd0b53D9277642d899DF5C87A3966A349A798F224;
 
     // ** Chainlink // https://data.chain.link/feeds/ethereum/mainnet/usdt-usd
     IAggV3 constant chainlink_feed_CBBTC = IAggV3(0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D);
@@ -49,3 +53,4 @@ library Constants {
     IAggV3 constant chainlink_feed_WETH = IAggV3(0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70);
     IAggV3 constant chainlink_feed_WSTETH = IAggV3(0x43a5C292A453A3bF3606fa856197f09D7B74251a);
 }
+/// forge-lint: disable-end(screaming-snake-case-const)

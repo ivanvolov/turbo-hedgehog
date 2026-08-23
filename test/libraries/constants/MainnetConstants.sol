@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+/// forge-lint: disable-start(screaming-snake-case-const)
+
 // ** interfaces
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
@@ -31,7 +33,7 @@ library Constants {
     // ** Morpho
     IMorpho constant MORPHO = IMorpho(0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb); // https://app.morpho.org/ethereum/earn
     IUniversalRewardsDistributor constant universalRewardsDistributor =
-        IUniversalRewardsDistributor(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb);
+        IUniversalRewardsDistributor(0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb); // https://docs.morpho.org/get-started/resources/addresses/
     IMorphoChainlinkOracleV2Factory constant morphoOracleFactory =
         IMorphoChainlinkOracleV2Factory(0x3A7bB36Ee3f3eE32A60e9f2b33c1e5f2E83ad766);
 
@@ -93,3 +95,4 @@ library Constants {
     IAggV3 constant chronicle_feed_CBBTC_sepolia = IAggV3(0xe4f05C62c09a3ec000a3f3895eFD2Ec9a1A11742);
     IAggV3 constant chronicle_feed_DAI_sepolia = IAggV3(0xaf900d10f197762794C41dac395C5b8112eD13E1);
 }
+/// forge-lint: disable-end(screaming-snake-case-const)

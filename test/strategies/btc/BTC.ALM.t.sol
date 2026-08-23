@@ -46,7 +46,7 @@ contract BTC_ALMTest is ALMTestBase {
         create_lending_adapter_euler(MConstants.eulerUSDCVault1, 2000000e6, MConstants.eulerCbBTCVault1, 0);
         create_flash_loan_adapter_euler(MConstants.eulerUSDCVault2, 0, MConstants.eulerCbBTCVault2, 100e8);
         create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_CBBTC, true);
-        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

@@ -17,8 +17,6 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IRebalanceAdapter} from "@src/interfaces/IRebalanceAdapter.sol";
-import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {PathKey} from "v4-periphery/src/interfaces/IV4Router.sol";
 
 // This test is for routing the swap during rebalance through one of our hooks.
@@ -80,7 +78,7 @@ contract ETH_UNICORD_UNI_ALMTest is ALMTestBaseUnichain {
         mock_latestRoundData(UConstants.chronicle_feed_WETH, 3732706458000000000000);
         mock_latestRoundData(UConstants.chronicle_feed_USDC, 1000010000000000000);
 
-        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 3000, 3000, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

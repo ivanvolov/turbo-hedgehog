@@ -14,7 +14,6 @@ import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 // ** contracts
 import {BaseStrategyHook} from "@src/core/base/BaseStrategyHook.sol";
 import {TestBaseUniswap} from "./TestBaseUniswap.sol";
-import {ALM} from "@src/ALM.sol";
 import {PositionManager} from "@src/core/positionManagers/PositionManager.sol";
 import {UnicordPositionManager} from "@src/core/positionManagers/UnicordPositionManager.sol";
 
@@ -54,7 +53,7 @@ abstract contract TestBaseShortcuts is TestBaseUniswap {
         );
         unauthorizedKey = PoolKey(key.currency0, key.currency1, LPFeeLibrary.DYNAMIC_FEE_FLAG, 2, IHooks(hookAddress));
         deployCodeTo(
-            "BaseStrategyHook.sol",
+            "src/core/base/BaseStrategyHook.sol:BaseStrategyHook",
             abi.encode(deployer.addr, BASE, QUOTE, WETH9_or_zero, isInvertedPool, manager),
             hookAddress
         );

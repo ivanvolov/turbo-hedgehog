@@ -6,8 +6,6 @@ import "forge-std/console.sol";
 // ** libraries
 import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as UConstants} from "@test/libraries/constants/UnichainConstants.sol";
-import {PoolKey} from "v4-core/types/PoolKey.sol";
-import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
 
 // ** contracts
 import {ALMTestBaseUnichain} from "@test/core/ALMTestBaseUnichain.sol";
@@ -56,7 +54,7 @@ contract UNICORD_R_UNI_ALMTest is ALMTestBaseUnichain {
         );
         isInvertedPool = true; // Here isInvertedPool in oracles and ALM are not in sync.
         mock_latestRoundData(UConstants.chronicle_feed_WSTETH, 1210060639502790000);
-        init_hook(false, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.sqrt_price_10per);
+        init_hook(false, true, liquidityMultiplier, 0, 100000 ether, 100, 100, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

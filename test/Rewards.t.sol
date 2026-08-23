@@ -36,7 +36,7 @@ contract RewardsAdaptersTest is ALMTestBase {
     IERC20 constant EUL = IERC20(0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b);
     IERC20 constant MORPHO = IERC20(0x58D97B57BB95320F9a05dC918Aef65434969c2B2);
     IERC20 constant UNI = IERC20(0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984);
-    IrEUL constant rEUL = MConstants.rEUL;
+    IrEUL constant rEUL = MConstants.rEUL; /// forge-lint: disable-line(screaming-snake-case-const)
 
     // ** Euler rewards
 

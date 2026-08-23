@@ -48,7 +48,7 @@ contract DeltaNeutral_ALMTest is ALMTestBase {
         create_lending_adapter_euler_USDC_WETH();
         create_flash_loan_adapter_euler_USDC_WETH();
         create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_WETH, true);
-        init_hook(true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.sqrt_price_10per);
+        init_hook(true, false, liquidityMultiplier, 0, 1000000 ether, 3000, 3000, TestLib.SQRT_PRICE_10PER);
 
         // ** Setting up strategy params
         {

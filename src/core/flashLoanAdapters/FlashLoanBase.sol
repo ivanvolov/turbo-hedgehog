@@ -45,7 +45,7 @@ abstract contract FlashLoanBase is Base, IFlashLoanAdapter {
 
     function _flashLoanSingle(bool isBase, uint256 amount, bytes memory data) internal virtual;
 
-    function _onFlashLoan(bytes calldata _data) internal {
+    function _onFlashLoan(bytes memory _data) internal {
         uint8 loanType = abi.decode(_data, (uint8));
         if (loanType == 0) {
             (, address sender, bool isBase, uint256 amount, bytes memory data) = abi.decode(

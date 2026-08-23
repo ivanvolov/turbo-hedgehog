@@ -10,15 +10,12 @@ import {PoolIdLibrary, PoolId} from "v4-core/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "v4-core/types/Currency.sol";
 
 // ** contracts
-import {SRebalanceAdapter} from "@src/core/SRebalanceAdapter.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ** interfaces
-import {IOracle} from "@src/interfaces/IOracle.sol";
-import {ILendingAdapter} from "@src/interfaces/ILendingAdapter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract UNICORD_ALMTest is ALMTestBase {
@@ -56,7 +53,7 @@ contract UNICORD_ALMTest is ALMTestBase {
         create_lending_adapter_morpho_earn();
         create_flash_loan_adapter_morpho();
         create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
-        init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.sqrt_price_1per);
+        init_hook(false, true, liquidityMultiplier, 0, 1000000 ether, 100, 100, TestLib.SQRT_PRICE_1PER);
 
         // ** Setting up strategy params
         {

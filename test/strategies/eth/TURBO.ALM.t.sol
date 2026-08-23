@@ -7,27 +7,27 @@ import "forge-std/console.sol";
 import {ALMTestBase} from "@test/core/ALMTestBase.sol";
 
 // ** libraries
-import {TestLib} from "@test/libraries/TestLib.sol";
 import {Constants as MConstants} from "@test/libraries/constants/MainnetConstants.sol";
 import {LiquidityAmounts} from "v4-core-test/utils/LiquidityAmounts.sol";
 import {ALMMathLib} from "@src/libraries/ALMMathLib.sol";
+import {TurboDeployConfig} from "@test/core/configs/TurboDeployConfig.sol";
+import {DeployConfig} from "@test/core/configs/DeployConfig.sol";
 
 // ** interfaces
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TURBO_ALMTest is ALMTestBase {
-    uint256 longLeverage = 2e18;
-    uint256 shortLeverage = 2e18;
-    uint256 weight = 50e16; //50%
-    uint256 liquidityMultiplier = 1e18;
     uint256 slippage = 5e14; //0.05%
-    uint24 feeLP = 5; //0.05%
 
     IERC20 USDT = IERC20(MConstants.USDT);
     IERC20 USDC = IERC20(MConstants.USDC);
 
+    uint256 liquidityMultiplier;
+    uint24 feeLP;
+
     function setUp() public {
         select_mainnet_fork(21817163);
+        DeployConfig.Config memory config = TurboDeployConfig.getConfig();
 
         // ** Setting up test environments params
         {
@@ -36,6 +36,7 @@ contract TURBO_ALMTest is ALMTestBase {
             ASSERT_EQ_PS_THRESHOLD_CS = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DL = 1e1;
             ASSERT_EQ_PS_THRESHOLD_DS = 1e5;
+            IS_NTS = false;
         }
 
         initialSQRTPrice = getV3PoolSQRTPrice(TARGET_SWAP_POOL);
@@ -44,17 +45,38 @@ contract TURBO_ALMTest is ALMTestBase {
         create_accounts_and_tokens(MConstants.USDC, 6, "USDC", MConstants.USDT, 6, "USDT");
         create_lending_adapter_euler_USDT_USDC();
         create_flash_loan_adapter_euler_USDT_USDC();
-        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, true);
-        init_hook(false, false, liquidityMultiplier, 0, 1000 ether, 10, 10, TestLib.sqrt_price_10per);
+        create_oracle(MConstants.chainlink_feed_USDC, MConstants.chainlink_feed_USDT, config.hookParams.isInvertedPool);
+
+        liquidityMultiplier = config.hookParams.liquidityMultiplier;
+        feeLP = config.hookParams.feeLP;
+        feeLP = 5; // for this test
+        init_hook(
+            config.hookParams.isInvertedAssets,
+            config.hookParams.isNova,
+            liquidityMultiplier,
+            config.hookParams.protocolFee,
+            config.hookParams.tvlCap,
+            config.hookParams.tickLowerDelta,
+            config.hookParams.tickUpperDelta,
+            config.hookParams.swapPriceThreshold
+        );
 
         // ** Setting up strategy params
         {
             vm.startPrank(deployer.addr);
             hook.setTreasury(treasury.addr);
-            // hook.setNextLPFee(0); // By default, dynamic-fee-pools initialize with a 0% fee, to change - call rebalance.
-            positionManager.setKParams(1425 * 1e15, 1425 * 1e15); // 1.425 1.425
-            rebalanceAdapter.setRebalanceParams(weight, longLeverage, shortLeverage);
-            rebalanceAdapter.setRebalanceConstraints(TestLib.ONE_PERCENT_AND_ONE_BPS, 2000, 1e17, 1e17); // 0.1 (1%), 0.1 (1%)
+            positionManager.setKParams(config.kParams.k1, config.kParams.k2);
+            rebalanceAdapter.setRebalanceParams(
+                config.preDeployParams.weight,
+                config.preDeployParams.longLeverage,
+                config.preDeployParams.shortLeverage
+            );
+            rebalanceAdapter.setRebalanceConstraints(
+                config.preDeployConstraints.rebalancePriceThreshold,
+                config.preDeployConstraints.rebalanceTimeThreshold,
+                config.preDeployConstraints.maxDeviationLong,
+                config.preDeployConstraints.maxDeviationShort
+            );
             vm.stopPrank();
         }
 

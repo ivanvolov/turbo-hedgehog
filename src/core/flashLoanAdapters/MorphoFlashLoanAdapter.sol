@@ -31,6 +31,7 @@ contract MorphoFlashLoanAdapter is FlashLoanBase {
     }
 
     function _flashLoanSingle(bool isBase, uint256 amount, bytes memory data) internal virtual override {
+        if (amount == 0) return _onFlashLoan(data); //TODO: This is the naive fix of the Nova rebalance problem
         morpho.flashLoan(isBase ? address(BASE) : address(QUOTE), amount, data);
     }
 }
