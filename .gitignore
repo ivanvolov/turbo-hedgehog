@@ -11,6 +11,9 @@ node_modules
 # Dotenv file
 .env
 .DS_Store
+
+# Carcass vault boundary pointer
+github.pointer.md
 PLAN.md
 *.csv
 test/**/*.html
