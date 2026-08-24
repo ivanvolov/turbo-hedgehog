@@ -1,4 +1,4 @@
-# Turbo hedgehog hook
+# Lumis core
 
 ## Setting up
 
